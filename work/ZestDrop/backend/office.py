@@ -161,7 +161,7 @@ def native(path,fmt,target):
     if exe.exists():
         process([exe,'--office-export',path,fmt,target],timeout=300)
     else:
-        raise RuntimeError(T('The current system cannot convert this Office format. Please install LibreOffice or Microsoft Word.'))
+        raise RuntimeError(T('当前系统无法转换此 Office 格式，请安装 LibreOffice 或 Microsoft Word'))
 
 def data_rows(path,folder):
     ext=Path(path).suffix.lower()
@@ -182,7 +182,7 @@ def text_without_office(path):
         from pptx import Presentation
         document=Presentation(path);parts=[]
         for i,slide in enumerate(document.slides):
-            parts.append(T('Slide {0}').format(i+1))
+            parts.append(T('第 {0} 页').format(i+1))
             for shape in slide.shapes:
                 if shape.has_text_frame:parts.append(shape.text)
                 if shape.has_table:
@@ -193,7 +193,7 @@ def text_without_office(path):
         document=Document(path);parts=[p.text for p in document.paragraphs]
         parts.extend('\t'.join(cell.text for cell in row.cells) for table in document.tables for row in table.rows)
         return '\n'.join(parts)
-    raise ValueError(T('Text export requires Microsoft Office or LibreOffice'))
+    raise ValueError(T('此文本导出需要本机 Microsoft Office'))
 
 def pdf_file(path,folder):
     if Path(path).suffix.lower() in ('.csv','.tsv'):path=csv_workbook(path,folder)
@@ -252,7 +252,7 @@ def convert(path,fmt,params):
         return state['output']
 
 def metadata(path):
-    if not zipfile.is_zipfile(path):return {'Format':Path(path).suffix.upper(),'Details':T('Metadata editing for this legacy format is not supported')}
+    if not zipfile.is_zipfile(path):return {'Format':Path(path).suffix.upper(),'Details':T('此旧格式的元数据编辑暂不支持')}
     result={}
     with zipfile.ZipFile(path) as package:
         for name in ('docProps/core.xml','docProps/app.xml'):
@@ -262,7 +262,7 @@ def metadata(path):
     return result
 
 def edit_metadata(path,params):
-    if not zipfile.is_zipfile(path):raise ValueError(T('Metadata editing requires modern Office formats. Please convert to PPTX/DOCX/XLSX first.'))
+    if not zipfile.is_zipfile(path):raise ValueError(T('元数据编辑支持现代 Office 格式，请先转换为 PPTX/DOCX/XLSX'))
     values=json.loads(params.get('metadata','{}'));remove=truth(params.get('remove','true'))
     with output_file(path,'metadata',Path(path).suffix.lower()) as state:
         with zipfile.ZipFile(path) as source,zipfile.ZipFile(state['temp'],'w',zipfile.ZIP_DEFLATED) as target:

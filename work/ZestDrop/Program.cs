@@ -520,6 +520,8 @@ internal sealed class Resident : IDisposable
             themeMenu.DropDownItems.Add(new Forms.ToolStripMenuItem(label, null, (_, _) => { UiTheme.Choose(choice); taskIndicator.ApplyTheme(); }) { Tag = choice });
         themeMenu.DropDownOpening += (_, _) => { foreach (Forms.ToolStripMenuItem item in themeMenu.DropDownItems) item.Checked = (string)item.Tag! == UiTheme.Choice; };
         items.Items.Add(themeMenu);
+        var soundItem = new Forms.ToolStripMenuItem(L.T("声音效果"), null, (_, _) => SoundManager.Enabled = !SoundManager.Enabled) { Checked = SoundManager.Enabled };
+        items.Items.Add(soundItem);
         items.Items.Add(L.T("自定义轮盘…"), null, (_, _) => { if (orderWindow == null) { orderWindow = new WheelOrderWindow(); orderWindow.Closed += (_, _) => orderWindow = null; orderWindow.Show(); } orderWindow.Activate(); });
         items.Items.Add(L.T("流程…"), null, (_, _) => { if (flowWindow == null) { flowWindow = new FlowWindow(() => { }); flowWindow.Closed += (_, _) => flowWindow = null; flowWindow.Show(); } flowWindow.Activate(); });
         Forms.ToolStripMenuItem? explorerItem = null;
@@ -563,6 +565,7 @@ internal sealed class Resident : IDisposable
             otherFolder.Text = OutputFolder.Current is { } chosen ? L.T("选择文件夹…") + "  (" + chosen + ")" : L.T("选择文件夹…");
             if (explorerItem != null)
                 explorerItem.Checked = ExplorerIntegration.Enabled;
+            soundItem.Checked = SoundManager.Enabled;
             bool canPause = jobs.Any(CanPause), canResume = jobs.Any(j => j.Pause != null);
             showProgress.Enabled = cancelAll.Enabled = jobs.Count > 0;
             pauseAll.Enabled = canPause || canResume;

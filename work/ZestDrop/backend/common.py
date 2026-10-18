@@ -18,8 +18,9 @@ VIDEO_EXT={'.mp4','.mov','.mkv','.webm','.avi','.wmv','.gif'}
 AUDIO_EXT={'.mp3','.m4a','.wav','.flac','.ogg','.opus','.aiff','.aif','.wma'}
 # Interface language for messages, chosen in the app and passed to each worker. Chinese strings double as keys.
 from translations import EN
-LANG=os.environ.get('LOTUS_LANG', os.environ.get('ZESTDROP_LANG', 'en'))
-def T(text): return EN.get(text, text)
+def T(text):
+    lang = os.environ.get('LOTUS_LANG', os.environ.get('ZESTDROP_LANG', 'zh'))
+    return EN.get(text, text) if lang == 'en' else text
 
 # Staged outputs carry the app's job id, so cancelling one job never removes another job's files.
 JOB=re.sub(r'[^0-9A-Za-z]','',os.environ.get('LOTUS_JOB', os.environ.get('ZESTDROP_JOB','')))[:32]

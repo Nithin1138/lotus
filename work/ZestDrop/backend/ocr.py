@@ -18,7 +18,7 @@ def recognise(files,language):
         else:
             process(['powershell.exe','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',SCRIPT,'-Language',language or 'en','-Out',out,*files],timeout=900)
             data=json.loads(out.read_text(encoding='utf-8-sig'))
-    if isinstance(data,dict) and data.get('error')=='noengine': raise ValueError(T('No OCR language engine available on system'))
+    if isinstance(data,dict) and data.get('error')=='noengine': raise ValueError(T('Windows 没有可用的文字识别语言。请在“设置 → 时间和语言 → 语言和区域”中为所需语言安装“光学字符识别”。'))
     for page in data:
         for line in page['lines']: line['text']=CJK.sub('',line['text'])
     return data
@@ -68,7 +68,7 @@ def run(path,action,params):
     if os.name != 'nt' and MAC_OCR.is_file():
         pages=recognise([str(path)],language)
         text='\n\n'.join(page_text(p) for p in pages)
-        if not text.strip(): raise ValueError(T('No text recognized in document'))
+        if not text.strip(): raise ValueError(T('没有识别到文字'))
         if output=='pdf':
             with output_file(path,action,'.pdf') as state:
                 create_text_pdf(pages,state['temp'],keep_background=keep_bg)
@@ -90,7 +90,7 @@ def run(path,action,params):
         else:
             import pypdfium2 as pdfium
             source=pdfium.PdfDocument(str(path),password=params.get('password') or None); count=len(source)
-            if count>200: raise ValueError(T('Maximum 200 pages per OCR job'))
+            if count>200: raise ValueError(T('一次最多识别 200 页'))
             files=[]; sizes=[]
             for index in range(count):
                 image=source[index].render(scale=150/72).to_pil(); target,size=prepared(image,temp,f'page-{index+1}.jpg'); files.append(str(target)); sizes.append(size)
@@ -99,6 +99,6 @@ def run(path,action,params):
                 with output_file(path,'ocrPDF','.pdf') as state:
                     create_text_pdf(pages,state['temp'],keep_background=keep_bg,source_images=files)
                 return state['output']
-    if not text.strip(): raise ValueError(T('No text recognized in document'))
+    if not text.strip(): raise ValueError(T('没有识别到文字'))
     with output_file(path,action,'.txt') as state: state['temp'].write_text(text,encoding='utf8')
     return state['output']

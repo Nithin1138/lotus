@@ -108,32 +108,55 @@ def organize(path, params):
     total = len(doc)
     if total == 0:
         doc.close()
-        raise ValueError(T('PDF has no pages'))
+        raise ValueError(T('PDF 中没有页面'))
     
-    if action == 'Reverse All Pages':
-        doc.select(list(range(total - 1, -1, -1)))
-    elif 'Rotate All 90' in action:
-        for page in doc:
-            page.set_rotation((page.rotation + 90) % 360)
-    elif 'Rotate All 180' in action:
-        for page in doc:
-            page.set_rotation((page.rotation + 180) % 360)
-    elif 'Rotate All 270' in action:
-        for page in doc:
-            page.set_rotation((page.rotation + 270) % 360)
-    elif action == 'Extract Even Pages':
-        even = [i for i in range(total) if (i + 1) % 2 == 0]
-        if not even: raise ValueError(T('No even pages found'))
-        doc.select(even)
-    elif action == 'Extract Odd Pages':
-        odd = [i for i in range(total) if (i + 1) % 2 != 0]
-        doc.select(odd)
-    elif action == 'Delete First Page':
-        if total <= 1: raise ValueError(T('Cannot delete the only page'))
-        doc.delete_page(0)
-    elif action == 'Delete Last Page':
-        if total <= 1: raise ValueError(T('Cannot delete the only page'))
-        doc.delete_page(total - 1)
+    page_order = params.get('pageOrder', '').strip()
+    rotations_raw = params.get('rotations', '{}')
+    rotations = json.loads(rotations_raw) if isinstance(rotations_raw, str) else (rotations_raw or {})
+    rot = int(number(params, 'rotation', 0))
+
+    if page_order:
+        indexes = [int(x.strip()) - 1 for x in page_order.split(',') if x.strip()]
+        for idx in indexes:
+            if idx < 0 or idx >= total:
+                raise ValueError(T('页码超出文档范围'))
+        doc.select(indexes)
+        if rot or rotations:
+            for i, page in enumerate(doc):
+                angle = int(rotations.get(str(i + 1), rot))
+                if angle:
+                    page.set_rotation((page.rotation + angle) % 360)
+    else:
+        if action == 'Reverse All Pages':
+            doc.select(list(range(total - 1, -1, -1)))
+        elif 'Rotate All 90' in action:
+            for page in doc:
+                page.set_rotation((page.rotation + 90) % 360)
+        elif 'Rotate All 180' in action:
+            for page in doc:
+                page.set_rotation((page.rotation + 180) % 360)
+        elif 'Rotate All 270' in action:
+            for page in doc:
+                page.set_rotation((page.rotation + 270) % 360)
+        elif action == 'Extract Even Pages':
+            even = [i for i in range(total) if (i + 1) % 2 == 0]
+            if not even: raise ValueError(T('没有找到偶数页'))
+            doc.select(even)
+        elif action == 'Extract Odd Pages':
+            odd = [i for i in range(total) if (i + 1) % 2 != 0]
+            if not odd: raise ValueError(T('没有找到偶数页'))
+            doc.select(odd)
+        elif action == 'Delete First Page':
+            if total <= 1: raise ValueError(T('无法删除仅有的单页'))
+            doc.delete_page(0)
+        elif action == 'Delete Last Page':
+            if total <= 1: raise ValueError(T('无法删除仅有的单页'))
+            doc.delete_page(total - 1)
+        elif rot or rotations:
+            for i, page in enumerate(doc):
+                angle = int(rotations.get(str(i + 1), rot))
+                if angle:
+                    page.set_rotation((page.rotation + angle) % 360)
     
     with output_file(path, 'organized', '.pdf') as state:
         doc.save(state['temp'], garbage=3, deflate=True)

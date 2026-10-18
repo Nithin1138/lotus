@@ -283,6 +283,7 @@ internal sealed class DropWheel : Window
         entered = false;
         eligible = false;
         Journal.Write("DropAccepted", new { Action = selected.Id, count = files.Length, effect = "Copy" });
+        SoundManager.PlayPop();
         Dispatcher.InvokeAsync(() => submit(files, selected));
     }
 
@@ -428,6 +429,8 @@ internal sealed class DropWheel : Window
     {
         if (index == ring.Highlighted)
             return;
+        if (index >= 0)
+            SoundManager.PlayTick();
         ring.Highlighted = index;
         for (int i = 0; i < ring.Petals.Count; i++)
         {

@@ -66,7 +66,7 @@ internal sealed class ToolWindow : Window
     private readonly Border rotatePlate = new() { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
     // Cropping is previewed by the frame itself, so the preview is not regenerated while its settings change.
     private bool LivePreview => RefreshFrame && !HasMedia && operation.Id != "cropImage";
-    private bool VisualPreview => operation.Id == "watermark" && Catalog.Category(paths[0]) == "image" || operation.Id is "editImage" or "frameImage" or "cropImage" or "cropVideo" or "redactImage" or "redactVideo" or "redactPDF" or "organizePDF" or "createCollage";
+    private bool VisualPreview => operation.Id == "watermark" && Catalog.Category(paths[0]) == "image" || operation.Id is "editImage" or "frameImage" or "cropImage" or "cropVideo" or "redactImage" or "annotateImage" or "redactVideo" or "redactPDF" or "organizePDF" or "createCollage";
     private bool ProcessedPlayback => operation.Id is "normalizeAudio" or "audioChannels" or "audioToVideo" or "redactAudio" or "trimAudio" or "trimVideo" or "cropVideo" or "changeVideoSpeed" or "redactVideo" or "muteVideo";
     private bool HasMedia => Catalog.Category(paths[0]) is "audio" or "video";
     private MediaTransport? transport;

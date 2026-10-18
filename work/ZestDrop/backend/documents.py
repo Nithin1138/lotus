@@ -7,7 +7,7 @@ from common import *
 
 def reader(path,params):
     doc=PdfReader(path)
-    if doc.is_encrypted and not doc.decrypt(params.get('password','')): raise ValueError(T('PDF requires the correct password'))
+    if doc.is_encrypted and not doc.decrypt(params.get('password','')): raise ValueError(T('PDF 需要正确的密码'))
     return doc
 
 def metadata(path):
@@ -109,7 +109,7 @@ def text_image(text,width=1200):
             else: current+=char
         lines.append(current)
     height=max(180,100+len(lines)*42)
-    if width*height>80_000_000: raise ValueError(T('Text is too long; single image too large; please select PDF output'))
+    if width*height>80_000_000: raise ValueError(T('文本过长，单张图片过大；请选择 PDF 输出'))
     image=Image.new('RGB',(width,height),'white'); draw=ImageDraw.Draw(image)
     for i,line in enumerate(lines): draw.text((50,50+i*42),line,fill='#111111',font=font)
     return image
@@ -365,7 +365,7 @@ def convert_epub(path, fmt, params):
         doc.close()
         return state['output']
     doc.close()
-    raise ValueError(T('This document conversion is not supported'))
+    raise ValueError(T('不支持此文档转换'))
 
 def convert(path,fmt,params):
     source=Path(path).suffix.lower()
@@ -379,7 +379,7 @@ def convert(path,fmt,params):
         if fmt=='docx': return pdf_word(path,params)
         if fmt=='txt':
             doc=reader(path,params); text='\n\n'.join(page.extract_text() or '' for page in doc.pages)
-            if not text.strip(): raise ValueError(T('PDF contains no selectable text; scanned documents require OCR first'))
+            if not text.strip(): raise ValueError(T('PDF 没有可选文字；扫描件需先识别文字'))
             with output_file(path,'converted','.txt') as state: state['temp'].write_text(text,encoding='utf8')
             return state['output']
     if source=='.txt':
@@ -399,7 +399,7 @@ def convert(path,fmt,params):
             return state['output']
         with output_file(path,'converted','.'+fmt) as state: save_image(text_image(text),state['temp'],fmt)
         return state['output']
-    raise ValueError(T('This document conversion is not supported'))
+    raise ValueError(T('不支持此文档转换'))
 
 def merge(paths,params):
     writer=PdfWriter()
@@ -428,12 +428,12 @@ def tool(path,action,params):
                 except (OSError,ValueError): pass
         with output_file(path,'compressed','.pdf') as state:
             doc.save(state['temp'],garbage=4,deflate=True)
-            if target and state['temp'].stat().st_size>target: raise ValueError(T('Target file size could not be reached with current settings. Try lowering quality or resizing.'))
+            if target and state['temp'].stat().st_size>target: raise ValueError(T('无法在当前设置下达到目标大小，请调低质量或缩小尺寸'))
         doc.close(); return state['output']
     doc=reader(path,params)
     if action=='splitPDF':
         group=int(number(params,'pagesPerFile',1))
-        if group<1: raise ValueError(T('Pages per file must be greater than zero'))
+        if group<1: raise ValueError(T('每份页数必须大于零'))
         with output_folder(path,'split') as state:
             for start in range(0,len(doc.pages),group):
                 writer=PdfWriter()
@@ -446,7 +446,7 @@ def tool(path,action,params):
     indexes=[int(x.strip())-1 for x in order.split(',')] if order else list(range(len(doc.pages)))
     rotations=json.loads(params.get('rotations','{}'))
     for index in indexes:
-        if index<0 or index>=len(doc.pages): raise ValueError(T('Page number out of document range'))
+        if index<0 or index>=len(doc.pages): raise ValueError(T('页码超出文档范围'))
         page=writer.add_page(doc.pages[index])
         angle=int(rotations.get(str(index+1),number(params,'rotation',0)))
         if angle: page.rotate(angle)

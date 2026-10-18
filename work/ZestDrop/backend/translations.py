@@ -23,7 +23,6 @@ EN = {
     '图片超过 8000 万像素上限': 'The image is larger than the 80-megapixel limit',
     '区域应为 JSON 数组': 'Regions must be a JSON array',
     '区域超出画面范围': 'A region is outside the picture',
-    # documents
     'PDF 需要正确的密码': 'This PDF needs the correct password',
     'PDF 密码错误': 'Wrong PDF password',
     '文本过长，单张图片过大；请选择 PDF 输出': 'The text is too long for a single image; choose PDF instead',
@@ -32,8 +31,10 @@ EN = {
     '无法在当前设置下达到目标大小，请调低质量或缩小尺寸': 'Cannot reach the target size with these settings; lower the quality or size',
     '每份页数必须大于零': 'Pages per file must be greater than zero',
     '页码超出文档范围': 'A page number is outside the document',
+    'PDF 中没有页面': 'PDF has no pages',
+    '没有找到偶数页': 'No even pages found',
+    '无法删除仅有的单页': 'Cannot delete the only page',
     # images
-    '裁剪区域超出图片范围': 'The crop area is outside the image',
     '马赛克颗粒需在 2–100 像素范围内': 'Pixel block size must be 2–100 px',
     '画布尺寸无效或过大': 'The canvas size is invalid or too large',
     '留白大于画布': 'The padding is larger than the canvas',
@@ -59,6 +60,7 @@ EN = {
     '此文本导出需要本机 Microsoft Office': 'This text export needs Microsoft Office',
     '此旧格式的元数据编辑暂不支持': 'Metadata editing is not supported for this older format',
     '元数据编辑支持现代 Office 格式，请先转换为 PPTX/DOCX/XLSX': 'Metadata editing supports modern Office formats; convert to PPTX/DOCX/XLSX first',
+    '当前系统无法转换此 Office 格式，请安装 LibreOffice 或 Microsoft Word': 'The current system cannot convert this Office format. Please install LibreOffice or Microsoft Word.',
     '旋转角度需在 0 到 360 度之间，翻转方式也要有效': 'The angle must be between 0 and 360 degrees, and the flip setting must be valid',
     '空白处颜色无效': 'The fill colour is not valid',
     '请选择旋转角度或翻转方式': 'Choose a rotation or a flip first',

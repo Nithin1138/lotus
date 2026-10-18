@@ -17,7 +17,7 @@ internal static class Catalog
     // Files with ten or more tools show categories first; this is how each kind of file is divided.
     private static readonly Dictionary<string, (string Label, string[] Ids)[]> Categories = new()
     {
-        ["image"] = [("尺寸与方向", ["cropImage", "rotateImage", "resizeImage"]), ("外观与标记", ["editImage", "frameImage", "watermark", "redactImage"]),
+        ["image"] = [("尺寸与方向", ["cropImage", "rotateImage", "resizeImage"]), ("外观与标记", ["editImage", "frameImage", "watermark", "annotateImage", "redactImage"]),
             ("输出与整理", ["compress", "removeMetadata", "location", "ocrImage", "makeIcon", "createPDF", "createCollage", "createAnimation", "packArchive"])],
         ["video"] = [("剪辑", ["trimVideo", "splitVideo", "joinVideos", "changeVideoSpeed", "videoSnapshots", "videoEffects"]), ("画面", ["cropVideo", "rotateVideo", "videoSettings", "watermark", "redactVideo"]),
             ("声音与字幕", ["muteVideo", "subtitlesAudio"]), ("输出与整理", ["compress", "removeMetadata", "location", "videoToGif", "packArchive"])],
@@ -100,7 +100,7 @@ internal static class Catalog
     public static string Category(string path)
     {
         string ext = Extension(path);
-        return Images.Contains(ext) ? "image" : Audio.Contains(ext) ? "audio" : Video.Contains(ext) || ext == "gif" ? "video" : OfficeSlides.Contains(ext) || OfficeWords.Contains(ext) || OfficeSheets.Contains(ext) ? "office" : new[] { "pdf", "txt", "srt", "vtt" }.Contains(ext) ? "document" : Archives.Contains(ext) ? "archive" : "file";
+        return Images.Contains(ext) ? "image" : Audio.Contains(ext) ? "audio" : Video.Contains(ext) || ext == "gif" ? "video" : OfficeSlides.Contains(ext) || OfficeWords.Contains(ext) || OfficeSheets.Contains(ext) ? "office" : new[] { "pdf", "txt", "srt", "vtt", "epub", "md", "markdown" }.Contains(ext) ? "document" : Archives.Contains(ext) ? "archive" : "file";
     }
     public static bool PackingOnly(string[] paths) => paths.Length > 0 && paths.All(path => Directory.Exists(path) || Category(path) == "file");
     private static string[] Targets(string ext)
@@ -108,10 +108,14 @@ internal static class Catalog
         if (OfficeSlides.Contains(ext))
             return OfficeBridge.Available("PowerPoint") ? ["pdf", "png", "jpg", "txt", "pptx", "ppt", "odp"] : new[] { "pptx", "pptm", "ppsx" }.Contains(ext) ? ["txt"] : [];
         if (OfficeWords.Contains(ext))
-            return OfficeBridge.Available("Word") ? ["pdf", "png", "jpg", "txt", "docx", "doc", "rtf", "odt", "html"] : new[] { "docx", "docm" }.Contains(ext) ? ["txt"] : [];
+            return OfficeBridge.Available("Word") ? ["pdf", "png", "jpg", "txt", "docx", "doc", "rtf", "odt", "html"] : ext is "rtf" or "rtfd" ? ["pdf", "docx", "txt", "html"] : new[] { "docx", "docm" }.Contains(ext) ? ["txt"] : [];
         if (OfficeSheets.Contains(ext))
             return OfficeBridge.Available("Excel") ? ["pdf", "png", "jpg", "xlsx", "xls", "ods", "csv", "tsv", "json", "txt"] : ext is "xlsx" or "xlsm" ? ["csv", "tsv", "json", "txt"] : ext is "csv" or "tsv" ? ["xlsx", "csv", "tsv", "json", "txt"] : [];
-        return ext is "jpg" or "png" ? [.. ImageTargets, "docx"] : Images.Contains(ext) ? ImageTargets : Audio.Contains(ext) ? Audio : Video.Contains(ext) ? [.. Video, "gif", "mp3"] : ext == "gif" ? Video : ext == "pdf" ? ["docx", "jpg", "png", "txt"] : ext == "txt" ? ["pdf", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? ["srt", "vtt", "txt"] : Archives;
+        if (ext == "epub")
+            return ["pdf", "docx", "txt", "md", "html"];
+        if (ext is "md" or "markdown")
+            return ["pdf", "docx", "html", "txt"];
+        return ext is "jpg" or "png" ? [.. ImageTargets, "docx"] : Images.Contains(ext) ? ImageTargets : Audio.Contains(ext) ? Audio : Video.Contains(ext) ? [.. Video, "gif", "mp3"] : ext == "gif" ? Video : ext == "pdf" ? ["docx", "jpg", "png", "txt"] : ext == "txt" ? ["pdf", "docx", "md", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? ["srt", "vtt", "txt"] : Archives;
     }
     public static List<Operation> Options(string[] paths, bool tools)
     {
@@ -211,8 +215,8 @@ internal static class Catalog
             if (ext == "svg")
                 return count > 1 ? ["createPDF", "createCollage", "createAnimation", "packArchive"] : ["resizeImage", "makeIcon"];
             if (ext == "bmp")
-                return count > 1 ? ["compress", "rotateImage", "resizeImage", "watermark", "createPDF", "createCollage", "createAnimation", "packArchive"] : ["compress", "editImage", "frameImage", "cropImage", "rotateImage", "resizeImage", "watermark", "makeIcon", "ocrImage", "redactImage"];
-            return count > 1 ? ["compress", "removeMetadata", "location", "rotateImage", "resizeImage", "watermark", "createPDF", "createCollage", "createAnimation", "packArchive"] : ["compress", "removeMetadata", "location", "editImage", "frameImage", "cropImage", "rotateImage", "resizeImage", "watermark", "makeIcon", "ocrImage", "redactImage"];
+                return count > 1 ? ["compress", "rotateImage", "resizeImage", "watermark", "createPDF", "createCollage", "createAnimation", "packArchive"] : ["compress", "editImage", "frameImage", "cropImage", "rotateImage", "resizeImage", "watermark", "annotateImage", "makeIcon", "ocrImage", "redactImage"];
+            return count > 1 ? ["compress", "removeMetadata", "location", "rotateImage", "resizeImage", "watermark", "createPDF", "createCollage", "createAnimation", "packArchive"] : ["compress", "removeMetadata", "location", "editImage", "frameImage", "cropImage", "rotateImage", "resizeImage", "watermark", "annotateImage", "makeIcon", "ocrImage", "redactImage"];
         }
         if (kind == "audio")
             return count > 1 ? ["compress", "normalizeAudio", "audioEffects", "joinAudio", "packArchive"] : ["compress", "removeMetadata", "normalizeAudio", "audioToVideo", "trimAudio", "audioChannels", "audioEffects", "ringtone", "redactAudio"];
@@ -248,6 +252,7 @@ internal static class Catalog
         "removeMetadata" => new(id, L.T("元数据"), true, [T("remove", L.T("移除全部元数据"), "true", "bool"), T("search", L.T("搜索元数据字段")), T("metadata", L.T("元数据字段（关闭全部移除后可修改）"), "{}", "metadata")]),
         "editImage" => new(id, L.T("编辑图片"), true, [N("exposure", L.T("曝光（EV）"), "0"), N("contrast", L.T("对比度（1 原始）"), "1"), N("saturation", L.T("饱和度（1 原始）"), "1"), N("temperature", L.T("色温（-100 到 100）"), "0"), N("shadows", L.T("阴影（-100 到 100）"), "0"), N("highlights", L.T("高光（-100 到 100）"), "0"), N("clarity", L.T("清晰度（0–100）"), "0"), N("dehaze", L.T("去雾（0–100）"), "0"), N("denoise", L.T("降噪（0–30）"), "0"), N("grain", L.T("颗粒（0–100）"), "0"), T("annotations", L.T("标注（JSON，可选）"), "", "json")]),
         "frameImage" => new(id, L.T("添加背景"), true, [N("canvasWidth", L.T("画布宽度"), "1400"), N("canvasHeight", L.T("画布高度"), "1000"), N("padding", L.T("留白"), "80"), N("radius", L.T("圆角"), "24"), N("shadow", L.T("阴影"), "20"), T("background", L.T("背景色"), "#f0ebff"), T("gradient", L.T("渐变结束色")), T("backgroundImage", L.T("背景图片"), "", "file"), N("backgroundBlur", L.T("背景模糊"), "0")]),
+        "annotateImage" => new(id, L.T("添加标注"), true, [T("text", L.T("标注文字"), "APPROVED"), T("color", L.T("文字颜色"), "#ff6500"), C("position", L.T("位置"), "bottom_right", "bottom_right", "bottom_left", "top_right", "top_left", "center")]),
         "cropImage" => new(id, L.T("裁剪"), true, [.. Crop, .. Ratio]),
         "resizeImage" => new(id, L.T("调整尺寸"), true, [C("mode", L.T("方式"), "percent", "percent", "edge", "size"), N("percent", L.T("缩放比例（%）"), "50"), N("edge", L.T("最长边（像素）"), "1920"), N("width", L.T("宽度（像素，0 为不限）"), "0"), N("height", L.T("高度（像素，0 为不限）"), "0"), T("keepRatio", L.T("同时填宽和高时保持比例"), "true", "bool")]),
         "watermark" => new(id, L.T("水印"), true, [T("text", L.T("水印文字")), T("logo", L.T("水印图片（可选）"), "", "file:image"), .. Positions, C("layout", L.T("排布"), "single", "single", "tiled"), N("opacity", L.T("不透明度（0–100）"), "60"), N("textSize", L.T("文字大小（占短边 %）"), "5"), N("scale", L.T("图片宽度（占画面 %）"), "20"), N("rotation", L.T("旋转角度"), "0"), N("margin", L.T("边距（占短边 %）"), "3"), T("color", L.T("文字颜色"), "#ffffff")]),
@@ -287,7 +292,7 @@ internal static class Catalog
         "redactAudio" => new(id, L.T("消音蜂鸣"), true, [.. Times, T("ranges", L.T("多个时段"), "", "json")]),
         "splitPDF" => new(id, L.T("拆分 PDF"), true, [N("pagesPerFile", L.T("每份页数"), "1"), T("password", L.T("PDF 密码（如需要）"), "", "password")]),
         "mergePDF" => new(id, L.T("合并 PDF"), true, [T("password", L.T("PDF 密码（如需要）"), "", "password")], true),
-        "organizePDF" => new(id, L.T("管理页面"), true, [T("pageOrder", L.T("页码顺序（可重复或省略）")), N("rotation", L.T("全部旋转角度（0/90/180/270）"), "0"), T("rotations", L.T("逐页旋转，如 {\"1\":90}"), "{}", "json"), T("password", L.T("PDF 密码（如需要）"), "", "password")]),
+        "organizePDF" => new(id, L.T("管理页面"), true, [C("action", L.T("快捷操作"), "none", "none", "Reverse All Pages", "Rotate All 90°", "Rotate All 180°", "Rotate All 270°", "Extract Even Pages", "Extract Odd Pages", "Delete First Page", "Delete Last Page"), T("pageOrder", L.T("页码顺序（可重复或省略）")), N("rotation", L.T("全部旋转角度（0/90/180/270）"), "0"), T("rotations", L.T("逐页旋转，如 {\"1\":90}"), "{}", "json"), T("password", L.T("PDF 密码（如需要）"), "", "password")]),
         "extractArchive" => new(id, L.T("解包"), true, [T("password", L.T("压缩包密码（如需要）"), "", "password")]),
         _ => throw new ArgumentException(L.T("未知工具 ") + id)
     };
