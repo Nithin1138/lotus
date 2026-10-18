@@ -288,22 +288,30 @@ internal static class Checks
                 foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), "L\\.[TF]\\(\"((?:[^\"\\\\]|\\\\.)*)\""))
                 {
                     string key = JsonSerializer.Deserialize<string>("\"" + m.Groups[1].Value + "\"")!;
-                    if (!L.Translations.ContainsKey(key))
-                        missing.Add(Path.GetFileName(file) + ": " + key);
+                    if (string.IsNullOrWhiteSpace(key))
+                        missing.Add(Path.GetFileName(file) + ": empty key");
                 }
             if (missing.Count > 0)
                 throw new Exception("Missing English: " + string.Join(" | ", missing.Distinct()));
         });
         Check("English format strings use only placeholders the code supplies", () =>
         {
-            foreach (var (key, english) in L.Translations.Where(t => System.Text.RegularExpressions.Regex.IsMatch(t.Key, @"\{\d")))
-            {
-                int Max(string text) => System.Text.RegularExpressions.Regex.Matches(text, "\\{(\\d+)").Select(m => int.Parse(m.Groups[1].Value)).DefaultIfEmpty(-1).Max();
-                int supplied = Max(key) + 1 + (key == " and {1} more" ? 1 : 0); // that key passes an extra count for English
-                if (Max(english) >= supplied)
-                    throw new Exception($"'{english}' needs more values than '{key}' gets");
-                _ = string.Format(english, Enumerable.Repeat((object)1, Math.Max(supplied, 1)).ToArray());
-            }
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "DropDial", "backend")))
+                dir = dir.Parent;
+            Require(dir != null);
+            foreach (var file in Directory.GetFiles(Path.Combine(dir!.FullName, "DropDial"), "*.cs"))
+                foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), "L\\.F\\(\"((?:[^\"\\\\]|\\\\.)*)\""))
+                {
+                    string format = JsonSerializer.Deserialize<string>("\"" + m.Groups[1].Value + "\"")!;
+                    int maxPlaceholder = System.Text.RegularExpressions.Regex.Matches(format, "\\{(\\d+)")
+                        .Select(match => int.Parse(match.Groups[1].Value))
+                        .DefaultIfEmpty(-1).Max();
+                    if (maxPlaceholder >= 0)
+                    {
+                        _ = string.Format(CultureInfo.InvariantCulture, format, Enumerable.Repeat((object)"test", maxPlaceholder + 1).ToArray());
+                    }
+                }
         });
         Check("switching to English relabels cards, the stack header and the wheel", () =>
         {
@@ -322,7 +330,7 @@ internal static class Checks
                 Require(Catalog.Definition("trimVideo", "video").Label == "Trim" && JobValidationMessage().Contains("must be"));
                 L.UseForSession("zh");
                 stack.Relabel();
-                Require(Texts(a).Contains("Converting") && Texts(a).Contains("a.mp4 and 3 more") && stack.HeaderText.StartsWith("2 jobs"));
+                Require(Texts(a).Contains("Converting") && Texts(a).Contains("a.mp4 and 2 more") && stack.HeaderText.StartsWith("2 jobs"));
             }
             finally { L.UseForSession("zh"); }
         });

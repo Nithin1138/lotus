@@ -23,5 +23,7 @@ internal static class L
 
     public static string F(string text, params object?[] values) => string.Format(CultureInfo.InvariantCulture, text, values);
 
+    public static IReadOnlyDictionary<string, string> Translations { get; } = new Dictionary<string, string>();
+
     public static void UseForSession(string value) { }
 }

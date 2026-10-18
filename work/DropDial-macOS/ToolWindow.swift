@@ -2743,6 +2743,17 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             self.originalWidth = w
             self.originalHeight = h
 
+            if let cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+                let maxEdge = max(cg.width, cg.height)
+                let ciFull = CIImage(cgImage: cg)
+                if maxEdge > 1200 {
+                    let scale = 1200.0 / CGFloat(maxEdge)
+                    self.previewCIImage = ciFull.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+                } else {
+                    self.previewCIImage = ciFull
+                }
+            }
+
             self.cropOverlayView.imageSize = CGSize(width: w, height: h)
             self.cropOverlayView.applyRatioPreset("free")
 
@@ -2752,10 +2763,26 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
                 self.updateCompressPreview(quality: self.qualitySlider?.integerValue ?? 80)
             } else if self.tool.id == "watermark" {
                 self.updateWatermarkPreview()
+            } else if self.tool.id == "editImage" {
+                self.updateEditImagePreview()
+            } else if self.tool.id == "frameImage" {
+                self.updateFramePreview()
+            } else if self.tool.id == "redactImage" {
+                self.cropOverlayView.normX = 0.15
+                self.cropOverlayView.normY = 0.25
+                self.cropOverlayView.normW = 0.70
+                self.cropOverlayView.normH = 0.20
+                self.cropOverlayView.needsDisplay = true
+                self.updateRedactPreview()
+            } else if self.tool.id == "annotateImage" {
+                self.updateAnnotatePreview()
+            } else if self.tool.id == "createCollage" {
+                self.updateCollagePreview()
             } else if self.tool.id == "cropImage" || self.tool.id == "cropVideo" {
                 self.cropOverlayView.notifyCropChanged()
-            } else if self.tool.id == "redactImage" {
-                self.cropInfoLabel.stringValue = "Redaction Area: Drag handles on image to select area to redact"
+            } else if self.tool.id == "resizeImage" {
+                if let wf = self.fieldInputs["width"] as? NSTextField { wf.stringValue = "\(w)" }
+                if let hf = self.fieldInputs["height"] as? NSTextField { hf.stringValue = "\(h)" }
             }
         }
     }
@@ -2848,6 +2875,13 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             params["width"] = "\(Int(px.width))"
             params["height"] = "\(Int(px.height))"
             params["ratio"] = cropOverlayView.currentRatioKey
+            if let rotPopup = fieldInputs["rotation"] as? NSPopUpButton {
+                let rotTitle = rotPopup.titleOfSelectedItem ?? "0°"
+                if rotTitle.contains("90") { params["rotation"] = "90" }
+                else if rotTitle.contains("180") { params["rotation"] = "180" }
+                else if rotTitle.contains("270") { params["rotation"] = "270" }
+                else { params["rotation"] = "0" }
+            }
         } else if tool.id == "redactImage" {
             let px = cropOverlayView.currentPixelRect()
             params["x"] = "\(Int(px.origin.x))"
