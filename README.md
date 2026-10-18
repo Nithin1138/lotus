@@ -1,0 +1,149 @@
+# ZestDrop
+
+<img src="work/ZestDrop/assets/zestdrop.png" alt="ZestDrop icon" width="112" />
+
+**Drag. Drop. Convert.**
+
+A Windows desktop file conversion utility that runs in the system tray. Drag files and use keyboard shortcuts to convert or edit them without opening a main window.
+
+## Download
+
+Download the [v1.0.0 Windows x64 portable bundle](https://github.com/Maxaccurate/ZestDrop/releases/download/v1.0.0/ZestDrop-v1.0.0-windows-x64.zip), extract the entire ZIP, and run `ZestDrop.exe` from the extracted `ZestDrop` folder. Keep `backend`, `runtime`, and the DLLs alongside the executable. No separate .NET or Python installation is required.
+
+See the [release notes and checksum](https://github.com/Maxaccurate/ZestDrop/releases/tag/v1.0.0) for requirements and known limitations.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center" valign="middle">
+      <img src="docs/images/document-conversion.png" alt="F8 document conversion menu with ODT selected" width="300" />
+      <br /><strong>Document conversion · Shift / F8</strong>
+    </td>
+    <td align="center" valign="middle">
+      <img src="docs/images/video-tools.png" alt="F9 menu with video compression, trimming, cropping, and other tools" width="300" />
+      <br /><strong>Video tools · Ctrl+Shift / F9</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="middle">
+      <img src="docs/images/archive-packing.png" alt="Menu for packing files into ZIP, TAR, GZIP, or RAR archives" width="300" />
+      <br /><strong>Archive packing</strong>
+    </td>
+    <td align="center" valign="middle">
+      <img src="docs/images/conversion-progress.png" alt="Desktop progress card showing an active image conversion and elapsed time" width="340" />
+      <br /><strong>Conversion progress</strong>
+    </td>
+  </tr>
+</table>
+
+## Usage
+
+1. Select files on the desktop or in File Explorer, then start dragging while holding the left mouse button.
+2. Press **Shift** while dragging, move onto the desired format in the floating menu, and release the mouse button.
+3. Press **Ctrl+Shift** while dragging to choose a tool instead. Tools that need settings open a dedicated tool window.
+
+Once the menu appears, you can release the keyboard keys while continuing to hold the mouse button. Pressing Ctrl while Shift is held switches the conversion menu to tools. While dragging, **F8** (formats) and **F9** (tools) open the same menu, including for drags started in other apps. They are not registered as global hotkeys, so other applications still receive F8/F9 when you are not dragging. Shift and Ctrl+Shift activate for drags started on the desktop or in File Explorer.
+
+The interface is available in English and Simplified Chinese. It follows your Windows display language at first; change it any time from the tray icon menu (Language / 语言). The choice is saved in `%LOCALAPPDATA%\ZestDrop\settings.json`.
+
+Background jobs appear as a stack of progress cards in the corner of the screen, oldest at the top. Each card has **Pause / Resume** (suspends the whole job, including FFmpeg, and continues exactly where it stopped), **Cancel** (stops the job and removes its unfinished files) and **Hide** (the job keeps running; show it again from the tray menu). With two or more jobs a header lets you **Collapse** the cards into one pile, **Expand** them again, or **Hide all**. Two jobs run at once; the rest wait their turn, and a paused job gives up its place.
+
+Outputs are saved alongside the originals. Existing files are preserved, and duplicate output names receive a numeric suffix. Press **Esc** to dismiss the floating menu. Right-click the tray icon to cancel the current task, open the latest output location, or quit. Jobs have no fixed time limit; cancelling removes any partially written output. Logs are kept in `%LOCALAPPDATA%\ZestDrop\logs`.
+
+Supported categories include images, video, audio, documents, and archives. Tools cover image adjustments, backgrounds, cropping, rotating by any angle and flipping, resizing, watermarks, icon sets, text recognition (OCR) and pixelation; video trimming, speed changes, joining and frame capture; audio loudness, channels and beep redaction; PDF page management; and Office document export. Image and video cropping support custom aspect ratios. Cropping shows a frame on the picture: drag it to move it, drag a corner or an edge to resize it, and the part outside it is dimmed. With a ratio chosen the frame keeps that ratio, and the size shown is exactly the size that is saved. While a tool window works on a preview, a thin line along the top of the preview shows it; quick updates show nothing. Progress indicators show the current stage, elapsed time, and actual processed counts for batch jobs.
+
+When a single picture or video has ten or more tools, related tools share one wheel entry and one window: for example **Crop & rotate**, **Size & compress** or **Sound & subtitles**. Each tool in the window is a tab. Click **Apply this step** to apply one change, then continue with the next one on the result; **Undo last step** takes the newest change back, and **Save new file** writes the result once. If you prefer, the older two-wheel layout (pick a category first, then the tool on a second wheel) can be chosen on the welcome screen or from the tray menu (**Wheel with many tools**).
+
+**Location** shows where a photo or video says it was taken, and either removes that location or sets a new one: paste coordinates from a map app (for example `31.2304, 121.4737`) or copy the location of another photo. Everything else is kept, and JPEGs are not re-encoded. **Redact PDF** blacks out areas you mark on a page and any text you type, and removes the content underneath from the file rather than just covering it.
+
+**Customize wheel…** in the tray menu arranges the options for each kind of file; the first sits at the top of the wheel, and the option you used last moves to the top with a ↻ mark (this can be switched off). **Appearance** in the tray menu chooses Match Windows, Light or Dark.
+
+Every audio and video tool window includes playback controls, a seek bar, time display, volume, and mute. Original files can be played in full. Supported tools also offer processed-effect previews for the current segment; preview length does not limit exported output.
+
+The player uses compact dark controls and a custom timeline. Audio and video trimming expose draggable start/end handles and highlight the selected range; moving these handles updates the time fields, and editing the fields updates the timeline.
+
+See the [usage guide](docs/usage.md) (Chinese) for the full feature list and limitations. Office exports that preserve native layout require the corresponding desktop version of Microsoft PowerPoint, Word, or Excel.
+
+## Build from source
+
+Requires Windows x64 and the .NET 8 SDK. Preparing the portable runtime also requires Python 3.13 with pip and a 64-bit 7-Zip installation in its default location, or a directory supplied explicitly.
+
+```powershell
+# Download portable Python and FFmpeg, install pinned packages, and copy 7-Zip
+python work/prepare-runtime.py
+
+# Build the self-contained Windows application and copy the Python backend
+./build.ps1
+
+# Start the tray application
+./outputs/ZestDrop/ZestDrop.exe
+```
+
+If 7-Zip is installed elsewhere:
+
+```powershell
+python work/prepare-runtime.py --sevenzip-dir "D:/Tools/7-Zip"
+```
+
+If you already have a complete application bundle, you can copy its `runtime` folder to `outputs/ZestDrop/runtime` and run `build.ps1`. To build the C# application without checking the runtime, use `./build.ps1 -SkipRuntimeCheck`; this does not prepare the runtime dependencies.
+
+Package a local build with `Compress-Archive -Path ./outputs/ZestDrop -DestinationPath ./outputs/ZestDrop-windows-x64.zip`. Before packaging, quit the application and exclude runtime logs, debug files, and temporary conversion outputs.
+
+## Project structure
+
+| Path | Contents |
+| --- | --- |
+| `work/ZestDrop/` | C# WPF application, global shortcuts, drag menu, Office bridge, and progress indicators |
+| `work/ZestDrop/backend/` | Python engines for images, media, documents, and archives |
+| `work/F9Checks/` | Tool parameter validation checks |
+| `work/ProgressChecks/` | Progress reading and component lifecycle checks |
+| `work/test-*.py` | Backend and application dispatch checks using generated fixtures |
+| `docs/validation/` | Local validation records with anonymized paths |
+| `packaging/` | Microsoft Store package manifest, logo assets, listing text and screenshots; `package-msix.ps1` builds the `.msix` |
+| `outputs/` | Build artifacts, runtimes, and generated reports; ignored by Git |
+
+## Microsoft Store package
+
+`./package-msix.ps1` builds the app (use `-SkipBuild` to reuse `outputs/ZestDrop`) and packs it into `outputs/msix/ZestDrop_<version>_x64.msix` with the Windows SDK's `makeappx`. The package is unsigned on purpose: upload it in Partner Center and the Store signs it. The identity values in `packaging/AppxManifest.xml` come from Partner Center. `packaging/store-listing.md` has the listing text, and `packaging/make-screenshots.py` rebuilds the screenshots from the app's debug render modes.
+
+Before uploading, run `./outputs/ZestDrop/runtime/python/python.exe packaging/check-package.py`. It opens the built `.msix` as a zip (nothing is installed) and checks the manifest, the logo sizes, that no file path is too long once installed, that no logs, caches or debug files slipped in, and that the license notices are present. A Store install is read-only, so ZestDrop writes nothing next to its own files; its settings and logs go to `%LOCALAPPDATA%\ZestDrop`.
+
+ZestDrop has no main window, so launching it (and launching it again while it runs) opens a short welcome window that explains how to use it and where its tray icon is. It has a language switch, the choice of wheel layout for files with many tools, and a "Don't show this window when ZestDrop starts" option.
+
+## Validation
+
+C# checks that do not require Office or the portable runtime:
+
+```powershell
+New-Item -ItemType Directory -Force outputs | Out-Null
+dotnet run --project work/F9Checks -- outputs/f9-parameter-tests.json
+dotnet run --project work/ProgressChecks -- outputs/progress-ui-tests.json
+```
+
+After preparing the runtime and building the application, run backend checks with the portable Python executable:
+
+```powershell
+./outputs/ZestDrop/runtime/python/python.exe work/test-full-backend.py
+./outputs/ZestDrop/runtime/python/python.exe work/test-advanced-branches.py
+./outputs/ZestDrop/runtime/python/python.exe work/test-app-cli.py
+./outputs/ZestDrop/runtime/python/python.exe work/test-f9-refinements.py
+./outputs/ZestDrop/runtime/python/python.exe work/test-progress.py
+./outputs/ZestDrop/runtime/python/python.exe work/test-i18n.py
+```
+
+To also pause and resume a real FFmpeg conversion inside the C# checks, point them at the built application first:
+
+```powershell
+$env:ZESTDROP_APP = (Resolve-Path ./outputs/ZestDrop).Path
+dotnet run --project work/ProgressChecks -- outputs/progress-ui-tests.json
+```
+
+Run the full backend checks first to generate shared test fixtures. Office checks require the corresponding desktop Office applications; run `test-office.py` followed by `test-office-extra.py`. See the [validation summary](docs/validation.md) (Chinese). These records do not establish coverage of every computer, DPI setting, or manual interaction.
+
+## License and dependencies
+
+Project source uses the repository's existing [MIT License](LICENSE). Python, .NET, FFmpeg, 7-Zip, and other third-party libraries retain their own licenses; see the [dependency record](docs/dependencies.json). The MIT License does not replace third-party licenses. Runtime dependencies, binary bundles, user files, and runtime logs are excluded from Git.
+
+Chinese interface text uses the bundled Source Han Sans CN Medium 2.005 font; Latin text uses Segoe UI. Source Han Sans is distributed under the [SIL Open Font License 1.1](work/ZestDrop/assets/fonts/OFL.txt), which is also included in application builds. No separate font installation is required.
+# lotus
