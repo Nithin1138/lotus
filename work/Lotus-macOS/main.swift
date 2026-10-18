@@ -315,7 +315,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        // 7. Output Folder menu
+        // 7. Theme Submenu (System / Light / Dark)
+        let currentTheme = UserDefaults.standard.string(forKey: "LOTUS_THEME") ?? "system"
+        let themeMenu = NSMenu()
+
+        let sysItem = NSMenuItem(title: "Follow System (Default)", action: #selector(setThemeSystem), keyEquivalent: "")
+        sysItem.target = self
+        sysItem.state = (currentTheme == "system") ? .on : .off
+        themeMenu.addItem(sysItem)
+
+        let lightItem = NSMenuItem(title: "Light Theme", action: #selector(setThemeLight), keyEquivalent: "")
+        lightItem.target = self
+        lightItem.state = (currentTheme == "light") ? .on : .off
+        themeMenu.addItem(lightItem)
+
+        let darkItem = NSMenuItem(title: "Dark Theme", action: #selector(setThemeDark), keyEquivalent: "")
+        darkItem.target = self
+        darkItem.state = (currentTheme == "dark") ? .on : .off
+        themeMenu.addItem(darkItem)
+
+        let themeMenuItem = NSMenuItem(title: "Theme", action: nil, keyEquivalent: "")
+        themeMenuItem.submenu = themeMenu
+        themeMenuItem.image = NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: nil)
+        menu.addItem(themeMenuItem)
+
+        // 8. Output Folder menu
         let currentOut = UserDefaults.standard.string(forKey: "LOTUS_OUTPUT_DIR") ?? ""
         let outMenu = NSMenu()
         let sameItem = NSMenuItem(title: "Same as Source File (Default)", action: #selector(setOutputSame), keyEquivalent: "")
@@ -405,6 +429,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.set(url.path, forKey: "LOTUS_OUTPUT_DIR")
             rebuildMenu()
         }
+    }
+
+    @objc private func setThemeSystem() {
+        UserDefaults.standard.set("system", forKey: "LOTUS_THEME")
+        DropWheelWindowController.shared.reloadTheme()
+        rebuildMenu()
+    }
+
+    @objc private func setThemeLight() {
+        UserDefaults.standard.set("light", forKey: "LOTUS_THEME")
+        DropWheelWindowController.shared.reloadTheme()
+        rebuildMenu()
+    }
+
+    @objc private func setThemeDark() {
+        UserDefaults.standard.set("dark", forKey: "LOTUS_THEME")
+        DropWheelWindowController.shared.reloadTheme()
+        rebuildMenu()
     }
 
     @objc private func openOutputFolder() {

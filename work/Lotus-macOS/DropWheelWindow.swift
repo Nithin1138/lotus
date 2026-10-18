@@ -1,5 +1,11 @@
 import AppKit
 
+enum AppTheme: String, CaseIterable {
+    case system = "system"
+    case light = "light"
+    case dark = "dark"
+}
+
 enum WheelMode: String, CaseIterable {
     case conversions = "Convert"
     case tools = "Tools"
@@ -51,11 +57,18 @@ final class RadialWheelView: NSView {
     var onHubClicked: (() -> Void)?
     var onFilesDropped: (([String]) -> Void)?
 
-    let wheelCenter = CGPoint(x: 210, y: 200)
-    let innerRadius: CGFloat = 66
-    let outerRadius: CGFloat = 172
-    let backdropRadius: CGFloat = 186
-    let topBarRect = NSRect(x: 210 - 132, y: 390, width: 264, height: 38)
+    let wheelCenter = CGPoint(x: 180, y: 165)
+    let innerRadius: CGFloat = 54
+    let outerRadius: CGFloat = 142
+    let backdropRadius: CGFloat = 156
+    let topBarRect = NSRect(x: 180 - 115, y: 345, width: 230, height: 32)
+
+    var isDarkMode: Bool {
+        let t = UserDefaults.standard.string(forKey: "LOTUS_THEME") ?? "system"
+        if t == "dark" { return true }
+        if t == "light" { return false }
+        return NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    }
 
     private var trackingArea: NSTrackingArea?
     private var hubThumbnail: NSImage?
@@ -167,7 +180,7 @@ final class RadialWheelView: NSView {
 
         hoveredIndex = -1
 
-        PreviewService.shared.loadPreview(for: first, targetSize: CGSize(width: 88, height: 88)) { [weak self] img in
+        PreviewService.shared.loadPreview(for: first, targetSize: CGSize(width: 80, height: 80)) { [weak self] img in
             self?.hubThumbnail = img
             self?.needsDisplay = true
         }
@@ -264,8 +277,8 @@ final class RadialWheelView: NSView {
     private func indexForPoint(_ point: NSPoint) -> Int {
         // 1. Check top pill bar
         if topBarRect.contains(point) {
-            let btnW = (topBarRect.width - 8) / 3.0
-            let localX = point.x - (topBarRect.minX + 4)
+            let btnW = (topBarRect.width - 6) / 3.0
+            let localX = point.x - (topBarRect.minX + 3)
             let btnIdx = Int(localX / btnW)
             return -10 - max(0, min(2, btnIdx)) // -10: Convert, -11: Tools, -12: Actions
         }
@@ -383,7 +396,6 @@ final class RadialWheelView: NSView {
         let newTopBar = (hit <= -10) ? (-hit - 10) : -1
 
         if newTopBar >= 0 && newTopBar != hoveredTopBarIndex {
-            // Dragged over a top mode button -> auto switch mode!
             let targetMode: WheelMode = (newTopBar == 0) ? .conversions : (newTopBar == 1) ? .tools : .actions
             setMode(targetMode)
         }
@@ -438,37 +450,38 @@ final class RadialWheelView: NSView {
         return true
     }
 
-    // MARK: - Rounded Petal Path Generator
-    private func createRoundedPetal(center: CGPoint, innerR: CGFloat, outerR: CGFloat, startDeg: CGFloat, endDeg: CGFloat, cornerRadius: CGFloat) -> CGPath {
+    // MARK: - Smooth Rounded Petal Path Generator
+    private func createSmoothRoundedPetal(center: CGPoint, innerR: CGFloat, outerR: CGFloat, startDeg: CGFloat, endDeg: CGFloat) -> CGPath {
         let path = CGMutablePath()
-        let cr = cornerRadius
+        let crOuter: CGFloat = 8.0
+        let crInner: CGFloat = 4.0
 
-        let daOuter = (cr / outerR) * (180.0 / .pi)
-        let daInner = (cr / innerR) * (180.0 / .pi)
+        let daOuter = (crOuter / outerR) * (180.0 / .pi)
+        let daInner = (crInner / innerR) * (180.0 / .pi)
 
         let radStart = startDeg * .pi / 180.0
         let radEnd = endDeg * .pi / 180.0
 
-        let p1 = CGPoint(x: center.x + (innerR + cr) * cos(radStart), y: center.y + (innerR + cr) * sin(radStart))
+        let p1 = CGPoint(x: center.x + (innerR + crInner) * cos(radStart), y: center.y + (innerR + crInner) * sin(radStart))
         let c_os = CGPoint(x: center.x + outerR * cos(radStart), y: center.y + outerR * sin(radStart))
         let p_os_arc = CGPoint(x: center.x + outerR * cos((startDeg - daOuter) * .pi / 180), y: center.y + outerR * sin((startDeg - daOuter) * .pi / 180))
 
         path.move(to: p1)
-        path.addArc(tangent1End: c_os, tangent2End: p_os_arc, radius: cr)
+        path.addArc(tangent1End: c_os, tangent2End: p_os_arc, radius: crOuter)
         path.addArc(center: center, radius: outerR, startAngle: (startDeg - daOuter) * .pi / 180, endAngle: (endDeg + daOuter) * .pi / 180, clockwise: true)
 
         let c_oe = CGPoint(x: center.x + outerR * cos(radEnd), y: center.y + outerR * sin(radEnd))
-        let p_oe_radial = CGPoint(x: center.x + (outerR - cr) * cos(radEnd), y: center.y + (outerR - cr) * sin(radEnd))
-        path.addArc(tangent1End: c_oe, tangent2End: p_oe_radial, radius: cr)
+        let p_oe_radial = CGPoint(x: center.x + (outerR - crOuter) * cos(radEnd), y: center.y + (outerR - crOuter) * sin(radEnd))
+        path.addArc(tangent1End: c_oe, tangent2End: p_oe_radial, radius: crOuter)
 
         let c_ie = CGPoint(x: center.x + innerR * cos(radEnd), y: center.y + innerR * sin(radEnd))
         let p_ie_arc = CGPoint(x: center.x + innerR * cos((endDeg + daInner) * .pi / 180), y: center.y + innerR * sin((endDeg + daInner) * .pi / 180))
-        path.addArc(tangent1End: c_ie, tangent2End: p_ie_arc, radius: cr)
+        path.addArc(tangent1End: c_ie, tangent2End: p_ie_arc, radius: crInner)
 
         path.addArc(center: center, radius: innerR, startAngle: (endDeg + daInner) * .pi / 180, endAngle: (startDeg - daInner) * .pi / 180, clockwise: false)
 
         let c_is = CGPoint(x: center.x + innerR * cos(radStart), y: center.y + innerR * sin(radStart))
-        path.addArc(tangent1End: c_is, tangent2End: p1, radius: cr)
+        path.addArc(tangent1End: c_is, tangent2End: p1, radius: crInner)
         path.closeSubpath()
 
         return path
@@ -478,33 +491,42 @@ final class RadialWheelView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         guard let context = NSGraphicsContext.current?.cgContext else { return }
+        let dark = isDarkMode
 
         // 1. Soft Outer Halo / Backing Disc
         context.saveGState()
         let haloPath = CGPath(ellipseIn: CGRect(x: wheelCenter.x - backdropRadius, y: wheelCenter.y - backdropRadius, width: backdropRadius * 2, height: backdropRadius * 2), transform: nil)
         context.addPath(haloPath)
-        context.setFillColor(NSColor(srgbRed: 0.88, green: 0.90, blue: 0.92, alpha: 0.55).cgColor)
-        context.setShadow(offset: CGSize(width: 0, height: -4), blur: 18, color: NSColor.black.withAlphaComponent(0.12).cgColor)
+        if dark {
+            context.setFillColor(NSColor(srgbRed: 0.14, green: 0.16, blue: 0.19, alpha: 0.82).cgColor)
+            context.setShadow(offset: CGSize(width: 0, height: -4), blur: 18, color: NSColor.black.withAlphaComponent(0.4).cgColor)
+        } else {
+            context.setFillColor(NSColor(srgbRed: 0.88, green: 0.90, blue: 0.92, alpha: 0.55).cgColor)
+            context.setShadow(offset: CGSize(width: 0, height: -4), blur: 18, color: NSColor.black.withAlphaComponent(0.12).cgColor)
+        }
         context.fillPath()
         context.restoreGState()
 
         // 2. Draw Petals with Rounded Corners & Gaps
         let angleStep = sliceAngle()
-        let gap: CGFloat = 4.0
+        let gap: CGFloat = 3.5
 
         for (i, item) in items.enumerated() {
             let isHovered = (i == hoveredIndex)
 
             let s = 90.0 - CGFloat(i) * angleStep - gap / 2.0
             let e = s - (angleStep - gap)
-            let petal = createRoundedPetal(center: wheelCenter, innerR: innerRadius, outerR: outerRadius, startDeg: s, endDeg: e, cornerRadius: 12)
+            let petal = createSmoothRoundedPetal(center: wheelCenter, innerR: innerRadius, outerR: outerRadius, startDeg: s, endDeg: e)
 
             // Fill & Shadow
             context.saveGState()
             context.addPath(petal)
             if isHovered {
                 context.setFillColor(NSColor(srgbRed: 1.0, green: 0.33, blue: 0.0, alpha: 1.0).cgColor)
-                context.setShadow(offset: CGSize(width: 0, height: -2), blur: 6, color: NSColor(srgbRed: 1.0, green: 0.33, blue: 0.0, alpha: 0.4).cgColor)
+                context.setShadow(offset: CGSize(width: 0, height: -2), blur: 6, color: NSColor(srgbRed: 1.0, green: 0.33, blue: 0.0, alpha: 0.45).cgColor)
+            } else if dark {
+                context.setFillColor(NSColor(srgbRed: 0.20, green: 0.22, blue: 0.25, alpha: 0.98).cgColor)
+                context.setShadow(offset: CGSize(width: 0, height: -1), blur: 3, color: NSColor.black.withAlphaComponent(0.25).cgColor)
             } else {
                 context.setFillColor(NSColor(srgbRed: 0.94, green: 0.95, blue: 0.96, alpha: 0.98).cgColor)
                 context.setShadow(offset: CGSize(width: 0, height: -1), blur: 3, color: NSColor.black.withAlphaComponent(0.06).cgColor)
@@ -512,11 +534,13 @@ final class RadialWheelView: NSView {
             context.fillPath()
             context.restoreGState()
 
-            // Subtle Stroke Border
+            // Stroke Border
             context.saveGState()
             context.addPath(petal)
             if isHovered {
                 context.setStrokeColor(NSColor(srgbRed: 0.90, green: 0.28, blue: 0.0, alpha: 0.8).cgColor)
+            } else if dark {
+                context.setStrokeColor(NSColor(white: 1.0, alpha: 0.10).cgColor)
             } else {
                 context.setStrokeColor(NSColor(white: 1.0, alpha: 0.8).cgColor)
             }
@@ -531,23 +555,30 @@ final class RadialWheelView: NSView {
             let tx = wheelCenter.x + midRadius * cos(midRad)
             let ty = wheelCenter.y + midRadius * sin(midRad)
 
-            let textColor = isHovered ? NSColor.white : NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0)
+            let textColor: NSColor
+            if isHovered {
+                textColor = .white
+            } else if dark {
+                textColor = NSColor(srgbRed: 0.92, green: 0.94, blue: 0.96, alpha: 1.0)
+            } else {
+                textColor = NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0)
+            }
 
             if let iconName = item.iconName, let symbol = NSImage(systemSymbolName: iconName, accessibilityDescription: nil) {
-                let iconSize: CGFloat = 16
+                let iconSize: CGFloat = 15
                 let iconRect = NSRect(x: tx - iconSize / 2, y: ty + 2, width: iconSize, height: iconSize)
                 let tinted = symbol.copy() as! NSImage
                 tinted.isTemplate = true
                 textColor.set()
                 tinted.draw(in: iconRect)
 
-                let font = NSFont.systemFont(ofSize: 11, weight: .bold)
+                let font = NSFont.systemFont(ofSize: 10, weight: .bold)
                 let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: textColor]
                 let str = NSAttributedString(string: item.title, attributes: attrs)
                 let sz = str.size()
                 str.draw(at: NSPoint(x: tx - sz.width / 2, y: ty - sz.height - 2))
             } else {
-                let font = NSFont.systemFont(ofSize: 15, weight: .bold)
+                let font = NSFont.systemFont(ofSize: 13.5, weight: .bold)
                 let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: textColor]
                 let str = NSAttributedString(string: item.title, attributes: attrs)
                 let sz = str.size()
@@ -558,19 +589,24 @@ final class RadialWheelView: NSView {
         // 3. Center Hole: When hovered, display a floating pill badge; otherwise remain transparent so user sees desktop file!
         if hoveredIndex >= 0 && hoveredIndex < items.count {
             let item = items[hoveredIndex]
-            let pillW: CGFloat = 86
-            let pillH: CGFloat = 36
+            let pillW: CGFloat = 78
+            let pillH: CGFloat = 30
             let pillRect = NSRect(x: wheelCenter.x - pillW / 2, y: wheelCenter.y - pillH / 2, width: pillW, height: pillH)
             let pillPath = NSBezierPath(roundedRect: pillRect, xRadius: pillH / 2, yRadius: pillH / 2)
 
             context.saveGState()
-            context.setShadow(offset: CGSize(width: 0, height: -2), blur: 8, color: NSColor.black.withAlphaComponent(0.12).cgColor)
-            NSColor.white.setFill()
+            context.setShadow(offset: CGSize(width: 0, height: -2), blur: 8, color: NSColor.black.withAlphaComponent(dark ? 0.35 : 0.12).cgColor)
+            if dark {
+                NSColor(srgbRed: 0.24, green: 0.26, blue: 0.30, alpha: 1.0).setFill()
+            } else {
+                NSColor.white.setFill()
+            }
             pillPath.fill()
             context.restoreGState()
 
-            let font = NSFont.systemFont(ofSize: 14, weight: .bold)
-            let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0)]
+            let font = NSFont.systemFont(ofSize: 13, weight: .bold)
+            let textColor = dark ? NSColor.white : NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0)
+            let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: textColor]
             let str = NSAttributedString(string: item.title, attributes: attrs)
             let sz = str.size()
             str.draw(at: NSPoint(x: wheelCenter.x - sz.width / 2.0, y: wheelCenter.y - sz.height / 2.0))
@@ -578,11 +614,17 @@ final class RadialWheelView: NSView {
 
         // 4. Floating Pill Toolbar Above Wheel: [ ⇧ Convert ]  [ ⌘ Tools ]  [ ⌃ Actions ]
         context.saveGState()
-        context.setShadow(offset: CGSize(width: 0, height: -3), blur: 12, color: NSColor.black.withAlphaComponent(0.12).cgColor)
+        context.setShadow(offset: CGSize(width: 0, height: -3), blur: 12, color: NSColor.black.withAlphaComponent(dark ? 0.35 : 0.12).cgColor)
         let barPath = NSBezierPath(roundedRect: topBarRect, xRadius: topBarRect.height / 2, yRadius: topBarRect.height / 2)
-        NSColor(white: 0.96, alpha: 0.95).setFill()
-        barPath.fill()
-        NSColor(white: 1.0, alpha: 0.8).setStroke()
+        if dark {
+            NSColor(srgbRed: 0.14, green: 0.16, blue: 0.19, alpha: 0.95).setFill()
+            barPath.fill()
+            NSColor(white: 1.0, alpha: 0.12).setStroke()
+        } else {
+            NSColor(white: 0.96, alpha: 0.95).setFill()
+            barPath.fill()
+            NSColor(white: 1.0, alpha: 0.8).setStroke()
+        }
         barPath.lineWidth = 1.0
         barPath.stroke()
         context.restoreGState()
@@ -593,49 +635,64 @@ final class RadialWheelView: NSView {
             ("⌘", "Tools", .tools),
             ("⌃", "Actions", .actions)
         ]
-        let btnW = (topBarRect.width - 8) / 3.0
+        let btnW = (topBarRect.width - 6) / 3.0
 
         for (mIdx, m) in modes.enumerated() {
             let isActive = (m.mode == self.mode)
             let isBtnHovered = (mIdx == hoveredTopBarIndex)
-            let btnX = topBarRect.minX + 4 + CGFloat(mIdx) * btnW
-            let btnRect = NSRect(x: btnX, y: topBarRect.minY + 3, width: btnW, height: topBarRect.height - 6)
+            let btnX = topBarRect.minX + 3 + CGFloat(mIdx) * btnW
+            let btnRect = NSRect(x: btnX, y: topBarRect.minY + 2.5, width: btnW, height: topBarRect.height - 5)
 
             if isActive {
                 let activePill = NSBezierPath(roundedRect: btnRect, xRadius: btnRect.height / 2, yRadius: btnRect.height / 2)
                 context.saveGState()
-                context.setShadow(offset: CGSize(width: 0, height: -1), blur: 4, color: NSColor.black.withAlphaComponent(0.1).cgColor)
-                NSColor.white.setFill()
+                context.setShadow(offset: CGSize(width: 0, height: -1), blur: 4, color: NSColor.black.withAlphaComponent(dark ? 0.3 : 0.1).cgColor)
+                if dark {
+                    NSColor(srgbRed: 0.28, green: 0.30, blue: 0.35, alpha: 1.0).setFill()
+                } else {
+                    NSColor.white.setFill()
+                }
                 activePill.fill()
                 context.restoreGState()
             } else if isBtnHovered {
                 let hoverPill = NSBezierPath(roundedRect: btnRect, xRadius: btnRect.height / 2, yRadius: btnRect.height / 2)
-                NSColor(white: 1.0, alpha: 0.5).setFill()
+                NSColor(white: dark ? 0.3 : 1.0, alpha: 0.4).setFill()
                 hoverPill.fill()
             }
 
             // Draw Keycap
-            let keyCapSize: CGFloat = 18
-            let keyCapRect = NSRect(x: btnRect.minX + 8, y: btnRect.midY - keyCapSize / 2, width: keyCapSize, height: keyCapSize)
-            let keyCapPath = NSBezierPath(roundedRect: keyCapRect, xRadius: 4, yRadius: 4)
-            NSColor(white: 0.90, alpha: 0.85).setFill()
-            keyCapPath.fill()
-            NSColor(white: 0.75, alpha: 0.6).setStroke()
+            let keyCapSize: CGFloat = 16
+            let keyCapRect = NSRect(x: btnRect.minX + 6, y: btnRect.midY - keyCapSize / 2, width: keyCapSize, height: keyCapSize)
+            let keyCapPath = NSBezierPath(roundedRect: keyCapRect, xRadius: 3.5, yRadius: 3.5)
+            if dark {
+                NSColor(white: 0.22, alpha: 0.85).setFill()
+                keyCapPath.fill()
+                NSColor(white: 0.35, alpha: 0.5).setStroke()
+            } else {
+                NSColor(white: 0.90, alpha: 0.85).setFill()
+                keyCapPath.fill()
+                NSColor(white: 0.75, alpha: 0.6).setStroke()
+            }
             keyCapPath.lineWidth = 0.5
             keyCapPath.stroke()
 
-            let keyFont = NSFont.systemFont(ofSize: 10, weight: .bold)
-            let keyAttrs: [NSAttributedString.Key: Any] = [.font: keyFont, .foregroundColor: NSColor(white: 0.25, alpha: 1.0)]
+            let keyFont = NSFont.systemFont(ofSize: 9, weight: .bold)
+            let keyAttrs: [NSAttributedString.Key: Any] = [.font: keyFont, .foregroundColor: dark ? NSColor(white: 0.85, alpha: 1.0) : NSColor(white: 0.25, alpha: 1.0)]
             let keyStr = NSAttributedString(string: m.key, attributes: keyAttrs)
             let kSz = keyStr.size()
             keyStr.draw(at: NSPoint(x: keyCapRect.midX - kSz.width / 2, y: keyCapRect.midY - kSz.height / 2))
 
             // Draw Title
-            let titleColor = isActive ? NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0) : NSColor(white: 0.45, alpha: 1.0)
-            let titleFont = NSFont.systemFont(ofSize: 11, weight: isActive ? .bold : .medium)
+            let titleColor: NSColor
+            if isActive {
+                titleColor = dark ? .white : NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0)
+            } else {
+                titleColor = dark ? NSColor(white: 0.60, alpha: 1.0) : NSColor(white: 0.45, alpha: 1.0)
+            }
+            let titleFont = NSFont.systemFont(ofSize: 10.5, weight: isActive ? .bold : .medium)
             let titleAttrs: [NSAttributedString.Key: Any] = [.font: titleFont, .foregroundColor: titleColor]
             let titleStr = NSAttributedString(string: m.title, attributes: titleAttrs)
-            titleStr.draw(at: NSPoint(x: keyCapRect.maxX + 5, y: btnRect.midY - titleStr.size().height / 2))
+            titleStr.draw(at: NSPoint(x: keyCapRect.maxX + 4, y: btnRect.midY - titleStr.size().height / 2))
         }
     }
 }
@@ -652,8 +709,8 @@ final class DropWheelWindowController: NSWindowController {
     private var localOutsideClickMonitor: Any?
 
     init() {
-        let width: CGFloat = 420
-        let height: CGFloat = 480
+        let width: CGFloat = 360
+        let height: CGFloat = 410
         let panel = KeyPanel(
             contentRect: NSRect(x: 0, y: 0, width: width, height: height),
             styleMask: [.borderless, .nonactivatingPanel],
@@ -706,6 +763,10 @@ final class DropWheelWindowController: NSWindowController {
         contentView.addSubview(wheelView)
     }
 
+    func reloadTheme() {
+        wheelView.needsDisplay = true
+    }
+
     func setLoadedPaths(_ paths: [String]) {
         self.currentPaths = paths
     }
@@ -716,8 +777,8 @@ final class DropWheelWindowController: NSWindowController {
 
     func showAtCursor(mode: WheelMode) {
         let mouse = NSEvent.mouseLocation
-        let width: CGFloat = 420
-        let height: CGFloat = 480
+        let width: CGFloat = 360
+        let height: CGFloat = 410
         let screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) }) ?? NSScreen.main ?? NSScreen()
         let frame = screen.visibleFrame
 
