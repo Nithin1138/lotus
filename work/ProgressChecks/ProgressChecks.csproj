@@ -33,5 +33,6 @@
     <Compile Include="../DropDial/Flows.cs" Link="Flows.cs"/>
     <Compile Include="../DropDial/Presets.cs" Link="Presets.cs"/>
     <Compile Include="../DropDial/OutputFolder.cs" Link="OutputFolder.cs"/>
+    <Compile Include="../DropDial/ExplorerIntegration.cs" Link="ExplorerIntegration.cs"/>
   </ItemGroup>
 </Project>
