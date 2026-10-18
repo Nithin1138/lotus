@@ -21,6 +21,13 @@ internal static class AppIcon
 
     public static System.Drawing.Icon CreateTrayIcon()
     {
+        var trayStream = typeof(AppIcon).Assembly.GetManifestResourceStream("DropDial.TrayIcon");
+        if (trayStream != null)
+        {
+            using (trayStream)
+            using (var icon = new System.Drawing.Icon(trayStream, System.Windows.Forms.SystemInformation.SmallIconSize))
+                return (System.Drawing.Icon)icon.Clone();
+        }
         using var stream = Open();
         using var icon = new System.Drawing.Icon(stream, System.Windows.Forms.SystemInformation.SmallIconSize);
         return (System.Drawing.Icon)icon.Clone();

@@ -24,5 +24,6 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="assets/dropdial.ico" LogicalName="DropDial.AppIcon" />
+    <EmbeddedResource Include="assets/tray.ico" LogicalName="DropDial.TrayIcon" />
   </ItemGroup>
 </Project>

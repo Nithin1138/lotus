@@ -45,6 +45,11 @@ fi
 if [ -f "$ROOT_DIR/work/DropDial/assets/dropdial.png" ]; then
     cp "$ROOT_DIR/work/DropDial/assets/dropdial.png" "$RESOURCES_DIR/dropdial.png"
 fi
+for icon in "$ROOT_DIR/work/DropDial/assets/StatusBarIcon"*.png "$ROOT_DIR/work/DropDial/assets/dropdial_mark"*.png; do
+    if [ -f "$icon" ]; then
+        cp "$icon" "$RESOURCES_DIR/"
+    fi
+done
 
 # 5. Copy Backend scripts
 cp -R "$ROOT_DIR/work/DropDial/backend/"* "$BACKEND_DIR/"

@@ -160,17 +160,85 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             button.addSubview(dropView)
 
-            if let iconImage = NSImage(named: "AppIcon") ?? NSImage(contentsOfFile: Bundle.main.bundlePath + "/Contents/Resources/AppIcon.icns") {
-                iconImage.size = NSSize(width: 18, height: 18)
-                button.image = iconImage
-            } else {
-                let symbol = NSImage(systemSymbolName: "circle.circle.fill", accessibilityDescription: "DropDial")
-                button.image = symbol
-            }
+            button.image = createStatusBarIcon()
             button.imagePosition = .imageOnly
         }
 
         rebuildMenu()
+    }
+
+    private func createStatusBarIcon() -> NSImage {
+        let resPath = Bundle.main.bundlePath + "/Contents/Resources/"
+        if let img = NSImage(contentsOfFile: resPath + "StatusBarIcon.png") {
+            img.isTemplate = true
+            img.size = NSSize(width: 18, height: 18)
+            return img
+        }
+        // Fallback: programmatic vector drawing of the 8-petal dial with 0 artifacts
+        let size: CGFloat = 18.0
+        let img = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+            guard let c = NSGraphicsContext.current?.cgContext else { return false }
+            let center = CGPoint(x: size / 2.0, y: size / 2.0)
+            let scale = size / 36.0
+
+            let innerR: CGFloat = 4.5 * scale
+            let outerR: CGFloat = 14.5 * scale
+            let crOuter: CGFloat = 1.6 * scale
+            let crInner: CGFloat = 0.8 * scale
+            let gap: CGFloat = 8.0
+
+            let count = 8
+            let angleStep: CGFloat = 360.0 / CGFloat(count)
+
+            for i in 0..<count {
+                let s = 90.0 - CGFloat(i) * angleStep - gap / 2.0
+                let e = s - (angleStep - gap)
+                let sRad = s * .pi / 180.0
+                let eRad = e * .pi / 180.0
+                let dOuter = crOuter / outerR
+                let dInner = crInner / innerR
+                let midR = (innerR + outerR) / 2.0
+
+                let path = CGMutablePath()
+                let p_start_mid = CGPoint(x: center.x + midR * cos(sRad), y: center.y + midR * sin(sRad))
+                let v_os = CGPoint(x: center.x + outerR * cos(sRad), y: center.y + outerR * sin(sRad))
+                let p_os_arc = CGPoint(x: center.x + outerR * cos(sRad - dOuter), y: center.y + outerR * sin(sRad - dOuter))
+                let v_oe = CGPoint(x: center.x + outerR * cos(eRad), y: center.y + outerR * sin(eRad))
+                let p_oe_radial = CGPoint(x: center.x + (outerR - crOuter) * cos(eRad), y: center.y + (outerR - crOuter) * sin(eRad))
+                let v_ie = CGPoint(x: center.x + innerR * cos(eRad), y: center.y + innerR * sin(eRad))
+                let p_ie_arc = CGPoint(x: center.x + innerR * cos(eRad + dInner), y: center.y + innerR * sin(eRad + dInner))
+                let v_is = CGPoint(x: center.x + innerR * cos(sRad), y: center.y + innerR * sin(sRad))
+                let p_is_radial = CGPoint(x: center.x + (innerR + crInner) * cos(sRad), y: center.y + (innerR + crInner) * sin(sRad))
+
+                path.move(to: p_start_mid)
+                path.addArc(tangent1End: v_os, tangent2End: p_os_arc, radius: crOuter)
+                path.addArc(center: center, radius: outerR, startAngle: sRad - dOuter, endAngle: eRad + dOuter, clockwise: true)
+                path.addArc(tangent1End: v_oe, tangent2End: p_oe_radial, radius: crOuter)
+                path.addArc(tangent1End: v_ie, tangent2End: p_ie_arc, radius: crInner)
+                path.addArc(center: center, radius: innerR, startAngle: eRad + dInner, endAngle: sRad - dInner, clockwise: false)
+                path.addArc(tangent1End: v_is, tangent2End: p_is_radial, radius: crInner)
+                path.closeSubpath()
+
+                c.addPath(path)
+                c.setFillColor(NSColor.black.cgColor)
+                c.fillPath()
+            }
+
+            let hubR: CGFloat = 3.6 * scale
+            c.addEllipse(in: CGRect(x: center.x - hubR, y: center.y - hubR, width: hubR * 2, height: hubR * 2))
+            c.setStrokeColor(NSColor.black.cgColor)
+            c.setLineWidth(1.6 * scale)
+            c.strokePath()
+
+            let pipR: CGFloat = 1.0 * scale
+            c.addEllipse(in: CGRect(x: center.x - pipR, y: center.y - pipR, width: pipR * 2, height: pipR * 2))
+            c.setFillColor(NSColor.black.cgColor)
+            c.fillPath()
+
+            return true
+        }
+        img.isTemplate = true
+        return img
     }
 
     private func showContextMenu() {
