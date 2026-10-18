@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import AVKit
+import CoreImage
 
 // MARK: - Interactive Crop Overlay View
 final class CropOverlayView: NSView {
@@ -22,6 +23,12 @@ final class CropOverlayView: NSView {
         didSet {
             needsDisplay = true
             window?.invalidateCursorRects(for: self)
+        }
+    }
+
+    var isRedactMode: Bool = false {
+        didSet {
+            needsDisplay = true
         }
     }
 
@@ -80,38 +87,40 @@ final class CropOverlayView: NSView {
 
         let crop = cropRectInView
 
-        // 1. Semi-transparent dark scrim outside the crop rectangle
-        NSGraphicsContext.saveGraphicsState()
-        let scrimPath = NSBezierPath(rect: bounds)
-        let cropPath = NSBezierPath(roundedRect: crop, xRadius: 2.0, yRadius: 2.0)
-        scrimPath.append(cropPath)
-        scrimPath.windingRule = .evenOdd
-        NSColor(white: 0.0, alpha: 0.60).setFill()
-        scrimPath.fill()
-        NSGraphicsContext.restoreGraphicsState()
+        if !isRedactMode {
+            // 1. Semi-transparent dark scrim outside the crop rectangle
+            NSGraphicsContext.saveGraphicsState()
+            let scrimPath = NSBezierPath(rect: bounds)
+            let cropPath = NSBezierPath(roundedRect: crop, xRadius: 2.0, yRadius: 2.0)
+            scrimPath.append(cropPath)
+            scrimPath.windingRule = .evenOdd
+            NSColor(white: 0.0, alpha: 0.60).setFill()
+            scrimPath.fill()
+            NSGraphicsContext.restoreGraphicsState()
 
-        // 2. Subtle rule-of-thirds grid
-        let thirdW = crop.width / 3.0
-        let thirdH = crop.height / 3.0
-        let gridPath = NSBezierPath()
-        gridPath.move(to: CGPoint(x: crop.minX, y: crop.minY + thirdH))
-        gridPath.line(to: CGPoint(x: crop.maxX, y: crop.minY + thirdH))
-        gridPath.move(to: CGPoint(x: crop.minX, y: crop.minY + thirdH * 2.0))
-        gridPath.line(to: CGPoint(x: crop.maxX, y: crop.minY + thirdH * 2.0))
+            // 2. Subtle rule-of-thirds grid
+            let thirdW = crop.width / 3.0
+            let thirdH = crop.height / 3.0
+            let gridPath = NSBezierPath()
+            gridPath.move(to: CGPoint(x: crop.minX, y: crop.minY + thirdH))
+            gridPath.line(to: CGPoint(x: crop.maxX, y: crop.minY + thirdH))
+            gridPath.move(to: CGPoint(x: crop.minX, y: crop.minY + thirdH * 2.0))
+            gridPath.line(to: CGPoint(x: crop.maxX, y: crop.minY + thirdH * 2.0))
 
-        gridPath.move(to: CGPoint(x: crop.minX + thirdW, y: crop.minY))
-        gridPath.line(to: CGPoint(x: crop.minX + thirdW, y: crop.maxY))
-        gridPath.move(to: CGPoint(x: crop.minX + thirdW * 2.0, y: crop.minY))
-        gridPath.line(to: CGPoint(x: crop.minX + thirdW * 2.0, y: crop.maxY))
+            gridPath.move(to: CGPoint(x: crop.minX + thirdW, y: crop.minY))
+            gridPath.line(to: CGPoint(x: crop.minX + thirdW, y: crop.maxY))
+            gridPath.move(to: CGPoint(x: crop.minX + thirdW * 2.0, y: crop.minY))
+            gridPath.line(to: CGPoint(x: crop.minX + thirdW * 2.0, y: crop.maxY))
 
-        NSColor(white: 1.0, alpha: 0.35).setStroke()
-        gridPath.lineWidth = 1.0
-        gridPath.stroke()
+            NSColor(white: 1.0, alpha: 0.35).setStroke()
+            gridPath.lineWidth = 1.0
+            gridPath.stroke()
+        }
 
-        // 3. Crisp Crop Border (DropDial Orange)
-        let orangeColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
+        // 3. Crisp Border (DropDial Orange or Red for Redaction)
+        let borderColor = isRedactMode ? NSColor(srgbRed: 1.0, green: 0.25, blue: 0.25, alpha: 0.95) : NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
         let borderPath = NSBezierPath(roundedRect: crop, xRadius: 2.0, yRadius: 2.0)
-        orangeColor.setStroke()
+        borderColor.setStroke()
         borderPath.lineWidth = 2.0
         borderPath.stroke()
 
@@ -132,7 +141,7 @@ final class CropOverlayView: NSView {
             let path = NSBezierPath(roundedRect: handleRect, xRadius: 3.0, yRadius: 3.0)
             handleFill.setFill()
             path.fill()
-            orangeColor.setStroke()
+            borderColor.setStroke()
             path.lineWidth = 1.5
             path.stroke()
         }
@@ -154,7 +163,7 @@ final class CropOverlayView: NSView {
             let path = NSBezierPath(roundedRect: handleRect, xRadius: 2.0, yRadius: 2.0)
             handleFill.setFill()
             path.fill()
-            orangeColor.setStroke()
+            borderColor.setStroke()
             path.lineWidth = 1.0
             path.stroke()
         }
@@ -410,6 +419,30 @@ final class CropOverlayView: NSView {
     }
 }
 
+// MARK: - Image Rotation Helper
+func rotateImage(_ image: NSImage, by degrees: CGFloat) -> NSImage {
+    var deg = degrees.truncatingRemainder(dividingBy: 360)
+    if deg < 0 { deg += 360 }
+    if deg == 0 { return image }
+
+    let srcSize = image.size
+    var newSize = srcSize
+    if deg == 90 || deg == 270 {
+        newSize = NSSize(width: srcSize.height, height: srcSize.width)
+    }
+
+    let rotated = NSImage(size: newSize)
+    rotated.lockFocus()
+    let transform = NSAffineTransform()
+    transform.translateX(by: newSize.width / 2.0, yBy: newSize.height / 2.0)
+    transform.rotate(byDegrees: -deg)
+    transform.translateX(by: -srcSize.width / 2.0, yBy: -srcSize.height / 2.0)
+    transform.concat()
+    image.draw(in: NSRect(origin: .zero, size: srcSize), from: .zero, operation: .copy, fraction: 1.0)
+    rotated.unlockFocus()
+    return rotated
+}
+
 // MARK: - Tool Window Controller
 final class ToolWindowController: NSWindowController, NSWindowDelegate {
     let paths: [String]
@@ -470,6 +503,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     private var originalHeight: Int = 0
     private var originalFileSize: Int64 = 0
     private var originalImage: NSImage?
+    private let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+    private var previewCIImage: CIImage?
 
     init(paths: [String], tool: Catalog.ToolOption) {
         self.paths = paths
@@ -1171,12 +1206,12 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     // MARK: - Crop Form with Free Style and Presets
     private func setupCropForm(in container: NSView) {
         let ratioLabel = NSTextField(labelWithString: "Aspect Ratio:")
-        ratioLabel.frame = NSRect(x: 0, y: 92, width: 110, height: 20)
+        ratioLabel.frame = NSRect(x: 0, y: 92, width: 95, height: 20)
         ratioLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
         ratioLabel.textColor = .white
         container.addSubview(ratioLabel)
 
-        let ratioPopup = NSPopUpButton(frame: NSRect(x: 120, y: 90, width: 200, height: 26))
+        let ratioPopup = NSPopUpButton(frame: NSRect(x: 100, y: 90, width: 340, height: 26))
         let ratios = [
             ("Free Style (Custom Drag)", "free"),
             ("1:1 (Square)", "1:1"),
@@ -1195,12 +1230,12 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         fieldInputs["ratio"] = ratioPopup
 
         let alignLabel = NSTextField(labelWithString: "Alignment:")
-        alignLabel.frame = NSRect(x: 0, y: 56, width: 110, height: 20)
+        alignLabel.frame = NSRect(x: 0, y: 56, width: 75, height: 20)
         alignLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
         alignLabel.textColor = .white
         container.addSubview(alignLabel)
 
-        let alignPopup = NSPopUpButton(frame: NSRect(x: 120, y: 54, width: 200, height: 26))
+        let alignPopup = NSPopUpButton(frame: NSRect(x: 80, y: 54, width: 135, height: 26))
         alignPopup.addItem(withTitle: "Center (Auto)")
         alignPopup.addItem(withTitle: "Top / Left")
         alignPopup.addItem(withTitle: "Bottom / Right")
@@ -1208,6 +1243,22 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         alignPopup.action = #selector(cropParamChanged)
         container.addSubview(alignPopup)
         fieldInputs["alignment"] = alignPopup
+
+        let rotLabel = NSTextField(labelWithString: "Rotation:")
+        rotLabel.frame = NSRect(x: 228, y: 56, width: 62, height: 20)
+        rotLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        rotLabel.textColor = .white
+        container.addSubview(rotLabel)
+
+        let rotPopup = NSPopUpButton(frame: NSRect(x: 295, y: 54, width: 145, height: 26))
+        rotPopup.addItem(withTitle: "0° (Normal)")
+        rotPopup.addItem(withTitle: "90° (Clockwise)")
+        rotPopup.addItem(withTitle: "180° (Flip)")
+        rotPopup.addItem(withTitle: "270° (Counter-CW)")
+        rotPopup.target = self
+        rotPopup.action = #selector(cropParamChanged)
+        container.addSubview(rotPopup)
+        fieldInputs["rotation"] = rotPopup
 
         cropInfoLabel.frame = NSRect(x: 0, y: 16, width: 440, height: 20)
         cropInfoLabel.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
@@ -1242,7 +1293,30 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         if alignTitle.contains("Top") { alignVal = "top_left" }
         else if alignTitle.contains("Bottom") { alignVal = "bottom_right" }
 
+        updateCropRotation()
         cropOverlayView.applyRatioPreset(ratioVal, alignment: alignVal)
+    }
+
+    private func updateCropRotation() {
+        guard let base = originalImage else { return }
+        let rotPopup = fieldInputs["rotation"] as? NSPopUpButton
+        let rotTitle = rotPopup?.titleOfSelectedItem ?? "0°"
+        var deg: CGFloat = 0
+        if rotTitle.contains("90") { deg = 90 }
+        else if rotTitle.contains("180") { deg = 180 }
+        else if rotTitle.contains("270") { deg = 270 }
+
+        if deg == 0 {
+            self.previewImageView.image = base
+            self.cropOverlayView.imageSize = CGSize(width: originalWidth, height: originalHeight)
+        } else {
+            let rotated = rotateImage(base, by: deg)
+            self.previewImageView.image = rotated
+            let rep = rotated.representations.first
+            let w = rep?.pixelsWide ?? Int(rotated.size.width)
+            let h = rep?.pixelsHigh ?? Int(rotated.size.height)
+            self.cropOverlayView.imageSize = CGSize(width: w, height: h)
+        }
     }
 
     // MARK: - Compression Form
@@ -1354,7 +1428,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     @objc private func sliderChanged(_ sender: NSSlider) {
         let val = Int(sender.doubleValue)
         qualityLabel?.stringValue = "\(val)%"
-        updateCompressInfo(quality: val)
+        updateCompressPreview(quality: val)
     }
 
     @objc private func presetClicked(_ sender: NSButton) {
@@ -1362,72 +1436,98 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         qualitySlider?.integerValue = val
         qualitySlider?.doubleValue = Double(val)
         qualityLabel?.stringValue = "\(val)%"
-        updateCompressInfo(quality: val)
+        updateCompressPreview(quality: val)
     }
 
     @objc private func compressSettingChanged() {
         let q = qualitySlider?.integerValue ?? 80
-        updateCompressInfo(quality: q)
+        updateCompressPreview(quality: q)
     }
 
-    private func updateCompressInfo(quality: Int) {
-        guard originalFileSize > 0 else { return }
-        let origStr = ByteCountFormatter.string(fromByteCount: originalFileSize, countStyle: .file)
-
-        var targetKB: Int64 = 0
-        if let sizePopup = fieldInputs["targetSize"] as? NSPopUpButton {
-            let t = sizePopup.titleOfSelectedItem ?? ""
-            if t.contains("200 KB") { targetKB = 200 }
-            else if t.contains("300 KB") { targetKB = 300 }
-            else if t.contains("500 KB") { targetKB = 500 }
-            else if t.contains("1 MB") { targetKB = 1024 }
-            else if t.contains("2 MB") { targetKB = 2048 }
-            else if t.contains("5 MB") { targetKB = 5120 }
-            else if t.contains("10 MB") { targetKB = 10240 }
-            else if t.contains("25 MB") { targetKB = 25600 }
-        }
+    private func updateCompressPreview(quality: Int) {
+        guard let base = originalImage else { return }
 
         var dimScale: Double = 1.0
         if let dimPopup = fieldInputs["maxEdge"] as? NSPopUpButton {
             let t = dimPopup.titleOfSelectedItem ?? ""
-            if t.contains("2560") && max(originalWidth, originalHeight) > 2560 {
-                dimScale = 2560.0 / Double(max(originalWidth, originalHeight))
-            } else if t.contains("1920") && max(originalWidth, originalHeight) > 1920 {
-                dimScale = 1920.0 / Double(max(originalWidth, originalHeight))
-            } else if t.contains("1280") && max(originalWidth, originalHeight) > 1280 {
-                dimScale = 1280.0 / Double(max(originalWidth, originalHeight))
-            } else if t.contains("800") && max(originalWidth, originalHeight) > 800 {
-                dimScale = 800.0 / Double(max(originalWidth, originalHeight))
+            let maxSide = max(originalWidth, originalHeight)
+            if t.contains("2560") && maxSide > 2560 { dimScale = 2560.0 / Double(maxSide) }
+            else if t.contains("1920") && maxSide > 1920 { dimScale = 1920.0 / Double(maxSide) }
+            else if t.contains("1280") && maxSide > 1280 { dimScale = 1280.0 / Double(maxSide) }
+            else if t.contains("800") && maxSide > 800 { dimScale = 800.0 / Double(maxSide) }
+        }
+
+        let targetW = max(10, Int(Double(originalWidth) * dimScale))
+        let targetH = max(10, Int(Double(originalHeight) * dimScale))
+
+        guard let tiffData = base.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiffData) else { return }
+
+        let qFactor = max(0.05, min(1.0, Double(quality) / 100.0))
+        let props: [NSBitmapImageRep.PropertyKey: Any] = [
+            .compressionFactor: qFactor
+        ]
+
+        var compressedRep = rep
+        if dimScale < 0.999 {
+            if let scaled = NSBitmapImageRep(
+                bitmapDataPlanes: nil,
+                pixelsWide: targetW,
+                pixelsHigh: targetH,
+                bitsPerSample: 8,
+                samplesPerPixel: 4,
+                hasAlpha: true,
+                isPlanar: false,
+                colorSpaceName: .deviceRGB,
+                bytesPerRow: 0,
+                bitsPerPixel: 0
+            ) {
+                NSGraphicsContext.saveGraphicsState()
+                NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: scaled)
+                base.draw(in: NSRect(x: 0, y: 0, width: targetW, height: targetH))
+                NSGraphicsContext.restoreGraphicsState()
+                compressedRep = scaled
             }
         }
 
-        let rawEst = Double(originalFileSize) * (Double(quality) / 100.0) * 0.70 * (dimScale * dimScale)
-        let estimatedBytes: Int64
-        if targetKB > 0 {
-            estimatedBytes = min(Int64(rawEst), targetKB * 1024)
-        } else {
-            estimatedBytes = Int64(rawEst)
-        }
+        if let jpegData = compressedRep.representation(using: .jpeg, properties: props) {
+            if let compressedImage = NSImage(data: jpegData) {
+                self.previewImageView.image = compressedImage
+            }
 
-        let estStr = ByteCountFormatter.string(fromByteCount: max(1024, estimatedBytes), countStyle: .file)
+            let actualSize = Int64(jpegData.count)
+            let actualStr = ByteCountFormatter.string(fromByteCount: actualSize, countStyle: .file)
+            let origStr = ByteCountFormatter.string(fromByteCount: originalFileSize, countStyle: .file)
+            let percent = originalFileSize > 0 ? Int(round((1.0 - Double(actualSize) / Double(originalFileSize)) * 100.0)) : 0
+            let savingsStr = percent > 0 ? " (-\(percent)%)" : ""
 
-        var parts: [String] = []
-        if originalWidth > 0 && originalHeight > 0 {
+            var targetKB: Int64 = 0
+            if let sizePopup = fieldInputs["targetSize"] as? NSPopUpButton {
+                let t = sizePopup.titleOfSelectedItem ?? ""
+                if t.contains("200 KB") { targetKB = 200 }
+                else if t.contains("300 KB") { targetKB = 300 }
+                else if t.contains("500 KB") { targetKB = 500 }
+                else if t.contains("1 MB") { targetKB = 1024 }
+                else if t.contains("2 MB") { targetKB = 2048 }
+                else if t.contains("5 MB") { targetKB = 5120 }
+                else if t.contains("10 MB") { targetKB = 10240 }
+                else if t.contains("25 MB") { targetKB = 25600 }
+            }
+
+            var parts: [String] = []
             if dimScale < 0.999 {
-                let newW = Int(Double(originalWidth) * dimScale)
-                let newH = Int(Double(originalHeight) * dimScale)
-                parts.append("\(originalWidth)×\(originalHeight) → \(newW)×\(newH)")
+                parts.append("\(originalWidth)×\(originalHeight) → \(targetW)×\(targetH)")
             } else {
                 parts.append("\(originalWidth) × \(originalHeight)")
             }
+            parts.append("Original: \(origStr)")
+            if targetKB > 0 {
+                parts.append("Target: ≤ \(ByteCountFormatter.string(fromByteCount: targetKB * 1024, countStyle: .file))")
+            }
+            parts.append("Est. Size: ~\(actualStr)\(savingsStr)")
+            self.infoLabel.stringValue = parts.joined(separator: "  ·  ")
+            self.compressInfoLabel.stringValue = parts.joined(separator: "  ·  ")
         }
-        parts.append("Original: \(origStr)")
-        if targetKB > 0 {
-            parts.append("Target: ≤ \(ByteCountFormatter.string(fromByteCount: targetKB * 1024, countStyle: .file))")
-        }
-        parts.append("Est. Size: ~\(estStr)")
-        self.infoLabel.stringValue = parts.joined(separator: "  ·  ")
-        self.compressInfoLabel.stringValue = parts.joined(separator: "  ·  ")
     }
 
     // MARK: - Watermark Form
@@ -1740,6 +1840,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
     // MARK: - Redact Form
     private func setupRedactForm(in container: NSView) {
+        cropOverlayView.isRedactMode = true
+
         let styleLabel = NSTextField(labelWithString: "Redact Style:")
         styleLabel.frame = NSRect(x: 0, y: 88, width: 110, height: 20)
         styleLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
@@ -1750,6 +1852,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         stylePopup.addItem(withTitle: "Solid Blackout")
         stylePopup.addItem(withTitle: "Gaussian Blur")
         stylePopup.addItem(withTitle: "Mosaic (Pixelate)")
+        stylePopup.target = self
+        stylePopup.action = #selector(redactParamChanged)
         container.addSubview(stylePopup)
         fieldInputs["style"] = stylePopup
 
@@ -1761,6 +1865,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
         let blockSlider = NSSlider(value: 18, minValue: 4, maxValue: 50, target: self, action: #selector(toolSliderChanged(_:)))
         blockSlider.frame = NSRect(x: 120, y: 50, width: 220, height: 22)
+        blockSlider.isContinuous = true
         container.addSubview(blockSlider)
         fieldSliders["blockSize"] = blockSlider
 
@@ -1782,6 +1887,72 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             let w = Int(rect.width)
             let h = Int(rect.height)
             self.cropInfoLabel.stringValue = "Redaction Area: \(w) × \(h) px · Drag handles to adjust"
+            self.updateRedactPreview()
+        }
+    }
+
+    @objc private func redactParamChanged() {
+        updateRedactPreview()
+    }
+
+    private func updateRedactPreview() {
+        guard let ciInput = previewCIImage ?? (originalImage?.cgImage(forProposedRect: nil, context: nil, hints: nil).map { CIImage(cgImage: $0) }) else { return }
+
+        let stylePopup = fieldInputs["style"] as? NSPopUpButton
+        let style = stylePopup?.titleOfSelectedItem ?? "Solid Blackout"
+        let blockSize = CGFloat(fieldSliders["blockSize"]?.integerValue ?? 18)
+
+        let px = cropOverlayView.currentPixelRect()
+        guard px.width > 0, px.height > 0 else {
+            self.previewImageView.image = originalImage
+            return
+        }
+
+        let fullW = CGFloat(originalWidth > 0 ? originalWidth : Int(ciInput.extent.width))
+        let fullH = CGFloat(originalHeight > 0 ? originalHeight : Int(ciInput.extent.height))
+
+        let scaleX = ciInput.extent.width / fullW
+        let scaleY = ciInput.extent.height / fullH
+
+        // In CIImage, coordinate (0,0) is at bottom-left:
+        let ciX = px.origin.x * scaleX
+        let ciY = (fullH - (px.origin.y + px.size.height)) * scaleY
+        let ciW = max(1.0, px.size.width * scaleX)
+        let ciH = max(1.0, px.size.height * scaleY)
+        let ciRect = CGRect(x: ciX, y: ciY, width: ciW, height: ciH)
+
+        var compositedCI = ciInput
+
+        if style.contains("Blur") {
+            let clamped = ciInput.clampedToExtent()
+            if let blurFilter = CIFilter(name: "CIGaussianBlur") {
+                blurFilter.setValue(clamped, forKey: kCIInputImageKey)
+                blurFilter.setValue(22.0, forKey: kCIInputRadiusKey)
+                if let blurred = blurFilter.outputImage {
+                    let effect = blurred.cropped(to: ciRect)
+                    compositedCI = effect.composited(over: ciInput)
+                }
+            }
+        } else if style.contains("Mosaic") || style.contains("Pixelate") {
+            if let pixFilter = CIFilter(name: "CIPixellate") {
+                pixFilter.setValue(ciInput, forKey: kCIInputImageKey)
+                pixFilter.setValue(max(2.0, blockSize * scaleX), forKey: kCIInputScaleKey)
+                pixFilter.setValue(CIVector(x: ciRect.midX, y: ciRect.midY), forKey: kCIInputCenterKey)
+                if let pixellated = pixFilter.outputImage {
+                    let effect = pixellated.cropped(to: ciRect)
+                    compositedCI = effect.composited(over: ciInput)
+                }
+            }
+        } else {
+            // Solid Blackout
+            let blackCI = CIImage(color: CIColor.black).cropped(to: ciRect)
+            compositedCI = blackCI.composited(over: ciInput)
+        }
+
+        let extent = ciInput.extent
+        if let cgOut = ciContext.createCGImage(compositedCI, from: extent) {
+            let finalImg = NSImage(cgImage: cgOut, size: NSSize(width: extent.width, height: extent.height))
+            self.previewImageView.image = finalImg
         }
     }
 
@@ -1807,6 +1978,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
             let slider = NSSlider(value: item.defVal, minValue: item.minVal, maxValue: item.maxVal, target: self, action: #selector(editSliderDragged(_:)))
             slider.frame = NSRect(x: 90, y: y - 2, width: 275, height: 20)
+            slider.isContinuous = true
             container.addSubview(slider)
             fieldSliders[item.key] = slider
 
@@ -1850,12 +2022,85 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
                 break
             }
         }
+        updateEditImagePreview()
     }
 
     @objc private func resetEditSliders() {
         for item in editSliders {
             item.slider.doubleValue = item.defVal
             item.badge.stringValue = formatEditVal(item.defVal, unit: item.unit)
+        }
+        updateEditImagePreview()
+    }
+
+    private func updateEditImagePreview() {
+        guard let ciInput = previewCIImage ?? (originalImage?.cgImage(forProposedRect: nil, context: nil, hints: nil).map { CIImage(cgImage: $0) }) else { return }
+
+        var currentCI = ciInput
+
+        let expVal = fieldSliders["exposure"]?.doubleValue ?? 0.0
+        let contVal = fieldSliders["contrast"]?.doubleValue ?? 1.0
+        let satVal = fieldSliders["saturation"]?.doubleValue ?? 1.0
+        let tempVal = fieldSliders["temperature"]?.doubleValue ?? 0.0
+        let shadowVal = fieldSliders["shadows"]?.doubleValue ?? 0.0
+        let highlightVal = fieldSliders["highlights"]?.doubleValue ?? 0.0
+        let clarityVal = fieldSliders["clarity"]?.doubleValue ?? 0.0
+
+        // 1. Exposure
+        if abs(expVal) > 0.001 {
+            if let filter = CIFilter(name: "CIExposureAdjust") {
+                filter.setValue(currentCI, forKey: kCIInputImageKey)
+                filter.setValue(expVal, forKey: kCIInputEVKey)
+                if let out = filter.outputImage { currentCI = out }
+            }
+        }
+
+        // 2. Contrast & Saturation (CIColorControls)
+        if abs(contVal - 1.0) > 0.001 || abs(satVal - 1.0) > 0.001 {
+            if let filter = CIFilter(name: "CIColorControls") {
+                filter.setValue(currentCI, forKey: kCIInputImageKey)
+                filter.setValue(contVal, forKey: kCIInputContrastKey)
+                filter.setValue(satVal, forKey: kCIInputSaturationKey)
+                if let out = filter.outputImage { currentCI = out }
+            }
+        }
+
+        // 3. Warmth / Temperature (CITemperatureAndTint)
+        if abs(tempVal) > 0.001 {
+            if let filter = CIFilter(name: "CITemperatureAndTint") {
+                filter.setValue(currentCI, forKey: kCIInputImageKey)
+                let targetTemp = 6500.0 + (tempVal * 25.0)
+                filter.setValue(CIVector(x: 6500, y: 0), forKey: "inputNeutral")
+                filter.setValue(CIVector(x: CGFloat(targetTemp), y: 0), forKey: "inputTargetNeutral")
+                if let out = filter.outputImage { currentCI = out }
+            }
+        }
+
+        // 4. Shadows & Highlights (CIHighlightShadowAdjust)
+        if abs(shadowVal) > 0.001 || abs(highlightVal) > 0.001 {
+            if let filter = CIFilter(name: "CIHighlightShadowAdjust") {
+                filter.setValue(currentCI, forKey: kCIInputImageKey)
+                let sAmt = max(0.0, min(1.0, (shadowVal + 100.0) / 200.0))
+                let hAmt = max(0.0, min(1.0, 1.0 - (highlightVal / 100.0)))
+                filter.setValue(sAmt, forKey: "inputShadowAmount")
+                filter.setValue(hAmt, forKey: "inputHighlightAmount")
+                if let out = filter.outputImage { currentCI = out }
+            }
+        }
+
+        // 5. Clarity (CISharpenLuminance)
+        if clarityVal > 0.1 {
+            if let filter = CIFilter(name: "CISharpenLuminance") {
+                filter.setValue(currentCI, forKey: kCIInputImageKey)
+                filter.setValue(clarityVal / 50.0, forKey: kCIInputSharpnessKey)
+                if let out = filter.outputImage { currentCI = out }
+            }
+        }
+
+        let extent = ciInput.extent
+        if let cgOut = ciContext.createCGImage(currentCI, from: extent) {
+            let finalImg = NSImage(cgImage: cgOut, size: NSSize(width: extent.width, height: extent.height))
+            self.previewImageView.image = finalImg
         }
     }
 
@@ -1879,6 +2124,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             "#10B981 (Emerald Green)"
         ]
         for c in colors { bgPopup.addItem(withTitle: c) }
+        bgPopup.target = self
+        bgPopup.action = #selector(frameParamChanged)
         container.addSubview(bgPopup)
         fieldInputs["background"] = bgPopup
         y -= 36
@@ -1897,6 +2144,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
             let slider = NSSlider(value: item.def, minValue: item.min, maxValue: item.max, target: self, action: #selector(toolSliderChanged(_:)))
             slider.frame = NSRect(x: 120, y: y - 2, width: 220, height: 22)
+            slider.isContinuous = true
             container.addSubview(slider)
             fieldSliders[item.key] = slider
 
@@ -1909,6 +2157,76 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
             y -= 36
         }
+    }
+
+    @objc private func frameParamChanged() {
+        updateFramePreview()
+    }
+
+    private func updateFramePreview() {
+        guard let base = originalImage else { return }
+
+        let bgPopup = fieldInputs["background"] as? NSPopUpButton
+        let bgTitle = bgPopup?.titleOfSelectedItem ?? "#F0EBFF"
+        var bgColor = NSColor(srgbRed: 0.941, green: 0.922, blue: 1.0, alpha: 1.0)
+        if bgTitle.contains("#FFFFFF") { bgColor = .white }
+        else if bgTitle.contains("#18181B") { bgColor = NSColor(srgbRed: 0.094, green: 0.094, blue: 0.106, alpha: 1.0) }
+        else if bgTitle.contains("#FF6500") { bgColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0) }
+        else if bgTitle.contains("#3B82F6") { bgColor = NSColor(srgbRed: 0.231, green: 0.510, blue: 0.965, alpha: 1.0) }
+        else if bgTitle.contains("#10B981") { bgColor = NSColor(srgbRed: 0.063, green: 0.725, blue: 0.506, alpha: 1.0) }
+
+        let pad = CGFloat(fieldSliders["padding"]?.integerValue ?? 80)
+        let radius = CGFloat(fieldSliders["radius"]?.integerValue ?? 24)
+        let shadowBlur = CGFloat(fieldSliders["shadow"]?.integerValue ?? 20)
+
+        let rep = base.representations.first
+        let rawW = CGFloat(rep?.pixelsWide ?? Int(base.size.width))
+        let rawH = CGFloat(rep?.pixelsHigh ?? Int(base.size.height))
+        guard rawW > 0, rawH > 0 else { return }
+
+        let scale = min(1.0, 1000.0 / max(rawW, rawH))
+        let imgW = rawW * scale
+        let imgH = rawH * scale
+        let scaledPad = pad * scale
+        let scaledRadius = radius * scale
+        let scaledShadow = shadowBlur * scale
+
+        let canvasW = imgW + scaledPad * 2
+        let canvasH = imgH + scaledPad * 2
+        let canvasSize = NSSize(width: canvasW, height: canvasH)
+
+        let composed = NSImage(size: canvasSize)
+        composed.lockFocus()
+
+        // 1. Draw Background Canvas
+        bgColor.setFill()
+        NSRect(origin: .zero, size: canvasSize).fill()
+
+        let imgRect = NSRect(x: scaledPad, y: scaledPad, width: imgW, height: imgH)
+
+        // 2. Draw Drop Shadow
+        if scaledShadow > 0 {
+            NSGraphicsContext.saveGraphicsState()
+            let shadow = NSShadow()
+            shadow.shadowBlurRadius = scaledShadow
+            shadow.shadowOffset = NSSize(width: 0, height: -scaledShadow * 0.35)
+            shadow.shadowColor = NSColor.black.withAlphaComponent(0.40)
+            shadow.set()
+            let shadowClip = NSBezierPath(roundedRect: imgRect, xRadius: scaledRadius, yRadius: scaledRadius)
+            NSColor.black.setFill()
+            shadowClip.fill()
+            NSGraphicsContext.restoreGraphicsState()
+        }
+
+        // 3. Draw Clipped Image
+        NSGraphicsContext.saveGraphicsState()
+        let clipPath = NSBezierPath(roundedRect: imgRect, xRadius: scaledRadius, yRadius: scaledRadius)
+        clipPath.addClip()
+        base.draw(in: imgRect, from: NSRect(x: 0, y: 0, width: base.size.width, height: base.size.height), operation: .copy, fraction: 1.0)
+        NSGraphicsContext.restoreGraphicsState()
+
+        composed.unlockFocus()
+        self.previewImageView.image = composed
     }
 
     // MARK: - Image Annotate Form
@@ -1924,6 +2242,9 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         let textField = NSTextField(frame: NSRect(x: 120, y: y, width: 240, height: 24))
         textField.stringValue = "APPROVED"
         textField.placeholderString = "Enter text..."
+        textField.target = self
+        textField.action = #selector(annotateParamChanged)
+        NotificationCenter.default.addObserver(self, selector: #selector(annotateTextDidChange(_:)), name: NSControl.textDidChangeNotification, object: textField)
         container.addSubview(textField)
         fieldInputs["text"] = textField
         y -= 38
@@ -1944,6 +2265,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             "#000000 (Black)"
         ]
         for c in colors { colorPopup.addItem(withTitle: c) }
+        colorPopup.target = self
+        colorPopup.action = #selector(annotateParamChanged)
         container.addSubview(colorPopup)
         fieldInputs["color"] = colorPopup
         y -= 38
@@ -1960,8 +2283,83 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         posPopup.addItem(withTitle: "Top Right")
         posPopup.addItem(withTitle: "Top Left")
         posPopup.addItem(withTitle: "Center")
+        posPopup.target = self
+        posPopup.action = #selector(annotateParamChanged)
         container.addSubview(posPopup)
         fieldInputs["position"] = posPopup
+    }
+
+    @objc private func annotateTextDidChange(_ notification: Notification) {
+        annotateParamChanged()
+    }
+
+    @objc private func annotateParamChanged() {
+        updateAnnotatePreview()
+    }
+
+    private func updateAnnotatePreview() {
+        guard let base = originalImage else { return }
+        let tf = fieldInputs["text"] as? NSTextField
+        let text = tf?.stringValue.trimmingCharacters(in: .whitespaces) ?? "APPROVED"
+        let displayStr = text.isEmpty ? "APPROVED" : text
+
+        let cPopup = fieldInputs["color"] as? NSPopUpButton
+        let cTitle = cPopup?.titleOfSelectedItem ?? "#ff6500"
+        var badgeBg = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
+        if cTitle.contains("#ef4444") { badgeBg = NSColor(srgbRed: 0.937, green: 0.267, blue: 0.267, alpha: 1.0) }
+        else if cTitle.contains("#3b82f6") { badgeBg = NSColor(srgbRed: 0.231, green: 0.510, blue: 0.965, alpha: 1.0) }
+        else if cTitle.contains("#10b981") { badgeBg = NSColor(srgbRed: 0.063, green: 0.725, blue: 0.506, alpha: 1.0) }
+        else if cTitle.contains("#ffffff") { badgeBg = .white }
+        else if cTitle.contains("#000000") { badgeBg = .black }
+
+        let pPopup = fieldInputs["position"] as? NSPopUpButton
+        let pTitle = pPopup?.titleOfSelectedItem ?? "Bottom Right"
+
+        let rep = base.representations.first
+        let w = CGFloat(rep?.pixelsWide ?? Int(base.size.width))
+        let h = CGFloat(rep?.pixelsHigh ?? Int(base.size.height))
+        guard w > 0, h > 0 else { return }
+
+        let scale = max(1.0, min(w, h) / 700.0)
+        let font = NSFont.boldSystemFont(ofSize: 22 * scale)
+        let textColor = (badgeBg == .white) ? NSColor.black : NSColor.white
+        let attrStr = NSAttributedString(string: displayStr, attributes: [.font: font, .foregroundColor: textColor])
+        let strSize = attrStr.size()
+
+        let padH: CGFloat = 20 * scale
+        let padV: CGFloat = 10 * scale
+        let badgeW = strSize.width + padH * 2
+        let badgeH = strSize.height + padV * 2
+        let margin: CGFloat = 35 * scale
+
+        var badgeX = w - badgeW - margin
+        var badgeY = margin
+        if pTitle.contains("Bottom Left") {
+            badgeX = margin
+            badgeY = margin
+        } else if pTitle.contains("Top Right") {
+            badgeX = w - badgeW - margin
+            badgeY = h - badgeH - margin
+        } else if pTitle.contains("Top Left") {
+            badgeX = margin
+            badgeY = h - badgeH - margin
+        } else if pTitle.contains("Center") {
+            badgeX = (w - badgeW) / 2.0
+            badgeY = (h - badgeH) / 2.0
+        }
+
+        let composed = NSImage(size: NSSize(width: w, height: h))
+        composed.lockFocus()
+        base.draw(in: NSRect(x: 0, y: 0, width: w, height: h))
+
+        let badgeRect = NSRect(x: badgeX, y: badgeY, width: badgeW, height: badgeH)
+        let badgePath = NSBezierPath(roundedRect: badgeRect, xRadius: badgeH / 2.0, yRadius: badgeH / 2.0)
+        badgeBg.setFill()
+        badgePath.fill()
+
+        attrStr.draw(at: NSPoint(x: badgeX + padH, y: badgeY + padV))
+        composed.unlockFocus()
+        self.previewImageView.image = composed
     }
 
     // MARK: - Multi-Image Collage Form
@@ -1979,6 +2377,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         layoutPopup.addItem(withTitle: "Hero (Featured + Thumbnails)")
         layoutPopup.addItem(withTitle: "Horizontal Row")
         layoutPopup.addItem(withTitle: "Vertical Column")
+        layoutPopup.target = self
+        layoutPopup.action = #selector(collageParamChanged)
         container.addSubview(layoutPopup)
         fieldInputs["layout"] = layoutPopup
         y -= 38
@@ -1991,6 +2391,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
         let gapSlider = NSSlider(value: 16, minValue: 0, maxValue: 40, target: self, action: #selector(toolSliderChanged(_:)))
         gapSlider.frame = NSRect(x: 120, y: y - 2, width: 210, height: 22)
+        gapSlider.isContinuous = true
         container.addSubview(gapSlider)
         fieldSliders["gap"] = gapSlider
 
@@ -2012,8 +2413,79 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         bgPopup.addItem(withTitle: "#ffffff (White)")
         bgPopup.addItem(withTitle: "#18181b (Dark Graphite)")
         bgPopup.addItem(withTitle: "#f0ebff (Soft Lavender)")
+        bgPopup.target = self
+        bgPopup.action = #selector(collageParamChanged)
         container.addSubview(bgPopup)
         fieldInputs["background"] = bgPopup
+    }
+
+    @objc private func collageParamChanged() {
+        updateCollagePreview()
+    }
+
+    private func updateCollagePreview() {
+        guard let base = originalImage else { return }
+
+        let bgPopup = fieldInputs["background"] as? NSPopUpButton
+        let bgTitle = bgPopup?.titleOfSelectedItem ?? "#ffffff"
+        var bgColor = NSColor.white
+        if bgTitle.contains("#18181b") { bgColor = NSColor(srgbRed: 0.094, green: 0.094, blue: 0.106, alpha: 1.0) }
+        else if bgTitle.contains("#f0ebff") { bgColor = NSColor(srgbRed: 0.941, green: 0.922, blue: 1.0, alpha: 1.0) }
+
+        let gap = CGFloat(fieldSliders["gap"]?.integerValue ?? 16)
+        let layoutPopup = fieldInputs["layout"] as? NSPopUpButton
+        let layoutTitle = layoutPopup?.titleOfSelectedItem ?? "Grid"
+
+        let targetSize = NSSize(width: 800, height: 600)
+        let composed = NSImage(size: targetSize)
+        composed.lockFocus()
+        bgColor.setFill()
+        NSRect(origin: .zero, size: targetSize).fill()
+
+        let innerW = targetSize.width - gap * 3
+        let innerH = targetSize.height - gap * 3
+
+        if layoutTitle.contains("Hero") {
+            let heroW = innerW * 0.58
+            let rightW = innerW * 0.42
+            let tileH = (innerH - gap) / 2.0
+
+            let heroRect = NSRect(x: gap, y: gap, width: heroW, height: innerH + gap)
+            base.draw(in: heroRect, from: .zero, operation: .copy, fraction: 1.0)
+
+            let r1 = NSRect(x: gap * 2 + heroW, y: gap * 2 + tileH, width: rightW, height: tileH)
+            base.draw(in: r1, from: .zero, operation: .copy, fraction: 1.0)
+
+            let r2 = NSRect(x: gap * 2 + heroW, y: gap, width: rightW, height: tileH)
+            base.draw(in: r2, from: .zero, operation: .copy, fraction: 1.0)
+        } else if layoutTitle.contains("Row") {
+            let tileW = (targetSize.width - gap * 4) / 3.0
+            let tileH = targetSize.height - gap * 2
+            for i in 0..<3 {
+                let r = NSRect(x: gap + CGFloat(i) * (tileW + gap), y: gap, width: tileW, height: tileH)
+                base.draw(in: r, from: .zero, operation: .copy, fraction: 1.0)
+            }
+        } else if layoutTitle.contains("Column") {
+            let tileW = targetSize.width - gap * 2
+            let tileH = (targetSize.height - gap * 4) / 3.0
+            for i in 0..<3 {
+                let r = NSRect(x: gap, y: gap + CGFloat(i) * (tileH + gap), width: tileW, height: tileH)
+                base.draw(in: r, from: .zero, operation: .copy, fraction: 1.0)
+            }
+        } else {
+            let tileW = (targetSize.width - gap * 3) / 2.0
+            let tileH = (targetSize.height - gap * 3) / 2.0
+            for row in 0..<2 {
+                for col in 0..<2 {
+                    let rx = gap + CGFloat(col) * (tileW + gap)
+                    let ry = gap + CGFloat(row) * (tileH + gap)
+                    base.draw(in: NSRect(x: rx, y: ry, width: tileW, height: tileH), from: .zero, operation: .copy, fraction: 1.0)
+                }
+            }
+        }
+
+        composed.unlockFocus()
+        self.previewImageView.image = composed
     }
 
     // MARK: - Split Video Form
@@ -2141,6 +2613,13 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
                 label.stringValue = "\(slider.integerValue) \(unit)"
                 break
             }
+        }
+        if tool.id == "frameImage" {
+            updateFramePreview()
+        } else if tool.id == "redactImage" {
+            updateRedactPreview()
+        } else if tool.id == "createCollage" {
+            updateCollagePreview()
         }
     }
 
@@ -2270,7 +2749,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             self.updateInfo(width: w, height: h, size: self.originalFileSize)
 
             if self.tool.id == "compress" {
-                self.updateCompressInfo(quality: self.qualitySlider?.integerValue ?? 80)
+                self.updateCompressPreview(quality: self.qualitySlider?.integerValue ?? 80)
             } else if self.tool.id == "watermark" {
                 self.updateWatermarkPreview()
             } else if self.tool.id == "cropImage" || self.tool.id == "cropVideo" {

@@ -25,11 +25,11 @@ internal static class AppIcon
         if (trayStream != null)
         {
             using (trayStream)
-            using (var icon = new System.Drawing.Icon(trayStream, System.Windows.Forms.SystemInformation.SmallIconSize))
-                return (System.Drawing.Icon)icon.Clone();
+            using (var trayIcon = new System.Drawing.Icon(trayStream, System.Windows.Forms.SystemInformation.SmallIconSize))
+                return (System.Drawing.Icon)trayIcon.Clone();
         }
         using var stream = Open();
-        using var icon = new System.Drawing.Icon(stream, System.Windows.Forms.SystemInformation.SmallIconSize);
-        return (System.Drawing.Icon)icon.Clone();
+        using var defaultIcon = new System.Drawing.Icon(stream, System.Windows.Forms.SystemInformation.SmallIconSize);
+        return (System.Drawing.Icon)defaultIcon.Clone();
     }
 }

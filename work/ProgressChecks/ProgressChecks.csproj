@@ -28,6 +28,7 @@
     <Compile Include="../DropDial/OfficeBridge.cs" Link="OfficeBridge.cs"/>
     <Compile Include="../DropDial/JobValidation.cs" Link="JobValidation.cs"/>
     <EmbeddedResource Include="../DropDial/assets/dropdial.ico" LogicalName="DropDial.AppIcon" />
+    <EmbeddedResource Include="../DropDial/assets/tray.ico" LogicalName="DropDial.TrayIcon" />
     <Compile Include="../DropDial/Flows.cs" Link="Flows.cs"/>
     <Compile Include="../DropDial/Presets.cs" Link="Presets.cs"/>
     <Compile Include="../DropDial/OutputFolder.cs" Link="OutputFolder.cs"/>

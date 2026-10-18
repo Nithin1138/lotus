@@ -14,5 +14,6 @@
     <Compile Include="../DropDial/Settings.cs" Link="Settings.cs"/>
     <Compile Include="../DropDial/StartupManager.cs" Link="StartupManager.cs"/>
     <EmbeddedResource Include="../DropDial/assets/dropdial.ico" LogicalName="DropDial.AppIcon"/>
+    <EmbeddedResource Include="../DropDial/assets/tray.ico" LogicalName="DropDial.TrayIcon"/>
   </ItemGroup>
 </Project>

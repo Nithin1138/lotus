@@ -7,7 +7,9 @@ namespace DropDial;
 // Application string helpers. All strings are natively in English.
 internal static class L
 {
+#pragma warning disable CS0067
     public static event Action? Changed;
+#pragma warning restore CS0067
 
     public static string Language
     {

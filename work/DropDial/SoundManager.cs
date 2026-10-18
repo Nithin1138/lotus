@@ -28,7 +28,7 @@ internal static class SoundManager
         if (!Enabled) return;
         try
         {
-            SystemSounds.MenuPopup.Play();
+            SystemSounds.Beep.Play();
         }
         catch { }
     }
