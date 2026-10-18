@@ -7,6 +7,7 @@ final class HotKeyManager {
     private var eventHandler: EventHandlerRef?
 
     func setup() {
+        guard eventHandler == nil else { return }
         var eventType = EventTypeSpec(
             eventClass: OSType(kEventClassKeyboard),
             eventKind: UInt32(kEventHotKeyPressed)
@@ -133,11 +134,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItem()
         setupShortcuts()
 
+        // 1. Listen for dynamic Accessibility permission changes
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("DropDialAccessibilityGranted"), object: nil, queue: .main) { [weak self] _ in
+            self?.setupShortcuts()
+            self?.rebuildMenu()
+        }
+
+        // 2. First launch onboarding & permissions check
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "DropDial_HasCompletedOnboarding")
+        if !AXIsProcessTrusted() && !hasCompletedOnboarding {
+            UserDefaults.standard.set(true, forKey: "DropDial_HasCompletedOnboarding")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                PermissionWelcomeWindowController.shared.show(isFirstLaunch: true)
+            }
+        }
+
         let args = Array(CommandLine.arguments.dropFirst())
         let files = args.filter { FileManager.default.fileExists(atPath: $0) && !$0.hasPrefix("-") }
         if !files.isEmpty {
             DropWheelWindowController.shared.loadFiles(files)
-        } else {
+        } else if hasCompletedOnboarding || AXIsProcessTrusted() {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 DropWheelWindowController.shared.showWheel()
             }
@@ -246,6 +262,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupShortcuts() {
+        // 0. Remove any previous monitors to prevent duplicate triggers
+        if let m = globalKeyMonitor { NSEvent.removeMonitor(m); globalKeyMonitor = nil }
+        if let m = localKeyMonitor { NSEvent.removeMonitor(m); localKeyMonitor = nil }
+        if let m = globalFlagsMonitor { NSEvent.removeMonitor(m); globalFlagsMonitor = nil }
+        if let m = globalDragMonitor { NSEvent.removeMonitor(m); globalDragMonitor = nil }
+
         // 1. Carbon Global HotKeys (No Accessibility permissions required!)
         HotKeyManager.shared.setup()
 
@@ -339,6 +361,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func rebuildMenu() {
         let menu = NSMenu()
         menu.autoenablesItems = false
+
+        if !AXIsProcessTrusted() {
+            let warnItem = NSMenuItem(title: "⚠️ Grant Accessibility (Drag Shortcuts)...", action: #selector(showPermissionsWindow(_:)), keyEquivalent: "")
+            warnItem.target = self
+            warnItem.isEnabled = true
+            warnItem.image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: nil)
+            menu.addItem(warnItem)
+            menu.addItem(NSMenuItem.separator())
+        }
 
         // 1. Formats Wheel (F8 / ⇧)
         let f8Item = NSMenuItem(title: "Formats Wheel (F8 / ⇧)", action: #selector(showFormatsWheel(_:)), keyEquivalent: "")
@@ -454,6 +485,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
+        // Permissions & Setup
+        let permTitle = AXIsProcessTrusted() ? "Accessibility: ✓ Enabled" : "Permissions & Setup (Accessibility)..."
+        let permItem = NSMenuItem(title: permTitle, action: #selector(showPermissionsWindow(_:)), keyEquivalent: "")
+        permItem.target = self
+        permItem.isEnabled = true
+        permItem.image = NSImage(systemSymbolName: AXIsProcessTrusted() ? "checkmark.shield" : "lock.shield", accessibilityDescription: nil)
+        menu.addItem(permItem)
+
         // 8. About
         let aboutItem = NSMenuItem(title: "About DropDial", action: #selector(aboutTapped(_:)), keyEquivalent: "")
         aboutItem.target = self
@@ -467,6 +506,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(quitItem)
 
         statusItem.menu = menu
+    }
+
+    @objc func showPermissionsWindow(_ sender: Any? = nil) {
+        PermissionWelcomeWindowController.shared.show()
     }
 
     @objc func showFormatsWheel(_ sender: Any? = nil) {

@@ -33,6 +33,7 @@ swiftc -O \
     "$ROOT_DIR/work/DropDial-macOS/FloatShelfWindow.swift" \
     "$ROOT_DIR/work/DropDial-macOS/ToolWindow.swift" \
     "$ROOT_DIR/work/DropDial-macOS/DropWheelWindow.swift" \
+    "$ROOT_DIR/work/DropDial-macOS/PermissionWelcomeWindow.swift" \
     "$ROOT_DIR/work/DropDial-macOS/main.swift" \
     -o "$MACOS_DIR/DropDial"
 
@@ -60,5 +61,45 @@ chmod +x "$MACOS_DIR/DropDial"
 chmod +x "$BACKEND_DIR/ocr-mac"
 chmod +x "$BACKEND_DIR/doc2pdf-mac"
 
+# 7. Strip quarantine attribute & ad-hoc sign bundle for smooth Gatekeeper launch
+xattr -cr "$APP_BUNDLE" 2>/dev/null || true
+echo "Signing application bundle (ad-hoc)..."
+codesign --force --deep --sign - "$APP_BUNDLE" 2>/dev/null || true
+
+# 8. Package Distribution Archives (ZIP and DMG)
+echo "Packaging distribution archives..."
+ZIP_FILE="$OUTPUT_DIR/DropDial-macOS.zip"
+rm -f "$ZIP_FILE"
+ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_FILE"
+
+DMG_FILE="$OUTPUT_DIR/DropDial.dmg"
+DMG_STAGE="$OUTPUT_DIR/dmg_staging"
+rm -rf "$DMG_STAGE" "$DMG_FILE"
+mkdir -p "$DMG_STAGE"
+cp -R "$APP_BUNDLE" "$DMG_STAGE/"
+ln -s /Applications "$DMG_STAGE/Applications"
+
+cat << 'EOF' > "$DMG_STAGE/Right-Click-To-Open.command"
+#!/usr/bin/env bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET="/Applications/DropDial.app"
+if [ ! -d "$TARGET" ]; then
+    TARGET="$DIR/DropDial.app"
+fi
+echo "Clearing macOS Gatekeeper quarantine for DropDial..."
+xattr -cr "$TARGET" 2>/dev/null || true
+echo "Launching DropDial..."
+open "$TARGET"
+EOF
+chmod +x "$DMG_STAGE/Right-Click-To-Open.command"
+
+echo "Creating DMG..."
+hdiutil create -volname "DropDial" -srcfolder "$DMG_STAGE" -ov -format UDZO "$DMG_FILE" >/dev/null 2>&1 || true
+rm -rf "$DMG_STAGE"
+
 echo "=== Build Complete! ==="
 echo "Application created at: $APP_BUNDLE"
+echo "ZIP archive: $ZIP_FILE"
+if [ -f "$DMG_FILE" ]; then
+    echo "DMG disk image: $DMG_FILE"
+fi

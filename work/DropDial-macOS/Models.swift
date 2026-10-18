@@ -144,7 +144,8 @@ enum Catalog {
         ActionOption(id: "action:copy", title: "COPY", label: "Copy", iconName: "doc.on.doc", description: "Copy files to clipboard, ready to paste in Finder"),
         ActionOption(id: "action:move", title: "MOVE", label: "Move", iconName: "folder", description: "Choose a destination folder and move originals there"),
         ActionOption(id: "action:copyPath", title: "COPY PATH", label: "Copy Path", iconName: "doc.text", description: "Copy full file paths as text to clipboard"),
-        ActionOption(id: "action:openTerminal", title: "TERMINAL", label: "Terminal", iconName: "terminal", description: "Open folder in Terminal or iTerm2")
+        ActionOption(id: "action:openTerminal", title: "TERMINAL", label: "Terminal", iconName: "terminal", description: "Open folder in Terminal or iTerm2"),
+        ActionOption(id: "action:metadata", title: "STRIP EXIF", label: "Strip Metadata", iconName: "eye.slash", description: "Remove camera, GPS location, and privacy metadata")
     ]
 
     static func multiFileTools(for paths: [String]) -> [ToolOption] {
@@ -203,7 +204,8 @@ enum Catalog {
                     ToolField(name: "height", label: "Height (px)", defaultValue: "", kind: "number", choices: nil)
                 ]),
                 ToolOption(id: "cropImage", label: "Crop", iconName: "crop", fields: [
-                    ToolField(name: "ratio", label: "Aspect Ratio", defaultValue: "Free Style (Custom Drag)", kind: "select", choices: ["Free Style (Custom Drag)", "1:1 (Square)", "16:9 (Widescreen)", "4:3 (Standard)", "9:16 (Story / Reel)", "3:2 (Classic Photo)", "Original Ratio"])
+                    ToolField(name: "ratio", label: "Aspect Ratio", defaultValue: "Free Style (Custom Drag)", kind: "select", choices: ["Free Style (Custom Drag)", "1:1 (Square)", "16:9 (Widescreen)", "4:3 (Standard)", "9:16 (Story / Reel)", "3:2 (Classic Photo)", "Original Ratio"]),
+                    ToolField(name: "rotation", label: "Rotation", defaultValue: "0°", kind: "select", choices: ["0°", "90° (Clockwise)", "180° (Upside Down)", "270° (Counter-Clockwise)"])
                 ]),
                 ToolOption(id: "editImage", label: "Adjust", iconName: "slider.horizontal.3", fields: [
                     ToolField(name: "exposure", label: "Exposure", defaultValue: "0", kind: "slider", choices: nil),
@@ -219,22 +221,6 @@ enum Catalog {
                     ToolField(name: "padding", label: "Padding (px)", defaultValue: "80", kind: "number", choices: nil),
                     ToolField(name: "radius", label: "Corner Radius", defaultValue: "24", kind: "number", choices: nil),
                     ToolField(name: "shadow", label: "Shadow Blur", defaultValue: "20", kind: "number", choices: nil)
-                ]),
-                ToolOption(id: "redactImage", label: "Redact", iconName: "eye.slash.fill", fields: [
-                    ToolField(name: "style", label: "Redaction Style", defaultValue: "solid", kind: "select", choices: ["solid", "blur", "pixelate"]),
-                    ToolField(name: "blockSize", label: "Mosaic Block Size", defaultValue: "18", kind: "number", choices: nil)
-                ]),
-                ToolOption(id: "annotateImage", label: "Annotate", iconName: "pencil.and.outline", fields: [
-                    ToolField(name: "text", label: "Text", defaultValue: "APPROVED", kind: "text", choices: nil),
-                    ToolField(name: "color", label: "Color", defaultValue: "#ff6500", kind: "select", choices: ["#ff6500", "#ef4444", "#3b82f6", "#10b981", "#ffffff", "#000000"]),
-                    ToolField(name: "position", label: "Position", defaultValue: "bottom_right", kind: "select", choices: ["bottom_right", "bottom_left", "top_right", "top_left", "center"])
-                ]),
-                ToolOption(id: "rotateImage", label: "Rotate", iconName: "rotate.right", fields: [
-                    ToolField(name: "angle", label: "Rotation Angle", defaultValue: "90", kind: "select", choices: ["90", "180", "270"])
-                ]),
-                ToolOption(id: "ocrImage", label: "OCR", iconName: "doc.text.viewfinder", fields: [
-                    ToolField(name: "language", label: "Language", defaultValue: "en", kind: "select", choices: ["en", "auto", "zh"]),
-                    ToolField(name: "output", label: "Output Format", defaultValue: "pdf", kind: "select", choices: ["pdf", "txt"])
                 ]),
                 ToolOption(id: "watermark", label: "Watermark", iconName: "text.bubble", fields: [
                     ToolField(name: "text", label: "Watermark Text", defaultValue: "CONFIDENTIAL", kind: "text", choices: nil),
@@ -263,8 +249,14 @@ enum Catalog {
                     ToolField(name: "opacity", label: "Opacity", defaultValue: "35%", kind: "select", choices: ["20%", "35%", "50%", "70%", "90%"]),
                     ToolField(name: "color", label: "Color", defaultValue: "#ffffff", kind: "select", choices: ["#ffffff", "#000000", "#ff6500", "#ef4444", "#3b82f6", "#10b981", "#f59e0b"])
                 ]),
-                ToolOption(id: "removeMetadata", label: "Metadata", iconName: "eye.slash", fields: []),
-                ToolOption(id: "createPDF", label: "To PDF", iconName: "doc.on.doc", fields: [])
+                ToolOption(id: "redactImage", label: "Redact", iconName: "eye.slash.fill", fields: [
+                    ToolField(name: "style", label: "Redaction Style", defaultValue: "solid", kind: "select", choices: ["solid", "blur", "pixelate"]),
+                    ToolField(name: "blockSize", label: "Mosaic Block Size", defaultValue: "18", kind: "number", choices: nil)
+                ]),
+                ToolOption(id: "ocrImage", label: "OCR", iconName: "doc.text.viewfinder", fields: [
+                    ToolField(name: "language", label: "Language", defaultValue: "en", kind: "select", choices: ["en", "auto", "zh"]),
+                    ToolField(name: "output", label: "Output Format", defaultValue: "pdf", kind: "select", choices: ["pdf", "txt"])
+                ])
             ]
         case "video":
             return [
@@ -312,16 +304,6 @@ enum Catalog {
                     ]),
                     ToolField(name: "opacity", label: "Opacity", defaultValue: "35%", kind: "select", choices: ["20%", "35%", "50%", "70%", "90%"]),
                     ToolField(name: "color", label: "Color", defaultValue: "#ffffff", kind: "select", choices: ["#ffffff", "#000000", "#ff6500", "#ef4444", "#3b82f6", "#10b981", "#f59e0b"])
-                ]),
-                ToolOption(id: "trimVideo", label: "Trim", iconName: "timeline.selection", fields: [
-                    ToolField(name: "start", label: "Start (s)", defaultValue: "0", kind: "number", choices: nil),
-                    ToolField(name: "end", label: "End (s)", defaultValue: "10", kind: "number", choices: nil)
-                ]),
-                ToolOption(id: "cropVideo", label: "Crop", iconName: "crop", fields: [
-                    ToolField(name: "ratio", label: "Aspect Ratio", defaultValue: "Free Style (Custom Drag)", kind: "select", choices: ["Free Style (Custom Drag)", "1:1 (Square)", "16:9 (Widescreen)", "4:3 (Standard)", "9:16 (Story / Reel)", "3:2 (Classic Photo)"])
-                ]),
-                ToolOption(id: "splitVideo", label: "Split", iconName: "square.split.2x1", fields: [
-                    ToolField(name: "parts", label: "Equal Parts", defaultValue: "2", kind: "select", choices: ["2", "3", "4", "5", "6"])
                 ]),
                 ToolOption(id: "videoToGif", label: "To GIF", iconName: "photo.on.rectangle.angled", fields: [
                     ToolField(name: "fps", label: "FPS", defaultValue: "15", kind: "select", choices: ["10", "15", "24"]),

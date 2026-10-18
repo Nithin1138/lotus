@@ -48,24 +48,92 @@
   addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 
-  /* ---------- Latest release (falls back to the links in the HTML) ---------- */
-  let release = { tag: "v0.1.1", size: 274469261 };
-  function renderRelease() {
-    const mb = Math.round(release.size / 1048576);
-    const label = `${release.tag} · ${mb} MB · portable ZIP`;
-    $$("[data-release-meta]").forEach(el => { el.textContent = label; });
+  /* ---------- Platform & Latest Releases ---------- */
+  const isMac = /Macintosh|Mac OS X|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  // Platform switcher tabs
+  const tabMac = $("#tab-mac");
+  const tabWin = $("#tab-win");
+  const panelMac = $("#panel-mac");
+  const panelWin = $("#panel-win");
+
+  function setPlatform(platform) {
+    const isMacPlatform = platform === "mac";
+    if (tabMac) {
+      tabMac.classList.toggle("active", isMacPlatform);
+      tabMac.setAttribute("aria-selected", isMacPlatform ? "true" : "false");
+    }
+    if (tabWin) {
+      tabWin.classList.toggle("active", !isMacPlatform);
+      tabWin.setAttribute("aria-selected", !isMacPlatform ? "true" : "false");
+    }
+    if (panelMac) panelMac.classList.toggle("active", isMacPlatform);
+    if (panelWin) panelWin.classList.toggle("active", !isMacPlatform);
   }
+
+  if (tabMac) tabMac.addEventListener("click", () => setPlatform("mac"));
+  if (tabWin) tabWin.addEventListener("click", () => setPlatform("win"));
+
+  // Default platform based on user's OS
+  setPlatform(isMac ? "mac" : "win");
+
+  // Copy install command button
+  const copyBtn = $("#copy-install-cmd");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", async () => {
+      const cmd = "curl -fsSL https://raw.githubusercontent.com/Nithin1138/lotus/advance-features/install.sh | bash";
+      try {
+        await navigator.clipboard.writeText(cmd);
+        const originalText = copyBtn.innerHTML;
+        copyBtn.innerHTML = "<span>✓ Copied!</span>";
+        setTimeout(() => { copyBtn.innerHTML = originalText; }, 2000);
+      } catch (err) {
+        window.prompt("Copy install command:", cmd);
+      }
+    });
+  }
+
+  // Fetch Releases for macOS and Windows
+  let releaseWin = { tag: "v0.1.1", size: 274469261 };
+  let releaseMac = { tag: "v0.1.1", size: 3600000 };
+
   fetch("https://api.github.com/repos/Nithin1138/lotus/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
     .then(response => response.ok ? response.json() : Promise.reject(response.status))
     .then(data => {
-      const asset = (data.assets || []).find(a => /windows-x64\.zip$/i.test(a.name));
-      if (!asset) return;
-      release = { tag: data.tag_name, size: asset.size };
-      $$("[data-download]").forEach(a => { a.href = asset.browser_download_url; });
+      const assets = data.assets || [];
+      const winAsset = assets.find(a => /windows-x64\.zip$/i.test(a.name));
+      const macAsset = assets.find(a => /(macOS\.zip|\.dmg)$/i.test(a.name));
+
+      if (winAsset) {
+        releaseWin = { tag: data.tag_name, size: winAsset.size };
+        $$("[data-download-win]").forEach(a => { a.href = winAsset.browser_download_url; });
+        const mb = Math.round(winAsset.size / 1048576);
+        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${data.tag_name} · ${mb} MB · portable ZIP`; });
+      }
+
+      if (macAsset) {
+        releaseMac = { tag: data.tag_name, size: macAsset.size };
+        $$("[data-download-mac]").forEach(a => { a.href = macAsset.browser_download_url; });
+        const mb = Math.round(macAsset.size / 1048576);
+        $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${data.tag_name} · ${mb} MB · macOS 12+ (Apple Silicon & Intel)`; });
+      }
+
       $$("[data-release-notes]").forEach(a => { a.href = data.html_url; });
-      renderRelease();
+
+      // Update hero download button based on user OS
+      $$("[data-download]").forEach(a => {
+        if (isMac) {
+          a.href = macAsset ? macAsset.browser_download_url : "#download";
+          const span = a.querySelector("span");
+          if (span) span.textContent = "Download for macOS";
+        } else {
+          a.href = winAsset ? winAsset.browser_download_url : "#download";
+          const span = a.querySelector("span");
+          if (span) span.textContent = "Download for Windows";
+        }
+      });
     })
-    .catch(() => { /* offline or rate limited: keep the built-in links */ });
+    .catch(() => { /* offline or rate limited */ });
 
   /* ---------- Interactive demo ---------- */
   // Menus follow the app's Catalog.cs: what each extension converts to, and which tools it offers for a single file.

@@ -208,7 +208,12 @@ def tool(path,action,params):
     if fmt in ('svg','heif'): fmt='png'
     if fmt=='jpeg': fmt='jpg'
     if fmt=='tif': fmt='tiff'
-    if action=='cropImage': image=crop(image,params)
+    if action=='cropImage':
+        image=crop(image,params)
+        rot=str(params.get('rotation',''))
+        if '90' in rot: image=image.transpose(Image.Transpose.ROTATE_270)
+        elif '180' in rot: image=image.transpose(Image.Transpose.ROTATE_180)
+        elif '270' in rot: image=image.transpose(Image.Transpose.ROTATE_90)
     elif action=='redactImage': image=redact(image,params)
     elif action=='rotateImage': image=rotate(image,params)
     elif action=='resizeImage': image=imagetools.resize(image,params)

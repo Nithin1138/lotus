@@ -22,18 +22,44 @@ A desktop file conversion and media utility running in the system tray / menu ba
 
 ---
 
-## macOS Version
+## Quick Install (macOS)
 
-### Build
+### 1. Terminal (One-Line Install)
+
+Run this single command in Terminal to build/install DropDial to `/Applications`, clear Gatekeeper quarantine, and launch it:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Nithin1138/lotus/advance-features/install.sh | bash
+```
+
+### 2. Website & Direct Download
+
+Download the disk image or archive from the [Releases page](https://github.com/Nithin1138/lotus/releases):
+- **`DropDial.dmg`**: Drag `DropDial.app` into `Applications`.
+- **`DropDial-macOS.zip`**: Extract and drag into `Applications`.
+
+### 3. Smooth First-Launch & Permissions
+
+When you open DropDial for the first time:
+- A welcome window guides you to grant **Accessibility** permission with 1 click.
+- **Why Accessibility?** macOS requires this permission for DropDial to detect modifier keys (`⇧ Shift`, `⌘ Cmd`, `⌃ Ctrl`) while you are dragging files from Finder.
+- **Live Permission Polling**: The moment you toggle DropDial in *System Settings > Privacy & Security > Accessibility*, DropDial immediately recognizes it and enables drag shortcuts without requiring any restart!
+- **Zero-Permission Fallback**: Even without Accessibility permissions, all conversions and tools work via Carbon HotKeys (`F8`, `F9`, `F10`, `⌥ Space`) and by dragging files directly onto the menu bar icon!
+
+---
+
+## macOS Manual Build
 
 ```bash
 ./build-mac.sh
 ```
 
-This compiles the native Swift application, integrates the Python engine and Apple Vision OCR, and produces `outputs/DropDial-macOS/DropDial.app`.
+This compiles the native Swift application, integrates the Python engine and Apple Vision OCR, and produces:
+- `outputs/DropDial-macOS/DropDial.app`
+- `outputs/DropDial-macOS/DropDial.dmg`
+- `outputs/DropDial-macOS/DropDial-macOS.zip`
 
-### Run
-
+Run directly:
 ```bash
 open outputs/DropDial-macOS/DropDial.app
 ```

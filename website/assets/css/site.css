@@ -281,6 +281,26 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 .install { text-align: left; margin: 36px auto 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 10px; max-width: 460px; }
 .install li { counter-increment: s; position: relative; padding: 12px 16px 12px 52px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 .install li::before { content: counter(s); position: absolute; left: 14px; top: 11px; width: 26px; height: 26px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-weight: 700; font-size: .9rem; display: grid; place-items: center; }
+.platform-tabs { display: inline-flex; gap: 6px; padding: 4px; background: var(--bg-alt); border: 1px solid var(--line); border-radius: 999px; margin-top: 24px; }
+.platform-tab { border: none; background: none; font: 600 .9rem var(--font); color: var(--muted); padding: 8px 18px; border-radius: 999px; cursor: pointer; transition: all .15s ease; display: inline-flex; align-items: center; gap: 8px; }
+.platform-tab.active { background: var(--surface); color: var(--ink); box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }
+.platform-panel { display: none; width: 100%; max-width: 580px; margin-top: 24px; }
+.platform-panel.active { display: block; }
+
+.terminal-box { background: #16181A; border: 1px solid #2B2F33; border-radius: 14px; text-align: left; padding: 14px 16px; margin: 20px auto 0; box-shadow: 0 8px 24px -10px rgba(0, 0, 0, .5); }
+.terminal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.terminal-dots { display: flex; gap: 6px; }
+.terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+.terminal-dot.red { background: #FF5F56; }
+.terminal-dot.yellow { background: #FFBD2E; }
+.terminal-dot.green { background: #27C93F; }
+.terminal-title { font-size: .78rem; font-family: monospace; color: #8F969E; }
+.terminal-cmd { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: .88rem; color: #38EF7D; background: #0E1012; padding: 10px 14px; border-radius: 8px; border: 1px solid #202326; overflow-x: auto; }
+.terminal-cmd code { color: #58E490; white-space: nowrap; }
+.terminal-cmd .copy-btn { background: #24282C; color: #E1E4E8; border: 1px solid #363B40; border-radius: 6px; padding: 6px 12px; font-size: .8rem; font-family: var(--font); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; transition: background .15s; }
+.terminal-cmd .copy-btn:hover { background: #32383E; }
+.terminal-hint { font-size: .82rem; color: #9A9FA5; margin-top: 8px; text-align: center; }
+
 .links { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px 12px; justify-content: center; color: var(--muted); }
 .requirements { margin-top: 18px; color: var(--muted); font-size: .9rem; max-width: 36em; }
 
