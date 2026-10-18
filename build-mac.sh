@@ -30,6 +30,7 @@ swiftc -O \
     "$ROOT_DIR/work/Lotus-macOS/PreviewService.swift" \
     "$ROOT_DIR/work/Lotus-macOS/BackendBridge.swift" \
     "$ROOT_DIR/work/Lotus-macOS/TaskIndicatorWindow.swift" \
+    "$ROOT_DIR/work/Lotus-macOS/FloatShelfWindow.swift" \
     "$ROOT_DIR/work/Lotus-macOS/ToolWindow.swift" \
     "$ROOT_DIR/work/Lotus-macOS/DropWheelWindow.swift" \
     "$ROOT_DIR/work/Lotus-macOS/main.swift" \

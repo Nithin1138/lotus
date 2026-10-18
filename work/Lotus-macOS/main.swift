@@ -47,6 +47,9 @@ final class HotKeyManager {
 
         // ID 4: Cmd + Shift + L (keyCode 37) -> Toggle Lotus Wheel
         register(id: 4, keyCode: UInt32(kVK_ANSI_L), modifiers: UInt32(cmdKey | shiftKey))
+
+        // ID 5: F10 (keyCode 109) -> Toggle Actions Wheel
+        register(id: 5, keyCode: UInt32(kVK_F10), modifiers: 0)
     }
 
     private func register(id: UInt32, keyCode: UInt32, modifiers: UInt32) {
@@ -62,11 +65,13 @@ final class HotKeyManager {
         DispatchQueue.main.async {
             switch id {
             case 1:
-                DropWheelWindowController.shared.toggleWheel(toolsMode: false)
+                DropWheelWindowController.shared.toggleWheel(mode: .conversions)
             case 2:
-                DropWheelWindowController.shared.toggleWheel(toolsMode: true)
+                DropWheelWindowController.shared.toggleWheel(mode: .tools)
+            case 5:
+                DropWheelWindowController.shared.toggleWheel(mode: .actions)
             case 3, 4:
-                DropWheelWindowController.shared.toggleWheel(toolsMode: nil)
+                DropWheelWindowController.shared.toggleWheel(mode: nil)
             default:
                 break
             }
@@ -193,20 +198,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return event
         }
 
-        // 4. Flags monitor (Shift while dragging)
+        // 4. Flags monitor (Shift, Command, or Control while dragging)
         globalFlagsMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged]) { event in
             let isMouseDown = (NSEvent.pressedMouseButtons & 1) != 0
-            if isMouseDown && event.modifierFlags.contains(.shift) {
-                let isTools = event.modifierFlags.contains(.control) || event.modifierFlags.contains(.command)
-                DropWheelWindowController.shared.showAtCursor(toolsMode: isTools)
+            guard isMouseDown else { return }
+
+            if event.modifierFlags.contains(.control) {
+                DropWheelWindowController.shared.showAtCursor(mode: .actions)
+            } else if event.modifierFlags.contains(.command) {
+                DropWheelWindowController.shared.showAtCursor(mode: .tools)
+            } else if event.modifierFlags.contains(.shift) {
+                DropWheelWindowController.shared.showAtCursor(mode: .conversions)
             }
         }
 
         // 5. Drag monitor
         globalDragMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged]) { event in
-            if event.modifierFlags.contains(.shift) {
-                let isTools = event.modifierFlags.contains(.control) || event.modifierFlags.contains(.command)
-                DropWheelWindowController.shared.showAtCursor(toolsMode: isTools)
+            if event.modifierFlags.contains(.control) {
+                DropWheelWindowController.shared.showAtCursor(mode: .actions)
+            } else if event.modifierFlags.contains(.command) {
+                DropWheelWindowController.shared.showAtCursor(mode: .tools)
+            } else if event.modifierFlags.contains(.shift) {
+                DropWheelWindowController.shared.showAtCursor(mode: .conversions)
             }
         }
     }
@@ -217,13 +230,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // F8 (keyCode 100) -> Show Formats Wheel
         if code == 100 {
-            DropWheelWindowController.shared.toggleWheel(toolsMode: false)
+            DropWheelWindowController.shared.toggleWheel(mode: .conversions)
             return true
         }
 
         // F9 (keyCode 101) -> Show Tools Wheel
         if code == 101 {
-            DropWheelWindowController.shared.toggleWheel(toolsMode: true)
+            DropWheelWindowController.shared.toggleWheel(mode: .tools)
+            return true
+        }
+
+        // F10 (keyCode 109) -> Show Actions Wheel
+        if code == 109 {
+            DropWheelWindowController.shared.toggleWheel(mode: .actions)
             return true
         }
 
@@ -256,25 +275,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func rebuildMenu() {
         let menu = NSMenu()
 
-        // 1. Formats Wheel (F8 / ⌥Space)
-        let f8Item = NSMenuItem(title: "Formats Wheel (F8)", action: #selector(showFormatsWheel), keyEquivalent: "")
+        // 1. Formats Wheel (F8 / ⇧)
+        let f8Item = NSMenuItem(title: "Formats Wheel (F8 / ⇧)", action: #selector(showFormatsWheel), keyEquivalent: "")
         f8Item.target = self
         f8Item.image = NSImage(systemSymbolName: "circle.grid.cross", accessibilityDescription: nil)
         menu.addItem(f8Item)
 
-        // 2. Tools Wheel (F9)
-        let f9Item = NSMenuItem(title: "Tools Wheel (F9)", action: #selector(showToolsWheel), keyEquivalent: "")
+        // 2. Tools Wheel (F9 / ⌘)
+        let f9Item = NSMenuItem(title: "Tools Wheel (F9 / ⌘)", action: #selector(showToolsWheel), keyEquivalent: "")
         f9Item.target = self
         f9Item.image = NSImage(systemSymbolName: "slider.horizontal.3", accessibilityDescription: nil)
         menu.addItem(f9Item)
 
-        // 3. Quick Toggle (⌥Space)
+        // 3. Actions Wheel (F10 / ⌃)
+        let f10Item = NSMenuItem(title: "File Actions Wheel (F10 / ⌃)", action: #selector(showActionsWheel), keyEquivalent: "")
+        f10Item.target = self
+        f10Item.image = NSImage(systemSymbolName: "hand.tap", accessibilityDescription: nil)
+        menu.addItem(f10Item)
+
+        // 4. Floating Shelf (Show)
+        let shelfItem = NSMenuItem(title: "Floating Shelf", action: #selector(showFloatingShelf), keyEquivalent: "")
+        shelfItem.target = self
+        shelfItem.image = NSImage(systemSymbolName: "pin.fill", accessibilityDescription: nil)
+        menu.addItem(shelfItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        // 5. Quick Toggle (⌥Space)
         let toggleItem = NSMenuItem(title: "Quick Toggle Wheel (⌥Space / ⌘⇧L)", action: #selector(toggleWheelTapped), keyEquivalent: "")
         toggleItem.target = self
         toggleItem.image = NSImage(systemSymbolName: "command", accessibilityDescription: nil)
         menu.addItem(toggleItem)
 
-        // 4. Select files (⌘O)
+        // 6. Select files (⌘O)
         let openItem = NSMenuItem(title: "Select Files to Convert...", action: #selector(selectFilesTapped), keyEquivalent: "o")
         openItem.target = self
         openItem.image = NSImage(systemSymbolName: "plus.rectangle.on.rectangle", accessibilityDescription: nil)
@@ -282,7 +315,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        // 5. Output Folder menu
+        // 7. Output Folder menu
         let currentOut = UserDefaults.standard.string(forKey: "LOTUS_OUTPUT_DIR") ?? ""
         let outMenu = NSMenu()
         let sameItem = NSMenuItem(title: "Same as Source File (Default)", action: #selector(setOutputSame), keyEquivalent: "")
@@ -307,12 +340,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        // 6. About
+        // 8. About
         let aboutItem = NSMenuItem(title: "About Lotus", action: #selector(aboutTapped), keyEquivalent: "")
         aboutItem.target = self
         menu.addItem(aboutItem)
 
-        // 7. Quit
+        // 9. Quit
         let quitItem = NSMenuItem(title: "Quit Lotus", action: #selector(quitTapped), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
@@ -321,11 +354,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showFormatsWheel() {
-        DropWheelWindowController.shared.showAtCursor(toolsMode: false)
+        DropWheelWindowController.shared.showAtCursor(mode: .conversions)
     }
 
     @objc private func showToolsWheel() {
-        DropWheelWindowController.shared.showAtCursor(toolsMode: true)
+        DropWheelWindowController.shared.showAtCursor(mode: .tools)
+    }
+
+    @objc private func showActionsWheel() {
+        DropWheelWindowController.shared.showAtCursor(mode: .actions)
+    }
+
+    @objc private func showFloatingShelf() {
+        FloatShelfWindowController.shared.showWindow(nil)
+        FloatShelfWindowController.shared.window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc private func toggleWheelTapped() {
@@ -378,7 +421,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func aboutTapped() {
         let alert = NSAlert()
         alert.messageText = "Lotus 1.0.0 (macOS Native)"
-        alert.informativeText = "Drag. Drop. Convert.\nUniversal desktop file conversion and media tools.\nRunning natively on macOS with Python and Apple Vision OCR.\n\nShortcuts:\n• F8 / ⌥Space: Open Formats Wheel\n• F9: Open Tools Wheel\n• Tab: Switch between Formats and Tools\n• Esc: Close Wheel\n• Numbers 1-8: Quick select slice\n• Click outside: Dismiss Wheel"
+        alert.informativeText = "Drag. Drop. Convert.\nUniversal desktop file conversion, media tools, and file actions.\nRunning natively on macOS with Python and Apple Vision OCR.\n\n3 Wheels:\n• ⇧ Shift / F8: Formats Wheel\n• ⌘ Command / F9: Tools Wheel\n• ⌃ Control / F10: Universal File Actions (AirDrop, Float Shelf, Copy, Move, Copy Path, Terminal)\n\nControls:\n• Tab: Cycle Wheels\n• Esc: Close Wheel\n• Numbers 1-8: Quick select slice\n• Audio Tick feedback on hover"
         alert.alertStyle = .informational
         alert.runModal()
     }

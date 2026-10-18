@@ -1,5 +1,19 @@
 import AppKit
 
+enum WheelMode: String, CaseIterable {
+    case conversions = "CONVERT (⇧)"
+    case tools = "TOOLS (⌘)"
+    case actions = "ACTIONS (⌃)"
+
+    var next: WheelMode {
+        switch self {
+        case .conversions: return .tools
+        case .tools: return .actions
+        case .actions: return .conversions
+        }
+    }
+}
+
 final class KeyPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
@@ -15,13 +29,14 @@ final class RadialWheelView: NSView {
         let title: String
         let iconName: String?
         let isTool: Bool
+        let isAction: Bool
     }
 
     var items: [SliceItem] = []
     var hoveredIndex: Int = -1
     var isHubHovered: Bool = false
     var currentPaths: [String] = []
-    var isToolsMode: Bool = false
+    var mode: WheelMode = .conversions
 
     var onSelectSlice: ((SliceItem, [String]?) -> Void)?
     var onHubClicked: (() -> Void)?
@@ -64,50 +79,80 @@ final class RadialWheelView: NSView {
     }
 
     func loadDefaultItems() {
-        if isToolsMode {
+        switch mode {
+        case .actions:
+            items = Catalog.fileActions.map {
+                SliceItem(id: $0.id, title: $0.title, iconName: $0.iconName, isTool: false, isAction: true)
+            }
+        case .tools:
             items = [
-                SliceItem(id: "compress", title: "Compress", iconName: "arrow.down.circle", isTool: true),
-                SliceItem(id: "resizeImage", title: "Resize", iconName: "arrow.up.left.and.arrow.down.right", isTool: true),
-                SliceItem(id: "cropImage", title: "Crop", iconName: "crop", isTool: true),
-                SliceItem(id: "rotateImage", title: "Rotate", iconName: "rotate.right", isTool: true),
-                SliceItem(id: "ocrImage", title: "OCR", iconName: "doc.text.viewfinder", isTool: true),
-                SliceItem(id: "watermark", title: "Watermark", iconName: "text.bubble", isTool: true),
-                SliceItem(id: "removeMetadata", title: "Metadata", iconName: "eye.slash", isTool: true),
-                SliceItem(id: "createPDF", title: "To PDF", iconName: "doc.on.doc", isTool: true)
+                SliceItem(id: "compress", title: "Compress", iconName: "arrow.down.circle", isTool: true, isAction: false),
+                SliceItem(id: "resizeImage", title: "Resize", iconName: "arrow.up.left.and.arrow.down.right", isTool: true, isAction: false),
+                SliceItem(id: "cropImage", title: "Crop", iconName: "crop", isTool: true, isAction: false),
+                SliceItem(id: "rotateImage", title: "Rotate", iconName: "rotate.right", isTool: true, isAction: false),
+                SliceItem(id: "ocrImage", title: "OCR", iconName: "doc.text.viewfinder", isTool: true, isAction: false),
+                SliceItem(id: "watermark", title: "Watermark", iconName: "text.bubble", isTool: true, isAction: false),
+                SliceItem(id: "removeMetadata", title: "Metadata", iconName: "eye.slash", isTool: true, isAction: false),
+                SliceItem(id: "createPDF", title: "To PDF", iconName: "doc.on.doc", isTool: true, isAction: false)
             ]
-        } else {
+        case .conversions:
             items = [
-                SliceItem(id: "convert:jpg", title: "JPG", iconName: nil, isTool: false),
-                SliceItem(id: "convert:png", title: "PNG", iconName: nil, isTool: false),
-                SliceItem(id: "convert:webp", title: "WEBP", iconName: nil, isTool: false),
-                SliceItem(id: "convert:pdf", title: "PDF", iconName: nil, isTool: false),
-                SliceItem(id: "convert:mp4", title: "MP4", iconName: nil, isTool: false),
-                SliceItem(id: "convert:mp3", title: "MP3", iconName: nil, isTool: false),
-                SliceItem(id: "convert:zip", title: "ZIP", iconName: nil, isTool: false),
-                SliceItem(id: "convert:gif", title: "GIF", iconName: nil, isTool: false)
+                SliceItem(id: "convert:jpg", title: "JPG", iconName: nil, isTool: false, isAction: false),
+                SliceItem(id: "convert:png", title: "PNG", iconName: nil, isTool: false, isAction: false),
+                SliceItem(id: "convert:webp", title: "WEBP", iconName: nil, isTool: false, isAction: false),
+                SliceItem(id: "convert:pdf", title: "PDF", iconName: nil, isTool: false, isAction: false),
+                SliceItem(id: "convert:mp4", title: "MP4", iconName: nil, isTool: false, isAction: false),
+                SliceItem(id: "convert:mp3", title: "MP3", iconName: nil, isTool: false, isAction: false),
+                SliceItem(id: "convert:zip", title: "ZIP", iconName: nil, isTool: false, isAction: false),
+                SliceItem(id: "convert:gif", title: "GIF", iconName: nil, isTool: false, isAction: false)
             ]
         }
         hubThumbnail = nil
+        hoveredIndex = -1
         needsDisplay = true
     }
 
-    func configure(paths: [String], toolsMode: Bool) {
+    func configure(paths: [String], mode: WheelMode) {
         self.currentPaths = paths
-        self.isToolsMode = toolsMode
+        self.mode = mode
 
         guard let first = paths.first else {
             loadDefaultItems()
             return
         }
 
-        let cat = Catalog.category(for: first)
-        if toolsMode {
-            let tools = Catalog.tools(for: cat)
-            items = tools.prefix(8).map { SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true) }
-        } else {
+        switch mode {
+        case .actions:
+            items = Catalog.fileActions.map {
+                SliceItem(id: $0.id, title: $0.title, iconName: $0.iconName, isTool: false, isAction: true)
+            }
+        case .tools:
+            if paths.count > 1 {
+                let multi = Catalog.multiFileTools(for: paths)
+                if !multi.isEmpty {
+                    items = multi.prefix(8).map {
+                        SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
+                    }
+                } else {
+                    let cat = Catalog.category(for: first)
+                    items = Catalog.tools(for: cat).prefix(8).map {
+                        SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
+                    }
+                }
+            } else {
+                let cat = Catalog.category(for: first)
+                let tools = Catalog.tools(for: cat)
+                items = tools.prefix(8).map {
+                    SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
+                }
+            }
+        case .conversions:
             let formats = Catalog.targetFormats(for: first)
-            items = formats.prefix(8).map { SliceItem(id: "convert:\($0)", title: $0.uppercased(), iconName: nil, isTool: false) }
+            items = formats.prefix(8).map {
+                SliceItem(id: "convert:\($0)", title: $0.uppercased(), iconName: nil, isTool: false, isAction: false)
+            }
         }
+
         hoveredIndex = -1
 
         PreviewService.shared.loadPreview(for: first, targetSize: CGSize(width: 88, height: 88)) { [weak self] img in
@@ -118,7 +163,29 @@ final class RadialWheelView: NSView {
         needsDisplay = true
     }
 
-    // MARK: - Keyboard Controls
+    func setMode(_ newMode: WheelMode) {
+        guard self.mode != newMode else { return }
+        self.mode = newMode
+        NSSound(named: "Pop")?.play()
+        if !currentPaths.isEmpty {
+            configure(paths: currentPaths, mode: newMode)
+        } else {
+            loadDefaultItems()
+        }
+    }
+
+    // MARK: - Keyboard & Modifier Controls
+    override func flagsChanged(with event: NSEvent) {
+        super.flagsChanged(with: event)
+        if event.modifierFlags.contains(.control) {
+            setMode(.actions)
+        } else if event.modifierFlags.contains(.command) {
+            setMode(.tools)
+        } else if event.modifierFlags.contains(.shift) {
+            setMode(.conversions)
+        }
+    }
+
     override func keyDown(with event: NSEvent) {
         let code = event.keyCode
         if code == 53 { // Escape
@@ -126,25 +193,25 @@ final class RadialWheelView: NSView {
             return
         }
         if code == 100 { // F8 -> Formats Mode
-            DropWheelWindowController.shared.toggleWheel(toolsMode: false)
+            DropWheelWindowController.shared.toggleWheel(mode: .conversions)
             return
         }
         if code == 101 { // F9 -> Tools Mode
-            DropWheelWindowController.shared.toggleWheel(toolsMode: true)
+            DropWheelWindowController.shared.toggleWheel(mode: .tools)
             return
         }
-        if code == 48 { // Tab -> Switch Modes
-            isToolsMode.toggle()
-            if !currentPaths.isEmpty {
-                configure(paths: currentPaths, toolsMode: isToolsMode)
-            } else {
-                loadDefaultItems()
-            }
+        if code == 109 { // F10 -> Actions Mode
+            DropWheelWindowController.shared.toggleWheel(mode: .actions)
+            return
+        }
+        if code == 48 { // Tab -> Cycle Modes
+            setMode(mode.next)
             return
         }
         if code == 123 || code == 126 { // Left or Up arrow
             if !items.isEmpty {
                 hoveredIndex = (hoveredIndex - 1 + items.count) % items.count
+                NSSound(named: "Tink")?.play()
                 needsDisplay = true
             }
             return
@@ -152,6 +219,7 @@ final class RadialWheelView: NSView {
         if code == 124 || code == 125 { // Right or Down arrow
             if !items.isEmpty {
                 hoveredIndex = (hoveredIndex + 1) % items.count
+                NSSound(named: "Tink")?.play()
                 needsDisplay = true
             }
             return
@@ -212,6 +280,9 @@ final class RadialWheelView: NSView {
         let newIndex = (hit >= 0) ? hit : -1
 
         if newIndex != hoveredIndex || newHub != isHubHovered {
+            if (newIndex != hoveredIndex && newIndex >= 0) || (newHub != isHubHovered && newHub) {
+                NSSound(named: "Tink")?.play()
+            }
             hoveredIndex = newIndex
             isHubHovered = newHub
             needsDisplay = true
@@ -267,7 +338,7 @@ final class RadialWheelView: NSView {
         let paths = extractPaths(from: sender)
         if !paths.isEmpty {
             self.currentPaths = paths
-            configure(paths: paths, toolsMode: isToolsMode)
+            configure(paths: paths, mode: mode)
             DropWheelWindowController.shared.setLoadedPaths(paths)
         }
         return .copy
@@ -280,6 +351,9 @@ final class RadialWheelView: NSView {
         let newIndex = (hit >= 0) ? hit : -1
 
         if newIndex != hoveredIndex || newHub != isHubHovered {
+            if (newIndex != hoveredIndex && newIndex >= 0) || (newHub != isHubHovered && newHub) {
+                NSSound(named: "Tink")?.play()
+            }
             hoveredIndex = newIndex
             isHubHovered = newHub
             needsDisplay = true
@@ -308,11 +382,9 @@ final class RadialWheelView: NSView {
         DropWheelWindowController.shared.setLoadedPaths(paths)
 
         if hit >= 0 && hit < self.items.count {
-            // Dropped directly onto a specific format or tool slice
             let slice = self.items[hit]
             onSelectSlice?(slice, paths)
         } else {
-            // Dropped on the center hub or wheel body -> load file options
             onFilesDropped?(paths)
         }
         return true
@@ -326,7 +398,7 @@ final class RadialWheelView: NSView {
         let center = CGPoint(x: bounds.midX, y: bounds.midY)
         let angleStep = sliceAngle()
 
-        // 1. Solid Dark Backing Disc (100% blocks background desktop & Finder windows from showing through!)
+        // 1. Solid Dark Backing Disc (prevents background bleed)
         context.saveGState()
         let backingPath = CGPath(ellipseIn: CGRect(x: center.x - outerRadius, y: center.y - outerRadius, width: outerRadius * 2, height: outerRadius * 2), transform: nil)
         context.addPath(backingPath)
@@ -362,29 +434,39 @@ final class RadialWheelView: NSView {
             slicePath.lineWidth = 1.0
             slicePath.stroke()
 
-            // Draw Label
+            // Draw Icon + Label
             let midDeg = (startDeg + endDeg) / 2.0
             let midRad = midDeg * .pi / 180.0
             let midRadius = (innerRadius + outerRadius) / 2.0
             let tx = center.x + midRadius * cos(midRad)
             let ty = center.y + midRadius * sin(midRad)
 
-            let textColor = NSColor.white
-            let font = NSFont.systemFont(ofSize: 13, weight: .semibold)
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: font,
-                .foregroundColor: textColor
-            ]
+            if let iconName = item.iconName, let symbol = NSImage(systemSymbolName: iconName, accessibilityDescription: nil) {
+                let iconSize: CGFloat = 16
+                let iconRect = NSRect(x: tx - iconSize / 2, y: ty + 2, width: iconSize, height: iconSize)
+                let tinted = symbol.copy() as! NSImage
+                tinted.isTemplate = true
+                NSColor.white.set()
+                tinted.draw(in: iconRect)
 
-            let titleStr = NSAttributedString(string: item.title, attributes: attrs)
-            let strSize = titleStr.size()
-            let strRect = NSRect(
-                x: tx - strSize.width / 2.0,
-                y: ty - strSize.height / 2.0,
-                width: strSize.width,
-                height: strSize.height
-            )
-            titleStr.draw(in: strRect)
+                let font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+                let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.white]
+                let str = NSAttributedString(string: item.title, attributes: attrs)
+                let sz = str.size()
+                str.draw(at: NSPoint(x: tx - sz.width / 2, y: ty - sz.height - 2))
+            } else {
+                let font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+                let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.white]
+                let titleStr = NSAttributedString(string: item.title, attributes: attrs)
+                let strSize = titleStr.size()
+                let strRect = NSRect(
+                    x: tx - strSize.width / 2.0,
+                    y: ty - strSize.height / 2.0,
+                    width: strSize.width,
+                    height: strSize.height
+                )
+                titleStr.draw(in: strRect)
+            }
         }
 
         // 3. Center Hub (Circle)
@@ -400,7 +482,36 @@ final class RadialWheelView: NSView {
         hubPath.stroke()
 
         // Hub Content
-        if let first = currentPaths.first {
+        if hoveredIndex >= 0 && hoveredIndex < items.count {
+            // Hovered Slice Preview / Title
+            let hoveredItem = items[hoveredIndex]
+            let hFont = NSFont.systemFont(ofSize: 13, weight: .bold)
+            let hAttrs: [NSAttributedString.Key: Any] = [.font: hFont, .foregroundColor: lotusOrange]
+            let hStr = NSAttributedString(string: hoveredItem.title, attributes: hAttrs)
+            let hSize = hStr.size()
+            hStr.draw(at: NSPoint(x: center.x - hSize.width / 2, y: center.y + 4))
+
+            let subFont = NSFont.systemFont(ofSize: 9, weight: .medium)
+            let subText: String
+            if hoveredItem.isAction {
+                subText = Catalog.fileActions.first(where: { $0.id == hoveredItem.id })?.label ?? "File Action"
+            } else if hoveredItem.isTool {
+                subText = "Tool"
+            } else {
+                subText = "Convert to \(hoveredItem.title)"
+            }
+            let subAttrs: [NSAttributedString.Key: Any] = [.font: subFont, .foregroundColor: NSColor(white: 0.8, alpha: 1.0)]
+            let subStr = NSAttributedString(string: subText, attributes: subAttrs)
+            let sSize = subStr.size()
+            subStr.draw(at: NSPoint(x: center.x - sSize.width / 2, y: center.y - 16))
+
+            let modeFont = NSFont.systemFont(ofSize: 9, weight: .bold)
+            let modeAttrs: [NSAttributedString.Key: Any] = [.font: modeFont, .foregroundColor: NSColor(white: 0.5, alpha: 1.0)]
+            let modeStr = NSAttributedString(string: mode.rawValue, attributes: modeAttrs)
+            let mSize = modeStr.size()
+            modeStr.draw(at: NSPoint(x: center.x - mSize.width / 2, y: center.y - 34))
+
+        } else if let first = currentPaths.first {
             let thumbRect = NSRect(x: center.x - 18, y: center.y + 4, width: 36, height: 36)
             if let thumb = hubThumbnail {
                 let thumbPath = NSBezierPath(ovalIn: thumbRect)
@@ -416,7 +527,12 @@ final class RadialWheelView: NSView {
                 icon.draw(in: thumbRect)
             }
 
-            let name = URL(fileURLWithPath: first).lastPathComponent
+            let name: String
+            if currentPaths.count > 1 {
+                name = "\(currentPaths.count) items"
+            } else {
+                name = URL(fileURLWithPath: first).lastPathComponent
+            }
             let nameFont = NSFont.systemFont(ofSize: 10, weight: .semibold)
             let nameAttrs: [NSAttributedString.Key: Any] = [.font: nameFont, .foregroundColor: NSColor.white]
             let nameStr = NSAttributedString(string: name, attributes: nameAttrs)
@@ -424,9 +540,8 @@ final class RadialWheelView: NSView {
             nameStr.draw(in: nRect)
 
             let modeFont = NSFont.systemFont(ofSize: 9, weight: .bold)
-            let modeText = isToolsMode ? "TOOLS (Tab)" : "FORMATS (Tab)"
             let modeAttrs: [NSAttributedString.Key: Any] = [.font: modeFont, .foregroundColor: lotusOrange]
-            let modeStr = NSAttributedString(string: modeText, attributes: modeAttrs)
+            let modeStr = NSAttributedString(string: mode.rawValue, attributes: modeAttrs)
             let mSize = modeStr.size()
             modeStr.draw(at: NSPoint(x: center.x - mSize.width / 2, y: center.y - 34))
         } else {
@@ -441,6 +556,12 @@ final class RadialWheelView: NSView {
             let subStr = NSAttributedString(string: "Drop files\nor click", attributes: subAttrs)
             let sSize = subStr.size()
             subStr.draw(at: NSPoint(x: center.x - sSize.width / 2, y: center.y - 22))
+
+            let modeFont = NSFont.systemFont(ofSize: 9, weight: .bold)
+            let modeAttrs: [NSAttributedString.Key: Any] = [.font: modeFont, .foregroundColor: NSColor(white: 0.5, alpha: 1.0)]
+            let modeStr = NSAttributedString(string: mode.rawValue, attributes: modeAttrs)
+            let mSize = modeStr.size()
+            modeStr.draw(at: NSPoint(x: center.x - mSize.width / 2, y: center.y - 42))
         }
     }
 }
@@ -450,7 +571,7 @@ final class DropWheelWindowController: NSWindowController {
 
     private let wheelView = RadialWheelView()
     private var currentPaths: [String] = []
-    private var isToolsMode = false
+    private var currentMode: WheelMode = .conversions
     private var activeToolControllers: [ToolWindowController] = []
 
     private var outsideClickMonitor: Any?
@@ -498,8 +619,8 @@ final class DropWheelWindowController: NSWindowController {
             if self.currentPaths.isEmpty {
                 self.pickFiles()
             } else {
-                self.isToolsMode.toggle()
-                self.wheelView.configure(paths: self.currentPaths, toolsMode: self.isToolsMode)
+                self.currentMode = self.currentMode.next
+                self.wheelView.setMode(self.currentMode)
             }
         }
 
@@ -515,17 +636,16 @@ final class DropWheelWindowController: NSWindowController {
     }
 
     func showWheel() {
-        showAtCursor(toolsMode: isToolsMode)
+        showAtCursor(mode: currentMode)
     }
 
-    func showAtCursor(toolsMode: Bool) {
+    func showAtCursor(mode: WheelMode) {
         let mouse = NSEvent.mouseLocation
         let size: CGFloat = 380
         let screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) }) ?? NSScreen.main ?? NSScreen()
         let frame = screen.visibleFrame
 
         // Outer line of the wheel at the cursor so the file in Finder is NOT covered
-        // The outer disc has radius 175 inside window size 380 (16px margin to outer rim)
         let outerRimInset: CGFloat = 16.0
         var x = mouse.x - outerRimInset
 
@@ -540,10 +660,11 @@ final class DropWheelWindowController: NSWindowController {
         x = max(frame.minX + 10, min(frame.maxX - size - 10, x))
 
         window?.setFrame(NSRect(x: x, y: y, width: size, height: size), display: true)
-        self.isToolsMode = toolsMode
+        self.currentMode = mode
         if !currentPaths.isEmpty {
-            wheelView.configure(paths: currentPaths, toolsMode: toolsMode)
+            wheelView.configure(paths: currentPaths, mode: mode)
         } else {
+            wheelView.mode = mode
             wheelView.loadDefaultItems()
         }
         window?.makeKeyAndOrderFront(nil)
@@ -557,30 +678,24 @@ final class DropWheelWindowController: NSWindowController {
         window?.orderOut(nil)
     }
 
-    func toggleWheel(toolsMode: Bool? = nil) {
+    func toggleWheel(mode: WheelMode? = nil) {
         if window?.isVisible == true {
-            if let tools = toolsMode, tools != self.isToolsMode {
-                // User is switching modes (e.g. from Formats to Tools or vice-versa)
-                self.isToolsMode = tools
-                if !currentPaths.isEmpty {
-                    wheelView.configure(paths: currentPaths, toolsMode: tools)
-                } else {
-                    wheelView.loadDefaultItems()
-                }
+            if let targetMode = mode, targetMode != self.currentMode {
+                self.currentMode = targetMode
+                wheelView.setMode(targetMode)
             } else {
-                // Same mode or general toggle -> close wheel
                 hideWheel()
             }
         } else {
-            showAtCursor(toolsMode: toolsMode ?? false)
+            showAtCursor(mode: mode ?? currentMode)
         }
     }
 
-    func loadFiles(_ paths: [String]) {
+    func loadFiles(_ paths: [String], mode: WheelMode = .conversions) {
         self.currentPaths = paths
-        self.isToolsMode = false
-        wheelView.configure(paths: paths, toolsMode: false)
-        showAtCursor(toolsMode: false)
+        self.currentMode = mode
+        wheelView.configure(paths: paths, mode: mode)
+        showAtCursor(mode: mode)
     }
 
     private func pickFiles() {
@@ -598,7 +713,6 @@ final class DropWheelWindowController: NSWindowController {
 
     private func installOutsideClickMonitors() {
         removeOutsideClickMonitors()
-        // Listen to mouseUp outside window frame so dragging files from Finder is never interrupted by mouseDown
         outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp, .rightMouseDown]) { [weak self] _ in
             guard let self = self, let win = self.window, win.isVisible else { return }
             let mouseLoc = NSEvent.mouseLocation
@@ -655,7 +769,26 @@ final class DropWheelWindowController: NSWindowController {
 
         guard !activePaths.isEmpty else { return }
 
+        // 1. Check if Action (AirDrop, Float Shelf, Copy, Move, Copy Path, Terminal)
+        if item.isAction || item.id.hasPrefix("action:") {
+            executeFileAction(item.id, paths: activePaths)
+            self.currentPaths = []
+            self.wheelView.loadDefaultItems()
+            hideWheel()
+            return
+        }
+
+        // 2. Check if Tool
         if item.isTool {
+            if activePaths.count > 1 {
+                let multi = Catalog.multiFileTools(for: activePaths)
+                if let matched = multi.first(where: { $0.id == item.id }), matched.fields.isEmpty {
+                    // Tool runs grouped on all files without extra modal!
+                    executeJob(action: item.id, paths: activePaths, params: nil)
+                    return
+                }
+            }
+
             guard let first = activePaths.first else { return }
             let cat = Catalog.category(for: first)
             let tool = Catalog.tools(for: cat).first(where: { $0.id == item.id })
@@ -676,7 +809,68 @@ final class DropWheelWindowController: NSWindowController {
             }
         }
 
-        let job = ConversionJob(Paths: activePaths, Action: item.id, Parameters: nil)
+        // 3. Conversion or parameterless Tool
+        executeJob(action: item.id, paths: activePaths, params: nil)
+    }
+
+    private func executeFileAction(_ actionId: String, paths: [String]) {
+        switch actionId {
+        case "action:airDrop":
+            let urls = paths.map { URL(fileURLWithPath: $0) }
+            if let service = NSSharingService(named: .sendViaAirDrop), service.canPerform(withItems: urls) {
+                service.perform(withItems: urls)
+            } else {
+                let picker = NSSharingServicePicker(items: urls)
+                if let view = window?.contentView {
+                    picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+                }
+            }
+
+        case "action:float":
+            FloatShelfWindowController.shared.addFiles(paths)
+
+        case "action:copy":
+            let urls = paths.map { URL(fileURLWithPath: $0) as NSURL }
+            let pboard = NSPasteboard.general
+            pboard.clearContents()
+            pboard.writeObjects(urls)
+
+        case "action:move":
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.canCreateDirectories = true
+            panel.prompt = "Move Here"
+            panel.title = "Choose Destination Folder"
+            if panel.runModal() == .OK, let destDir = panel.url {
+                for p in paths {
+                    let src = URL(fileURLWithPath: p)
+                    let dst = destDir.appendingPathComponent(src.lastPathComponent)
+                    try? FileManager.default.moveItem(at: src, to: dst)
+                }
+            }
+
+        case "action:copyPath":
+            let pboard = NSPasteboard.general
+            pboard.clearContents()
+            pboard.setString(paths.joined(separator: "\n"), forType: .string)
+
+        case "action:openTerminal":
+            if let first = paths.first {
+                let folder = URL(fileURLWithPath: first).deletingLastPathComponent().path
+                let escaped = folder.replacingOccurrences(of: "\"", with: "\\\"")
+                let script = "tell application \"Terminal\" to do script \"cd \\\"\(escaped)\\\"\""
+                var error: NSDictionary?
+                NSAppleScript(source: script)?.executeAndReturnError(&error)
+            }
+
+        default:
+            break
+        }
+    }
+
+    private func executeJob(action: String, paths: [String], params: [String: String]?) {
+        let job = ConversionJob(Paths: paths, Action: action, Parameters: params)
         let card = TaskIndicatorManager.shared.addJob(job)
         self.currentPaths = []
         self.wheelView.loadDefaultItems()

@@ -123,6 +123,42 @@ enum Catalog {
         let choices: [String]?
     }
 
+    struct ActionOption {
+        let id: String
+        let title: String
+        let label: String
+        let iconName: String
+        let description: String
+    }
+
+    static let fileActions: [ActionOption] = [
+        ActionOption(id: "action:airDrop", title: "AIRDROP", label: "AirDrop", iconName: "airplayaudio", description: "Share files through macOS recipient picker"),
+        ActionOption(id: "action:float", title: "FLOAT", label: "Float", iconName: "pin.fill", description: "Keep files in a floating shelf at screen edge"),
+        ActionOption(id: "action:copy", title: "COPY", label: "Copy", iconName: "doc.on.doc", description: "Copy files to clipboard, ready to paste in Finder"),
+        ActionOption(id: "action:move", title: "MOVE", label: "Move", iconName: "folder", description: "Choose a destination folder and move originals there"),
+        ActionOption(id: "action:copyPath", title: "COPY PATH", label: "Copy Path", iconName: "doc.text", description: "Copy full file paths as text to clipboard"),
+        ActionOption(id: "action:openTerminal", title: "TERMINAL", label: "Terminal", iconName: "terminal", description: "Open folder in Terminal or iTerm2")
+    ]
+
+    static func multiFileTools(for paths: [String]) -> [ToolOption] {
+        guard paths.count > 1 else { return [] }
+        let exts = Set(paths.map { URL(fileURLWithPath: $0).pathExtension.lowercased() })
+        var options: [ToolOption] = []
+        if exts.allSatisfy({ imageExts.contains($0) }) {
+            options.append(ToolOption(id: "createPDF", label: "Combine to PDF", iconName: "doc.on.doc", fields: []))
+            options.append(ToolOption(id: "createCollage", label: "Make Collage", iconName: "rectangle.3.group", fields: []))
+            options.append(ToolOption(id: "compress", label: "Compress All", iconName: "arrow.down.circle", fields: []))
+        } else if exts.allSatisfy({ videoExts.contains($0) }) {
+            options.append(ToolOption(id: "joinVideos", label: "Join Videos", iconName: "film.stack", fields: []))
+            options.append(ToolOption(id: "compress", label: "Compress All", iconName: "arrow.down.circle", fields: []))
+        } else if exts.allSatisfy({ $0 == "pdf" }) {
+            options.append(ToolOption(id: "mergePDF", label: "Merge PDFs", iconName: "doc.on.doc", fields: []))
+            options.append(ToolOption(id: "compress", label: "Compress All", iconName: "arrow.down.circle", fields: []))
+        }
+        options.append(ToolOption(id: "packArchive", label: "Pack Archive", iconName: "archivebox", fields: []))
+        return options
+    }
+
     struct ToolOption {
         let id: String
         let label: String
