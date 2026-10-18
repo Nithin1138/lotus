@@ -133,15 +133,15 @@ internal sealed class TaskIndicatorWindow : Window
 
     // Shows the result for a few seconds, then removes the card. Returns false when the card was hidden,
     // so the caller can announce the result another way (the tray notification).
-    public bool Finish(JobCard card, string title, string detail)
+    public bool Finish(JobCard card, string title, string detail, string? outputPath = null)
     {
-        card.Complete(title, detail);
+        card.Complete(title, detail, outputPath);
         bool shown = !AllHidden && !card.UserHidden;
         if (!shown)
             Remove(card);
         else
         {
-            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
             timer.Tick += (_, _) => { timer.Stop(); Remove(card); };
             timer.Start();
             Refresh();

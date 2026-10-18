@@ -34,5 +34,11 @@
     <string>DropDial requires accessibility permissions to monitor modifier keys (Shift, Command, Control) while dragging files.</string>
     <key>NSSystemAdministrationUsageDescription</key>
     <string>DropDial needs accessibility permissions to summon the radial tool wheel while dragging files.</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>DropDial requires access to convert and process files dragged from your Desktop.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>DropDial requires access to convert and process files dragged from your Documents.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>DropDial requires access to convert and process files dragged from your Downloads.</string>
 </dict>
 </plist>

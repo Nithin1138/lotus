@@ -748,9 +748,22 @@ internal sealed class Resident : IDisposable
             int failures = result.Files.Length - success.Length;
             Journal.Write("Completed", new { queued.Job.Action, count = result.Files.Length, success = success.Length, failures, errors = result.Files.Where(x => x.Error != null).Select(x => x.Error) });
             string? folder = OutputFolder.For(queued.Job);
-            string detail = failures > 0 ? result.Files.First(x => x.Error != null).Error! : folder == null ? L.T("New files were saved next to the originals.") : L.F("New files were saved to {0}.", Path.GetFileName(folder.TrimEnd('\\')));
-            string output = success.Length > 0 ? Path.GetFileName(success[^1].Output) ?? L.T("New file saved") : L.T("New file saved");
-            bool cardShown = job.Card == null || taskIndicator.Finish(job.Card, failures == 0 ? L.T("Done") : L.F("{0} succeeded · {1} failed", success.Length, failures), failures == 0 ? output : detail);
+            string? lastSuccessOutput = success.Length > 0 ? success[^1].Output : null;
+            string detail = failures > 0 && success.Length == 0
+                ? (result.Files.FirstOrDefault(x => x.Error != null)?.Error ?? L.T("The conversion failed."))
+                : folder == null
+                    ? L.T("New files were saved next to the originals.")
+                    : L.F("New files were saved to {0}.", Path.GetFileName(folder.TrimEnd('\\')));
+            string output = success.Length > 1
+                ? L.F("{0} files created · {1}", success.Length, Path.GetFileName(lastSuccessOutput ?? ""))
+                : (success.Length > 0 ? (Path.GetFileName(lastSuccessOutput) ?? L.T("New file saved")) : L.T("New file saved"));
+            string title = failures == 0
+                ? L.T("Done")
+                : success.Length == 0
+                    ? L.T("Failed")
+                    : L.F("{0} succeeded · {1} failed", success.Length, failures);
+            string cardDetail = failures == 0 ? output : (success.Length == 0 ? detail : output + " · " + detail);
+            bool cardShown = job.Card == null || taskIndicator.Finish(job.Card, title, cardDetail, lastSuccessOutput);
             if (queued.Progress != null || failures > 0 || !cardShown)
                 Notify(L.F("{0} done", success.Length) + (failures == 0 ? "" : L.F(" · {0} failed", failures)), failures == 0 && !cardShown ? output : detail);
         }

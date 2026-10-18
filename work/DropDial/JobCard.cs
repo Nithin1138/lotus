@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,12 +13,13 @@ internal sealed class JobCard : Border
 {
     private readonly ActivityIndicator indicator = new();
     private readonly StackPanel controls = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
-    private readonly Button pauseButton, cancelButton, hideButton;
+    private readonly Button pauseButton, cancelButton, openButton, revealButton, hideButton;
     private readonly bool converting;
     private readonly string firstName;
     private readonly int count;
     private string stage, file;
     private ActivityIndicator.Session? session;
+    private string? outputPath;
 
     public event Action<JobCard>? PauseRequested, ResumeRequested, CancelRequested, HideRequested;
     public JobState State { get; private set; } = JobState.Waiting;
@@ -40,6 +42,26 @@ internal sealed class JobCard : Border
         Effect = new DropShadowEffect { BlurRadius = 14, ShadowDepth = 2, Opacity = .12 };
         pauseButton = Action(L.T("Pause"), L.T("Pause this job; resume it any time"), () => (Paused ? ResumeRequested : PauseRequested)?.Invoke(this));
         cancelButton = Action(L.T("Cancel"), L.T("Stop this job and remove its unfinished files"), () => CancelRequested?.Invoke(this));
+        openButton = Action(L.T("Open"), L.T("Open the created file"), () =>
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(outputPath) && File.Exists(outputPath))
+                    Process.Start(new ProcessStartInfo(outputPath) { UseShellExecute = true });
+            }
+            catch { }
+        });
+        openButton.Visibility = Visibility.Collapsed;
+        revealButton = Action(L.T("Show in Explorer"), L.T("Open folder and highlight file"), () =>
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(outputPath))
+                    ExplorerIntegration.Reveal(outputPath);
+            }
+            catch { }
+        });
+        revealButton.Visibility = Visibility.Collapsed;
         hideButton = Action(L.T("Hide"), L.T("Hide this card. The job keeps running; show it again from the tray menu"), () => HideRequested?.Invoke(this));
         hideButton.Margin = new Thickness(0);
         var content = new StackPanel();
@@ -62,6 +84,10 @@ internal sealed class JobCard : Border
         SetPaused(Paused);
         cancelButton.Content = L.T("Cancel");
         cancelButton.ToolTip = L.T("Stop this job and remove its unfinished files");
+        openButton.Content = L.T("Open");
+        openButton.ToolTip = L.T("Open the created file");
+        revealButton.Content = L.T("Show in Explorer");
+        revealButton.ToolTip = L.T("Open folder and highlight file");
         hideButton.Content = L.T("Hide");
         hideButton.ToolTip = L.T("Hide this card. The job keeps running; show it again from the tray menu");
     }
@@ -100,14 +126,29 @@ internal sealed class JobCard : Border
         session?.SetPaused(false);
     }
 
-    public void Complete(string title, string detail)
+    public void Complete(string title, string detail, string? output = null)
     {
+        outputPath = output;
         session?.Dispose();
         session = null;
         State = JobState.Done;
         Paused = false;
         indicator.Complete(title, detail);
-        controls.Visibility = Visibility.Collapsed;
+        pauseButton.Visibility = Visibility.Collapsed;
+        cancelButton.Visibility = Visibility.Collapsed;
+        if (!string.IsNullOrEmpty(outputPath))
+        {
+            openButton.Visibility = Visibility.Visible;
+            revealButton.Visibility = Visibility.Visible;
+            hideButton.Visibility = Visibility.Visible;
+            controls.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            openButton.Visibility = Visibility.Collapsed;
+            revealButton.Visibility = Visibility.Collapsed;
+            controls.Visibility = Visibility.Collapsed;
+        }
     }
 }
 

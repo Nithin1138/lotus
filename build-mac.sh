@@ -64,7 +64,7 @@ chmod +x "$BACKEND_DIR/doc2pdf-mac"
 # 7. Strip quarantine attribute & ad-hoc sign bundle for smooth Gatekeeper launch
 xattr -cr "$APP_BUNDLE" 2>/dev/null || true
 echo "Signing application bundle (ad-hoc)..."
-codesign --force --deep --sign - "$APP_BUNDLE" 2>/dev/null || true
+codesign --force --deep --sign - --identifier com.dropdial.mac "$APP_BUNDLE" 2>/dev/null || true
 
 # 8. Package Distribution Archives (ZIP and DMG)
 echo "Packaging distribution archives..."

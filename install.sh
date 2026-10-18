@@ -100,29 +100,16 @@ ditto "$SOURCE_APP" "$TARGET_APP"
 # 6. Smooth Gatekeeper & Security Setup
 echo -e "${GRAY}→ Stripping quarantine & signing ad-hoc for Gatekeeper...${RESET}"
 xattr -cr "$TARGET_APP" 2>/dev/null || true
-codesign --force --deep --sign - "$TARGET_APP" 2>/dev/null || true
-
-# 7. Check Accessibility status
-IS_TRUSTED=0
-if swift -e 'import ApplicationServices; exit(AXIsProcessTrusted() ? 0 : 1)' >/dev/null 2>&1; then
-    IS_TRUSTED=1
-fi
+codesign --force --deep --sign - --identifier com.dropdial.mac "$TARGET_APP" 2>/dev/null || true
 
 echo ""
 echo -e "${GREEN}${BOLD}✓ DropDial installed successfully!${RESET}"
 echo ""
-
-if [ "$IS_TRUSTED" -eq 1 ]; then
-    echo -e "${GREEN}✓ Accessibility permission is already active.${RESET}"
-else
-    echo -e "${ORANGE}${BOLD}Accessibility Permission Recommended:${RESET}"
-    echo -e "  To detect modifier keys (${BOLD}⇧ Shift${RESET}, ${BOLD}⌘ Cmd${RESET}, ${BOLD}⌃ Ctrl${RESET}) while dragging files"
-    echo -e "  from Finder, macOS requires Accessibility permission."
-    echo -e "  ${CYAN}Opening System Settings > Privacy & Security > Accessibility...${RESET}"
-    echo -e "  Simply toggle ${BOLD}DropDial${RESET} to ${BOLD}ON${RESET}."
-    echo ""
-    open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility" 2>/dev/null || true
-fi
+echo -e "${ORANGE}${BOLD}Accessibility Permission:${RESET}"
+echo -e "  To detect modifier keys (${BOLD}⇧ Shift${RESET}, ${BOLD}⌘ Cmd${RESET}, ${BOLD}⌃ Ctrl${RESET}) while dragging files"
+echo -e "  from Finder, macOS requires Accessibility permission."
+echo -e "  ${CYAN}If prompted or needed, toggle DropDial to ON in System Settings.${RESET}"
+echo ""
 
 # 8. Launch DropDial
 echo -e "${CYAN}→ Launching DropDial...${RESET}"

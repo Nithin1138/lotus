@@ -161,6 +161,9 @@ def preview(path,action,params,folder,paths=None):
         elif action=='frameImage': image=images.framed(image,params)
         elif action=='annotateImage': image=images.annotate(image,params)
         elif action=='createCollage': image=images.collage(paths or [path],params,preview=True)
+        elif action=='compress':
+            edge=int(number(params,'maxEdge',0))
+            if edge>0: image.thumbnail((edge,edge),Image.Resampling.LANCZOS)
         image.thumbnail((1200,900)); target=folder/'live-preview.png'; image.save(target); return {'Preview':str(target)}
     if category(path)=='video':
         import images

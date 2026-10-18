@@ -66,7 +66,7 @@ internal sealed class ToolWindow : Window
     private readonly Border rotatePlate = new() { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
     // Cropping is previewed by the frame itself, so the preview is not regenerated while its settings change.
     private bool LivePreview => RefreshFrame && !HasMedia && operation.Id != "cropImage";
-    private bool VisualPreview => operation.Id == "watermark" && Catalog.Category(paths[0]) == "image" || operation.Id is "editImage" or "frameImage" or "cropImage" or "cropVideo" or "redactImage" or "annotateImage" or "redactVideo" or "redactPDF" or "organizePDF" or "createCollage";
+    private bool VisualPreview => operation.Id == "watermark" && Catalog.Category(paths[0]) == "image" || operation.Id is "compress" or "editImage" or "frameImage" or "cropImage" or "cropVideo" or "redactImage" or "annotateImage" or "redactVideo" or "redactPDF" or "organizePDF" or "createCollage";
     private bool ProcessedPlayback => operation.Id is "normalizeAudio" or "audioChannels" or "audioToVideo" or "redactAudio" or "trimAudio" or "trimVideo" or "cropVideo" or "changeVideoSpeed" or "redactVideo" or "muteVideo";
     private bool HasMedia => Catalog.Category(paths[0]) is "audio" or "video";
     private MediaTransport? transport;
@@ -114,7 +114,7 @@ internal sealed class ToolWindow : Window
         this.host = host;
         if (host != null)
         {
-            previewDelay = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(550) };
+            previewDelay = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
             previewDelay.Tick += async (_, _) => { previewDelay.Stop(); await UpdatePreview(); };
             Body = Build();
             return;
@@ -128,7 +128,7 @@ internal sealed class ToolWindow : Window
         Background = UiTheme.WindowBack;
         FontFamily = UiTheme.Font;
         FontSize = 13;
-        previewDelay = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(550) };
+        previewDelay = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
         previewDelay.Tick += async (_, _) => { previewDelay.Stop(); await UpdatePreview(); };
         UiTheme.Apply(this);
         Content = UiTheme.Frame(this, Build());
