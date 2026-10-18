@@ -1,4 +1,6 @@
 import AppKit
+import AVFoundation
+import AVKit
 
 // MARK: - Interactive Crop Overlay View
 final class CropOverlayView: NSView {
@@ -382,6 +384,10 @@ final class CropOverlayView: NSView {
         window?.invalidateCursorRects(for: self)
     }
 
+    func applyAlignment(_ alignment: String) {
+        applyRatioPreset(currentRatioKey, alignment: alignment)
+    }
+
     func currentPixelRect() -> CGRect {
         guard imageSize.width > 0, imageSize.height > 0 else { return .zero }
         let px = max(0, min(Int(imageSize.width) - 1, Int(round(normX * imageSize.width))))
@@ -420,9 +426,45 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     private let titleLabel = NSTextField(labelWithString: "")
     private let infoLabel = NSTextField(labelWithString: "")
     private let cropInfoLabel = NSTextField(labelWithString: "")
+    private let watermarkInfoLabel = NSTextField(labelWithString: "")
+    private let compressInfoLabel = NSTextField(labelWithString: "")
 
     private var qualityLabel: NSTextField?
     private var qualitySlider: NSSlider?
+
+    // Video Player & Video Studio State
+    private var player: AVPlayer?
+    private var playerView: AVPlayerView?
+    private var playerTimeObserver: Any?
+    private var videoDuration: Double = 0.0
+    private var currentPlayheadTime: Double = 0.0
+    private var isPlayingTrimSelection: Bool = false
+
+    private var activeVideoTab: Int = 0 // 0: Trim, 1: Crop, 2: Split
+    private var videoTabControl: NSSegmentedControl?
+    private var trimFormView: NSView?
+    private var cropFormView: NSView?
+    private var splitFormView: NSView?
+    private var actionSaveButton: NSButton?
+
+    // Trim Video Controls
+    private var trimStartSlider: NSSlider?
+    private var trimEndSlider: NSSlider?
+    private var trimStartBadge: NSTextField?
+    private var trimEndBadge: NSTextField?
+    private let trimSummaryLabel = NSTextField(labelWithString: "")
+
+    // Split Video Controls
+    private var splitModeSegment: NSSegmentedControl?
+    private var splitPoints: [Double] = []
+    private var selectedSplitParts: Int = 2
+    private var splitCutsStack: NSStackView?
+    private var splitCutsListLabel: NSTextField?
+    private var addSplitCutButton: NSButton?
+    private var splitEqualSummaryLabel: NSTextField?
+    private let splitSummaryLabel = NSTextField(labelWithString: "")
+    private var splitCutModeContainer: NSView?
+    private var splitEqualPartsContainer: NSView?
 
     private var originalWidth: Int = 0
     private var originalHeight: Int = 0
@@ -433,11 +475,14 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         self.paths = paths
         self.tool = tool
 
+        let isVideoStudio = (tool.id == "trimVideo" || tool.id == "cropVideo" || tool.id == "splitVideo" || tool.id == "editVideo")
         let winH: CGFloat
         if tool.id == "editImage" {
             winH = 680
-        } else if tool.id == "frameImage" || tool.id == "annotateImage" || tool.id == "createCollage" || tool.id == "splitVideo" {
-            winH = 580
+        } else if isVideoStudio {
+            winH = 650
+        } else if tool.id == "frameImage" || tool.id == "annotateImage" || tool.id == "createCollage" || tool.id == "watermark" || tool.id == "compress" {
+            winH = 600
         } else {
             winH = 540
         }
@@ -448,7 +493,11 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "DropDial · " + tool.label
+        if isVideoStudio {
+            window.title = "DropDial · Video Studio"
+        } else {
+            window.title = "DropDial · " + tool.label
+        }
         window.center()
         window.isReleasedWhenClosed = false
         window.level = .floating
@@ -462,6 +511,13 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     required init?(coder: NSCoder) { fatalError() }
 
     func windowWillClose(_ notification: Notification) {
+        if let observer = playerTimeObserver {
+            player?.removeTimeObserver(observer)
+            playerTimeObserver = nil
+        }
+        player?.pause()
+        player = nil
+        NotificationCenter.default.removeObserver(self)
         onClose?()
     }
 
@@ -509,7 +565,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         container.addSubview(infoLabel)
 
         // Preview Container Card
-        let previewH: CGFloat = (tool.id == "editImage") ? 220 : 250
+        let isVideoStudio = (tool.id == "trimVideo" || tool.id == "cropVideo" || tool.id == "splitVideo" || tool.id == "editVideo")
+        let previewH: CGFloat = isVideoStudio ? 240 : ((tool.id == "editImage" || tool.id == "watermark" || tool.id == "compress") ? 220 : 250)
         let previewY = topY - previewH - 12
         let previewContainer = NSView(frame: NSRect(x: 20, y: previewY, width: 440, height: previewH))
         previewContainer.wantsLayer = true
@@ -544,12 +601,16 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         formContainer.wantsLayer = true
         container.addSubview(formContainer)
 
-        if tool.id == "cropImage" || tool.id == "cropVideo" {
+        if isVideoStudio {
+            setupVideoStudioForm(in: formContainer)
+        } else if tool.id == "cropImage" {
             setupCropForm(in: formContainer)
         } else if tool.id == "redactImage" {
             setupRedactForm(in: formContainer)
         } else if tool.id == "compress" {
             setupCompressForm(in: formContainer)
+        } else if tool.id == "watermark" {
+            setupWatermarkForm(in: formContainer)
         } else if tool.id == "resizeImage" {
             setupResizeForm(in: formContainer)
         } else if tool.id == "editImage" {
@@ -581,8 +642,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         cancelButton.action = #selector(cancelClicked)
         container.addSubview(cancelButton)
 
-        let saveButton = NSButton(frame: NSRect(x: 290, y: 16, width: 170, height: 32))
-        saveButton.title = "Save New File"
+        let saveButton = NSButton(frame: NSRect(x: 270, y: 16, width: 190, height: 32))
+        saveButton.title = isVideoStudio ? "Save Video" : "Save New File"
         saveButton.bezelStyle = .rounded
         saveButton.keyEquivalent = "\r" // Return
         saveButton.bezelColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
@@ -590,6 +651,521 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         saveButton.target = self
         saveButton.action = #selector(saveClicked)
         container.addSubview(saveButton)
+        self.actionSaveButton = saveButton
+    }
+
+    // MARK: - Video Studio Form (Interactive Trim, Crop, Split)
+    private func setupVideoStudioForm(in container: NSView) {
+        let totalH = container.bounds.height
+        let totalW = container.bounds.width
+
+        // 1. Top Tab Segmented Control
+        let tabLabels = ["✂️ Trim Clip", "⛶ Crop Frame", "➗ Split Video"]
+        let tabs = NSSegmentedControl(labels: tabLabels, trackingMode: .selectOne, target: self, action: #selector(videoTabChanged(_:)))
+        tabs.frame = NSRect(x: 0, y: totalH - 32, width: totalW, height: 28)
+        tabs.segmentStyle = .texturedRounded
+
+        if tool.id == "cropVideo" {
+            tabs.selectedSegment = 1
+            activeVideoTab = 1
+        } else if tool.id == "splitVideo" {
+            tabs.selectedSegment = 2
+            activeVideoTab = 2
+        } else {
+            tabs.selectedSegment = 0
+            activeVideoTab = 0
+        }
+        container.addSubview(tabs)
+        self.videoTabControl = tabs
+
+        // 2. Sub-views Container
+        let subH = totalH - 42
+        let subContainer = NSView(frame: NSRect(x: 0, y: 0, width: totalW, height: subH))
+        container.addSubview(subContainer)
+
+        let tView = NSView(frame: subContainer.bounds)
+        let cView = NSView(frame: subContainer.bounds)
+        let sView = NSView(frame: subContainer.bounds)
+
+        subContainer.addSubview(tView)
+        subContainer.addSubview(cView)
+        subContainer.addSubview(sView)
+
+        self.trimFormView = tView
+        self.cropFormView = cView
+        self.splitFormView = sView
+
+        setupTrimVideoSubform(in: tView)
+        setupCropVideoSubform(in: cView)
+        setupSplitVideoSubform(in: sView)
+
+        switchVideoStudioTab(to: activeVideoTab)
+    }
+
+    @objc private func videoTabChanged(_ sender: NSSegmentedControl) {
+        switchVideoStudioTab(to: sender.selectedSegment)
+    }
+
+    private func switchVideoStudioTab(to tab: Int) {
+        activeVideoTab = tab
+        trimFormView?.isHidden = (tab != 0)
+        cropFormView?.isHidden = (tab != 1)
+        splitFormView?.isHidden = (tab != 2)
+        cropOverlayView.isHidden = (tab != 1)
+
+        if tab == 0 {
+            actionSaveButton?.title = "Save Trimmed Video"
+        } else if tab == 1 {
+            actionSaveButton?.title = "Save Cropped Video"
+            cropOverlayView.notifyCropChanged()
+        } else if tab == 2 {
+            let partsCount = (splitModeSegment?.selectedSegment == 0) ? (splitPoints.count + 1) : selectedSplitParts
+            actionSaveButton?.title = "Export \(partsCount) Split Clips"
+        }
+    }
+
+    // MARK: - Subform: Trim Video
+    private func setupTrimVideoSubform(in container: NSView) {
+        let totalH = container.bounds.height
+
+        // Live Trim Summary
+        trimSummaryLabel.frame = NSRect(x: 0, y: totalH - 22, width: 440, height: 20)
+        trimSummaryLabel.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .semibold)
+        trimSummaryLabel.textColor = NSColor(srgbRed: 1.0, green: 0.55, blue: 0.15, alpha: 1.0)
+        trimSummaryLabel.stringValue = "Trim Selection: 00:00.0 → 00:10.0  ·  Length: 10.0s"
+        container.addSubview(trimSummaryLabel)
+
+        // Row 1: Start Time (In-Point)
+        let row1Y = totalH - 56
+        let inLabel = NSTextField(labelWithString: "Start (In):")
+        inLabel.frame = NSRect(x: 0, y: row1Y, width: 68, height: 20)
+        inLabel.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+        inLabel.textColor = .white
+        container.addSubview(inLabel)
+
+        let startSlider = NSSlider(value: 0.0, minValue: 0.0, maxValue: 10.0, target: self, action: #selector(trimStartSliderMoved(_:)))
+        startSlider.frame = NSRect(x: 72, y: row1Y - 2, width: 206, height: 22)
+        container.addSubview(startSlider)
+        self.trimStartSlider = startSlider
+
+        let startBadge = NSTextField(labelWithString: "00:00.0")
+        startBadge.frame = NSRect(x: 286, y: row1Y, width: 66, height: 18)
+        startBadge.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .medium)
+        startBadge.textColor = .white
+        startBadge.alignment = .center
+        startBadge.wantsLayer = true
+        startBadge.layer?.backgroundColor = NSColor(white: 0.2, alpha: 0.8).cgColor
+        startBadge.layer?.cornerRadius = 4
+        container.addSubview(startBadge)
+        self.trimStartBadge = startBadge
+
+        let markInBtn = NSButton(title: "⤓ Mark In", target: self, action: #selector(markInClicked))
+        markInBtn.frame = NSRect(x: 358, y: row1Y - 2, width: 82, height: 24)
+        markInBtn.bezelStyle = .rounded
+        markInBtn.font = NSFont.systemFont(ofSize: 11)
+        container.addSubview(markInBtn)
+
+        // Row 2: End Time (Out-Point)
+        let row2Y = totalH - 90
+        let outLabel = NSTextField(labelWithString: "End (Out):")
+        outLabel.frame = NSRect(x: 0, y: row2Y, width: 68, height: 20)
+        outLabel.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+        outLabel.textColor = .white
+        container.addSubview(outLabel)
+
+        let endSlider = NSSlider(value: 10.0, minValue: 0.0, maxValue: 10.0, target: self, action: #selector(trimEndSliderMoved(_:)))
+        endSlider.frame = NSRect(x: 72, y: row2Y - 2, width: 206, height: 22)
+        container.addSubview(endSlider)
+        self.trimEndSlider = endSlider
+
+        let endBadge = NSTextField(labelWithString: "00:10.0")
+        endBadge.frame = NSRect(x: 286, y: row2Y, width: 66, height: 18)
+        endBadge.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .medium)
+        endBadge.textColor = .white
+        endBadge.alignment = .center
+        endBadge.wantsLayer = true
+        endBadge.layer?.backgroundColor = NSColor(white: 0.2, alpha: 0.8).cgColor
+        endBadge.layer?.cornerRadius = 4
+        container.addSubview(endBadge)
+        self.trimEndBadge = endBadge
+
+        let markOutBtn = NSButton(title: "⤓ Mark Out", target: self, action: #selector(markOutClicked))
+        markOutBtn.frame = NSRect(x: 358, y: row2Y - 2, width: 82, height: 24)
+        markOutBtn.bezelStyle = .rounded
+        markOutBtn.font = NSFont.systemFont(ofSize: 11)
+        container.addSubview(markOutBtn)
+
+        // Row 3: Actions & Presets
+        let row3Y = totalH - 128
+        let playBtn = NSButton(title: "▶ Play Trim Selection", target: self, action: #selector(playTrimSelectionClicked))
+        playBtn.frame = NSRect(x: 0, y: row3Y, width: 155, height: 26)
+        playBtn.bezelStyle = .rounded
+        playBtn.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+        container.addSubview(playBtn)
+
+        let p15Btn = NSButton(title: "First 15s", target: self, action: #selector(trimPreset15Clicked))
+        p15Btn.frame = NSRect(x: 165, y: row3Y, width: 68, height: 26)
+        p15Btn.bezelStyle = .rounded
+        p15Btn.font = NSFont.systemFont(ofSize: 11)
+        container.addSubview(p15Btn)
+
+        let p30Btn = NSButton(title: "First 30s", target: self, action: #selector(trimPreset30Clicked))
+        p30Btn.frame = NSRect(x: 237, y: row3Y, width: 68, height: 26)
+        p30Btn.bezelStyle = .rounded
+        p30Btn.font = NSFont.systemFont(ofSize: 11)
+        container.addSubview(p30Btn)
+
+        let pFullBtn = NSButton(title: "Full Video", target: self, action: #selector(trimPresetFullClicked))
+        pFullBtn.frame = NSRect(x: 309, y: row3Y, width: 80, height: 26)
+        pFullBtn.bezelStyle = .rounded
+        pFullBtn.font = NSFont.systemFont(ofSize: 11)
+        container.addSubview(pFullBtn)
+
+        // Row 4: Helper tip
+        let tip = NSTextField(labelWithString: "💡 Scrub the player above to any frame, then click 'Mark In' or 'Mark Out' to cut.")
+        tip.frame = NSRect(x: 0, y: row3Y - 24, width: 440, height: 16)
+        tip.font = NSFont.systemFont(ofSize: 10.5)
+        tip.textColor = NSColor(white: 0.65, alpha: 1.0)
+        container.addSubview(tip)
+    }
+
+    // MARK: - Subform: Crop Video
+    private func setupCropVideoSubform(in container: NSView) {
+        let totalH = container.bounds.height
+
+        // Live Crop Info
+        cropInfoLabel.frame = NSRect(x: 0, y: totalH - 22, width: 440, height: 20)
+        cropInfoLabel.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        cropInfoLabel.textColor = NSColor(srgbRed: 1.0, green: 0.55, blue: 0.15, alpha: 1.0)
+        cropInfoLabel.stringValue = "Crop Area: Free Style · Drag orange handles on video above"
+        container.addSubview(cropInfoLabel)
+
+        // Presets Segment
+        let row1Y = totalH - 58
+        let rLabel = NSTextField(labelWithString: "Aspect Ratio:")
+        rLabel.frame = NSRect(x: 0, y: row1Y, width: 85, height: 20)
+        rLabel.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+        rLabel.textColor = .white
+        container.addSubview(rLabel)
+
+        let ratioSegment = NSSegmentedControl(labels: ["Free Style", "16:9", "9:16 Reel", "1:1 Square", "4:3"], trackingMode: .selectOne, target: self, action: #selector(cropPresetSegmentChanged(_:)))
+        ratioSegment.frame = NSRect(x: 88, y: row1Y - 2, width: 352, height: 24)
+        ratioSegment.segmentStyle = .texturedRounded
+        ratioSegment.selectedSegment = 0
+        container.addSubview(ratioSegment)
+
+        // Alignment Row
+        let row2Y = totalH - 94
+        let aLabel = NSTextField(labelWithString: "Align Frame:")
+        aLabel.frame = NSRect(x: 0, y: row2Y, width: 85, height: 20)
+        aLabel.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+        aLabel.textColor = .white
+        container.addSubview(aLabel)
+
+        let centerBtn = NSButton(title: "Center", target: self, action: #selector(cropAlignCenterClicked))
+        centerBtn.frame = NSRect(x: 88, y: row2Y - 2, width: 75, height: 24)
+        centerBtn.bezelStyle = .rounded
+        centerBtn.font = NSFont.systemFont(ofSize: 11)
+        container.addSubview(centerBtn)
+
+        let leftBtn = NSButton(title: "Left", target: self, action: #selector(cropAlignLeftClicked))
+        leftBtn.frame = NSRect(x: 168, y: row2Y - 2, width: 68, height: 24)
+        leftBtn.bezelStyle = .rounded
+        leftBtn.font = NSFont.systemFont(ofSize: 11)
+        container.addSubview(leftBtn)
+
+        let rightBtn = NSButton(title: "Right", target: self, action: #selector(cropAlignRightClicked))
+        rightBtn.frame = NSRect(x: 241, y: row2Y - 2, width: 68, height: 24)
+        rightBtn.bezelStyle = .rounded
+        rightBtn.font = NSFont.systemFont(ofSize: 11)
+        container.addSubview(rightBtn)
+
+        let resetBtn = NSButton(title: "Reset Full", target: self, action: #selector(cropResetClicked))
+        resetBtn.frame = NSRect(x: 314, y: row2Y - 2, width: 85, height: 24)
+        resetBtn.bezelStyle = .rounded
+        resetBtn.font = NSFont.systemFont(ofSize: 11)
+        container.addSubview(resetBtn)
+
+        // Helper tip
+        let tip = NSTextField(labelWithString: "💡 Handles & rule-of-thirds grid appear directly over the video player. Drag corners or edges to reframe.")
+        tip.frame = NSRect(x: 0, y: row2Y - 32, width: 440, height: 28)
+        tip.font = NSFont.systemFont(ofSize: 10.5)
+        tip.textColor = NSColor(white: 0.65, alpha: 1.0)
+        container.addSubview(tip)
+
+        cropOverlayView.onCropChanged = { [weak self] (rect, modeDesc) in
+            guard let self = self else { return }
+            let w = Int(rect.width)
+            let h = Int(rect.height)
+            self.cropInfoLabel.stringValue = "Crop: \(w) × \(h) px (\(modeDesc)) · Drag handles on video"
+        }
+    }
+
+    // MARK: - Subform: Split Video
+    private func setupSplitVideoSubform(in container: NSView) {
+        let totalH = container.bounds.height
+
+        // Mode Switcher
+        let modeSegment = NSSegmentedControl(labels: ["✂️ Split at Cuts", "➗ Equal Parts"], trackingMode: .selectOne, target: self, action: #selector(splitModeChanged(_:)))
+        modeSegment.frame = NSRect(x: 0, y: totalH - 30, width: 440, height: 26)
+        modeSegment.segmentStyle = .texturedRounded
+        modeSegment.selectedSegment = 0
+        container.addSubview(modeSegment)
+        self.splitModeSegment = modeSegment
+
+        let subH = totalH - 38
+        let cutContainer = NSView(frame: NSRect(x: 0, y: 0, width: 440, height: subH))
+        let equalContainer = NSView(frame: NSRect(x: 0, y: 0, width: 440, height: subH))
+        container.addSubview(cutContainer)
+        container.addSubview(equalContainer)
+        equalContainer.isHidden = true
+        self.splitCutModeContainer = cutContainer
+        self.splitEqualPartsContainer = equalContainer
+
+        // --- Cuts Mode UI ---
+        let addCutBtn = NSButton(title: "+ Add Cut at Playhead (00:00.0)", target: self, action: #selector(addSplitCutClicked))
+        addCutBtn.frame = NSRect(x: 0, y: subH - 34, width: 280, height: 28)
+        addCutBtn.bezelStyle = .rounded
+        addCutBtn.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+        cutContainer.addSubview(addCutBtn)
+        self.addSplitCutButton = addCutBtn
+
+        let clearBtn = NSButton(title: "Clear Cuts", target: self, action: #selector(clearSplitCutsClicked))
+        clearBtn.frame = NSRect(x: 290, y: subH - 34, width: 100, height: 28)
+        clearBtn.bezelStyle = .rounded
+        clearBtn.font = NSFont.systemFont(ofSize: 11)
+        cutContainer.addSubview(clearBtn)
+
+        let cutsLabel = NSTextField(labelWithString: "No cuts yet. Scrub video and click '+ Add Cut at Playhead'")
+        cutsLabel.frame = NSRect(x: 0, y: subH - 62, width: 440, height: 20)
+        cutsLabel.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+        cutsLabel.textColor = .white
+        cutContainer.addSubview(cutsLabel)
+        self.splitCutsListLabel = cutsLabel
+
+        splitSummaryLabel.frame = NSRect(x: 0, y: subH - 92, width: 440, height: 24)
+        splitSummaryLabel.font = NSFont.monospacedSystemFont(ofSize: 11.5, weight: .semibold)
+        splitSummaryLabel.textColor = NSColor(srgbRed: 1.0, green: 0.55, blue: 0.15, alpha: 1.0)
+        splitSummaryLabel.stringValue = "Output: 1 full clip (add cuts to split)"
+        cutContainer.addSubview(splitSummaryLabel)
+
+        let cutTip = NSTextField(labelWithString: "💡 Scrub video player above to any timestamp and click '+ Add Cut'. Output splits into separate video files.")
+        cutTip.frame = NSRect(x: 0, y: subH - 124, width: 440, height: 28)
+        cutTip.font = NSFont.systemFont(ofSize: 10.5)
+        cutTip.textColor = NSColor(white: 0.65, alpha: 1.0)
+        cutContainer.addSubview(cutTip)
+
+        // --- Equal Parts Mode UI ---
+        let pLabel = NSTextField(labelWithString: "Divide into:")
+        pLabel.frame = NSRect(x: 0, y: subH - 32, width: 75, height: 20)
+        pLabel.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+        pLabel.textColor = .white
+        equalContainer.addSubview(pLabel)
+
+        let partsSegment = NSSegmentedControl(labels: ["2 Parts", "3 Parts", "4 Parts", "5 Parts", "6 Parts"], trackingMode: .selectOne, target: self, action: #selector(splitPartsSegmentChanged(_:)))
+        partsSegment.frame = NSRect(x: 80, y: subH - 34, width: 360, height: 26)
+        partsSegment.segmentStyle = .texturedRounded
+        partsSegment.selectedSegment = 0
+        equalContainer.addSubview(partsSegment)
+
+        let eqSum = NSTextField(labelWithString: "Output: 2 equal clips of ~0.0s each")
+        eqSum.frame = NSRect(x: 0, y: subH - 70, width: 440, height: 24)
+        eqSum.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .semibold)
+        eqSum.textColor = NSColor(srgbRed: 1.0, green: 0.55, blue: 0.15, alpha: 1.0)
+        equalContainer.addSubview(eqSum)
+        self.splitEqualSummaryLabel = eqSum
+
+        let eqTip = NSTextField(labelWithString: "💡 Automatically calculates keyframe-accurate cuts to produce exactly equal duration clips.")
+        eqTip.frame = NSRect(x: 0, y: subH - 104, width: 440, height: 28)
+        eqTip.font = NSFont.systemFont(ofSize: 10.5)
+        eqTip.textColor = NSColor(white: 0.65, alpha: 1.0)
+        equalContainer.addSubview(eqTip)
+    }
+
+    // MARK: - Video Action Handlers
+    private func formatTime(_ seconds: Double) -> String {
+        guard seconds.isFinite && seconds >= 0 else { return "00:00.0" }
+        let totalSec = Int(seconds)
+        let mins = totalSec / 60
+        let secs = totalSec % 60
+        let tenths = Int((seconds - Double(totalSec)) * 10)
+        return String(format: "%02d:%02d.%01d", mins, secs, tenths)
+    }
+
+    private func seekPlayer(to seconds: Double) {
+        let clamped = max(0, min(videoDuration, seconds))
+        let cmTime = CMTime(seconds: clamped, preferredTimescale: 600)
+        player?.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+    }
+
+    private func onPlayheadMoved(time: Double) {
+        self.currentPlayheadTime = time
+        if isPlayingTrimSelection {
+            let endT = trimEndSlider?.doubleValue ?? videoDuration
+            if time >= endT {
+                player?.pause()
+                isPlayingTrimSelection = false
+            }
+        }
+        addSplitCutButton?.title = "+ Add Cut at Playhead (\(formatTime(time)))"
+    }
+
+    private func setupSliderRanges() {
+        guard videoDuration > 0 else { return }
+        trimStartSlider?.minValue = 0.0
+        trimStartSlider?.maxValue = videoDuration
+        trimStartSlider?.doubleValue = 0.0
+
+        trimEndSlider?.minValue = 0.0
+        trimEndSlider?.maxValue = videoDuration
+        trimEndSlider?.doubleValue = videoDuration
+
+        updateTrimUI()
+        updateSplitUI()
+    }
+
+    @objc private func trimStartSliderMoved(_ sender: NSSlider) {
+        if sender.doubleValue >= (trimEndSlider?.doubleValue ?? videoDuration) {
+            trimEndSlider?.doubleValue = min(videoDuration, sender.doubleValue + 0.5)
+        }
+        seekPlayer(to: sender.doubleValue)
+        updateTrimUI()
+    }
+
+    @objc private func trimEndSliderMoved(_ sender: NSSlider) {
+        if sender.doubleValue <= (trimStartSlider?.doubleValue ?? 0.0) {
+            trimStartSlider?.doubleValue = max(0.0, sender.doubleValue - 0.5)
+        }
+        seekPlayer(to: sender.doubleValue)
+        updateTrimUI()
+    }
+
+    @objc private func markInClicked() {
+        trimStartSlider?.doubleValue = currentPlayheadTime
+        if currentPlayheadTime >= (trimEndSlider?.doubleValue ?? videoDuration) {
+            trimEndSlider?.doubleValue = min(videoDuration, currentPlayheadTime + 1.0)
+        }
+        updateTrimUI()
+    }
+
+    @objc private func markOutClicked() {
+        trimEndSlider?.doubleValue = currentPlayheadTime
+        if currentPlayheadTime <= (trimStartSlider?.doubleValue ?? 0.0) {
+            trimStartSlider?.doubleValue = max(0.0, currentPlayheadTime - 1.0)
+        }
+        updateTrimUI()
+    }
+
+    @objc private func playTrimSelectionClicked() {
+        let start = trimStartSlider?.doubleValue ?? 0.0
+        seekPlayer(to: start)
+        isPlayingTrimSelection = true
+        player?.play()
+    }
+
+    @objc private func trimPreset15Clicked() {
+        trimStartSlider?.doubleValue = 0.0
+        trimEndSlider?.doubleValue = min(videoDuration, 15.0)
+        seekPlayer(to: 0.0)
+        updateTrimUI()
+    }
+
+    @objc private func trimPreset30Clicked() {
+        trimStartSlider?.doubleValue = 0.0
+        trimEndSlider?.doubleValue = min(videoDuration, 30.0)
+        seekPlayer(to: 0.0)
+        updateTrimUI()
+    }
+
+    @objc private func trimPresetFullClicked() {
+        trimStartSlider?.doubleValue = 0.0
+        trimEndSlider?.doubleValue = videoDuration
+        seekPlayer(to: 0.0)
+        updateTrimUI()
+    }
+
+    private func updateTrimUI() {
+        let start = trimStartSlider?.doubleValue ?? 0.0
+        let end = trimEndSlider?.doubleValue ?? videoDuration
+        let dur = max(0.0, end - start)
+        trimStartBadge?.stringValue = formatTime(start)
+        trimEndBadge?.stringValue = formatTime(end)
+        trimSummaryLabel.stringValue = "Trim Selection: \(formatTime(start)) → \(formatTime(end))  ·  Length: \(String(format: "%.1fs", dur))"
+    }
+
+    @objc private func cropPresetSegmentChanged(_ sender: NSSegmentedControl) {
+        let ratios = ["free", "16:9", "9:16", "1:1", "4:3"]
+        guard sender.selectedSegment >= 0 && sender.selectedSegment < ratios.count else { return }
+        cropOverlayView.applyRatioPreset(ratios[sender.selectedSegment])
+    }
+
+    @objc private func cropAlignCenterClicked() {
+        cropOverlayView.applyAlignment("center")
+    }
+
+    @objc private func cropAlignLeftClicked() {
+        cropOverlayView.applyAlignment("left")
+    }
+
+    @objc private func cropAlignRightClicked() {
+        cropOverlayView.applyAlignment("right")
+    }
+
+    @objc private func cropResetClicked() {
+        cropOverlayView.applyRatioPreset("original")
+    }
+
+    @objc private func splitModeChanged(_ sender: NSSegmentedControl) {
+        splitCutModeContainer?.isHidden = (sender.selectedSegment != 0)
+        splitEqualPartsContainer?.isHidden = (sender.selectedSegment != 1)
+        updateSplitUI()
+    }
+
+    @objc private func addSplitCutClicked() {
+        let t = round(currentPlayheadTime * 10) / 10.0
+        if t > 0.5 && (videoDuration <= 0 || t < videoDuration - 0.5) && !splitPoints.contains(t) {
+            splitPoints.append(t)
+            splitPoints.sort()
+            updateSplitUI()
+        }
+    }
+
+    @objc private func clearSplitCutsClicked() {
+        splitPoints.removeAll()
+        updateSplitUI()
+    }
+
+    @objc private func splitPartsSegmentChanged(_ sender: NSSegmentedControl) {
+        selectedSplitParts = sender.selectedSegment + 2
+        updateSplitUI()
+    }
+
+    private func updateSplitUI() {
+        if splitModeSegment?.selectedSegment == 0 {
+            if splitPoints.isEmpty {
+                splitCutsListLabel?.stringValue = "No cuts yet. Scrub video and click '+ Add Cut at Playhead'"
+                splitSummaryLabel.stringValue = "Output: 1 full clip (add cuts to split)"
+                if activeVideoTab == 2 { actionSaveButton?.title = "Export 1 Clip" }
+            } else {
+                let cutsStr = splitPoints.map { formatTime($0) }.joined(separator: ", ")
+                splitCutsListLabel?.stringValue = "Cut points: \(cutsStr)"
+
+                var parts: [String] = []
+                var prev = 0.0
+                for (i, p) in splitPoints.enumerated() {
+                    parts.append("Clip \(i + 1): [\(formatTime(prev))-\(formatTime(p))]")
+                    prev = p
+                }
+                parts.append("Clip \(splitPoints.count + 1): [\(formatTime(prev))-\(formatTime(videoDuration))]")
+                splitSummaryLabel.stringValue = parts.joined(separator: "  ·  ")
+                if activeVideoTab == 2 { actionSaveButton?.title = "Export \(splitPoints.count + 1) Split Clips" }
+            }
+        } else {
+            let parts = selectedSplitParts
+            let partLen = videoDuration > 0 ? (videoDuration / Double(parts)) : 0.0
+            splitEqualSummaryLabel?.stringValue = "Output: \(parts) equal clips of ~\(String(format: "%.1fs", partLen)) each"
+            if activeVideoTab == 2 { actionSaveButton?.title = "Export \(parts) Split Clips" }
+        }
     }
 
     // MARK: - Crop Form with Free Style and Presets
@@ -671,32 +1247,35 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
     // MARK: - Compression Form
     private func setupCompressForm(in container: NSView) {
+        // Row 1: Compression Quality Slider Header
         let label = NSTextField(labelWithString: "Compression Quality:")
-        label.frame = NSRect(x: 0, y: 84, width: 170, height: 20)
+        label.frame = NSRect(x: 0, y: 195, width: 180, height: 20)
         label.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
         label.textColor = .white
         container.addSubview(label)
 
         let qValLabel = NSTextField(labelWithString: "80%")
-        qValLabel.frame = NSRect(x: 360, y: 84, width: 80, height: 20)
+        qValLabel.frame = NSRect(x: 350, y: 195, width: 90, height: 20)
         qValLabel.alignment = .right
         qValLabel.font = NSFont.systemFont(ofSize: 14, weight: .bold)
         qValLabel.textColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
         container.addSubview(qValLabel)
         self.qualityLabel = qValLabel
 
+        // Row 2: Quality Slider
         let slider = NSSlider(value: 80, minValue: 10, maxValue: 100, target: self, action: #selector(sliderChanged(_:)))
-        slider.frame = NSRect(x: 0, y: 50, width: 440, height: 26)
+        slider.frame = NSRect(x: 0, y: 164, width: 440, height: 24)
         slider.numberOfTickMarks = 10
         slider.allowsTickMarkValuesOnly = false
         slider.isContinuous = true
         container.addSubview(slider)
         self.qualitySlider = slider
 
+        // Row 3: Preset Buttons
         let presets = [("Low (50%)", 50), ("Med (75%)", 75), ("High (80%)", 80), ("Best (95%)", 95)]
         var xOffset: CGFloat = 0
         for (name, val) in presets {
-            let btn = NSButton(frame: NSRect(x: xOffset, y: 12, width: 102, height: 28))
+            let btn = NSButton(frame: NSRect(x: xOffset, y: 128, width: 102, height: 26))
             btn.title = name
             btn.bezelStyle = .rounded
             btn.font = NSFont.systemFont(ofSize: 11, weight: .medium)
@@ -706,6 +1285,70 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             container.addSubview(btn)
             xOffset += 112
         }
+
+        // Row 4: Max Target File Size (Size matters!)
+        let targetSizeLabel = NSTextField(labelWithString: "Max Target Size:")
+        targetSizeLabel.frame = NSRect(x: 0, y: 88, width: 125, height: 20)
+        targetSizeLabel.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        targetSizeLabel.textColor = .white
+        container.addSubview(targetSizeLabel)
+
+        let targetSizePopup = NSPopUpButton(frame: NSRect(x: 130, y: 84, width: 190, height: 26))
+        let sizes = [
+            "Auto (Quality Only)",
+            "200 KB",
+            "300 KB",
+            "500 KB",
+            "1 MB",
+            "2 MB",
+            "5 MB",
+            "10 MB",
+            "25 MB"
+        ]
+        for s in sizes { targetSizePopup.addItem(withTitle: s) }
+        targetSizePopup.target = self
+        targetSizePopup.action = #selector(compressSettingChanged)
+        container.addSubview(targetSizePopup)
+        fieldInputs["targetSize"] = targetSizePopup
+
+        let targetHintLabel = NSTextField(labelWithString: "Iterative size cap")
+        targetHintLabel.frame = NSRect(x: 326, y: 88, width: 114, height: 18)
+        targetHintLabel.font = NSFont.systemFont(ofSize: 11)
+        targetHintLabel.textColor = NSColor(white: 0.7, alpha: 1.0)
+        container.addSubview(targetHintLabel)
+
+        // Row 5: Max Dimensions / Scaling
+        let dimLabel = NSTextField(labelWithString: "Max Dimension:")
+        dimLabel.frame = NSRect(x: 0, y: 48, width: 125, height: 20)
+        dimLabel.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        dimLabel.textColor = .white
+        container.addSubview(dimLabel)
+
+        let dimPopup = NSPopUpButton(frame: NSRect(x: 130, y: 44, width: 190, height: 26))
+        let dims = [
+            "Original (100%)",
+            "2560 px (2K)",
+            "1920 px (Full HD)",
+            "1280 px (Web Ready)",
+            "800 px (Compact)"
+        ]
+        for d in dims { dimPopup.addItem(withTitle: d) }
+        dimPopup.target = self
+        dimPopup.action = #selector(compressSettingChanged)
+        container.addSubview(dimPopup)
+        fieldInputs["maxEdge"] = dimPopup
+
+        let dimHintLabel = NSTextField(labelWithString: "Aspect-ratio kept")
+        dimHintLabel.frame = NSRect(x: 326, y: 48, width: 114, height: 18)
+        dimHintLabel.font = NSFont.systemFont(ofSize: 11)
+        dimHintLabel.textColor = NSColor(white: 0.7, alpha: 1.0)
+        container.addSubview(dimHintLabel)
+
+        // Row 6: Live size & target feedback label
+        compressInfoLabel.frame = NSRect(x: 0, y: 10, width: 440, height: 22)
+        compressInfoLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        compressInfoLabel.textColor = NSColor(srgbRed: 1.0, green: 0.7, blue: 0.3, alpha: 1.0)
+        container.addSubview(compressInfoLabel)
     }
 
     @objc private func sliderChanged(_ sender: NSSlider) {
@@ -722,19 +1365,352 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         updateCompressInfo(quality: val)
     }
 
+    @objc private func compressSettingChanged() {
+        let q = qualitySlider?.integerValue ?? 80
+        updateCompressInfo(quality: q)
+    }
+
     private func updateCompressInfo(quality: Int) {
         guard originalFileSize > 0 else { return }
-        let estimatedBytes = Int64(Double(originalFileSize) * (Double(quality) / 100.0) * 0.72)
         let origStr = ByteCountFormatter.string(fromByteCount: originalFileSize, countStyle: .file)
+
+        var targetKB: Int64 = 0
+        if let sizePopup = fieldInputs["targetSize"] as? NSPopUpButton {
+            let t = sizePopup.titleOfSelectedItem ?? ""
+            if t.contains("200 KB") { targetKB = 200 }
+            else if t.contains("300 KB") { targetKB = 300 }
+            else if t.contains("500 KB") { targetKB = 500 }
+            else if t.contains("1 MB") { targetKB = 1024 }
+            else if t.contains("2 MB") { targetKB = 2048 }
+            else if t.contains("5 MB") { targetKB = 5120 }
+            else if t.contains("10 MB") { targetKB = 10240 }
+            else if t.contains("25 MB") { targetKB = 25600 }
+        }
+
+        var dimScale: Double = 1.0
+        if let dimPopup = fieldInputs["maxEdge"] as? NSPopUpButton {
+            let t = dimPopup.titleOfSelectedItem ?? ""
+            if t.contains("2560") && max(originalWidth, originalHeight) > 2560 {
+                dimScale = 2560.0 / Double(max(originalWidth, originalHeight))
+            } else if t.contains("1920") && max(originalWidth, originalHeight) > 1920 {
+                dimScale = 1920.0 / Double(max(originalWidth, originalHeight))
+            } else if t.contains("1280") && max(originalWidth, originalHeight) > 1280 {
+                dimScale = 1280.0 / Double(max(originalWidth, originalHeight))
+            } else if t.contains("800") && max(originalWidth, originalHeight) > 800 {
+                dimScale = 800.0 / Double(max(originalWidth, originalHeight))
+            }
+        }
+
+        let rawEst = Double(originalFileSize) * (Double(quality) / 100.0) * 0.70 * (dimScale * dimScale)
+        let estimatedBytes: Int64
+        if targetKB > 0 {
+            estimatedBytes = min(Int64(rawEst), targetKB * 1024)
+        } else {
+            estimatedBytes = Int64(rawEst)
+        }
+
         let estStr = ByteCountFormatter.string(fromByteCount: max(1024, estimatedBytes), countStyle: .file)
 
         var parts: [String] = []
         if originalWidth > 0 && originalHeight > 0 {
-            parts.append("\(originalWidth) × \(originalHeight)")
+            if dimScale < 0.999 {
+                let newW = Int(Double(originalWidth) * dimScale)
+                let newH = Int(Double(originalHeight) * dimScale)
+                parts.append("\(originalWidth)×\(originalHeight) → \(newW)×\(newH)")
+            } else {
+                parts.append("\(originalWidth) × \(originalHeight)")
+            }
         }
         parts.append("Original: \(origStr)")
+        if targetKB > 0 {
+            parts.append("Target: ≤ \(ByteCountFormatter.string(fromByteCount: targetKB * 1024, countStyle: .file))")
+        }
         parts.append("Est. Size: ~\(estStr)")
         self.infoLabel.stringValue = parts.joined(separator: "  ·  ")
+        self.compressInfoLabel.stringValue = parts.joined(separator: "  ·  ")
+    }
+
+    // MARK: - Watermark Form
+    private func setupWatermarkForm(in container: NSView) {
+        // Row 1: Watermark Text
+        let textLabel = NSTextField(labelWithString: "Watermark Text:")
+        textLabel.frame = NSRect(x: 0, y: 195, width: 120, height: 20)
+        textLabel.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        textLabel.textColor = .white
+        container.addSubview(textLabel)
+
+        let textField = NSTextField(frame: NSRect(x: 125, y: 192, width: 315, height: 24))
+        textField.stringValue = "CONFIDENTIAL"
+        textField.placeholderString = "Enter watermark text..."
+        textField.target = self
+        textField.action = #selector(watermarkParamChanged)
+        container.addSubview(textField)
+        fieldInputs["text"] = textField
+
+        NotificationCenter.default.addObserver(self, selector: #selector(watermarkTextDidChange(_:)), name: NSControl.textDidChangeNotification, object: textField)
+
+        // Row 2: Repeats and Angle
+        let repeatsLabel = NSTextField(labelWithString: "Repeats:")
+        repeatsLabel.frame = NSRect(x: 0, y: 150, width: 65, height: 18)
+        repeatsLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        repeatsLabel.textColor = .white
+        container.addSubview(repeatsLabel)
+
+        let repeatsPopup = NSPopUpButton(frame: NSRect(x: 70, y: 146, width: 155, height: 26))
+        let repeatsList = [
+            "Single (Center)",
+            "Single (Bottom Right)",
+            "4 (2×2 Grid)",
+            "9 (3×3 Grid)",
+            "16 (4×4 Dense Grid)",
+            "Tiled Pattern (Full Page)"
+        ]
+        for r in repeatsList { repeatsPopup.addItem(withTitle: r) }
+        repeatsPopup.target = self
+        repeatsPopup.action = #selector(watermarkParamChanged)
+        container.addSubview(repeatsPopup)
+        fieldInputs["repeats"] = repeatsPopup
+
+        let angleLabel = NSTextField(labelWithString: "Angle:")
+        angleLabel.frame = NSRect(x: 235, y: 150, width: 50, height: 18)
+        angleLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        angleLabel.textColor = .white
+        container.addSubview(angleLabel)
+
+        let anglePopup = NSPopUpButton(frame: NSRect(x: 290, y: 146, width: 150, height: 26))
+        let angles = [
+            "45° (Diagonal)",
+            "0° (Horizontal)",
+            "30° (Subtle Angle)",
+            "-45° (Inverse Diagonal)",
+            "90° (Vertical)"
+        ]
+        for a in angles { anglePopup.addItem(withTitle: a) }
+        anglePopup.target = self
+        anglePopup.action = #selector(watermarkParamChanged)
+        container.addSubview(anglePopup)
+        fieldInputs["angle"] = anglePopup
+
+        // Row 3: Text Size and Opacity
+        let sizeLabel = NSTextField(labelWithString: "Text Size:")
+        sizeLabel.frame = NSRect(x: 0, y: 106, width: 65, height: 18)
+        sizeLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        sizeLabel.textColor = .white
+        container.addSubview(sizeLabel)
+
+        let sizePopup = NSPopUpButton(frame: NSRect(x: 70, y: 102, width: 155, height: 26))
+        let sizes = [
+            "18 pt (Small)",
+            "32 pt (Medium)",
+            "48 pt (Large)",
+            "72 pt (Extra Large)",
+            "96 pt (Huge)"
+        ]
+        for s in sizes { sizePopup.addItem(withTitle: s) }
+        sizePopup.selectItem(withTitle: "48 pt (Large)")
+        sizePopup.target = self
+        sizePopup.action = #selector(watermarkParamChanged)
+        container.addSubview(sizePopup)
+        fieldInputs["size"] = sizePopup
+
+        let opacityLabel = NSTextField(labelWithString: "Opacity:")
+        opacityLabel.frame = NSRect(x: 235, y: 106, width: 50, height: 18)
+        opacityLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        opacityLabel.textColor = .white
+        container.addSubview(opacityLabel)
+
+        let opacityPopup = NSPopUpButton(frame: NSRect(x: 290, y: 102, width: 150, height: 26))
+        let opacities = ["20%", "35%", "50%", "70%", "90%"]
+        for o in opacities { opacityPopup.addItem(withTitle: o) }
+        opacityPopup.selectItem(withTitle: "35%")
+        opacityPopup.target = self
+        opacityPopup.action = #selector(watermarkParamChanged)
+        container.addSubview(opacityPopup)
+        fieldInputs["opacity"] = opacityPopup
+
+        // Row 4: Color
+        let colorLabel = NSTextField(labelWithString: "Color:")
+        colorLabel.frame = NSRect(x: 0, y: 62, width: 65, height: 18)
+        colorLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        colorLabel.textColor = .white
+        container.addSubview(colorLabel)
+
+        let colorPopup = NSPopUpButton(frame: NSRect(x: 70, y: 58, width: 180, height: 26))
+        let colors = [
+            "White (#ffffff)",
+            "Black (#000000)",
+            "Orange (#ff6500)",
+            "Red (#ef4444)",
+            "Blue (#3b82f6)",
+            "Green (#10b981)",
+            "Gold (#f59e0b)"
+        ]
+        for c in colors { colorPopup.addItem(withTitle: c) }
+        colorPopup.target = self
+        colorPopup.action = #selector(watermarkParamChanged)
+        container.addSubview(colorPopup)
+        fieldInputs["color"] = colorPopup
+
+        // Row 5: Info summary label
+        watermarkInfoLabel.frame = NSRect(x: 0, y: 14, width: 440, height: 22)
+        watermarkInfoLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        watermarkInfoLabel.textColor = NSColor(srgbRed: 1.0, green: 0.7, blue: 0.3, alpha: 1.0)
+        watermarkInfoLabel.stringValue = "Watermark: CONFIDENTIAL  ·  Single (Center)  ·  45°  ·  48 pt"
+        container.addSubview(watermarkInfoLabel)
+
+        updateWatermarkPreview()
+    }
+
+    @objc private func watermarkTextDidChange(_ notification: Notification) {
+        watermarkParamChanged()
+    }
+
+    @objc private func watermarkParamChanged() {
+        let tf = fieldInputs["text"] as? NSTextField
+        let text = tf?.stringValue.trimmingCharacters(in: .whitespaces) ?? "CONFIDENTIAL"
+        let displayStr = text.isEmpty ? "CONFIDENTIAL" : text
+
+        let rPopup = fieldInputs["repeats"] as? NSPopUpButton
+        let rTitle = rPopup?.titleOfSelectedItem ?? "Single (Center)"
+
+        let aPopup = fieldInputs["angle"] as? NSPopUpButton
+        let aTitle = aPopup?.titleOfSelectedItem ?? "45°"
+
+        let sPopup = fieldInputs["size"] as? NSPopUpButton
+        let sTitle = sPopup?.titleOfSelectedItem ?? "48 pt"
+
+        let oPopup = fieldInputs["opacity"] as? NSPopUpButton
+        let oTitle = oPopup?.titleOfSelectedItem ?? "35%"
+
+        watermarkInfoLabel.stringValue = "Watermark: \(displayStr)  ·  \(rTitle)  ·  \(aTitle)  ·  \(sTitle)  ·  \(oTitle)"
+        updateWatermarkPreview()
+    }
+
+    private func updateWatermarkPreview() {
+        guard let base = originalImage else { return }
+        let tf = fieldInputs["text"] as? NSTextField
+        let text = tf?.stringValue.trimmingCharacters(in: .whitespaces) ?? "CONFIDENTIAL"
+        let displayStr = text.isEmpty ? "CONFIDENTIAL" : text
+
+        let rPopup = fieldInputs["repeats"] as? NSPopUpButton
+        let rTitle = rPopup?.titleOfSelectedItem ?? "Single (Center)"
+
+        let aPopup = fieldInputs["angle"] as? NSPopUpButton
+        let aTitle = aPopup?.titleOfSelectedItem ?? "45°"
+        var angleDeg: CGFloat = 45
+        if aTitle.contains("-45") { angleDeg = -45 }
+        else if aTitle.contains("90") { angleDeg = 90 }
+        else if aTitle.contains("30") { angleDeg = 30 }
+        else if aTitle.contains("0") { angleDeg = 0 }
+
+        let sPopup = fieldInputs["size"] as? NSPopUpButton
+        let sTitle = sPopup?.titleOfSelectedItem ?? "48 pt"
+        var ptSize: CGFloat = 48
+        if sTitle.contains("18") { ptSize = 18 }
+        else if sTitle.contains("32") { ptSize = 32 }
+        else if sTitle.contains("72") { ptSize = 72 }
+        else if sTitle.contains("96") { ptSize = 96 }
+
+        let oPopup = fieldInputs["opacity"] as? NSPopUpButton
+        let oTitle = oPopup?.titleOfSelectedItem ?? "35%"
+        var alpha: CGFloat = 0.35
+        if oTitle.contains("20") { alpha = 0.20 }
+        else if oTitle.contains("50") { alpha = 0.50 }
+        else if oTitle.contains("70") { alpha = 0.70 }
+        else if oTitle.contains("90") { alpha = 0.90 }
+
+        let cPopup = fieldInputs["color"] as? NSPopUpButton
+        let cTitle = cPopup?.titleOfSelectedItem ?? "#ffffff"
+        var fontColor = NSColor.white
+        if cTitle.contains("#000000") { fontColor = .black }
+        else if cTitle.contains("#ff6500") { fontColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0) }
+        else if cTitle.contains("#ef4444") { fontColor = NSColor(srgbRed: 0.937, green: 0.267, blue: 0.267, alpha: 1.0) }
+        else if cTitle.contains("#3b82f6") { fontColor = NSColor(srgbRed: 0.231, green: 0.510, blue: 0.965, alpha: 1.0) }
+        else if cTitle.contains("#10b981") { fontColor = NSColor(srgbRed: 0.063, green: 0.725, blue: 0.506, alpha: 1.0) }
+        else if cTitle.contains("#f59e0b") { fontColor = NSColor(srgbRed: 0.961, green: 0.620, blue: 0.043, alpha: 1.0) }
+
+        let rep = base.representations.first
+        let w = CGFloat(rep?.pixelsWide ?? Int(base.size.width))
+        let h = CGFloat(rep?.pixelsHigh ?? Int(base.size.height))
+        guard w > 0, h > 0 else { return }
+
+        // Scale font size proportionally for high resolution images
+        let scaleFactor = max(1.0, min(w, h) / 800.0)
+        let scaledFont = NSFont.boldSystemFont(ofSize: ptSize * scaleFactor)
+        let textAttrs: [NSAttributedString.Key: Any] = [
+            .font: scaledFont,
+            .foregroundColor: fontColor.withAlphaComponent(alpha)
+        ]
+        let attrStr = NSAttributedString(string: displayStr, attributes: textAttrs)
+        let strSize = attrStr.size()
+
+        let composed = NSImage(size: NSSize(width: w, height: h))
+        composed.lockFocus()
+        base.draw(in: NSRect(x: 0, y: 0, width: w, height: h))
+
+        func drawRotatedText(at center: CGPoint) {
+            let transform = NSAffineTransform()
+            transform.translateX(by: center.x, yBy: center.y)
+            transform.rotate(byDegrees: angleDeg)
+            transform.concat()
+            attrStr.draw(at: NSPoint(x: -strSize.width / 2.0, y: -strSize.height / 2.0))
+            transform.invert()
+            transform.concat()
+        }
+
+        if rTitle.contains("4") {
+            // 2x2 grid
+            for r in 0..<2 {
+                for c in 0..<2 {
+                    let cx = w * (CGFloat(c) + 0.5) / 2.0
+                    let cy = h * (CGFloat(r) + 0.5) / 2.0
+                    drawRotatedText(at: CGPoint(x: cx, y: cy))
+                }
+            }
+        } else if rTitle.contains("9") {
+            // 3x3 grid
+            for r in 0..<3 {
+                for c in 0..<3 {
+                    let cx = w * (CGFloat(c) + 0.5) / 3.0
+                    let cy = h * (CGFloat(r) + 0.5) / 3.0
+                    drawRotatedText(at: CGPoint(x: cx, y: cy))
+                }
+            }
+        } else if rTitle.contains("16") {
+            // 4x4 grid
+            for r in 0..<4 {
+                for c in 0..<4 {
+                    let cx = w * (CGFloat(c) + 0.5) / 4.0
+                    let cy = h * (CGFloat(r) + 0.5) / 4.0
+                    drawRotatedText(at: CGPoint(x: cx, y: cy))
+                }
+            }
+        } else if rTitle.contains("Tiled") {
+            let stepX = max(60, strSize.width * 1.5)
+            let stepY = max(40, strSize.height * 2.2)
+            var row = 0
+            var y: CGFloat = 0
+            while y < h + stepY {
+                let xOffset = (row % 2 == 1) ? (stepX / 2.0) : 0
+                var x: CGFloat = -stepX / 2.0 + xOffset
+                while x < w + stepX {
+                    drawRotatedText(at: CGPoint(x: x, y: y))
+                    x += stepX
+                }
+                y += stepY
+                row += 1
+            }
+        } else if rTitle.contains("Bottom Right") {
+            let cx = max(strSize.width / 2.0, w - strSize.width / 2.0 - 40)
+            let cy = max(strSize.height / 2.0, 40 + strSize.height / 2.0)
+            drawRotatedText(at: CGPoint(x: cx, y: cy))
+        } else {
+            // Center
+            drawRotatedText(at: CGPoint(x: w / 2.0, y: h / 2.0))
+        }
+
+        composed.unlockFocus()
+        self.previewImageView.image = composed
     }
 
     // MARK: - Resize Form
@@ -1209,6 +2185,74 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
         self.infoLabel.stringValue = "Loading preview..."
 
+        let ext = URL(fileURLWithPath: firstPath).pathExtension.lowercased()
+        let isVideo = ["mp4", "mov", "mkv", "webm", "avi", "m4v"].contains(ext)
+        let isVideoStudio = (tool.id == "trimVideo" || tool.id == "cropVideo" || tool.id == "splitVideo" || tool.id == "editVideo")
+
+        if isVideoStudio || (isVideo && tool.id == "cropVideo") {
+            let url = URL(fileURLWithPath: firstPath)
+            let asset = AVURLAsset(url: url)
+
+            let dur = CMTimeGetSeconds(asset.duration)
+            if dur.isFinite && dur > 0 {
+                self.videoDuration = dur
+            }
+
+            var naturalW = 1280
+            var naturalH = 720
+            if let track = asset.tracks(withMediaType: .video).first {
+                let size = track.naturalSize.applying(track.preferredTransform)
+                naturalW = max(10, abs(Int(size.width)))
+                naturalH = max(10, abs(Int(size.height)))
+            }
+            self.originalWidth = naturalW
+            self.originalHeight = naturalH
+            self.cropOverlayView.imageSize = CGSize(width: naturalW, height: naturalH)
+            self.cropOverlayView.applyRatioPreset("free")
+            self.updateInfo(width: naturalW, height: naturalH, size: self.originalFileSize)
+
+            let playerItem = AVPlayerItem(url: url)
+            let p = AVPlayer(playerItem: playerItem)
+            self.player = p
+
+            let pv = AVPlayerView(frame: self.previewImageView.frame)
+            pv.autoresizingMask = [.width, .height]
+            pv.controlsStyle = .inline
+            pv.showsFullScreenToggleButton = false
+            pv.wantsLayer = true
+            pv.layer?.cornerRadius = 6
+            pv.layer?.masksToBounds = true
+            pv.player = p
+            self.playerView = pv
+
+            self.previewImageView.isHidden = true
+            self.previewImageView.superview?.addSubview(pv, positioned: .below, relativeTo: self.cropOverlayView)
+
+            let interval = CMTime(seconds: 0.1, preferredTimescale: 600)
+            self.playerTimeObserver = p.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+                guard let self = self else { return }
+                let sec = CMTimeGetSeconds(time)
+                guard sec.isFinite else { return }
+                self.onPlayheadMoved(time: sec)
+            }
+
+            if self.videoDuration > 0 {
+                self.setupSliderRanges()
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    guard let self = self else { return }
+                    let d = CMTimeGetSeconds(playerItem.duration)
+                    if d.isFinite && d > 0 {
+                        self.videoDuration = d
+                        self.setupSliderRanges()
+                    }
+                }
+            }
+
+            self.cropOverlayView.notifyCropChanged()
+            return
+        }
+
         PreviewService.shared.loadPreview(for: firstPath) { [weak self] img in
             guard let self = self, let img = img else { return }
             self.originalImage = img
@@ -1227,6 +2271,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
             if self.tool.id == "compress" {
                 self.updateCompressInfo(quality: self.qualitySlider?.integerValue ?? 80)
+            } else if self.tool.id == "watermark" {
+                self.updateWatermarkPreview()
             } else if self.tool.id == "cropImage" || self.tool.id == "cropVideo" {
                 self.cropOverlayView.notifyCropChanged()
             } else if self.tool.id == "redactImage" {
@@ -1257,6 +2303,64 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
     @objc private func saveClicked() {
         var params: [String: String] = [:]
+
+        let isVideoStudio = (tool.id == "trimVideo" || tool.id == "cropVideo" || tool.id == "splitVideo" || tool.id == "editVideo")
+        if isVideoStudio {
+            player?.pause()
+            var finalAction = "trimVideo"
+            if activeVideoTab == 0 {
+                finalAction = "trimVideo"
+                let start = trimStartSlider?.doubleValue ?? 0.0
+                var end = trimEndSlider?.doubleValue ?? videoDuration
+                if end <= start { end = min(videoDuration, start + 1.0) }
+                params["start"] = String(format: "%.2f", start)
+                params["end"] = String(format: "%.2f", end)
+            } else if activeVideoTab == 1 {
+                finalAction = "cropVideo"
+                let px = cropOverlayView.currentPixelRect()
+                params["x"] = "\(Int(px.origin.x))"
+                params["y"] = "\(Int(px.origin.y))"
+                params["width"] = "\(Int(px.width))"
+                params["height"] = "\(Int(px.height))"
+                params["ratio"] = cropOverlayView.currentRatioKey
+            } else if activeVideoTab == 2 {
+                finalAction = "splitVideo"
+                if splitModeSegment?.selectedSegment == 0 {
+                    if !splitPoints.isEmpty {
+                        params["splitPoints"] = splitPoints.map { String(format: "%.2f", $0) }.joined(separator: ", ")
+                    } else {
+                        params["parts"] = "2"
+                    }
+                } else {
+                    params["parts"] = "\(selectedSplitParts)"
+                }
+            }
+
+            let job = ConversionJob(Paths: paths, Action: finalAction, Parameters: params)
+            let card = TaskIndicatorManager.shared.addJob(job)
+
+            window?.close()
+            onClose?()
+
+            BackendBridge.shared.execute(
+                job: job,
+                onStart: { process in
+                    card.process = process
+                },
+                progressHandler: { prog in
+                    card.updateProgress(prog)
+                },
+                completion: { result in
+                    switch result {
+                    case .success(let batch):
+                        card.markCompleted(result: batch)
+                    case .failure(let err):
+                        card.markFailed(error: err)
+                    }
+                }
+            )
+            return
+        }
 
         if tool.id == "cropImage" || tool.id == "cropVideo" {
             let px = cropOverlayView.currentPixelRect()
@@ -1348,6 +2452,88 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         } else if tool.id == "compress" {
             let q = qualitySlider?.integerValue ?? 80
             params["quality"] = "\(q)"
+            if let sizePopup = fieldInputs["targetSize"] as? NSPopUpButton {
+                let title = sizePopup.titleOfSelectedItem ?? "Auto"
+                if title.contains("200 KB") { params["targetKB"] = "200" }
+                else if title.contains("300 KB") { params["targetKB"] = "300" }
+                else if title.contains("500 KB") { params["targetKB"] = "500" }
+                else if title.contains("1 MB") { params["targetKB"] = "1024" }
+                else if title.contains("2 MB") { params["targetKB"] = "2048" }
+                else if title.contains("5 MB") { params["targetKB"] = "5120" }
+                else if title.contains("10 MB") { params["targetKB"] = "10240" }
+                else if title.contains("25 MB") { params["targetKB"] = "25600" }
+                else if title.contains("50 MB") { params["targetKB"] = "51200" }
+                else if title.contains("100 MB") { params["targetKB"] = "102400" }
+            }
+            if let edgePopup = fieldInputs["maxEdge"] as? NSPopUpButton {
+                let title = edgePopup.titleOfSelectedItem ?? "Original"
+                if title.contains("2560") { params["maxEdge"] = "2560" }
+                else if title.contains("2000") { params["maxEdge"] = "2000" }
+                else if title.contains("1920") { params["maxEdge"] = "1920" }
+                else if title.contains("1500") { params["maxEdge"] = "1500" }
+                else if title.contains("1280") { params["maxEdge"] = "1280" }
+                else if title.contains("1000") { params["maxEdge"] = "1000" }
+                else if title.contains("854") { params["maxEdge"] = "854" }
+                else if title.contains("800") { params["maxEdge"] = "800" }
+            }
+        } else if tool.id == "watermark" {
+            if let tf = fieldInputs["text"] as? NSTextField {
+                let t = tf.stringValue.trimmingCharacters(in: .whitespaces)
+                params["text"] = t.isEmpty ? "CONFIDENTIAL" : t
+            }
+            if let rPopup = fieldInputs["repeats"] as? NSPopUpButton {
+                let title = rPopup.titleOfSelectedItem ?? ""
+                if title.contains("Tiled") {
+                    params["layout"] = "tiled"
+                    params["repeats"] = "0"
+                } else if title.contains("16") {
+                    params["layout"] = "grid"
+                    params["repeats"] = "16"
+                } else if title.contains("9") {
+                    params["layout"] = "grid"
+                    params["repeats"] = "9"
+                } else if title.contains("4") {
+                    params["layout"] = "grid"
+                    params["repeats"] = "4"
+                } else if title.contains("Bottom Right") {
+                    params["layout"] = "single"
+                    params["repeats"] = "1"
+                    params["position"] = "bottomRight"
+                } else {
+                    params["layout"] = "single"
+                    params["repeats"] = "1"
+                    params["position"] = "center"
+                }
+            }
+            if let aPopup = fieldInputs["angle"] as? NSPopUpButton {
+                let title = aPopup.titleOfSelectedItem ?? "45"
+                if title.contains("-45") { params["angle"] = "-45"; params["rotation"] = "-45" }
+                else if title.contains("90") { params["angle"] = "90"; params["rotation"] = "90" }
+                else if title.contains("30") { params["angle"] = "30"; params["rotation"] = "30" }
+                else if title.contains("0") { params["angle"] = "0"; params["rotation"] = "0" }
+                else { params["angle"] = "45"; params["rotation"] = "45" }
+            }
+            if let sPopup = fieldInputs["size"] as? NSPopUpButton {
+                let title = sPopup.titleOfSelectedItem ?? "48"
+                if title.contains("18") { params["textSize"] = "18"; params["fontSize"] = "18" }
+                else if title.contains("32") { params["textSize"] = "32"; params["fontSize"] = "32" }
+                else if title.contains("72") { params["textSize"] = "72"; params["fontSize"] = "72" }
+                else if title.contains("96") { params["textSize"] = "96"; params["fontSize"] = "96" }
+                else { params["textSize"] = "48"; params["fontSize"] = "48" }
+            }
+            if let oPopup = fieldInputs["opacity"] as? NSPopUpButton {
+                let title = oPopup.titleOfSelectedItem ?? "35"
+                let digits = title.filter { $0.isNumber }
+                params["opacity"] = digits.isEmpty ? "35" : digits
+            }
+            if let cPopup = fieldInputs["color"] as? NSPopUpButton {
+                let title = cPopup.titleOfSelectedItem ?? "#ffffff"
+                if let hex = title.split(separator: "(").last?.replacingOccurrences(of: ")", with: "").trimmingCharacters(in: .whitespaces), hex.hasPrefix("#") {
+                    params["color"] = hex
+                } else {
+                    params["color"] = "#ffffff"
+                }
+            }
         } else if tool.id == "resizeImage" {
             if let wField = fieldInputs["width"] as? NSTextField {
                 params["width"] = wField.stringValue

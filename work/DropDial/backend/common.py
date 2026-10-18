@@ -95,7 +95,7 @@ def output_stem(path,suffix):
     return name+'-'+suffix
 
 # Output names say what was done in plain words (photo-rotated.jpg) instead of using the tool's internal id.
-SUFFIX={'rotateImage':'rotated','rotateVideo':'rotated','cropImage':'cropped','cropVideo':'cropped','compress':'compressed','editImage':'edited',
+SUFFIX={'rotateImage':'rotated','rotateVideo':'rotated','cropImage':'cropped','cropVideo':'cropped','compress':'compressed','editImage':'edited','editVideo':'edited',
     'frameImage':'framed','redactImage':'redacted','redactVideo':'redacted','redactAudio':'beeped','removeMetadata':'clean','redactPDF':'redacted','muteVideo':'muted',
     'trimVideo':'trimmed','trimAudio':'trimmed','changeVideoSpeed':'speed','normalizeAudio':'normalized','audioChannels':'channels','audioToVideo':'visualizer',
     'resizeImage':'resized','watermark':'watermarked','makeIcon':'icons','ocrImage':'text','ocrPDF':'text','videoToGif':'gif','videoSettings':'resized',

@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DropDial · Drag. Drop. Convert.</title>
+<meta name="description" content="DropDial is a free, open-source file converter for macOS and Windows. Hold Shift while dragging any file and drop it on the format you want. Images, video, audio, PDF, Office and archives, all processed locally.">
+<link rel="canonical" href="https://dropdial.org/">
+<meta name="theme-color" content="#FAF8F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141516" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/assets/img/icon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://dropdial.org/">
+<meta property="og:site_name" content="DropDial">
+<meta property="og:title" content="DropDial · Drag. Drop. Convert.">
+<meta property="og:description" content="Free file converter for macOS and Windows. Hold Shift while dragging any file and drop it on the format you want.">
+<meta property="og:image" content="https://dropdial.org/assets/img/og-image.png?v=2">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/assets/css/site.css?v=6">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"DropDial","operatingSystem":"macOS, Windows","applicationCategory":"UtilitiesApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://opensource.org/licenses/MIT","url":"https://dropdial.org/","downloadUrl":"https://github.com/Nithin1138/lotus/releases/latest","softwareVersion":"0.1.1"}
+</script>
+<!--
+  Visitor statistics: on Cloudflare Pages, enable Web Analytics in the project's Metrics tab; no snippet is needed.
+  On other hosts, create a site in Cloudflare Web Analytics and paste the beacon script it gives you here.
+-->
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+
+<header class="nav" id="top">
+  <div class="wrap nav-row">
+    <a class="brand" href="#top" aria-label="DropDial home">
+      <img src="/assets/img/logo.png" alt="" width="32" height="32">
+      <span>DropDial</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#how" data-i18n="nav.how">How it works</a>
+      <a href="#features" data-i18n="nav.features">Features</a>
+      <a href="#faq" data-i18n="nav.faq">FAQ</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="icon-link" href="https://github.com/Nithin1138/lotus" aria-label="DropDial on GitHub">
+        <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      </a>
+      <a class="btn btn-small" href="#download" data-i18n="nav.download">Download</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow" data-i18n="hero.eyebrow">Free · Open source · macOS &amp; Windows</p>
+        <h1 data-i18n="hero.title">Drag. Drop. <em>Convert.</em></h1>
+        <p class="lead" data-i18n="hero.lead">Hold <kbd>Shift</kbd> while you drag any file, and a format wheel opens under your cursor. Release on the format you want. No app window, no upload, no browser tab.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/Nithin1138/lotus/releases" data-download>
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>
+            <span data-i18n="cta.download">Download DropDial</span>
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/Nithin1138/lotus" data-i18n="cta.source">View source on GitHub</a>
+        </div>
+        <p class="fineprint"><span data-release-meta>macOS &amp; Windows · Fast, local, private</span> · <span data-i18n="cta.fine">100% Free &amp; Open Source</span></p>
+      </div>
+
+      <div class="demo" id="demo">
+        <div class="stage" id="stage" aria-describedby="demo-help">
+          <ul class="desk" id="desk" aria-label="Demo files"></ul>
+          <div class="ring" aria-hidden="true" data-i18n="demo.ring">Drag a file here</div>
+          <div class="wheel-wrap" id="wheel-wrap" hidden>
+            <svg class="wheel" id="wheel" viewBox="0 0 380 380" role="listbox" aria-label="Format wheel"></svg>
+          </div>
+          <div class="ghost" id="ghost" hidden></div>
+          <div class="toast" id="toast" hidden role="status" aria-live="polite">
+            <strong id="toast-title"></strong>
+            <span id="toast-detail"></span>
+            <div class="bar" id="toast-bar"><i></i></div>
+            <small id="toast-time"></small>
+          </div>
+        </div>
+        <div class="demo-bar">
+          <p class="demo-help" id="demo-help" data-i18n="demo.help">Try it: drag a file and release it on a petal.</p>
+          <div class="mode" role="group" aria-label="Wheel mode">
+            <button type="button" id="mode-formats" aria-pressed="true"><span data-i18n="demo.formats">Formats</span> <kbd>Shift</kbd></button>
+            <button type="button" id="mode-tools" aria-pressed="false"><span data-i18n="demo.tools">Tools</span> <kbd>Ctrl</kbd><kbd>Shift</kbd></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="strip" aria-label="Highlights">
+    <ul class="wrap strip-row">
+      <li><b data-i18n="strip.local">100% local</b><span data-i18n="strip.local.d">Files never leave your PC</span></li>
+      <li><b data-i18n="strip.free">Free &amp; open source</b><span data-i18n="strip.free.d">MIT licensed</span></li>
+      <li><b data-i18n="strip.portable">Portable</b><span data-i18n="strip.portable.d">No installer, nothing else to install</span></li>
+      <li><b data-i18n="strip.safe">Originals untouched</b><span data-i18n="strip.safe.d">New files are saved alongside</span></li>
+    </ul>
+  </section>
+
+  <section class="section" id="how">
+    <div class="wrap">
+      <h2 data-i18n="how.title">Three moves. No windows.</h2>
+      <p class="section-lead" data-i18n="how.lead">DropDial lives in the menu bar / system tray and wakes up only when you need it, in the middle of a drag you were already making.</p>
+      <ol class="steps">
+        <li>
+          <span class="step-n">1</span>
+          <h3 data-i18n="how.1.t">Start dragging</h3>
+          <p data-i18n="how.1.d">Select one or more files on the desktop or in File Explorer/Finder and start dragging, as if you were moving them.</p>
+        </li>
+        <li>
+          <span class="step-n">2</span>
+          <h3 data-i18n="how.2.t">Press a shortcut</h3>
+          <p data-i18n="how.2.d"><kbd>Shift</kbd> opens formats, <kbd>Ctrl</kbd> + <kbd>Shift</kbd> opens tools. <kbd>F8</kbd> and <kbd>F9</kbd> work too. Once the wheel is open you can let go of the keys.</p>
+        </li>
+        <li>
+          <span class="step-n">3</span>
+          <h3 data-i18n="how.3.t">Release on a petal</h3>
+          <p data-i18n="how.3.d">Drop on the format or tool you want. The new file appears next to the original, which is never overwritten.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="features">
+    <div class="wrap">
+      <h2 data-i18n="feat.title">One gesture for every file on your desktop</h2>
+      <p class="section-lead" data-i18n="feat.lead">The wheel only shows what makes sense for the files you are holding. Pick a file type to see its menus.</p>
+
+      <!-- 333 = input-to-output format pairs from Catalog.cs (49 input formats; 145 of them are Office conversions).
+           27 = tool definitions in Catalog.cs. Recount both when the catalog changes. -->
+      <div class="stats">
+        <div class="stat">
+          <b>333</b>
+          <h3 data-i18n="stat.conv.t">Conversion options</h3>
+          <p data-i18n="stat.conv.d">Input-to-output format pairs across images, video, audio, documents, Office files and archives. 145 of them use your installed Microsoft Office.</p>
+        </div>
+        <div class="stat">
+          <b>27</b>
+          <h3 data-i18n="stat.tools.t">Advanced file tools</h3>
+          <p data-i18n="stat.tools.d">Compress, trim, crop, redact, join, split and more, many with a live preview.</p>
+        </div>
+      </div>
+
+      <div class="showcase" id="showcase">
+        <div class="tabs" role="tablist" aria-label="File types">
+          <button class="tab" role="tab" type="button" id="tab-images" data-cat="images" aria-selected="true" aria-controls="show-panel" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5.5-5 3.5 3 3-2.5 4 4.5"/></svg><span>Images</span></button>
+          <button class="tab" role="tab" type="button" id="tab-video" data-cat="video" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="13" height="14" rx="2.5"/><path d="m16 10 5-3v10l-5-3"/></svg><span>Video</span></button>
+          <button class="tab" role="tab" type="button" id="tab-audio" data-cat="audio" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span>Audio</span></button>
+          <button class="tab" role="tab" type="button" id="tab-documents" data-cat="documents" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg><span>Documents</span></button>
+          <button class="tab" role="tab" type="button" id="tab-archives" data-cat="archives" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v13H4zM3 4h18v3H3zM10 11h4"/></svg><span>Archives</span></button>
+        </div>
+        <div class="panel" id="show-panel" role="tabpanel" aria-labelledby="tab-images">
+          <h3 id="show-title">Image tools</h3>
+          <p class="panel-desc" id="show-desc">JPG, PNG, WebP, HEIC, TIFF, AVIF, BMP and SVG. Convert, compress, crop to any ratio, redact, adjust colour, add a background or strip metadata.</p>
+          <div class="duo">
+            <div class="duo-col">
+              <div class="keys"><span class="cap"><i aria-hidden="true">⇧</i><span>Shift</span></span></div>
+              <p class="duo-label" id="show-fmt-label">Convert formats</p>
+              <svg class="wheel mini" id="show-wheel-fmt" viewBox="0 0 380 380" role="img" tabindex="0"></svg>
+              <p class="duo-caption" id="show-fmt-cap" aria-live="polite"></p>
+            </div>
+            <div class="duo-rule" aria-hidden="true"></div>
+            <div class="duo-col">
+              <div class="keys"><span class="cap"><i aria-hidden="true">⌃</i><span>Ctrl</span></span><span class="plus" aria-hidden="true">+</span><span class="cap"><i aria-hidden="true">⇧</i><span>Shift</span></span></div>
+              <p class="duo-label" id="show-tools-label">Advanced tools</p>
+              <svg class="wheel mini" id="show-wheel-tools" viewBox="0 0 380 380" role="img" tabindex="0"></svg>
+              <p class="duo-caption" id="show-tools-cap" aria-live="polite"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="screens">
+    <div class="wrap">
+      <h2 data-i18n="shots.title">Real tools when you need them</h2>
+      <p class="section-lead" data-i18n="shots.lead">Tools that need settings open in their own window with a live preview. Every audio and video tool has a player with a seek bar, and trimming gives you draggable start and end handles.</p>
+      <figure class="shot-main">
+        <img src="/assets/img/tool-trim-en.webp?v=2" data-src-en="/assets/img/tool-trim-en.webp?v=2" data-src-zh="/assets/img/tool-trim-en.webp?v=2" width="1040" height="800" loading="lazy" alt="The DropDial trim tool window, with a video preview, a timeline with orange start and end handles, playback controls and start and end time fields." data-i18n-alt="shots.trim.alt">
+        <figcaption data-i18n="shots.trim">The trim tool: preview, timeline handles, exact times, then save a new file.</figcaption>
+      </figure>
+      <div class="jobs">
+        <img src="/assets/img/jobs-en.webp?v=2" data-src-en="/assets/img/jobs-en.webp?v=2" data-src-zh="/assets/img/jobs-en.webp?v=2" width="536" height="792" loading="lazy" alt="Three stacked progress cards: one processing with Pause, Cancel and Hide buttons, one paused with Resume, and one waiting for a running job to finish." data-i18n-alt="jobs.alt">
+        <div class="jobs-copy">
+          <h3 data-i18n="jobs.title">Every job has its own controls</h3>
+          <ul>
+            <li data-i18n="jobs.1"><b>Pause and resume.</b> Pause freezes the whole job, including FFmpeg, and stops the clock. Resume carries on exactly where it stopped.</li>
+            <li data-i18n="jobs.2"><b>Cancel.</b> Stops the job and removes its unfinished files. Your originals are never touched.</li>
+            <li data-i18n="jobs.3"><b>Hide.</b> Tucks the card away while the job keeps running, and a tray notification tells you when it finishes.</li>
+            <li data-i18n="jobs.4"><b>Two at a time.</b> Two jobs run in parallel and the rest wait their turn. Long encodes are never cut off.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-dark" id="privacy">
+    <div class="wrap privacy-grid">
+      <div>
+        <h2 data-i18n="priv.title">Your files stay on your PC</h2>
+        <p class="section-lead" data-i18n="priv.lead">Online converters ask you to upload your photos, contracts and recordings to someone else's server. DropDial does all of the work on your own machine.</p>
+      </div>
+      <ul class="checks">
+        <li data-i18n="priv.1"><b>Nothing is uploaded.</b> Every conversion runs locally and works offline.</li>
+        <li data-i18n="priv.2"><b>Originals are never overwritten.</b> Outputs get a clear suffix, and duplicates get a number.</li>
+        <li data-i18n="priv.3"><b>Everything is included.</b> FFmpeg, Python, 7-Zip and system engines ship inside the download.</li>
+        <li data-i18n="priv.4"><b>It stays out of the way.</b> No main window, no installer, no startup entries. Quit from the tray/menu bar at any time.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="download">
+    <div class="wrap download">
+      <img src="/assets/img/logo.png" alt="" width="72" height="72">
+      <h2 data-i18n="dl.title">Get DropDial</h2>
+      <p class="section-lead" data-i18n="dl.lead">Free for personal and commercial use. Ready to run.</p>
+      <a class="btn btn-primary btn-large" href="https://github.com/Nithin1138/lotus/releases" data-download>
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>
+        <span data-i18n="cta.download">Download DropDial</span>
+      </a>
+      <p class="fineprint" data-release-meta>macOS &amp; Windows · Fast, local, private</p>
+      <ol class="install">
+        <li data-i18n="dl.1">Download and extract the app.</li>
+        <li data-i18n="dl.2">Run <code>DropDial</code>. It appears in the menu bar / system tray.</li>
+        <li data-i18n="dl.3">Drag a file and press <kbd>Shift</kbd>.</li>
+      </ol>
+      <p class="links">
+        <a href="https://github.com/Nithin1138/lotus/releases/latest" data-release-notes data-i18n="dl.notes">Release notes &amp; SHA-256 checksum</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/Nithin1138/lotus/releases" data-i18n="dl.all">All versions</a>
+      </p>
+      <p class="requirements" data-i18n="dl.req">Available for macOS and Windows. 100% offline, private, and local.</p>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="faq">
+    <div class="wrap narrow">
+      <h2 data-i18n="faq.title">Questions</h2>
+      <div class="faq">
+        <details>
+          <summary data-i18n="faq.1.q">Is DropDial safe to run?</summary>
+          <div data-i18n="faq.1.a"><p>DropDial is an open source project under the MIT License with full source code available on GitHub. You can verify SHA-256 checksums on the GitHub release page.</p></div>
+        </details>
+        <details>
+          <summary data-i18n="faq.2.q">Is it really free?</summary>
+          <div data-i18n="faq.2.a"><p>Yes. DropDial is open source under the MIT License, with no ads, accounts or paid tiers. Bundled components keep their own licenses.</p></div>
+        </details>
+        <details>
+          <summary data-i18n="faq.3.q">Are my files uploaded anywhere?</summary>
+          <div data-i18n="faq.3.a"><p>No. Everything is processed on your computer by the engines bundled in the download, and DropDial works with no internet connection.</p></div>
+        </details>
+        <details>
+          <summary data-i18n="faq.4.q">Why is the download package self-contained?</summary>
+          <div data-i18n="faq.4.a"><p>It includes everything it needs to run: native engines, portable Python with libraries, and FFmpeg. You don't have to install anything else.</p></div>
+        </details>
+        <details>
+          <summary data-i18n="faq.5.q">Where do the converted files go?</summary>
+          <div data-i18n="faq.5.a"><p>Into the same folder as the original, with a suffix such as <code>photo-converted.jpg</code>. If that name is taken, a number is added. Originals are never changed. Right-click the menu bar / tray icon to open the folder of your latest output.</p></div>
+        </details>
+        <details>
+          <summary data-i18n="faq.6.q">What language is supported?</summary>
+          <div data-i18n="faq.6.a"><p>Yes. DropDial is fully in English.</p></div>
+        </details>
+        <details>
+          <summary data-i18n="faq.7.q">Do I need Microsoft Office?</summary>
+          <div data-i18n="faq.7.a"><p>Only for layout-exact exports of Word, Excel and PowerPoint files, such as PDF or images. DropDial drives your installed Office to do these. Without Office, you can still extract text and table data from modern Office files.</p></div>
+        </details>
+        <details>
+          <summary data-i18n="faq.8.q">How do I update or uninstall it?</summary>
+          <div data-i18n="faq.8.a"><p>Quit DropDial from its menu bar / tray menu. To update, extract the new version into a fresh folder. To uninstall, delete the folder. DropDial adds no installer entries or startup items.</p></div>
+        </details>
+      </div>
+      <p class="faq-more" data-i18n="faq.more">Found a bug or have an idea? <a href="https://github.com/Nithin1138/lotus/issues">Open an issue on GitHub</a>. Please don't attach private files.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-row">
+    <div class="brand">
+      <img src="/assets/img/logo.png" alt="" width="24" height="24">
+      <span>DropDial</span>
+    </div>
+    <p data-i18n="foot.license">Open source under the MIT License. Bundled third-party components keep their own licenses.</p>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="https://github.com/Nithin1138/lotus">GitHub</a>
+      <a href="https://github.com/Nithin1138/lotus/releases" data-i18n="foot.releases">Releases</a>
+      <a href="https://github.com/Nithin1138/lotus/issues" data-i18n="foot.issues">Report a bug</a>
+      <a href="https://github.com/Nithin1138/lotus#readme" data-i18n="foot.guide">Usage guide</a>
+      <a href="https://github.com/Nithin1138/lotus/blob/main/LICENSE" data-i18n="foot.licenses">Licenses</a>
+      <a href="/privacy" data-i18n="foot.privacy">Privacy</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="/assets/js/i18n.js?v=7"></script>
+<script src="/assets/js/wheel-ui.js?v=1"></script>
+<script src="/assets/js/site.js?v=10"></script>
+<script src="/assets/js/showcase.js?v=2"></script>
+</body>
+</html>

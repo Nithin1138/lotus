@@ -128,6 +128,11 @@ def join(paths,params):
 
 def video_tool(path,action,params):
     import mediatools
+    if action=='editVideo':
+        mode=params.get('mode','trim').lower()
+        if mode=='crop' or ('width' in params and 'height' in params and 'x' in params): action='cropVideo'
+        elif mode=='split' or 'splitPoints' in params or 'parts' in params: return split_video(path,params)
+        else: action='trimVideo'
     extra={'videoToGif':mediatools.video_to_gif,'videoSettings':mediatools.video_settings,'videoEffects':mediatools.video_effects,'subtitlesAudio':mediatools.subtitles_audio,'watermark':mediatools.video_watermark}
     if action in extra: return extra[action](path,params)
     if action=='videoSnapshots' and truth(params.get('sheet','false')): return mediatools.contact_sheet(path,params)

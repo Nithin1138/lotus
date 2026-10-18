@@ -30,31 +30,77 @@ def watermark_mark(size,params):
         mark=open_image(logo).convert('RGBA'); w=max(1,int(width*number(params,'scale',20)/100))
         parts.append(mark.resize((w,max(1,round(mark.height*w/mark.width))),Image.Resampling.LANCZOS))
     if text:
-        font=ImageFont.truetype(str(FONT),max(8,int(min(width,height)*number(params,'textSize',5)/100))); box=font.getbbox(text)
-        layer=Image.new('RGBA',(box[2]+12,box[3]+12),(0,0,0,0)); draw=ImageDraw.Draw(layer)
-        try: colour=ImageColor.getrgb(params.get('color') or '#ffffff')[:3]
+        raw_size = number(params, 'textSize', number(params, 'fontSize', 5))
+        font_size = int(raw_size if raw_size > 20 else max(8, int(min(width, height) * raw_size / 100)))
+        font = ImageFont.truetype(str(FONT), font_size)
+        box = font.getbbox(text)
+        layer = Image.new('RGBA', (box[2] + 16, box[3] + 16), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(layer)
+        try: colour = ImageColor.getrgb(params.get('color') or '#ffffff')[:3]
         except ValueError: raise ValueError(T('The fill colour is not valid')) from None
-        draw.text((7,7),text,font=font,fill=(0,0,0,110)); draw.text((6,6),text,font=font,fill=(*colour,255)); parts.append(layer)
+        draw.text((8, 8), text, font=font, fill=(0, 0, 0, 110))
+        draw.text((7, 7), text, font=font, fill=(*colour, 255))
+        parts.append(layer)
     gap=6; mark=Image.new('RGBA',(max(p.width for p in parts),sum(p.height for p in parts)+gap*(len(parts)-1)),(0,0,0,0)); top=0
     for part in parts: mark.alpha_composite(part,((mark.width-part.width)//2,top)); top+=part.height+gap
-    angle=number(params,'rotation',0)
-    if angle%360: mark=mark.rotate(angle,Image.Resampling.BICUBIC,expand=True)
-    opacity=min(100,max(0,number(params,'opacity',60)))/100
-    mark.putalpha(mark.getchannel('A').point(lambda a:int(a*opacity))); return mark
+    angle = number(params, 'rotation', number(params, 'angle', 0))
+    if angle % 360: mark = mark.rotate(angle, Image.Resampling.BICUBIC, expand=True)
+    raw_opacity = number(params, 'opacity', 60)
+    if 0 < raw_opacity <= 1.0:
+        opacity = raw_opacity
+    else:
+        opacity = min(100, max(0, raw_opacity)) / 100.0
+    mark.putalpha(mark.getchannel('A').point(lambda a: int(a * opacity)))
+    return mark
 
 def watermark_layer(size,params):
     """A transparent picture of the target's size with the watermark placed on it, or repeated across it."""
-    mark=watermark_mark(size,params)
-    if mark.width>size[0] or mark.height>size[1]: mark=ImageOps.contain(mark,size,Image.Resampling.LANCZOS)
-    layer=Image.new('RGBA',size,(0,0,0,0))
-    if params.get('layout','single')=='tiled':
-        for row,y in enumerate(range(0,size[1],max(1,mark.height*3))):
-            for x in range(-(row%2)*mark.width,size[0],max(1,mark.width*2)):
-                layer.paste(mark,(x,y),mark)
+    mark = watermark_mark(size, params)
+    if mark.width > size[0] or mark.height > size[1]: mark = ImageOps.contain(mark, size, Image.Resampling.LANCZOS)
+    layer = Image.new('RGBA', size, (0, 0, 0, 0))
+    layout = params.get('layout', 'single').lower()
+    repeats = int(number(params, 'repeats', number(params, 'repeat', 1 if layout == 'single' else 0)))
+
+    if repeats == 4:
+        # 2x2 grid
+        for r in range(2):
+            for c in range(2):
+                cx = int(size[0] * (c + 0.5) / 2.0 - mark.width / 2.0)
+                cy = int(size[1] * (r + 0.5) / 2.0 - mark.height / 2.0)
+                layer.paste(mark, (cx, cy), mark)
         return layer
-    margin=int(min(size)*number(params,'margin',3)/100); fx,fy=POSITIONS.get(params.get('position','bottomRight'),(1,1))
-    layer.paste(mark,(max(0,int(margin+(size[0]-mark.width-2*margin)*fx)),max(0,int(margin+(size[1]-mark.height-2*margin)*fy))),mark)
-    return layer
+    elif repeats == 9:
+        # 3x3 grid
+        for r in range(3):
+            for c in range(3):
+                cx = int(size[0] * (c + 0.5) / 3.0 - mark.width / 2.0)
+                cy = int(size[1] * (r + 0.5) / 3.0 - mark.height / 2.0)
+                layer.paste(mark, (cx, cy), mark)
+        return layer
+    elif repeats >= 16:
+        # 4x4 grid
+        n = 4
+        for r in range(n):
+            for c in range(n):
+                cx = int(size[0] * (c + 0.5) / float(n) - mark.width / 2.0)
+                cy = int(size[1] * (r + 0.5) / float(n) - mark.height / 2.0)
+                layer.paste(mark, (cx, cy), mark)
+        return layer
+    elif layout == 'tiled' or repeats == 0:
+        step_y = max(1, int(mark.height * 2.2))
+        step_x = max(1, int(mark.width * 1.6))
+        for row, y in enumerate(range(0, size[1], step_y)):
+            for x in range(-(row % 2) * (step_x // 2), size[0], step_x):
+                layer.paste(mark, (x, y), mark)
+        return layer
+    else:
+        margin = int(min(size) * number(params, 'margin', 3) / 100)
+        pos_key = params.get('position', 'center')
+        fx, fy = POSITIONS.get(pos_key, (0.5, 0.5))
+        x = max(0, int(margin + (size[0] - mark.width - 2 * margin) * fx))
+        y = max(0, int(margin + (size[1] - mark.height - 2 * margin) * fy))
+        layer.paste(mark, (x, y), mark)
+        return layer
 
 def make_icon(path,params):
     image=open_image(path).convert('RGBA'); factor=256/max(image.size)

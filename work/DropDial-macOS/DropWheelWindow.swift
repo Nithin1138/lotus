@@ -76,6 +76,7 @@ final class RadialWheelView: NSView {
     var hoveredIndex: Int = -1
     var isHubHovered: Bool = false
     var hoveredTopBarIndex: Int = -1 // 0: Convert, 1: Tools, 2: Actions
+    var isCloseHovered: Bool = false
     var currentPaths: [String] = []
     var mode: WheelMode = .conversions
 
@@ -96,6 +97,7 @@ final class RadialWheelView: NSView {
     let backdropRadius: CGFloat = 144
     let hubRadius: CGFloat = 46
     let topBarRect = NSRect(x: 170 - 110, y: 308, width: 220, height: 32)
+    let closeButtonRect = NSRect(x: 170 - 110 + 220 + 8, y: 308, width: 32, height: 32)
 
     var isDarkMode: Bool {
         let t = UserDefaults.standard.string(forKey: "DROPDIAL_THEME") ?? "system"
@@ -106,6 +108,29 @@ final class RadialWheelView: NSView {
 
     private var trackingArea: NSTrackingArea?
     private var hubThumbnail: NSImage?
+    private var tintedIconCache: [String: NSImage] = [:]
+
+    func reloadTheme() {
+        tintedIconCache.removeAll()
+        needsDisplay = true
+    }
+
+    private func tintedSymbol(name: String, color: NSColor, size: CGFloat) -> NSImage? {
+        let key = "\(name)_\(color.hash)_\(size)"
+        if let cached = tintedIconCache[key] {
+            return cached
+        }
+        guard let base = NSImage(systemSymbolName: name, accessibilityDescription: nil) else { return nil }
+        let img = NSImage(size: NSSize(width: size, height: size))
+        img.lockFocus()
+        color.set()
+        NSRect(origin: .zero, size: img.size).fill()
+        base.draw(in: NSRect(origin: .zero, size: img.size), from: .zero, operation: .destinationIn, fraction: 1.0)
+        img.unlockFocus()
+        img.isTemplate = false
+        tintedIconCache[key] = img
+        return img
+    }
 
     override var acceptsFirstResponder: Bool { true }
 
@@ -310,6 +335,10 @@ final class RadialWheelView: NSView {
     }
 
     private func indexForPoint(_ point: NSPoint) -> Int {
+        if closeButtonRect.contains(point) {
+            return -20 // Close button
+        }
+
         // 1. Check top pill bar
         if topBarRect.contains(point) {
             let btnW = (topBarRect.width - 6) / 3.0
@@ -349,7 +378,8 @@ final class RadialWheelView: NSView {
         let dist = sqrt(dx * dx + dy * dy)
         let inCircle = (dist <= backdropRadius)
         let inTopBar = topBarRect.contains(point)
-        if !inCircle && !inTopBar {
+        let inCloseBtn = closeButtonRect.contains(point)
+        if !inCircle && !inTopBar && !inCloseBtn {
             return nil
         }
         return super.hitTest(point)
@@ -400,6 +430,12 @@ final class RadialWheelView: NSView {
         let pt = convert(event.locationInWindow, from: nil)
         let hit = indexForPoint(pt)
 
+        if hit == -20 {
+            SoundManager.playPop()
+            DropWheelWindowController.shared.hideWheel()
+            return
+        }
+
         if hit <= -10 {
             // Clicked top bar button
             let btnIdx = -hit - 10
@@ -417,6 +453,11 @@ final class RadialWheelView: NSView {
         updateCursor(for: pt)
     }
 
+    override func rightMouseDown(with event: NSEvent) {
+        SoundManager.playPop()
+        DropWheelWindowController.shared.hideWheel()
+    }
+
     override func mouseMoved(with event: NSEvent) {
         let pt = convert(event.locationInWindow, from: nil)
         updateCursor(for: pt)
@@ -425,14 +466,16 @@ final class RadialWheelView: NSView {
         let newHub = (hit == -2)
         let newIndex = (hit >= 0) ? hit : -1
         let newTopBar = (hit <= -10) ? (-hit - 10) : -1
+        let newClose = (hit == -20)
 
-        if newIndex != hoveredIndex || newHub != isHubHovered || newTopBar != hoveredTopBarIndex {
-            if (newIndex != hoveredIndex && newIndex >= 0) || (newTopBar != hoveredTopBarIndex && newTopBar >= 0) {
+        if newIndex != hoveredIndex || newHub != isHubHovered || newTopBar != hoveredTopBarIndex || newClose != isCloseHovered {
+            if (newIndex != hoveredIndex && newIndex >= 0) || (newTopBar != hoveredTopBarIndex && newTopBar >= 0) || (newClose != isCloseHovered && newClose) {
                 SoundManager.playTick()
             }
             hoveredIndex = newIndex
             isHubHovered = newHub
             hoveredTopBarIndex = newTopBar
+            isCloseHovered = newClose
             needsDisplay = true
         }
     }
@@ -442,12 +485,15 @@ final class RadialWheelView: NSView {
         hoveredIndex = -1
         isHubHovered = false
         hoveredTopBarIndex = -1
+        isCloseHovered = false
         needsDisplay = true
     }
 
     private func updateCursor(for point: NSPoint) {
         let hit = indexForPoint(point)
-        if hit <= -10 {
+        if hit == -20 {
+            NSCursor.pointingHand.set()
+        } else if hit <= -10 {
             NSCursor.pointingHand.set()
         } else if hit >= 0 && hit < items.count {
             NSCursor.pointingHand.set()
@@ -697,12 +743,9 @@ final class RadialWheelView: NSView {
                 textColor = NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0)
             }
 
-            if let iconName = item.iconName, let symbol = NSImage(systemSymbolName: iconName, accessibilityDescription: nil) {
-                let iconSize: CGFloat = 15
+            if let iconName = item.iconName, let tinted = tintedSymbol(name: iconName, color: textColor, size: 16) {
+                let iconSize: CGFloat = 16
                 let iconRect = NSRect(x: tx - iconSize / 2, y: ty + 2, width: iconSize, height: iconSize)
-                let tinted = symbol.copy() as! NSImage
-                tinted.isTemplate = true
-                textColor.set()
                 tinted.draw(in: iconRect)
 
                 let font = NSFont.systemFont(ofSize: 10, weight: .bold)
@@ -915,6 +958,34 @@ final class RadialWheelView: NSView {
             let titleStr = NSAttributedString(string: m.title, attributes: titleAttrs)
             titleStr.draw(at: NSPoint(x: keyCapRect.maxX + 4, y: btnRect.midY - titleStr.size().height / 2))
         }
+
+        // 5. Close Button (✕) Next to Floating Pill Bar
+        context.saveGState()
+        context.setShadow(offset: CGSize(width: 0, height: -3), blur: 12, color: NSColor.black.withAlphaComponent(dark ? 0.35 : 0.12).cgColor)
+        let closePath = NSBezierPath(roundedRect: closeButtonRect, xRadius: closeButtonRect.height / 2, yRadius: closeButtonRect.height / 2)
+        if isCloseHovered {
+            NSColor(srgbRed: 0.92, green: 0.28, blue: 0.28, alpha: 0.90).setFill()
+            closePath.fill()
+            NSColor(white: 1.0, alpha: 0.3).setStroke()
+        } else if dark {
+            NSColor(srgbRed: 0.14, green: 0.16, blue: 0.19, alpha: 0.95).setFill()
+            closePath.fill()
+            NSColor(white: 1.0, alpha: 0.12).setStroke()
+        } else {
+            NSColor(white: 0.96, alpha: 0.95).setFill()
+            closePath.fill()
+            NSColor(white: 1.0, alpha: 0.8).setStroke()
+        }
+        closePath.lineWidth = 1.0
+        closePath.stroke()
+        context.restoreGState()
+
+        let xFont = NSFont.systemFont(ofSize: 12, weight: .bold)
+        let xColor = isCloseHovered ? NSColor.white : (dark ? NSColor(white: 0.65, alpha: 1.0) : NSColor(white: 0.45, alpha: 1.0))
+        let xAttrs: [NSAttributedString.Key: Any] = [.font: xFont, .foregroundColor: xColor]
+        let xStr = NSAttributedString(string: "✕", attributes: xAttrs)
+        let xSz = xStr.size()
+        xStr.draw(at: NSPoint(x: closeButtonRect.midX - xSz.width / 2, y: closeButtonRect.midY - xSz.height / 2))
     }
 }
 
@@ -926,7 +997,6 @@ final class DropWheelWindowController: NSWindowController {
     private var currentMode: WheelMode = .conversions
     private var activeToolControllers: [ToolWindowController] = []
 
-    private var outsideClickMonitor: Any?
     private var localOutsideClickMonitor: Any?
 
     init() {
@@ -989,7 +1059,7 @@ final class DropWheelWindowController: NSWindowController {
     }
 
     func reloadTheme() {
-        wheelView.needsDisplay = true
+        wheelView.reloadTheme()
     }
 
     func setLoadedPaths(_ paths: [String]) {
@@ -1079,30 +1149,6 @@ final class DropWheelWindowController: NSWindowController {
         removeOutsideClickMonitors()
         openTimestamp = ProcessInfo.processInfo.systemUptime
 
-        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            guard let self = self, let win = self.window, win.isVisible else { return }
-            if ProcessInfo.processInfo.systemUptime - self.openTimestamp < 0.25 {
-                return
-            }
-            let mouseLoc = NSEvent.mouseLocation
-            let clickInWheel: Bool
-            if win.frame.contains(mouseLoc) {
-                let local = NSPoint(x: mouseLoc.x - win.frame.minX, y: mouseLoc.y - win.frame.minY)
-                let dx = local.x - self.wheelView.wheelCenter.x
-                let dy = local.y - self.wheelView.wheelCenter.y
-                let dist = sqrt(dx * dx + dy * dy)
-                let inCircle = (dist <= self.wheelView.backdropRadius)
-                let inTopBar = self.wheelView.topBarRect.contains(local)
-                clickInWheel = inCircle || inTopBar
-            } else {
-                clickInWheel = false
-            }
-            if !clickInWheel {
-                DispatchQueue.main.async {
-                    self.hideWheel()
-                }
-            }
-        }
         localOutsideClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             guard let self = self, let win = self.window, win.isVisible else { return event }
             if ProcessInfo.processInfo.systemUptime - self.openTimestamp < 0.25 {
@@ -1115,26 +1161,18 @@ final class DropWheelWindowController: NSWindowController {
                 let dist = sqrt(dx * dx + dy * dy)
                 let inCircle = (dist <= self.wheelView.backdropRadius)
                 let inTopBar = self.wheelView.topBarRect.contains(local)
-                if !inCircle && !inTopBar {
+                let inCloseBtn = self.wheelView.closeButtonRect.contains(local)
+                if !inCircle && !inTopBar && !inCloseBtn {
                     DispatchQueue.main.async {
                         self.hideWheel()
                     }
                 }
-                return event
-            } else {
-                DispatchQueue.main.async {
-                    self.hideWheel()
-                }
-                return event
             }
+            return event
         }
     }
 
     private func removeOutsideClickMonitors() {
-        if let monitor = outsideClickMonitor {
-            NSEvent.removeMonitor(monitor)
-            outsideClickMonitor = nil
-        }
         if let monitor = localOutsideClickMonitor {
             NSEvent.removeMonitor(monitor)
             localOutsideClickMonitor = nil

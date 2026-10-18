@@ -158,13 +158,25 @@ enum Catalog {
                 ToolField(name: "gap", label: "Gap (px)", defaultValue: "16", kind: "number", choices: nil),
                 ToolField(name: "background", label: "Background", defaultValue: "#ffffff", kind: "select", choices: ["#ffffff", "#18181b", "#f0ebff"])
             ]))
-            options.append(ToolOption(id: "compress", label: "Compress All", iconName: "arrow.down.circle", fields: []))
+            options.append(ToolOption(id: "compress", label: "Compress All", iconName: "arrow.down.circle", fields: [
+                ToolField(name: "quality", label: "Quality", defaultValue: "80", kind: "slider", choices: nil),
+                ToolField(name: "targetSize", label: "Max Target Size", defaultValue: "Auto", kind: "select", choices: ["Auto", "200 KB", "500 KB", "1 MB", "2 MB", "5 MB", "10 MB"]),
+                ToolField(name: "maxEdge", label: "Max Dimension", defaultValue: "Original", kind: "select", choices: ["Original", "2560 px (2K)", "1920 px (Full HD)", "1280 px (Web)", "800 px (Compact)"])
+            ]))
         } else if exts.allSatisfy({ videoExts.contains($0) }) {
             options.append(ToolOption(id: "joinVideos", label: "Join Videos", iconName: "film.stack", fields: []))
-            options.append(ToolOption(id: "compress", label: "Compress All", iconName: "arrow.down.circle", fields: []))
+            options.append(ToolOption(id: "compress", label: "Compress All", iconName: "arrow.down.circle", fields: [
+                ToolField(name: "quality", label: "Quality", defaultValue: "80", kind: "slider", choices: nil),
+                ToolField(name: "targetSize", label: "Max Target Size", defaultValue: "Auto", kind: "select", choices: ["Auto", "5 MB", "10 MB", "25 MB", "50 MB", "100 MB"]),
+                ToolField(name: "maxEdge", label: "Max Dimension", defaultValue: "Original", kind: "select", choices: ["Original", "1920 px (1080p)", "1280 px (720p)", "854 px (480p)"])
+            ]))
         } else if exts.allSatisfy({ $0 == "pdf" }) {
             options.append(ToolOption(id: "mergePDF", label: "Merge PDFs", iconName: "doc.on.doc", fields: []))
-            options.append(ToolOption(id: "compress", label: "Compress All", iconName: "arrow.down.circle", fields: []))
+            options.append(ToolOption(id: "compress", label: "Compress All", iconName: "arrow.down.circle", fields: [
+                ToolField(name: "quality", label: "Quality", defaultValue: "75", kind: "slider", choices: nil),
+                ToolField(name: "targetSize", label: "Max Target Size", defaultValue: "Auto", kind: "select", choices: ["Auto", "500 KB", "1 MB", "2 MB", "5 MB", "10 MB"]),
+                ToolField(name: "maxEdge", label: "Max Dimension", defaultValue: "Original", kind: "select", choices: ["Original", "2000 px (Crisp)", "1500 px (Standard)", "1000 px (Compact)"])
+            ]))
         }
         options.append(ToolOption(id: "packArchive", label: "Pack Archive", iconName: "archivebox", fields: []))
         return options
@@ -182,7 +194,9 @@ enum Catalog {
         case "image":
             return [
                 ToolOption(id: "compress", label: "Compress", iconName: "arrow.down.circle", fields: [
-                    ToolField(name: "quality", label: "Quality (1-100)", defaultValue: "80", kind: "number", choices: nil)
+                    ToolField(name: "quality", label: "Quality", defaultValue: "80", kind: "slider", choices: nil),
+                    ToolField(name: "targetSize", label: "Max Target Size", defaultValue: "Auto", kind: "select", choices: ["Auto", "200 KB", "500 KB", "1 MB", "2 MB", "5 MB", "10 MB"]),
+                    ToolField(name: "maxEdge", label: "Max Dimension", defaultValue: "Original", kind: "select", choices: ["Original", "2560 px (2K)", "1920 px (Full HD)", "1280 px (Web)", "800 px (Compact)"])
                 ]),
                 ToolOption(id: "resizeImage", label: "Resize", iconName: "arrow.up.left.and.arrow.down.right", fields: [
                     ToolField(name: "width", label: "Width (px)", defaultValue: "1920", kind: "number", choices: nil),
@@ -223,15 +237,81 @@ enum Catalog {
                     ToolField(name: "output", label: "Output Format", defaultValue: "pdf", kind: "select", choices: ["pdf", "txt"])
                 ]),
                 ToolOption(id: "watermark", label: "Watermark", iconName: "text.bubble", fields: [
-                    ToolField(name: "text", label: "Watermark Text", defaultValue: "CONFIDENTIAL", kind: "text", choices: nil)
+                    ToolField(name: "text", label: "Watermark Text", defaultValue: "CONFIDENTIAL", kind: "text", choices: nil),
+                    ToolField(name: "repeats", label: "Repeats / Pattern", defaultValue: "Single (Center)", kind: "select", choices: [
+                        "Single (Center)",
+                        "Single (Bottom Right)",
+                        "4 (2×2 Grid)",
+                        "9 (3×3 Grid)",
+                        "16 (4×4 Dense Grid)",
+                        "Tiled Pattern (Full Page)"
+                    ]),
+                    ToolField(name: "angle", label: "Angle / Rotation", defaultValue: "45° (Diagonal)", kind: "select", choices: [
+                        "45° (Diagonal)",
+                        "0° (Horizontal)",
+                        "30° (Subtle Angle)",
+                        "-45° (Inverse Diagonal)",
+                        "90° (Vertical)"
+                    ]),
+                    ToolField(name: "size", label: "Text Size", defaultValue: "48 pt (Large)", kind: "select", choices: [
+                        "18 pt (Small)",
+                        "32 pt (Medium)",
+                        "48 pt (Large)",
+                        "72 pt (Extra Large)",
+                        "96 pt (Huge)"
+                    ]),
+                    ToolField(name: "opacity", label: "Opacity", defaultValue: "35%", kind: "select", choices: ["20%", "35%", "50%", "70%", "90%"]),
+                    ToolField(name: "color", label: "Color", defaultValue: "#ffffff", kind: "select", choices: ["#ffffff", "#000000", "#ff6500", "#ef4444", "#3b82f6", "#10b981", "#f59e0b"])
                 ]),
                 ToolOption(id: "removeMetadata", label: "Metadata", iconName: "eye.slash", fields: []),
                 ToolOption(id: "createPDF", label: "To PDF", iconName: "doc.on.doc", fields: [])
             ]
         case "video":
             return [
+                ToolOption(id: "editVideo", label: "Video Studio", iconName: "slider.horizontal.3", fields: [
+                    ToolField(name: "mode", label: "Tool", defaultValue: "trim", kind: "select", choices: ["trim", "crop", "split"])
+                ]),
+                ToolOption(id: "trimVideo", label: "Trim", iconName: "timeline.selection", fields: [
+                    ToolField(name: "start", label: "Start (s)", defaultValue: "0", kind: "number", choices: nil),
+                    ToolField(name: "end", label: "End (s)", defaultValue: "10", kind: "number", choices: nil)
+                ]),
+                ToolOption(id: "cropVideo", label: "Crop", iconName: "crop", fields: [
+                    ToolField(name: "ratio", label: "Aspect Ratio", defaultValue: "Free Style (Custom Drag)", kind: "select", choices: ["Free Style (Custom Drag)", "1:1 (Square)", "16:9 (Widescreen)", "4:3 (Standard)", "9:16 (Story / Reel)", "3:2 (Classic Photo)"])
+                ]),
+                ToolOption(id: "splitVideo", label: "Split", iconName: "square.split.2x1", fields: [
+                    ToolField(name: "parts", label: "Equal Parts", defaultValue: "2", kind: "select", choices: ["2", "3", "4", "5", "6"])
+                ]),
                 ToolOption(id: "compress", label: "Compress", iconName: "arrow.down.circle", fields: [
-                    ToolField(name: "crf", label: "CRF (18-32)", defaultValue: "26", kind: "number", choices: nil)
+                    ToolField(name: "crf", label: "CRF (18-32)", defaultValue: "26", kind: "number", choices: nil),
+                    ToolField(name: "targetSize", label: "Max Target Size", defaultValue: "Auto", kind: "select", choices: ["Auto", "5 MB", "10 MB", "25 MB", "50 MB", "100 MB"]),
+                    ToolField(name: "maxEdge", label: "Max Dimension", defaultValue: "Original", kind: "select", choices: ["Original", "1920 px (1080p)", "1280 px (720p)", "854 px (480p)"])
+                ]),
+                ToolOption(id: "watermark", label: "Watermark", iconName: "text.bubble", fields: [
+                    ToolField(name: "text", label: "Watermark Text", defaultValue: "CONFIDENTIAL", kind: "text", choices: nil),
+                    ToolField(name: "repeats", label: "Repeats / Pattern", defaultValue: "Single (Center)", kind: "select", choices: [
+                        "Single (Center)",
+                        "Single (Bottom Right)",
+                        "4 (2×2 Grid)",
+                        "9 (3×3 Grid)",
+                        "16 (4×4 Dense Grid)",
+                        "Tiled Pattern (Full Page)"
+                    ]),
+                    ToolField(name: "angle", label: "Angle / Rotation", defaultValue: "45° (Diagonal)", kind: "select", choices: [
+                        "45° (Diagonal)",
+                        "0° (Horizontal)",
+                        "30° (Subtle Angle)",
+                        "-45° (Inverse Diagonal)",
+                        "90° (Vertical)"
+                    ]),
+                    ToolField(name: "size", label: "Text Size", defaultValue: "48 pt (Large)", kind: "select", choices: [
+                        "18 pt (Small)",
+                        "32 pt (Medium)",
+                        "48 pt (Large)",
+                        "72 pt (Extra Large)",
+                        "96 pt (Huge)"
+                    ]),
+                    ToolField(name: "opacity", label: "Opacity", defaultValue: "35%", kind: "select", choices: ["20%", "35%", "50%", "70%", "90%"]),
+                    ToolField(name: "color", label: "Color", defaultValue: "#ffffff", kind: "select", choices: ["#ffffff", "#000000", "#ff6500", "#ef4444", "#3b82f6", "#10b981", "#f59e0b"])
                 ]),
                 ToolOption(id: "trimVideo", label: "Trim", iconName: "timeline.selection", fields: [
                     ToolField(name: "start", label: "Start (s)", defaultValue: "0", kind: "number", choices: nil),
@@ -276,7 +356,38 @@ enum Catalog {
             ]
         case "document":
             return [
-                ToolOption(id: "compress", label: "Compress", iconName: "arrow.down.circle", fields: []),
+                ToolOption(id: "compress", label: "Compress", iconName: "arrow.down.circle", fields: [
+                    ToolField(name: "quality", label: "Quality", defaultValue: "75", kind: "slider", choices: nil),
+                    ToolField(name: "targetSize", label: "Max Target Size", defaultValue: "Auto", kind: "select", choices: ["Auto", "500 KB", "1 MB", "2 MB", "5 MB", "10 MB"]),
+                    ToolField(name: "maxEdge", label: "Max Dimension", defaultValue: "Original", kind: "select", choices: ["Original", "2000 px (Crisp)", "1500 px (Standard)", "1000 px (Compact)"])
+                ]),
+                ToolOption(id: "watermark", label: "Watermark", iconName: "text.bubble", fields: [
+                    ToolField(name: "text", label: "Watermark Text", defaultValue: "CONFIDENTIAL", kind: "text", choices: nil),
+                    ToolField(name: "repeats", label: "Repeats / Pattern", defaultValue: "Single (Center)", kind: "select", choices: [
+                        "Single (Center)",
+                        "Single (Bottom Right)",
+                        "4 (2×2 Grid)",
+                        "9 (3×3 Grid)",
+                        "16 (4×4 Dense Grid)",
+                        "Tiled Pattern (Full Page)"
+                    ]),
+                    ToolField(name: "angle", label: "Angle / Rotation", defaultValue: "45° (Diagonal)", kind: "select", choices: [
+                        "45° (Diagonal)",
+                        "0° (Horizontal)",
+                        "30° (Subtle Angle)",
+                        "-45° (Inverse Diagonal)",
+                        "90° (Vertical)"
+                    ]),
+                    ToolField(name: "size", label: "Text Size", defaultValue: "48 pt (Large)", kind: "select", choices: [
+                        "18 pt (Small)",
+                        "32 pt (Medium)",
+                        "48 pt (Large)",
+                        "72 pt (Extra Large)",
+                        "96 pt (Huge)"
+                    ]),
+                    ToolField(name: "opacity", label: "Opacity", defaultValue: "35%", kind: "select", choices: ["20%", "35%", "50%", "70%", "90%"]),
+                    ToolField(name: "color", label: "Color", defaultValue: "#ffffff", kind: "select", choices: ["#ffffff", "#000000", "#ff6500", "#ef4444", "#3b82f6", "#10b981", "#f59e0b"])
+                ]),
                 ToolOption(id: "splitPDF", label: "Split PDF", iconName: "square.split.2x1", fields: []),
                 ToolOption(id: "organizePDF", label: "Organize", iconName: "rectangle.stack", fields: [
                     ToolField(name: "action", label: "Action", defaultValue: "Reverse All Pages", kind: "select", choices: [

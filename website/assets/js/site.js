@@ -1,0 +1,455 @@
+(() => {
+  "use strict";
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const store = {
+    get(key) { try { return localStorage.getItem(key); } catch { return null; } },
+    set(key, value) { try { localStorage.setItem(key, value); } catch { /* storage unavailable */ } }
+  };
+
+  /* ---------- Language ---------- */
+  const EN = {};
+  $$("[data-i18n]").forEach(el => { EN[el.dataset.i18n] = el.innerHTML; });
+  $$("[data-i18n-alt]").forEach(el => { EN[el.dataset.i18nAlt] = el.alt; });
+  EN["doc.title"] = document.title;
+  const metaDescription = $('meta[name="description"]');
+  EN["doc.description"] = metaDescription.content;
+
+  const params = new URLSearchParams(location.search);
+  let lang = "en";
+  const text = key => (window.ZD_ZH ? window.ZD_ZH[key] : undefined) ?? EN[key];
+  const demoText = () => window.ZD_DEMO["en"] || window.ZD_DEMO[lang];
+  // Lets showcase.js re-render when the language changes.
+  const languageListeners = [];
+  window.ZD = { get lang() { return "en"; }, onLanguage(fn) { languageListeners.push(fn); fn(); } };
+  window.DD = window.ZD;
+
+  function applyLanguage() {
+    document.documentElement.lang = "en";
+    $$("[data-i18n]").forEach(el => { const value = text(el.dataset.i18n); if (value != null) el.innerHTML = value; });
+    $$("[data-i18n-alt]").forEach(el => { const value = text(el.dataset.i18nAlt); if (value != null) el.alt = value; });
+    $$("img[data-src-en]").forEach(img => { const src = img.dataset.srcEn; if (src && !img.src.endsWith(src)) img.src = src; });
+    document.title = text("doc.title");
+    metaDescription.content = text("doc.description");
+    const toggle = $("#lang-toggle");
+    if (toggle) toggle.style.display = "none";
+    $("#desk").setAttribute("aria-label", demoText().desk);
+    $("#wheel").setAttribute("aria-label", demoText().wheel);
+    $(".mode").setAttribute("aria-label", demoText().mode);
+    renderRelease();
+    demo.relabel();
+    languageListeners.forEach(fn => fn());
+  }
+
+  /* ---------- Navigation ---------- */
+  const nav = $(".nav");
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  /* ---------- Latest release (falls back to the links in the HTML) ---------- */
+  let release = { tag: "v0.1.1", size: 274469261 };
+  function renderRelease() {
+    const mb = Math.round(release.size / 1048576);
+    const label = `${release.tag} · ${mb} MB · portable ZIP`;
+    $$("[data-release-meta]").forEach(el => { el.textContent = label; });
+  }
+  fetch("https://api.github.com/repos/Nithin1138/lotus/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+    .then(response => response.ok ? response.json() : Promise.reject(response.status))
+    .then(data => {
+      const asset = (data.assets || []).find(a => /windows-x64\.zip$/i.test(a.name));
+      if (!asset) return;
+      release = { tag: data.tag_name, size: asset.size };
+      $$("[data-download]").forEach(a => { a.href = asset.browser_download_url; });
+      $$("[data-release-notes]").forEach(a => { a.href = data.html_url; });
+      renderRelease();
+    })
+    .catch(() => { /* offline or rate limited: keep the built-in links */ });
+
+  /* ---------- Interactive demo ---------- */
+  // Menus follow the app's Catalog.cs: what each extension converts to, and which tools it offers for a single file.
+  const IMAGES = ["jpg", "png", "webp", "heic", "tiff", "svg", "avif", "bmp"];
+  const AUDIO = ["mp3", "m4a", "wav", "flac", "ogg", "opus", "aiff", "wma"];
+  const VIDEO = ["mp4", "mov", "mkv", "webm", "avi", "wmv"];
+  const ARCHIVES = ["zip", "tar", "gz", "rar"];
+  const IMAGE_TARGETS = ["jpg", "png", "webp", "heic", "tiff", "avif", "bmp", "pdf"];
+  const kindOf = e => IMAGES.includes(e) ? "image" : AUDIO.includes(e) ? "audio" : VIDEO.includes(e) || e === "gif" ? "video" : e === "pdf" ? "pdf" : e === "docx" ? "office" : ["txt", "srt", "vtt"].includes(e) ? "text" : ARCHIVES.includes(e) ? "archive" : "file";
+  function targets(e) {
+    if (e === "docx") return ["pdf", "png", "jpg", "txt", "docx", "doc", "rtf", "odt", "html"]; // with Microsoft Word installed
+    if (e === "jpg" || e === "png") return [...IMAGE_TARGETS, "docx"];
+    if (IMAGES.includes(e)) return IMAGE_TARGETS;
+    if (AUDIO.includes(e)) return AUDIO;
+    if (VIDEO.includes(e)) return [...VIDEO, "gif", "mp3"];
+    if (e === "gif") return VIDEO;
+    if (e === "pdf") return ["docx", "jpg", "png", "txt"];
+    if (e === "txt") return ["pdf", "jpg", "png", "srt", "vtt"];
+    if (e === "srt" || e === "vtt") return ["srt", "vtt", "txt"];
+    return ARCHIVES;
+  }
+  function tools(e) {
+    switch (kindOf(e)) {
+      case "image": return e === "svg" ? [] : e === "bmp" ? ["compress", "editImage", "frameImage", "cropImage", "redactImage"] : ["compress", "removeMetadata", "editImage", "frameImage", "cropImage", "redactImage"];
+      case "audio": return ["compress", "removeMetadata", "normalizeAudio", "audioToVideo", "trimAudio", "audioChannels", "redactAudio"];
+      case "video": return e === "gif" ? ["removeMetadata"] : ["compress", "removeMetadata", "muteVideo", "trimVideo", "cropVideo", "changeVideoSpeed", "videoSnapshots", "splitVideo", "redactVideo"];
+      case "pdf": return ["compress", "removeMetadata", "splitPDF", "organizePDF"];
+      case "office": return ["officePdf", "removeMetadata"];
+      case "archive": return ["extractArchive"];
+      default: return [];
+    }
+  }
+  const extOf = name => /\.tar\.gz$/i.test(name) ? "gz" : name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+  const stemOf = name => name.replace(/(\.tar\.gz|\.[^.]+)$/i, "");
+  // A folder can only be packed, matching the app's PackingOnly rule.
+  function menu(file, mode) {
+    if (file.folder) return mode === "formats" ? ARCHIVES.map(t => "pack:" + t) : [];
+    if (mode === "tools") return tools(file.ext).map(t => "tool:" + t);
+    return targets(file.ext).filter(t => t !== file.ext).map(t => "convert:" + t);
+  }
+  const fmtName = t => t === "gz" ? "GZIP" : t.toUpperCase();
+  function label(option) {
+    const [kind, value] = option.split(":");
+    return kind === "convert" ? fmtName(value) : kind === "pack" ? demoText().pack(fmtName(value)) : demoText().tools[value];
+  }
+  const iconTag = file => file.folder ? "DIR" : /\.tar\.gz$/i.test(file.name) ? "TGZ" : file.ext.toUpperCase();
+  const iconHtml = file => `<span class="file-icon t-${file.folder ? "folder" : kindOf(file.ext)}"><b>${iconTag(file)}</b></span>`;
+
+  const stage = $("#stage"), desk = $("#desk"), wheelWrap = $("#wheel-wrap"), wheel = $("#wheel"), ghost = $("#ghost"), help = $("#demo-help");
+  const toast = $("#toast"), toastTitle = $("#toast-title"), toastDetail = $("#toast-detail"), toastBar = $("#toast-bar"), toastTime = $("#toast-time");
+  const modeButtons = { formats: $("#mode-formats"), tools: $("#mode-tools") };
+  const SVG = "http://www.w3.org/2000/svg";
+  const wheelUI = window.ZD_WHEEL;
+  const C = wheelUI.CENTER, MAX_OUTPUTS = 3;
+  const names = new Set();
+  const outputs = [];
+  let defaultMode = "formats";   // set by the toggle under the stage
+  let session = null;            // the open wheel: { file, button, source: "pointer" | "keyboard" | "auto", mode, options, highlighted, pointerId }
+  let helpTimer = 0, interacted = false;
+  let suppressed = null;          // pointer whose drag was cancelled; ignored until the button is released, like the app's Escape
+
+  /* Files on the demo desktop */
+  function addFile(name, { folder = false, fresh = false } = {}) {
+    const file = { name, folder, ext: folder ? "" : extOf(name) };
+    names.add(name);
+    const li = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "file" + (fresh ? " fresh" : "");
+    // Allow a line break before the extension so long names never split mid-word.
+    button.innerHTML = `${iconHtml(file)}<span class="file-name">${name.replace(/\.(?=[^.]+$)/, "<wbr>.")}</span>`;
+    button.dataset.name = name;
+    li.appendChild(button);
+    desk.appendChild(li);
+    bindFile(button, file);
+    return li;
+  }
+  ["photo.png", "trip.mp4", "song.wav", "report.pdf", "photos.zip"].forEach(name => addFile(name));
+
+  function uniqueName(base, extension) {
+    let name = base + extension, i = 0;
+    while (names.has(name)) name = `${base}-${++i}${extension}`;
+    return name;
+  }
+  function addOutput(name, folder) {
+    outputs.push(addFile(name, { folder, fresh: true }));
+    // Keep the desk tidy, but never remove the file someone is dragging.
+    while (outputs.length > MAX_OUTPUTS) {
+      const index = outputs.findIndex(li => !session || !li.contains(session.button));
+      const [old] = outputs.splice(index, 1);
+      names.delete(old.querySelector("button").dataset.name);
+      old.remove();
+    }
+  }
+
+  /* Help line under the stage */
+  function say(message, ms) {
+    clearTimeout(helpTimer);
+    help.textContent = message;
+    if (ms) helpTimer = setTimeout(() => { help.textContent = session ? demoText().helpDrag : demoText().help; }, ms);
+  }
+
+  /* Wheel */
+  function svg(name, attrs, parent) {
+    const node = document.createElementNS(SVG, name);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    parent.appendChild(node);
+    return node;
+  }
+  const polar = wheelUI.polar;
+  function showMode(mode) {
+    for (const [key, button] of Object.entries(modeButtons)) button.setAttribute("aria-pressed", String(key === mode));
+  }
+  function render() {
+    const s = session;
+    s.options = menu(s.file, s.mode);
+    s.highlighted = -1;
+    showMode(s.mode);
+    const layers = wheelUI.base(wheel);
+    const n = s.options.length;
+    s.options.forEach((option, i) => {
+      const angle = -Math.PI / 2 + i * 2 * Math.PI / n;
+      wheelUI.petal(layers, i, n, { "data-i": i, role: "option", "aria-label": label(option) });
+      const [lx, ly] = polar(119, angle), text = label(option), words = text.split(" ");
+      const node = svg("text", { class: "label" + (n > 7 ? " small" : ""), x: lx, y: ly, "data-i": i }, wheel);
+      if (words.length > 1 && text.length > 9) {
+        const cut = Math.ceil(words.length / 2);
+        svg("tspan", { x: lx, dy: "-0.55em" }, node).textContent = words.slice(0, cut).join(" ");
+        svg("tspan", { x: lx, dy: "1.15em" }, node).textContent = words.slice(cut).join(" ");
+      } else node.textContent = text;
+    });
+    wheelUI.hub(wheel);
+    svg("text", { class: "hub-title", x: C, y: C - 2 }, wheel).textContent = n ? demoText().files(1) : demoText().none;
+    svg("text", { class: "hub-hint", x: C, y: C + 20, id: "hub-hint" }, wheel).textContent = n ? demoText().release : demoText().escHint;
+  }
+  function highlight(index) {
+    const s = session;
+    if (!s || index === s.highlighted) return;
+    s.highlighted = index;
+    wheelUI.select(wheel, index);
+    const hint = $("#hub-hint", wheel);
+    if (hint && s.options.length) hint.textContent = index >= 0 ? label(s.options[index]) : demoText().release;
+    const badge = $(".badge", ghost);
+    if (badge) { badge.textContent = index >= 0 ? "→ " + label(s.options[index]) : ""; badge.hidden = index < 0; }
+  }
+  // Uses the wheel's layout size rather than its on-screen box, so the opening animation never skews hits.
+  function geometry() {
+    const box = wheelWrap.getBoundingClientRect(), size = parseFloat(getComputedStyle(wheel).width) || 0;
+    return { cx: box.left + box.width / 2, cy: box.top + box.height / 2, scale: size / 380 };
+  }
+  function hitTest(x, y) {
+    const s = session;
+    if (!s || !s.options.length) return -1;
+    const g = geometry();
+    if (!g.scale) return -1;
+    return wheelUI.hit(wheel, C + (x - g.cx) / g.scale, C + (y - g.cy) / g.scale);
+  }
+  function petalPoint(index) {
+    const g = geometry(), angle = -Math.PI / 2 + index * 2 * Math.PI / session.options.length;
+    return [g.cx + 126 * Math.cos(angle) * g.scale, g.cy + 126 * Math.sin(angle) * g.scale];
+  }
+  function moveGhost(x, y) {
+    const box = stage.getBoundingClientRect();
+    ghost.style.left = x - box.left + "px";
+    ghost.style.top = y - box.top + "px";
+  }
+
+  /* One wheel at a time; every way out goes through end(). */
+  function begin(file, button, source, chord) {
+    if (session) end();
+    clearTimeout(helpTimer);
+    session = { file, button, source, mode: chord === 2 ? "tools" : chord === 1 ? "formats" : defaultMode, options: [], highlighted: -1, pointerId: null };
+    button.classList.add("dragging");
+    render();
+    wheelWrap.hidden = false;
+    stage.classList.add("open");
+    wheel.style.animation = "none"; void wheel.offsetWidth; wheel.style.animation = "";
+    if (source !== "keyboard") {
+      ghost.innerHTML = `${iconHtml(file)}<span class="badge" hidden></span>`;
+      ghost.hidden = false;
+    }
+    if (source !== "auto") say(demoText().helpDrag);
+  }
+  function end(suppress) {
+    const s = session;
+    if (!s) return null;
+    session = null;
+    if (suppress && s.pointerId != null) suppressed = s.pointerId;
+    s.button.classList.remove("dragging");
+    if (s.pointerId != null) {
+      try { if (s.button.hasPointerCapture(s.pointerId)) s.button.releasePointerCapture(s.pointerId); } catch { /* already released */ }
+    }
+    wheelWrap.hidden = true;
+    ghost.hidden = true;
+    stage.classList.remove("open");
+    showMode(defaultMode);
+    if (help.textContent === demoText().helpDrag) help.textContent = demoText().help;
+    return s;
+  }
+  function drop(index) {
+    const s = end();
+    if (!s) return;
+    if (!s.options.length) { say(demoText().nothing, 4000); return; }
+    if (index < 0) { if (s.source !== "auto") say(demoText().outside, 4000); return; }
+    const option = s.options[index], [kind, value] = option.split(":");
+    if (kind === "tool" && value !== "extractArchive") { say(demoText().toolInfo(label(option)), 6000); return; }
+    enqueue(s.file, kind, value);
+  }
+
+  function setMode(next, fromToggle) {
+    if (fromToggle) defaultMode = next;
+    if (session) { if (session.mode !== next) { session.mode = next; render(); } }
+    else showMode(defaultMode);
+  }
+  modeButtons.formats.addEventListener("click", () => setMode("formats", true));
+  modeButtons.tools.addEventListener("click", () => setMode("tools", true));
+
+  // Same chords as the app: Shift → formats, Ctrl+Shift → tools; adding Ctrl later switches to tools.
+  let previousChord = 0;
+  const chordOf = e => e.shiftKey && !e.altKey ? (e.ctrlKey || e.metaKey ? 2 : 1) : 0;
+  function applyChord(e) {
+    const chord = chordOf(e);
+    if (chord === 2) setMode("tools");
+    else if (chord === 1 && previousChord === 0) setMode("formats");
+    previousChord = chord;
+  }
+
+  /* Conversion queue: one job at a time, like the app's worker queue. */
+  const queue = [];
+  let running = null, toastHide = 0;
+  function enqueue(file, kind, value) {
+    queue.push({ file, kind, value });
+    if (running) updateClock(); else next();
+  }
+  function updateClock() {
+    if (!running || running.finishing) return;
+    const seconds = Math.floor((performance.now() - running.started) / 1000);
+    toastTime.textContent = demoText().elapsed(seconds) + (queue.length ? " · " + demoText().queued(queue.length) : "");
+  }
+  function showToast(title, detail, busy) {
+    clearTimeout(toastHide);
+    toast.hidden = false;
+    toastTitle.textContent = title;
+    toastDetail.textContent = detail;
+    toastBar.classList.toggle("indeterminate", busy);
+    $("i", toastBar).style.width = busy ? "" : "100%";
+  }
+  function next() {
+    const job = queue.shift();
+    running = null;
+    if (!job) { toastHide = setTimeout(() => { toast.hidden = true; }, 2600); return; }
+    const wasHidden = toast.hidden;
+    running = { ...job, started: performance.now() };
+    showToast(job.kind === "convert" ? demoText().converting : demoText().processing, job.file.name, true);
+    if (wasHidden) { toast.style.animation = "none"; void toast.offsetWidth; toast.style.animation = ""; }
+    updateClock();
+    const current = running;
+    current.clock = setInterval(updateClock, 250);
+    current.timer = setTimeout(() => finish(current), reducedMotion ? 300 : 1300);
+  }
+  function finish(job) {
+    clearInterval(job.clock);
+    const base = stemOf(job.file.name), extension = job.value === "gz" ? ".tar.gz" : "." + job.value;
+    const name = job.kind === "tool" ? uniqueName(base + "-extracted", "")
+      : uniqueName(base + (job.kind === "pack" ? "-packed" : "-converted"), extension);
+    addOutput(name, job.kind === "tool");
+    showToast(demoText().done, demoText().saved(name), false);
+    toastTime.textContent = demoText().elapsed(Math.max(1, Math.round((performance.now() - job.started) / 1000))) + (queue.length ? " · " + demoText().queued(queue.length) : "");
+    running = { finishing: true, started: job.started };
+    setTimeout(next, queue.length ? 700 : 0);
+  }
+
+  /* Pointer and keyboard input.
+     A press starts on a file; the rest of the drag is followed at the window level, so the release is seen
+     no matter which element ends up receiving it (browsers may drop pointer capture before pointerup). */
+  let press = null;   // { id, x, y, chord, button, file }
+  function bindFile(button, file) {
+    button.addEventListener("pointerdown", e => {
+      if (e.button !== 0) return;
+      stopAutoplay();
+      // A new press always starts fresh, so an earlier drag whose release went missing can never block the demo.
+      if (session) end();
+      suppressed = null;
+      press = { id: e.pointerId, x: e.clientX, y: e.clientY, chord: chordOf(e), button, file };
+      // Capture keeps touch drags flowing to us; it is optional, so failures are harmless.
+      try { button.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
+      e.preventDefault();
+    });
+    button.addEventListener("contextmenu", e => { if (session) e.preventDefault(); });
+    button.addEventListener("keydown", e => {
+      if ((e.key === "Enter" || e.key === " ") && !session) {
+        // Stop here so the same keypress doesn't reach the document handler and pick an option at once.
+        e.preventDefault(); e.stopPropagation(); stopAutoplay();
+        begin(file, button, "keyboard", 0);
+        highlight(session.options.length ? 0 : -1);
+      }
+    });
+  }
+  const ownsPress = e => press && e.pointerId === press.id;
+  const dragging = () => session && press && session.button === press.button && session.source === "pointer";
+  addEventListener("pointermove", e => {
+    if (!ownsPress(e) || e.pointerId === suppressed) return;
+    // A mouse with no buttons held means the release happened outside the page: treat it as cancelled.
+    if (e.pointerType === "mouse" && e.buttons === 0) { if (dragging()) end(); press = null; return; }
+    if (!dragging()) {
+      if (Math.hypot(e.clientX - press.x, e.clientY - press.y) < 6) return;
+      previousChord = press.chord;
+      begin(press.file, press.button, "pointer", chordOf(e) || press.chord);
+      session.pointerId = e.pointerId;
+    }
+    applyChord(e);
+    moveGhost(e.clientX, e.clientY);
+    highlight(hitTest(e.clientX, e.clientY));
+  });
+  addEventListener("pointerup", e => {
+    if (!ownsPress(e)) return;
+    const wasDragging = dragging();
+    press = null;
+    if (wasDragging) drop(hitTest(e.clientX, e.clientY));
+  });
+  addEventListener("pointercancel", e => {
+    if (!ownsPress(e)) return;
+    if (dragging()) end();
+    press = null;
+  });
+  document.addEventListener("keydown", e => {
+    if (!session) return;
+    if (session.source === "auto") { stopAutoplay(); return; }
+    applyChord(e);
+    if (e.key === "Escape") { e.preventDefault(); end(true); return; }
+    if (session.source !== "keyboard") return;
+    const n = session.options.length;
+    if (n && (e.key === "ArrowRight" || e.key === "ArrowDown")) { e.preventDefault(); highlight((session.highlighted + 1) % n); }
+    else if (n && (e.key === "ArrowLeft" || e.key === "ArrowUp")) { e.preventDefault(); highlight((session.highlighted - 1 + n) % n); }
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const button = session.button; drop(session.highlighted); button.focus(); }
+    else if (e.key === "Tab") end();
+  });
+  document.addEventListener("keyup", e => { if (session) previousChord = chordOf(e); });
+  addEventListener("blur", () => { if (session && session.source !== "auto") end(true); });
+  // Only the automatic run stops when the page is hidden; a real drag is ended by its release, blur, or a missed release.
+  document.addEventListener("visibilitychange", () => { if (document.hidden) stopAutoplay(); });
+
+  /* One automatic run when the demo first scrolls into view, so visitors see what to do. */
+  let autoFrame = 0, autoTimer = 0;
+  function stopAutoplay() {
+    interacted = true;
+    cancelAnimationFrame(autoFrame);
+    clearTimeout(autoTimer);
+    if (session && session.source === "auto") end();
+  }
+  function autoplay() {
+    if (interacted || reducedMotion || session || document.hidden) return;
+    const button = $(".file", desk), file = { name: "photo.png", folder: false, ext: "png" };
+    const from = button.getBoundingClientRect();
+    begin(file, button, "auto", 1);
+    const start = [from.left + from.width / 2, from.top + from.height / 2], target = petalPoint(0);
+    const t0 = performance.now(), duration = 1100;
+    const step = now => {
+      if (!session || session.source !== "auto") return;
+      const t = Math.min(1, (now - t0) / duration), k = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      const x = start[0] + (target[0] - start[0]) * k, y = start[1] + (target[1] - start[1]) * k - Math.sin(Math.PI * k) * 40;
+      moveGhost(x, y);
+      highlight(hitTest(x, y));
+      if (t < 1) autoFrame = requestAnimationFrame(step);
+      else autoTimer = setTimeout(() => { if (session && session.source === "auto") drop(session.highlighted); }, 550);
+    };
+    autoFrame = requestAnimationFrame(step);
+  }
+  stage.addEventListener("pointerdown", () => { if (!interacted) stopAutoplay(); }, true);
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) { observer.disconnect(); autoTimer = setTimeout(autoplay, 900); }
+    }, { threshold: .6 });
+    observer.observe(stage);
+  }
+
+  const demo = {
+    relabel() {
+      if (session) render();
+      if (!running) toast.hidden = true;
+      clearTimeout(helpTimer);
+      help.textContent = session && session.source !== "auto" ? demoText().helpDrag : demoText().help;
+    }
+  };
+
+  applyLanguage();
+})();
