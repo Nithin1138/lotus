@@ -18,10 +18,10 @@ mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$BACKEND_DIR"
 
 # 2. Build native macOS OCR and document converter binaries
 echo "Compiling native macOS Vision OCR..."
-swiftc -O "$ROOT_DIR/work/ZestDrop/backend/ocr-mac.swift" -o "$ROOT_DIR/work/ZestDrop/backend/ocr-mac"
+swiftc -O "$ROOT_DIR/work/Lotus/backend/ocr-mac.swift" -o "$ROOT_DIR/work/Lotus/backend/ocr-mac"
 
 echo "Compiling native macOS doc2pdf converter..."
-swiftc -O "$ROOT_DIR/work/ZestDrop/backend/doc2pdf-mac.swift" -o "$ROOT_DIR/work/ZestDrop/backend/doc2pdf-mac"
+swiftc -O "$ROOT_DIR/work/Lotus/backend/doc2pdf-mac.swift" -o "$ROOT_DIR/work/Lotus/backend/doc2pdf-mac"
 
 # 3. Build Swift Application
 echo "Compiling Lotus Swift binary..."
@@ -39,13 +39,15 @@ swiftc -O \
 # 4. Copy Bundle Info & Icons
 echo "Packaging application bundle..."
 cp "$ROOT_DIR/work/Lotus-macOS/Info.plist" "$CONTENTS_DIR/Info.plist"
-if [ -f "$ROOT_DIR/work/ZestDrop/assets/AppIcon.icns" ]; then
-    cp "$ROOT_DIR/work/ZestDrop/assets/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
+if [ -f "$ROOT_DIR/work/Lotus/assets/AppIcon.icns" ]; then
+    cp "$ROOT_DIR/work/Lotus/assets/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
 fi
-cp "$ROOT_DIR/work/ZestDrop/assets/zestdrop.png" "$RESOURCES_DIR/lotus.png"
+if [ -f "$ROOT_DIR/work/Lotus/assets/lotus.png" ]; then
+    cp "$ROOT_DIR/work/Lotus/assets/lotus.png" "$RESOURCES_DIR/lotus.png"
+fi
 
 # 5. Copy Backend scripts
-cp -R "$ROOT_DIR/work/ZestDrop/backend/"* "$BACKEND_DIR/"
+cp -R "$ROOT_DIR/work/Lotus/backend/"* "$BACKEND_DIR/"
 find "$BACKEND_DIR" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 
 # 6. Make binaries executable

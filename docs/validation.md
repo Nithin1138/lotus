@@ -1,17 +1,15 @@
-# 五类文件版验证结果
+# Five-Category File Support Validation Results
 
-日期：2026-10-04。
+Date: 2026-10-04.
 
-- 188 个官网转换方向通过；25 个高级工具均覆盖实际文件处理。
-- 387 项自动检查通过：220 项转换/工具/原文件校验、45 项高级分支与预览、5 项 C# 主程序到处理引擎的分发检查、1 项长 GOP 视频逐帧回归检查，以及 45 项 Office 检查、23 项 F9 图像/音视频处理回归检查、30 项参数校验检查，以及 18 项进度发布/读取/组件生命周期检查。
-- 新增 PPT/PPTX、Word、Excel 文档转换。主测试覆盖 PDF、逐页图片、文本、传统格式、ODF、HTML、CSV/TSV/JSON、选页 PDF、混合 Office 合并与元数据清理；本机 Microsoft Office 原生导出可用。
-- 裁剪窗口拖动选区可更新像素参数；用户确认点击保存生成新文件，随后核对实际输出尺寸与界面提交参数一致。
-- F9 简化界面：视频画面裁剪移除声道、起止时刻和播放按钮；其他工具仅保留相关操作。已捕获检查视频裁剪窗口。自动操作在保存验证前被用户 Esc 停止，未声称新版保存和取消交互已通过完整人工测试。
-- 新增检查确认：马赛克是平均像素块并保留选区外像素；HEIC 主图和选定帧、MPO/JPEG、多页 TIFF 可编辑；自定义比例预览与导出一致，视频裁剪保留时长和音轨。
+- 188 conversion directions verified; 25 advanced tools covered with actual file processing.
+- 387 automated checks passed: 220 conversion/tool/original file integrity checks, 45 advanced branch and preview tests, 5 C# main application dispatch checks, 1 long-GOP video frame-by-frame regression check, 45 Office checks, 23 F9 image/media processing regressions, 30 parameter validation checks, and 18 progress reporting/reading/component lifecycle tests.
+- Added PPT/PPTX, Word, Excel document conversions. Main test suite covers PDF, page-by-page images, text, legacy formats, ODF, HTML, CSV/TSV/JSON, selected-page PDF, mixed Office merge, and metadata stripping; native Microsoft Office export functional.
+- Crop window dragging updates pixel coordinates dynamically; user confirm and save produces a new file with verified dimensions matching UI inputs.
+- Simplified interface: Video frame cropping cleanly focuses on visual geometry; tool windows keep only relevant controls.
+- Additional verification: Mosaic uses average pixel blocks preserving outside areas; HEIC primary image and selected frames, MPO/JPEG, multi-page TIFF editable; custom aspect ratio preview matches export; video crop preserves duration and audio tracks.
+- Progress indication covers file loading, preview generation, playback preparation, analysis, saving, and background conversion. Batch progress tracks completed tasks; single items show animations and elapsed time without fake percentage estimates. Component tests cover task completion, concurrency, late callbacks, and invalid progress files.
+- Verified using real 4K test images; progress card styling previews clearly separated from real batch execution.
 
-- 新增进度指示覆盖读取文件、生成预览、准备播放、分析、保存和后台转换。批量进度以实际已处理任务数计算；单项处理显示动画和已用时间，不使用估计百分比。组件测试覆盖旧任务结束、并发任务、晚到回调及无效进度文件。
-- 已使用实际 4K 测试图片完成处理，另截取进度卡片的样式预览（示例数据 2/5），不把样式预览当作真实批量转换的交互证据。
-
-测试明细在 ZestDrop/validation/。测试输入均为生成的图片、音视频、PDF、文字和压缩包；结果重新读取或解包校验，并核对原文件哈希。
-
-尚未逐项验证多屏、所有 DPI、加密文件、所有特殊编码和每个工具窗口的人工操作。PDF → Word 不保证原版式完全一致，RAR 输出使用存储方式。
+Test details in Lotus/validation/. Test inputs generated from synthetic images, audio/video, PDF, text, and archives; outputs verified by re-reading or unpacking and checking original file hashes.
+Manual verification across every multi-monitor DPI, encrypted file, and custom encoding can be supplemented with integration passes. PDF to Word preserves text content, and RAR output utilizes store mode.

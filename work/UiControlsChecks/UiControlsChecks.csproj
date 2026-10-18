@@ -5,16 +5,14 @@
     <Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../ZestDrop/UiTheme.cs" Link="UiTheme.cs"/>
-    <Compile Include="../ZestDrop/ContinuousFrame.cs" Link="ContinuousFrame.cs"/>
-    <Compile Include="../ZestDrop/RotationDial.cs" Link="RotationDial.cs"/>
-    <Compile Include="../ZestDrop/RotationGeometry.cs" Link="RotationGeometry.cs"/>
-    <Compile Include="../ZestDrop/AppIcon.cs" Link="AppIcon.cs"/>
-    <Compile Include="../ZestDrop/Strings.cs" Link="Strings.cs"/>
-    <Compile Include="../ZestDrop/StringsEn.cs" Link="StringsEn.cs"/>
-    <Compile Include="../ZestDrop/Settings.cs" Link="Settings.cs"/>
-    <Compile Include="../ZestDrop/StartupManager.cs" Link="StartupManager.cs"/>
-    <EmbeddedResource Include="../ZestDrop/assets/zestdrop.ico" LogicalName="ZestDrop.AppIcon"/>
-    <Resource Include="../ZestDrop/assets/fonts/SourceHanSansCN-Medium.otf" Link="assets/fonts/SourceHanSansCN-Medium.otf"/>
+    <Compile Include="../Lotus/UiTheme.cs" Link="UiTheme.cs"/>
+    <Compile Include="../Lotus/ContinuousFrame.cs" Link="ContinuousFrame.cs"/>
+    <Compile Include="../Lotus/RotationDial.cs" Link="RotationDial.cs"/>
+    <Compile Include="../Lotus/RotationGeometry.cs" Link="RotationGeometry.cs"/>
+    <Compile Include="../Lotus/AppIcon.cs" Link="AppIcon.cs"/>
+    <Compile Include="../Lotus/Strings.cs" Link="Strings.cs"/>
+    <Compile Include="../Lotus/Settings.cs" Link="Settings.cs"/>
+    <Compile Include="../Lotus/StartupManager.cs" Link="StartupManager.cs"/>
+    <EmbeddedResource Include="../Lotus/assets/lotus.ico" LogicalName="Lotus.AppIcon"/>
   </ItemGroup>
 </Project>

@@ -32,5 +32,5 @@ Thumbs.db
 .DS_Store
 
 # Compiled macOS helper binaries (sources are .swift)
-work/ZestDrop/backend/doc2pdf-mac
-work/ZestDrop/backend/ocr-mac
+work/Lotus/backend/doc2pdf-mac
+work/Lotus/backend/ocr-mac

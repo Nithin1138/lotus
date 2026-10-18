@@ -17,13 +17,12 @@ OUT.mkdir(exist_ok=True)
 for old in OUT.glob('*.png'):
     old.unlink()
 
-logo = Image.open(ROOT.parent / 'work' / 'ZestDrop' / 'assets' / 'zestdrop.png').convert('RGBA')
+logo = Image.open(ROOT.parent / 'work' / 'Lotus' / 'assets' / 'lotus.png').convert('RGBA')
 logo = logo.crop(logo.getchannel('A').getbbox())
 
 BG, INK, MUTED, ACCENT = (250, 248, 245), (31, 34, 38), (95, 101, 109), (213, 84, 24)
-FONTS = {'en': ('C:/Windows/Fonts/segoeuib.ttf', 'C:/Windows/Fonts/segoeui.ttf'),
-         'zh': ('C:/Windows/Fonts/msyhbd.ttc', 'C:/Windows/Fonts/msyh.ttc')}
-TAGLINE = {'en': 'Drag. Drop. Convert.', 'zh': '拖，松，转！'}
+FONTS = {'en': ('C:/Windows/Fonts/segoeuib.ttf', 'C:/Windows/Fonts/segoeui.ttf')}
+TAGLINE = {'en': 'Drag. Drop. Convert.'}
 
 
 def mark(width):
@@ -46,12 +45,12 @@ def card(size, lang, logo_w, logo_y, name_size, name_y, tag_size, tag_y):
     img.alpha_composite(m, ((w - m.width) // 2, logo_y))
     d = ImageDraw.Draw(img)
     bold, regular = (ImageFont.truetype(f, s) for f, s in ((FONTS[lang][0], name_size), (FONTS[lang][1], tag_size)))
-    centered(d, 'ZestDrop', bold, name_y, INK, w)
+    centered(d, 'Lotus', bold, name_y, INK, w)
     centered(d, TAGLINE[lang], regular, tag_y, ACCENT if lang == 'en' else MUTED, w)
     return img
 
 
-for lang in ('en', 'zh'):
+for lang in ('en',):
     card((1080, 1080), lang, 400, 150, 132, 580, 56, 740).convert('RGB').save(OUT / f'box-art-1080-{lang}.png', optimize=True)
     card((720, 1080), lang, 300, 110, 96, 450, 42, 580).convert('RGB').save(OUT / f'poster-720x1080-{lang}.png', optimize=True)
 

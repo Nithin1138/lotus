@@ -3,7 +3,7 @@ import sys,json,hashlib,importlib.util
 from PIL import Image
 
 ROOT=Path(__file__).resolve().parent.parent
-BUILD=ROOT/'outputs/ZestDrop'
+BUILD=ROOT/'outputs/Lotus'
 sys.path.insert(0,str(BUILD/'backend'))
 import worker,common
 DIR=ROOT/'work/progress-fixtures';DIR.mkdir(exist_ok=True)
@@ -14,7 +14,7 @@ def check(name,fn):
 def require(value):
     if not value:raise AssertionError('unexpected progress state')
 
-inputs=[DIR/f'照片 {i}.png' for i in range(1,4)]
+inputs=[DIR/f'Photo {i}.png' for i in range(1,4)]
 for i,path in enumerate(inputs):Image.new('RGB',(32,24),('red','green','blue')[i]).save(path)
 before={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs}
 def batch():

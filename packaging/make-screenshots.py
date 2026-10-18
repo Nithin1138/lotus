@@ -1,12 +1,12 @@
 """Compose 1920x1080 Store screenshots from renders made by the app's debug modes.
 
 Usage: python packaging/make-screenshots.py <renders folder>
-The folder must contain, for each language L in (en, zh):
-  wheel-L-holiday.png.png   ZestDrop.exe --debug-wheel-render formats <holiday.png> convert:jpg <out>
-  wheel-L-trip.mp4.png      ZestDrop.exe --debug-wheel-render tools <trip.mp4> trimVideo <out>
-  tool-L.png                a capture of the combined window: ZestDrop.exe --debug-tool merge:trimSplit <video>, then PrintWindow
-  stack-L-expanded.png      ZestDrop.exe --debug-indicator <folder>/stack-L
-(set ZESTDROP_LANG=en or zh when rendering). Output: packaging/screenshots/<lang>-<n>.png
+The folder must contain:
+  wheel-en-holiday.png.png   Lotus.exe --debug-wheel-render formats <holiday.png> convert:jpg <out>
+  wheel-en-trip.mp4.png      Lotus.exe --debug-wheel-render tools <trip.mp4> trimVideo <out>
+  tool-en.png                a capture of the combined window: Lotus.exe --debug-tool merge:trimSplit <video>, then PrintWindow
+  stack-en-expanded.png      Lotus.exe --debug-indicator <folder>/stack-en
+(set LOTUS_LANG=en when rendering). Output: packaging/screenshots/<lang>-<n>.png
 """
 from pathlib import Path
 import sys
@@ -126,7 +126,7 @@ def stack_shot(lang):
     return canvas
 
 
-for lang in ('en', 'zh'):
+for lang in ('en',):
     shots = [
         wheel_shot(lang, 'holiday.png', 'PNG', (47, 143, 91), -90),
         wheel_shot(lang, 'trip.mp4', 'MP4', (109, 79, 209), 45),  # 'Trim & split' is the fourth of eight entries, 45 degrees clockwise of the right

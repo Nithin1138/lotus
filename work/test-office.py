@@ -7,16 +7,16 @@ from openpyxl import Workbook,load_workbook
 from PIL import Image
 from pypdf import PdfReader
 
-ROOT=Path(__file__).resolve().parent.parent;APP=ROOT/'outputs/ZestDrop';EXE=APP/'ZestDrop.exe';DIR=ROOT/'work/office-fixtures';DIR.mkdir(exist_ok=True)
+ROOT=Path(__file__).resolve().parent.parent;APP=ROOT/'outputs/Lotus';EXE=APP/'Lotus.exe';DIR=ROOT/'work/office-fixtures';DIR.mkdir(exist_ok=True)
 sys.path.insert(0,str(APP/'backend'))
 import worker,office
 deck=Presentation()
 for i in range(2):
-    slide=deck.slides.add_slide(deck.slide_layouts[1]);slide.shapes.title.text=f'Office test slide {i+1}';slide.placeholders[1].text=f'第 {i+1} 页中文内容\nA useful sentence on slide {i+1}'
+    slide=deck.slides.add_slide(deck.slide_layouts[1]);slide.shapes.title.text=f'Office test slide {i+1}';slide.placeholders[1].text=f'Page {i+1} content\nA useful sentence on slide {i+1}'
 deck.save(DIR/'slides.pptx')
-word=Document();word.add_heading('Office conversion test',0);word.add_paragraph('第一页文字：中文和 English');table=word.add_table(rows=2,cols=2);table.cell(0,0).text='Item';table.cell(0,1).text='Amount';table.cell(1,0).text='Test';table.cell(1,1).text='123';word.add_page_break();word.add_paragraph('Second page selectable text');word.save(DIR/'document.docx')
-book=Workbook();sheet=book.active;sheet.title='Sales';sheet.append(['Name','Amount']);sheet.append(['中文项目',123]);sheet.append(['Formula','=SUM(B2,7)']);sheet.page_setup.paperSize=sheet.PAPERSIZE_A4;sheet.print_area='A1:B3';second=book.create_sheet('第二张表');second.append(['Second sheet',42]);second.print_area='A1:B1';book.save(DIR/'sheets.xlsx')
-(DIR/'source.csv').write_text('名称,金额\n测试,15\nliteral,=1+2\n',encoding='utf-8-sig')
+word=Document();word.add_heading('Office conversion test',0);word.add_paragraph('First page text: English test');table=word.add_table(rows=2,cols=2);table.cell(0,0).text='Item';table.cell(0,1).text='Amount';table.cell(1,0).text='Test';table.cell(1,1).text='123';word.add_page_break();word.add_paragraph('Second page selectable text');word.save(DIR/'document.docx')
+book=Workbook();sheet=book.active;sheet.title='Sales';sheet.append(['Name','Amount']);sheet.append(['Item test',123]);sheet.append(['Formula','=SUM(B2,7)']);sheet.page_setup.paperSize=sheet.PAPERSIZE_A4;sheet.print_area='A1:B3';second=book.create_sheet('Second Sheet');second.append(['Second sheet',42]);second.print_area='A1:B1';book.save(DIR/'sheets.xlsx')
+(DIR/'source.csv').write_text('Name,Amount\nTest,15\nliteral,=1+2\n',encoding='utf-8-sig')
 checks=[]
 def run(name,source,fmt):
     original=hashlib.sha256(source.read_bytes()).hexdigest()

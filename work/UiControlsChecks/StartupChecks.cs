@@ -1,14 +1,14 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Win32;
-using ZestDrop;
+using Lotus;
 
 internal static class StartupChecks
 {
     public static void Run(Action<string, Action> check)
     {
-        string testKey = @"Software\ZestDrop\Tests\Startup-" + Guid.NewGuid().ToString("N");
-        var provider = new RegistryStartupProvider(testKey, "ZestDrop", @"C:\Apps with spaces\工具 & files\ZestDrop.exe");
+        string testKey = @"Software\Lotus\Tests\Startup-" + Guid.NewGuid().ToString("N");
+        var provider = new RegistryStartupProvider(testKey, "Lotus", @"C:\Apps with spaces\Tools & files\Lotus.exe");
         void Require(bool condition) { if (!condition) throw new Exception("Unexpected startup registration state."); }
         try
         {
@@ -24,17 +24,17 @@ internal static class StartupChecks
                 using (var key = Registry.CurrentUser.CreateSubKey(testKey)) key.SetValue("unrelated", "keep");
                 Require(provider.SetAsync(true).GetAwaiter().GetResult().Enabled);
                 using (var key = Registry.CurrentUser.OpenSubKey(testKey))
-                    Require((string?)key?.GetValue("ZestDrop") == "\"C:\\Apps with spaces\\工具 & files\\ZestDrop.exe\" --startup");
+                    Require((string?)key?.GetValue("Lotus") == "\"C:\\Apps with spaces\\Tools & files\\Lotus.exe\" --startup");
                 Require(!provider.SetAsync(false).GetAwaiter().GetResult().Enabled);
                 using (var key = Registry.CurrentUser.OpenSubKey(testKey))
-                    Require(key?.GetValue("ZestDrop") == null && (string?)key?.GetValue("unrelated") == "keep");
+                    Require(key?.GetValue("Lotus") == null && (string?)key?.GetValue("unrelated") == "keep");
             });
             check("moving an enabled portable app refreshes its path without enabling a disabled app", () =>
             {
                 provider.SetAsync(true).GetAwaiter().GetResult();
-                var moved = new RegistryStartupProvider(testKey, "ZestDrop", @"D:\New folder\ZestDrop.exe");
+                var moved = new RegistryStartupProvider(testKey, "Lotus", @"D:\New folder\Lotus.exe");
                 moved.RefreshPath();
-                using (var key = Registry.CurrentUser.OpenSubKey(testKey)) Require((string?)key?.GetValue("ZestDrop") == "\"D:\\New folder\\ZestDrop.exe\" --startup");
+                using (var key = Registry.CurrentUser.OpenSubKey(testKey)) Require((string?)key?.GetValue("Lotus") == "\"D:\\New folder\\Lotus.exe\" --startup");
                 moved.SetAsync(false).GetAwaiter().GetResult(); moved.RefreshPath();
                 Require(!moved.GetAsync().GetAwaiter().GetResult().Enabled);
             });

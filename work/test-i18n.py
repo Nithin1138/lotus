@@ -1,12 +1,12 @@
 """Checks the backend's English messages.
 
-Run with the portable Python: ./outputs/ZestDrop/runtime/python/python.exe work/test-i18n.py
+Run with the portable Python: ./outputs/Lotus/runtime/python/python.exe work/test-i18n.py
 """
 from pathlib import Path
 import json, os, re, subprocess, sys, tempfile
 
 ROOT = Path(__file__).resolve().parent
-BACKEND = ROOT / 'ZestDrop' / 'backend'
+BACKEND = ROOT / 'Lotus' / 'backend'
 sys.path.insert(0, str(BACKEND))
 from translations import EN
 
@@ -33,14 +33,14 @@ def run(language):
         source.write_text('hello', encoding='utf8')
         request, response = Path(temp) / 'request.json', Path(temp) / 'result.json'
         request.write_text(json.dumps({'Paths': [str(source)], 'Action': 'extractArchive'}), encoding='utf8')
-        env = {**os.environ, 'ZESTDROP_LANG': language}
+        env = {**os.environ, 'LOTUS_LANG': language}
         subprocess.run([sys.executable, str(BACKEND / 'worker.py'), '--job', str(request), str(response)], env=env, check=True, timeout=120)
         return json.loads(response.read_text(encoding='utf8'))['Files'][0]['Error']
 
 
 english, chinese = run('en'), run('zh')
 check('errors come back in English when the app is set to English', english == 'Unsupported archive format', english)
-check('errors stay in Chinese otherwise', chinese == '不支持的压缩包格式', chinese)
+check('errors stay in Chinese otherwise', chinese == 'Unsupported archive format', chinese)
 
 failed = [c for c in checks if not c['passed']]
 print(json.dumps({'passed': len(checks) - len(failed), 'failed': len(failed), 'checks': checks}, ensure_ascii=False, indent=1))

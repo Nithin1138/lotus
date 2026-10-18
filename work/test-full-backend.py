@@ -8,7 +8,7 @@ from docx import Document
 import pymupdf as fitz
 
 ROOT=Path(__file__).resolve().parent.parent
-APP=ROOT/'outputs/ZestDrop';PY=APP/'runtime/python/python.exe';WORKER=APP/'backend/worker.py';FF=APP/'runtime/ffmpeg/ffmpeg.exe';FP=APP/'runtime/ffmpeg/ffprobe.exe';SEVEN=APP/'runtime/7zip/7z.exe'
+APP=ROOT/'outputs/Lotus';PY=APP/'runtime/python/python.exe';WORKER=APP/'backend/worker.py';FF=APP/'runtime/ffmpeg/ffmpeg.exe';FP=APP/'runtime/ffmpeg/ffprobe.exe';SEVEN=APP/'runtime/7zip/7z.exe'
 sys.path.insert(0,str(APP/'backend'))
 import archives
 DIR=ROOT/'work/full-fixtures';DIR.mkdir(parents=True,exist_ok=True)
@@ -50,10 +50,10 @@ pdf=DIR/'document.pdf';doc=fitz.open()
 for i in range(3):
     page=doc.new_page();page.insert_text((50,60),f'Page {i+1} selectable text');page.insert_image(fitz.Rect(60,100,360,325),filename=str(inputs['jpg']))
 doc.set_metadata({'title':'fixture-title','author':'fixture-author'});doc.save(pdf);doc.close();inputs['pdf']=pdf
-txt=DIR/'notes.txt';txt.write_text('Hello world\n中文测试文字\nThird paragraph',encoding='utf8');inputs['txt']=txt
+txt=DIR/'notes.txt';txt.write_text('Hello world\nTest content line\nThird paragraph',encoding='utf8');inputs['txt']=txt
 srt=DIR/'caption.srt';srt.write_text('1\n00:00:00,000 --> 00:00:00,600\nHello\n\n2\n00:00:00,600 --> 00:00:01,200\nWorld\n',encoding='utf8');inputs['srt']=srt
 vtt=DIR/'caption.vtt';vtt.write_text('WEBVTT\n\n00:00:00.000 --> 00:00:00.600\nHello\n\n00:00:00.600 --> 00:00:01.200\nWorld\n',encoding='utf8');inputs['vtt']=vtt
-payload=DIR/'payload';(payload/'nested').mkdir(parents=True,exist_ok=True);(payload/'empty').mkdir(exist_ok=True);(payload/'nested/你好.txt').write_text('archive payload\n中文',encoding='utf8');(payload/'readme.txt').write_text('hello',encoding='utf8')
+payload=DIR/'payload';(payload/'nested').mkdir(parents=True,exist_ok=True);(payload/'empty').mkdir(exist_ok=True);(payload/'nested/hello.txt').write_text('archive payload\ntest text',encoding='utf8');(payload/'readme.txt').write_text('hello',encoding='utf8')
 for ext in ('zip','tar','gz','rar'):
     path=DIR/('bundle.tar.gz' if ext=='gz' else 'bundle.'+ext);archives.pack(payload,path,ext);inputs[ext]=path
 sourceHashes={str(path):hashlib.sha256(path.read_bytes()).hexdigest() for path in inputs.values()}
@@ -89,7 +89,7 @@ def validate(output,fmt):
         elif fmt in ('txt','srt','vtt'):assert file.read_text(encoding='utf8').strip()
         elif fmt in ('zip','tar','gz','rar'):
             folder=RESULTS/(file.name+'-unpacked');folder.mkdir(exist_ok=True);archives.extract_to(file,folder)
-            assert (folder/'nested/你好.txt').read_text(encoding='utf8')=='archive payload\n中文' and (folder/'readme.txt').read_text()=='hello'
+            assert (folder/'nested/hello.txt').read_text(encoding='utf8')=='archive payload\ntest text' and (folder/'readme.txt').read_text()=='hello'
 def conversion(pair):
     ext,fmt=pair;name=ext+'-to-'+fmt
     try:output=execute(name,[inputs[ext]],'convert:'+fmt)[0];validate(output,fmt);return {'test':name,'passed':True}
@@ -178,7 +178,7 @@ for name,paths,action,params in toolCases:
         if name=='pdf-split':assert sorted(len(PdfReader(p).pages) for p in output.iterdir())==[1,2]
         if name=='pdf-merge':assert len(PdfReader(output).pages)==6
         if name=='pdf-organize':assert len(PdfReader(output).pages)==3 and 'Page 3' in PdfReader(output).pages[0].extract_text() and PdfReader(output).pages[0].rotation==90
-        if name=='archive-extract':assert (output/'nested/你好.txt').exists()
+        if name=='archive-extract':assert (output/'nested/hello.txt').exists()
         if name=='image-resize':assert max(Image.open(output).size)==64
         if name=='image-watermark':assert any(p[0]>200 and p[1]<80 for p in Image.open(output).convert('RGB').getdata())
         if name=='image-icon':assert output.suffix=='.ico' and Image.open(output).size[0]>=16

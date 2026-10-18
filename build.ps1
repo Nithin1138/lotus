@@ -11,9 +11,9 @@ if (-not $SkipRuntimeCheck) {
     }
 }
 
-dotnet publish (Join-Path $taskRoot 'work/ZestDrop/ZestDrop.csproj') -c Release -r win-x64 --self-contained true -o $taskOutput --nologo
+dotnet publish (Join-Path $taskRoot 'work/Lotus/Lotus.csproj') -c Release -r win-x64 --self-contained true -o $taskOutput --nologo
 if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed.' }
-Copy-Item -LiteralPath (Join-Path $taskRoot 'work/ZestDrop/backend') -Destination $taskOutput -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $taskRoot 'work/Lotus/backend') -Destination $taskOutput -Recurse -Force
 Get-ChildItem -LiteralPath (Join-Path $taskOutput 'backend') -Recurse -Directory -Filter '__pycache__' | Remove-Item -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/usage.md') -Destination (Join-Path $taskOutput 'USAGE.md') -Force
 Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/dependencies.json') -Destination (Join-Path $taskOutput 'dependencies.json') -Force
@@ -27,8 +27,8 @@ if (Test-Path -LiteralPath $taskPython) {
 Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/validation') -Destination $taskOutput -Recurse -Force
 $taskSource = Join-Path $taskOutput 'source'
 New-Item -ItemType Directory -Force -Path $taskSource | Out-Null
-Get-ChildItem -LiteralPath (Join-Path $taskRoot 'work/ZestDrop') -File | Where-Object {$_.Extension -in @('.cs', '.csproj', '.manifest')} | Copy-Item -Destination $taskSource -Force
-Copy-Item -LiteralPath (Join-Path $taskRoot 'work/ZestDrop/backend') -Destination $taskSource -Recurse -Force
-Copy-Item -LiteralPath (Join-Path $taskRoot 'work/ZestDrop/assets') -Destination $taskSource -Recurse -Force
+Get-ChildItem -LiteralPath (Join-Path $taskRoot 'work/Lotus') -File | Where-Object {$_.Extension -in @('.cs', '.csproj', '.manifest')} | Copy-Item -Destination $taskSource -Force
+Copy-Item -LiteralPath (Join-Path $taskRoot 'work/Lotus/backend') -Destination $taskSource -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $taskRoot 'work/Lotus/assets') -Destination $taskSource -Recurse -Force
 Get-ChildItem -LiteralPath $taskSource -Recurse -Include '*.otf', '__pycache__' | Remove-Item -Recurse -Force
 Write-Output "Built: $taskOutput/Lotus.exe"

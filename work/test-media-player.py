@@ -1,6 +1,6 @@
 from pathlib import Path
 import sys,json,hashlib
-ROOT=Path(__file__).resolve().parent.parent;APP=ROOT/'outputs/ZestDrop';sys.path.insert(0,str(APP/'backend'))
+ROOT=Path(__file__).resolve().parent.parent;APP=ROOT/'outputs/Lotus';sys.path.insert(0,str(APP/'backend'))
 import worker
 from common import ffmpeg,probe,duration
 DIR=ROOT/'work/player-fixtures';DIR.mkdir(exist_ok=True);checks=[]

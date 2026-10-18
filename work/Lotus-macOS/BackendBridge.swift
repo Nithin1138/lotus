@@ -72,12 +72,12 @@ final class BackendBridge {
         }
         
         let repoRoot = bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let localPath = repoRoot.appendingPathComponent("work/ZestDrop/backend/worker.py").path
+        let localPath = repoRoot.appendingPathComponent("work/Lotus/backend/worker.py").path
         if FileManager.default.fileExists(atPath: localPath) {
             return localPath
         }
 
-        let currentDirScript = FileManager.default.currentDirectoryPath + "/work/ZestDrop/backend/worker.py"
+        let currentDirScript = FileManager.default.currentDirectoryPath + "/work/Lotus/backend/worker.py"
         if FileManager.default.fileExists(atPath: currentDirScript) {
             return currentDirScript
         }
@@ -117,7 +117,6 @@ final class BackendBridge {
 
         var env = ProcessInfo.processInfo.environment
         env["LOTUS_LANG"] = "en"
-        env["ZESTDROP_LANG"] = "en"
         let extraPaths = [
             "/Library/Frameworks/Python.framework/Versions/Current/bin",
             "/Library/Frameworks/Python.framework/Versions/3.14/bin",
@@ -210,7 +209,6 @@ final class BackendBridge {
 
         var env = ProcessInfo.processInfo.environment
         env["LOTUS_LANG"] = "en"
-        env["ZESTDROP_LANG"] = "en"
         process.environment = env
 
         let errorPipe = Pipe()

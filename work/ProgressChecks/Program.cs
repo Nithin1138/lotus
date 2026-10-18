@@ -1,4 +1,4 @@
-using ZestDrop;
+using Lotus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,11 +26,11 @@ internal static class Checks
             if (glyphs.Weight != FontWeights.Medium) throw new Exception("Bundled face weight: " + glyphs.Weight);
             if (!glyphs.FontUri.OriginalString.Contains("sourcehansanscn-medium.otf", StringComparison.OrdinalIgnoreCase))
                 throw new Exception("Unexpected font source: " + glyphs.FontUri);
-            foreach (char character in "打包裁剪图片") Require(glyphs.CharacterToGlyphMap.ContainsKey(character));
+            foreach (char character in "Pack Crop Image") Require(glyphs.CharacterToGlyphMap.ContainsKey(character));
         });
         Check("layered wheel retains each visible sector's drop target",()=>
         {
-            string path=Path.Combine(Path.GetTempPath(),"zestdrop-wheel-"+Guid.NewGuid().ToString("N")+".png");File.WriteAllText(path,"fixture");
+            string path=Path.Combine(Path.GetTempPath(),"lotus-wheel-"+Guid.NewGuid().ToString("N")+".png");File.WriteAllText(path,"fixture");
             var wheel=new DropWheel((_,_)=>{});
             try
             {
@@ -42,7 +42,7 @@ internal static class Checks
         });
         Check("wheel mode changes keep the dragged file and valid tool sectors",()=>
         {
-            string path=Path.Combine(Path.GetTempPath(),"zestdrop-wheel-"+Guid.NewGuid().ToString("N")+".png");File.WriteAllText(path,"fixture");var wheel=new DropWheel((_,_)=>{});
+            string path=Path.Combine(Path.GetTempPath(),"lotus-wheel-"+Guid.NewGuid().ToString("N")+".png");File.WriteAllText(path,"fixture");var wheel=new DropWheel((_,_)=>{});
             try{wheel.Preview([path],false,"convert:jpg");wheel.ChangeMode(true);Require(wheel.HasFileDrag&&wheel.ToolsMode);var all=Catalog.Options([path],true);var groups=Catalog.Grouped(all,"image");var actions=groups==null?all:groups.Select((g,i)=>new Operation("__group:"+i,g.Label)).ToList();var hit=typeof(DropWheel).GetMethod("Hit",BindingFlags.NonPublic|BindingFlags.Static)!;var ring=typeof(DropWheel).GetField("first",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel);for(int i=0;i<actions.Count;i++){double angle=-Math.PI/2+i*2*Math.PI/actions.Count;Require((int)hit.Invoke(null,[ring!,new Point(190+119*Math.Cos(angle),190+119*Math.Sin(angle)),65d,172d])! == i);}}
             finally{wheel.Close();File.Delete(path);}
         });
@@ -74,7 +74,7 @@ internal static class Checks
         Check("missing progress does not crash UI",()=>Require(ProgressReader.Read(file)==null));
         foreach(string content in new[]{"{bad}","{\"Total\":0,\"Processed\":0}","{\"Total\":2,\"Processed\":3}","{\"Total\":2,\"Processed\":-1}"})
             Check("invalid/partial progress ignored: "+content,()=>{File.WriteAllText(file,content);Require(ProgressReader.Read(file)==null);});
-        Check("actual batch counts and Unicode filename read correctly",()=>{File.WriteAllText(file,JsonSerializer.Serialize(new JobProgress("processing",2,5,"照片.png")));var p=ProgressReader.Read(file);Require(p?.Processed==2&&p.Total==5&&p.Current=="照片.png");});
+        Check("actual batch counts and Unicode filename read correctly",()=>{File.WriteAllText(file,JsonSerializer.Serialize(new JobProgress("processing",2,5,"photo.png")));var p=ProgressReader.Read(file);Require(p?.Processed==2&&p.Total==5&&p.Current=="photo.png");});
         File.Delete(file);
         Check("embedded window icon loads at high resolution and stays frozen",()=>
         {
@@ -86,7 +86,7 @@ internal static class Checks
         });
         Check("worker progress is delivered through the actual runtime monitor",()=>
         {
-            string progressFile=file+".progress";File.WriteAllText(progressFile,JsonSerializer.Serialize(new JobProgress("processing",2,5,"照片 3.png")));
+            string progressFile=file+".progress";File.WriteAllText(progressFile,JsonSerializer.Serialize(new JobProgress("processing",2,5,"photo 3.png")));
             using var seen=new ManualResetEventSlim();JobProgress? received=null;
             using(var monitor=Backend.WatchProgress(file,new Reporter(p=>{received=p;seen.Set();}))){Require(seen.Wait(3000)&&received?.Processed==2&&received.Total==5);}
             File.Delete(progressFile);
@@ -99,37 +99,37 @@ internal static class Checks
         });
         Check("single unknown-duration task shows elapsed time without percentage",()=>
         {
-            var view=new ActivityIndicator();using var session=view.Begin("生成预览","照片.png");session.Report(new JobProgress("processing",0,1,"照片.png"));var text=string.Join(" ",view.Children.OfType<TextBlock>().Select(t=>t.Text));Require(text.Contains("已用")&&!text.Contains('%')&&!text.Contains("0 / 1"));
+            var view=new ActivityIndicator();using var session=view.Begin("Generating preview","photo.png");session.Report(new JobProgress("processing",0,1,"photo.png"));var text=string.Join(" ",view.Children.OfType<TextBlock>().Select(t=>t.Text));Require(text.Contains("Elapsed")&&!text.Contains('%')&&!text.Contains("0 / 1"));
         });
         Check("batch indicator uses actual completed count",()=>
         {
-            var view=new ActivityIndicator();using var session=view.Begin("保存文件","batch");session.Report(new JobProgress("processing",2,5,"照片 3.png"));Require(view.Children.OfType<TextBlock>().Any(t=>t.Text.Contains("2 / 5")));
+            var view=new ActivityIndicator();using var session=view.Begin("Saving file","batch");session.Report(new JobProgress("processing",2,5,"photo 3.png"));Require(view.Children.OfType<TextBlock>().Any(t=>t.Text.Contains("2 / 5")));
         });
         Check("old preview completion cannot hide a newer task",()=>
         {
-            var view=new ActivityIndicator();var older=view.Begin("旧预览","old");var newer=view.Begin("新预览","new");older.Dispose();Require(view.Visibility==Visibility.Visible&&view.Children.OfType<TextBlock>().First().Text=="新预览");newer.Dispose();Require(view.Visibility==Visibility.Collapsed);
+            var view=new ActivityIndicator();var older=view.Begin("Old preview","old");var newer=view.Begin("New preview","new");older.Dispose();Require(view.Visibility==Visibility.Visible&&view.Children.OfType<TextBlock>().First().Text=="New preview");newer.Dispose();Require(view.Visibility==Visibility.Collapsed);
         });
         Check("finishing one overlapping operation keeps remaining work visible",()=>
         {
-            var view=new ActivityIndicator();var older=view.Begin("分析响度","a");var newer=view.Begin("准备播放","b");newer.Dispose();Require(view.Visibility==Visibility.Visible&&view.Children.OfType<TextBlock>().First().Text=="分析响度");older.Dispose();Require(view.Visibility==Visibility.Collapsed);
+            var view=new ActivityIndicator();var older=view.Begin("Analyzing loudness","a");var newer=view.Begin("Preparing playback","b");newer.Dispose();Require(view.Visibility==Visibility.Visible&&view.Children.OfType<TextBlock>().First().Text=="Analyzing loudness");older.Dispose();Require(view.Visibility==Visibility.Collapsed);
         });
         Check("late progress from disposed task cannot revive indicator",()=>
         {
-            var view=new ActivityIndicator();var session=view.Begin("处理中","a");session.Dispose();session.Report(new JobProgress("processing",1,3,"b"));Require(view.Visibility==Visibility.Collapsed);
+            var view=new ActivityIndicator();var session=view.Begin("Processing","a");session.Dispose();session.Report(new JobProgress("processing",1,3,"b"));Require(view.Visibility==Visibility.Collapsed);
         });
         Check("completion replaces busy state and survives late callbacks",()=>
         {
-            var view=new ActivityIndicator();var session=view.Begin("处理中","a");view.Complete("处理完成","result.png");session.Report(new JobProgress("processing",0,1,"a"));session.Dispose();Require(view.Visibility==Visibility.Visible&&view.Children.OfType<TextBlock>().First().Text=="处理完成");
+            var view=new ActivityIndicator();var session=view.Begin("Processing","a");view.Complete("Done","result.png");session.Report(new JobProgress("processing",0,1,"a"));session.Dispose();Require(view.Visibility==Visibility.Visible&&view.Children.OfType<TextBlock>().First().Text=="Done");
         });
         Check("temp sweep removes only staging entries created after the job started",()=>
         {
-            string root=Path.Combine(Path.GetTempPath(),"zestdrop-sweep-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);
+            string root=Path.Combine(Path.GetTempPath(),"lotus-sweep-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);
             try
             {
-                string input=Path.Combine(root,"clip.mp4"),older=Path.Combine(root,".zestdrop-older.mp4"),user=Path.Combine(root,"notes.txt");
+                string input=Path.Combine(root,"clip.mp4"),older=Path.Combine(root,".lotus-older.mp4"),user=Path.Combine(root,"notes.txt");
                 File.WriteAllText(input,"x");File.WriteAllText(older,"x");
                 var sweep=new TempSweep([input]);
-                string partial=Path.Combine(root,".zestdrop-partial.mp4"),folder=Path.Combine(root,".zestdrop-abc");
+                string partial=Path.Combine(root,".lotus-partial.mp4"),folder=Path.Combine(root,".lotus-abc");
                 File.WriteAllText(partial,"x");Directory.CreateDirectory(folder);File.WriteAllText(Path.Combine(folder,"frame-0001.png"),"x");File.WriteAllText(user,"x");
                 sweep.Run().GetAwaiter().GetResult();
                 Require(!File.Exists(partial)&&!Directory.Exists(folder)&&File.Exists(older)&&File.Exists(input)&&File.Exists(user));
@@ -138,34 +138,34 @@ internal static class Checks
         });
         Check("temp sweep retries while a killed encoder still holds the file",()=>
         {
-            string root=Path.Combine(Path.GetTempPath(),"zestdrop-sweep-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);
+            string root=Path.Combine(Path.GetTempPath(),"lotus-sweep-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);
             try
             {
                 string input=Path.Combine(root,"clip.mp4");File.WriteAllText(input,"x");var sweep=new TempSweep([input]);
-                string partial=Path.Combine(root,".zestdrop-locked.mp4");var handle=new FileStream(partial,FileMode.CreateNew,FileAccess.Write,FileShare.None);
+                string partial=Path.Combine(root,".lotus-locked.mp4");var handle=new FileStream(partial,FileMode.CreateNew,FileAccess.Write,FileShare.None);
                 var release=new Timer(_=>handle.Dispose(),null,500,Timeout.Infinite);
                 sweep.Run().GetAwaiter().GetResult();release.Dispose();
                 Require(!File.Exists(partial)&&File.Exists(input));
             }
             finally{Directory.Delete(root,true);}
         });
-        Check("pausing a progress session shows 已暂停 and resuming restores the stage", () =>
+        Check("pausing a progress session shows Paused and resuming restores the stage", () =>
         {
             var view = new ActivityIndicator();
-            var session = view.Begin("正在转换格式", "a.png");
+            var session = view.Begin("Converting", "a.png");
             var heading = (TextBlock)view.Children[0];
             session.SetPaused(true);
-            Require(heading.Text == "已暂停");
+            Require(heading.Text == "Paused");
             session.SetPaused(false);
-            Require(heading.Text == "正在转换格式");
+            Require(heading.Text == "Converting");
         });
         Check("a waiting job explains it starts after the jobs ahead of it", () =>
         {
             var card = new JobCard(new ConversionJob(["a.mp4"], "convert:webm"));
             var texts = Texts(card);
-            Require(card.State == JobState.Waiting && texts.Contains("等待处理") && texts.Contains("前面的任务完成后开始"));
+            Require(card.State == JobState.Waiting && texts.Contains("Waiting") && texts.Contains("Starts when a running job finishes"));
             card.Start();
-            Require(card.State == JobState.Running && Texts(card).Contains("正在转换格式"));
+            Require(card.State == JobState.Running && Texts(card).Contains("Converting"));
         });
         Check("one job shows a single card and no stack header", () =>
         {
@@ -182,7 +182,7 @@ internal static class Checks
             a.Start();
             stack.Update();
             Require(stack.HeaderVisible && stack.VisibleCards.SequenceEqual(new[] { a, b, c }));
-            Require(stack.HeaderText == "3 个任务 · 进行中 1 · 等待 2");
+            Require(stack.HeaderText == "3 jobs · 1 running · 2 waiting");
         });
         Check("collapsing piles the stack under the newest running job; expanding lists all again", () =>
         {
@@ -203,7 +203,7 @@ internal static class Checks
             var b = stack.Add(new ConversionJob(["b.mp4"], "convert:webm"));
             a.Start(); b.Start();
             stack.HideCard(a);
-            Require(stack.VisibleCards.SequenceEqual(new[] { b }) && stack.HeaderText.Contains("已隐藏 1"));
+            Require(stack.VisibleCards.SequenceEqual(new[] { b }) && stack.HeaderText.Contains("hidden 1"));
             stack.ShowAll();
             Require(stack.VisibleCards.Count() == 2);
         });
@@ -214,7 +214,7 @@ internal static class Checks
             stack.HideAll();
             var b = stack.Add(new ConversionJob(["b.mp4"], "convert:webm"));
             Require(!stack.ShouldShow);
-            Require(!stack.Finish(a, "处理完成", "a.webm") && !stack.Finish(b, "处理完成", "b.webm"));
+            Require(!stack.Finish(a, "Done", "a.webm") && !stack.Finish(b, "Done", "b.webm"));
             Require(stack.Cards.Count == 0 && !stack.AllHidden);
             stack.Add(new ConversionJob(["c.mp4"], "convert:webm"));
             Require(stack.ShouldShow);
@@ -225,19 +225,19 @@ internal static class Checks
             var a = stack.Add(new ConversionJob(["a.mp4"], "convert:webm"));
             var b = stack.Add(new ConversionJob(["b.mp4"], "convert:webm"));
             stack.HideCard(b);
-            Require(stack.Finish(a, "处理完成", "a.webm") && stack.Cards.Contains(a) && a.State == JobState.Done && Texts(a).Contains("a.webm"));
-            Require(!stack.Finish(b, "处理完成", "b.webm") && !stack.Cards.Contains(b));
+            Require(stack.Finish(a, "Done", "a.webm") && stack.Cards.Contains(a) && a.State == JobState.Done && Texts(a).Contains("a.webm"));
+            Require(!stack.Finish(b, "Done", "b.webm") && !stack.Cards.Contains(b));
         });
         Check("cancelling one job never removes another job's staging files in the same folder", () =>
         {
-            string root = Path.Combine(Path.GetTempPath(), "zestdrop-sweep-" + Guid.NewGuid().ToString("N"));
+            string root = Path.Combine(Path.GetTempPath(), "lotus-sweep-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
             try
             {
                 string input = Path.Combine(root, "clip.mp4");
                 File.WriteAllText(input, "x");
                 var sweepA = new TempSweep([input], "aaaa");
-                string mine = Path.Combine(root, ".zestdrop-aaaa-1.webm"), theirs = Path.Combine(root, ".zestdrop-bbbb-1.webm");
+                string mine = Path.Combine(root, ".lotus-aaaa-1.webm"), theirs = Path.Combine(root, ".lotus-bbbb-1.webm");
                 File.WriteAllText(mine, "x");
                 File.WriteAllText(theirs, "x");
                 sweepA.Run().GetAwaiter().GetResult();
@@ -247,7 +247,7 @@ internal static class Checks
         });
         Check("pausing freezes a whole process tree and resuming continues it", () =>
         {
-            string output = Path.Combine(Path.GetTempPath(), "zestdrop-pause-" + Guid.NewGuid().ToString("N") + ".txt");
+            string output = Path.Combine(Path.GetTempPath(), "lotus-pause-" + Guid.NewGuid().ToString("N") + ".txt");
             // cmd starts ping as a child; ping writes one line per second, so the file only grows while both run.
             var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c ping -n 40 127.0.0.1 > \"{output}\"") { CreateNoWindow = true, UseShellExecute = false })!;
             try
@@ -284,11 +284,11 @@ internal static class Checks
         {
             // Scan the app's sources for L.T("…") / L.F("…") keys.
             var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "ZestDrop", "backend")))
+            while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "Lotus", "backend")))
                 dir = dir.Parent;
             Require(dir != null);
             var missing = new List<string>();
-            foreach (var file in Directory.GetFiles(Path.Combine(dir!.FullName, "ZestDrop"), "*.cs"))
+            foreach (var file in Directory.GetFiles(Path.Combine(dir!.FullName, "Lotus"), "*.cs"))
                 foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), "L\\.[TF]\\(\"((?:[^\"\\\\]|\\\\.)*)\""))
                 {
                     string key = JsonSerializer.Deserialize<string>("\"" + m.Groups[1].Value + "\"")!;
@@ -303,7 +303,7 @@ internal static class Checks
             foreach (var (key, english) in L.Translations.Where(t => System.Text.RegularExpressions.Regex.IsMatch(t.Key, @"\{\d")))
             {
                 int Max(string text) => System.Text.RegularExpressions.Regex.Matches(text, "\\{(\\d+)").Select(m => int.Parse(m.Groups[1].Value)).DefaultIfEmpty(-1).Max();
-                int supplied = Max(key) + 1 + (key == " 等 {0} 项" ? 1 : 0); // that key passes an extra count for English
+                int supplied = Max(key) + 1 + (key == " and {1} more" ? 1 : 0); // that key passes an extra count for English
                 if (Max(english) >= supplied)
                     throw new Exception($"'{english}' needs more values than '{key}' gets");
                 _ = string.Format(english, Enumerable.Repeat((object)1, Math.Max(supplied, 1)).ToArray());
@@ -326,13 +326,13 @@ internal static class Checks
                 Require(Catalog.Definition("trimVideo", "video").Label == "Trim" && JobValidationMessage().Contains("must be"));
                 L.UseForSession("zh");
                 stack.Relabel();
-                Require(Texts(a).Contains("正在转换格式") && Texts(a).Contains("a.mp4 等 3 项") && stack.HeaderText.StartsWith("2 个任务"));
+                Require(Texts(a).Contains("Converting") && Texts(a).Contains("a.mp4 and 3 more") && stack.HeaderText.StartsWith("2 jobs"));
             }
             finally { L.UseForSession("zh"); }
         });
         Check("settings keep each other's values and survive a damaged file", () =>
         {
-            string file = Path.Combine(Path.GetTempPath(), "zestdrop-settings-" + Guid.NewGuid().ToString("N") + ".json");
+            string file = Path.Combine(Path.GetTempPath(), "lotus-settings-" + Guid.NewGuid().ToString("N") + ".json");
             Settings.PathOverride = file;
             try
             {
@@ -354,17 +354,17 @@ internal static class Checks
         });
         Check("the welcome window explains the app in both languages and remembers the startup choice", () =>
         {
-            string file = Path.Combine(Path.GetTempPath(), "zestdrop-welcome-" + Guid.NewGuid().ToString("N") + ".json");
+            string file = Path.Combine(Path.GetTempPath(), "lotus-welcome-" + Guid.NewGuid().ToString("N") + ".json");
             Settings.PathOverride = file;
             try
             {
                 L.UseForSession("en");
                 var window = new WelcomeWindow();
                 var english = Texts(window);
-                Require(english.Contains("Welcome to ZestDrop") && english.Contains("Drag files") && english.Contains("Press Shift") && english.Contains("Got it"));
+                Require(english.Contains("Welcome to Lotus") && english.Contains("Drag files") && english.Contains("Press Shift") && english.Contains("Got it"));
                 Require(english.Any(t => t.Contains("notification area")) && english.Any(t => t.Contains("never connects to the internet")));
-                Require(english.Contains("English") && english.Contains("简体中文"));
-                var box = FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("启动时不再显示此窗口")));
+                Require(english.Contains("English") && english.Contains("English"));
+                var box = FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("Don't show this window when Lotus starts")));
                 Require(box.IsChecked == false);
                 box.IsChecked = true;
                 box.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
@@ -372,7 +372,7 @@ internal static class Checks
                 // Changing the language rebuilds the open window, and the checkbox still reflects the saved choice.
                 L.Language = "zh"; // the same setter the language buttons and the tray menu use
                 var chinese = Texts(window);
-                Require(chinese.Contains("欢迎使用 ZestDrop") && chinese.Contains("知道了") && FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("启动时不再显示此窗口"))).IsChecked == true);
+                Require(chinese.Contains("Welcome to Lotus") && chinese.Contains("Got it") && FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("Don't show this window when Lotus starts"))).IsChecked == true);
                 window.Close();
             }
             finally
@@ -390,7 +390,7 @@ internal static class Checks
             var window = new WelcomeWindow();
             try
             {
-                var checkbox = FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("开机自启")));
+                var checkbox = FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("Start with Windows")));
                 Require(checkbox.IsChecked == false && checkbox.IsEnabled);
                 checkbox.IsChecked = true; checkbox.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
                 Require(startupProvider.Enabled && checkbox.IsChecked == true);
@@ -400,7 +400,7 @@ internal static class Checks
                 startupProvider.Blocked = true;
                 StartupManager.SetAsync(true).GetAwaiter().GetResult();
                 Require(checkbox.IsChecked == false && !checkbox.IsEnabled);
-                Require(Texts(window).Any(t => t.Contains("Windows 已禁用")));
+                Require(Texts(window).Any(t => t.Contains("Windows disabled startup")));
             }
             finally { window.Close(); StartupManager.ProviderOverride = null; }
         });
@@ -593,11 +593,11 @@ internal static class Checks
             session.Report(new JobProgress("processing", 0, 1, "c"));
             Require(line.Fraction == null);
         });
-        // End to end with the real worker and FFmpeg. Needs the portable runtime: set ZESTDROP_APP to outputs/ZestDrop.
-        string? app = Environment.GetEnvironmentVariable("ZESTDROP_APP");
+        // End to end with the real worker and FFmpeg. Needs the portable runtime: set LOTUS_APP to outputs/Lotus.
+        string? app = Environment.GetEnvironmentVariable("LOTUS_APP");
         if (app != null) Check("a real conversion pauses mid-encode, resumes, and still produces a valid file", () =>
         {
-            string root = Path.Combine(Path.GetTempPath(), "zestdrop-e2e-" + Guid.NewGuid().ToString("N"));
+            string root = Path.Combine(Path.GetTempPath(), "lotus-e2e-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
             void Must(bool ok, string what) { if (!ok) throw new Exception(what); }
             // The directory listing lags while FFmpeg writes, so read the live size through a handle.
@@ -613,13 +613,13 @@ internal static class Checks
                 var start = new System.Diagnostics.ProcessStartInfo(Path.Combine(app, "runtime", "python", "python.exe")) { CreateNoWindow = true, UseShellExecute = false };
                 foreach (var arg in new[] { Path.Combine(app, "backend", "worker.py"), "--job", request, response })
                     start.ArgumentList.Add(arg);
-                start.Environment["ZESTDROP_JOB"] = "e2etoken";
+                start.Environment["LOTUS_JOB"] = "e2etoken";
                 worker = System.Diagnostics.Process.Start(start)!;
                 string? staging = null;
                 for (int i = 0; i < 300 && staging == null; i++)
                 {
                     Thread.Sleep(100);
-                    staging = Directory.GetFiles(root, ".zestdrop-e2etoken-*").FirstOrDefault(f => Live(f) > 0);
+                    staging = Directory.GetFiles(root, ".lotus-e2etoken-*").FirstOrDefault(f => Live(f) > 0);
                 }
                 Must(staging != null, "no tagged staging file appeared"); // the job tags its staging file with its own id
                 using (var pause = ProcessTreePause.Suspend(worker))
@@ -633,7 +633,7 @@ internal static class Checks
                 using var result = JsonDocument.Parse(File.ReadAllText(response));
                 var file = result.RootElement.GetProperty("Files")[0];
                 string? output = file.GetProperty("Output").GetString();
-                Must(output != null && new FileInfo(output).Length > 10000 && !Directory.GetFiles(root, ".zestdrop-*").Any(), "bad output or leftover staging files");
+                Must(output != null && new FileInfo(output).Length > 10000 && !Directory.GetFiles(root, ".lotus-*").Any(), "bad output or leftover staging files");
             }
             finally
             {
@@ -644,7 +644,7 @@ internal static class Checks
         // The frame must be saved as shown. This feeds frames the UI can produce to the real backend (needs the portable runtime).
         if (app != null) Check("the backend saves every frame the crop UI can produce at exactly the size shown", () =>
         {
-            string root = Path.Combine(Path.GetTempPath(), "zestdrop-cropcheck-" + Guid.NewGuid().ToString("N"));
+            string root = Path.Combine(Path.GetTempPath(), "lotus-cropcheck-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
             try
             {
@@ -752,7 +752,7 @@ internal static class Checks
     private sealed class MemoryStartupProvider : IStartupProvider
     {
         public bool Enabled, Blocked;
-        public System.Threading.Tasks.Task<StartupStatus> GetAsync() => System.Threading.Tasks.Task.FromResult(new StartupStatus(Enabled, !Blocked, Blocked ? "Windows 已禁用自启" : null));
+        public System.Threading.Tasks.Task<StartupStatus> GetAsync() => System.Threading.Tasks.Task.FromResult(new StartupStatus(Enabled, !Blocked, Blocked ? "Windows disabled startup" : null));
         public System.Threading.Tasks.Task<StartupStatus> SetAsync(bool enabled) { Enabled = !Blocked && enabled; return GetAsync(); }
     }
     private sealed class Reporter(Action<JobProgress> callback):IProgress<JobProgress>{public void Report(JobProgress value)=>callback(value);}

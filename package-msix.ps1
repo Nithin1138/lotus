@@ -1,11 +1,11 @@
 # Build the Microsoft Store package (.msix) from the app bundle.
 #   ./package-msix.ps1                  build the app, then package it
-#   ./package-msix.ps1 -SkipBuild       package the existing outputs/ZestDrop
-# Upload outputs/msix/ZestDrop_<version>_x64.msix in Partner Center; the Store signs it.
+#   ./package-msix.ps1 -SkipBuild       package the existing outputs/Lotus
+# Upload outputs/msix/Lotus_<version>_x64.msix in Partner Center; the Store signs it.
 param([switch]$SkipBuild)
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
-$app = Join-Path $root 'outputs/ZestDrop'
+$app = Join-Path $root 'outputs/Lotus'
 $work = Join-Path $root 'outputs/msix'
 
 # The only deletions in this script. The target is resolved, printed and checked to be exactly
@@ -23,7 +23,7 @@ function Remove-WorkFolder([string]$name) {
 }
 
 # The Store needs a four-part version whose last part is 0; take it from the project file.
-[xml]$project = Get-Content -LiteralPath (Join-Path $root 'work/ZestDrop/ZestDrop.csproj')
+[xml]$project = Get-Content -LiteralPath (Join-Path $root 'work/Lotus/Lotus.csproj')
 $version = ([string]($project.Project.PropertyGroup | ForEach-Object { $_.Version } | Where-Object { $_ } | Select-Object -First 1)).Trim()
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Project version '$version' must look like 1.2.3." }
 $packageVersion = "$version.0"
@@ -32,7 +32,7 @@ if (-not $SkipBuild) {
     & (Join-Path $root 'build.ps1')
     if ($LASTEXITCODE) { throw 'build.ps1 failed.' }
 }
-if (-not (Test-Path -LiteralPath (Join-Path $app 'ZestDrop.exe'))) { throw "No app bundle at $app. Run build.ps1 first." }
+if (-not (Test-Path -LiteralPath (Join-Path $app 'Lotus.exe'))) { throw "No app bundle at $app. Run build.ps1 first." }
 
 $sdk = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Directory -ErrorAction SilentlyContinue |
     Where-Object { Test-Path (Join-Path $_.FullName 'x64\makeappx.exe') } | Sort-Object { [version]$_.Name } | Select-Object -Last 1
@@ -77,7 +77,7 @@ if ($LASTEXITCODE) { throw 'makepri createconfig failed.' }
 if ($LASTEXITCODE) { throw 'makepri new failed.' }
 
 # 3. Pack.
-$package = Join-Path $work "ZestDrop_${packageVersion}_x64.msix"
+$package = Join-Path $work "Lotus_${packageVersion}_x64.msix"
 & $makeappx pack /d $layout /p $package /o /h SHA256 | Out-Null
 if ($LASTEXITCODE) { throw 'makeappx pack failed.' }
 $size = [math]::Round((Get-Item -LiteralPath $package).Length / 1MB, 1)

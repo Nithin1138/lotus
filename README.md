@@ -1,6 +1,6 @@
 # Lotus
 
-<img src="work/ZestDrop/assets/zestdrop.png" alt="Lotus icon" width="112" />
+<img src="work/Lotus/assets/lotus.png" alt="Lotus icon" width="112" />
 
 **Drag. Drop. Convert.**
 
@@ -68,8 +68,8 @@ See the [User Guide](docs/usage.md) for full features and details.
 | Path | Contents |
 | --- | --- |
 | `work/Lotus-macOS/` | Native Swift macOS application, menu bar status item, floating wheel, tool windows |
-| `work/ZestDrop/` | C# WPF application, global shortcuts, drag menu, Office bridge, and progress indicators |
-| `work/ZestDrop/backend/` | Python engines for images, media, documents, and archives |
+| `work/Lotus/` | C# WPF application, global shortcuts, drag menu, Office bridge, and progress indicators |
+| `work/Lotus/backend/` | Python engines for images, media, documents, and archives |
 | `build-mac.sh` | macOS build script producing `outputs/Lotus-macOS/Lotus.app` |
 | `build.ps1` | Windows build script producing `outputs/Lotus/Lotus.exe` |
 | `docs/` | User documentation and usage guides |

@@ -1,37 +1,35 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms></PropertyGroup>
   <ItemGroup>
-    <Compile Include="../ZestDrop/Models.cs" Link="Models.cs"/>
-    <Compile Include="../ZestDrop/Strings.cs" Link="Strings.cs"/>
-    <Compile Include="../ZestDrop/StringsEn.cs" Link="StringsEn.cs"/>
-    <Compile Include="../ZestDrop/ProgressReader.cs" Link="ProgressReader.cs"/>
-    <Compile Include="../ZestDrop/Backend.cs" Link="Backend.cs"/>
-    <Compile Include="../ZestDrop/ActivityIndicator.cs" Link="ActivityIndicator.cs"/>
-    <Compile Include="../ZestDrop/UiTheme.cs" Link="UiTheme.cs"/>
-    <Compile Include="../ZestDrop/ContinuousFrame.cs" Link="ContinuousFrame.cs"/>
-    <Compile Include="../ZestDrop/AppIcon.cs" Link="AppIcon.cs"/>
-    <Compile Include="../ZestDrop/DragShortcutTracker.cs" Link="DragShortcutTracker.cs"/>
-    <Compile Include="../ZestDrop/MediaSegment.cs" Link="MediaSegment.cs"/>
-    <Compile Include="../ZestDrop/TrimRange.cs" Link="TrimRange.cs"/>
-    <Compile Include="../ZestDrop/TempSweep.cs" Link="TempSweep.cs"/>
-    <Compile Include="../ZestDrop/Native.cs" Link="Native.cs"/>
-    <Compile Include="../ZestDrop/FloatingWheel.cs" Link="FloatingWheel.cs"/>
-    <Compile Include="../ZestDrop/JobCard.cs" Link="JobCard.cs"/>
-    <Compile Include="../ZestDrop/Settings.cs" Link="Settings.cs"/>
-    <Compile Include="../ZestDrop/StartupManager.cs" Link="StartupManager.cs"/>
-    <Compile Include="../ZestDrop/CropMath.cs" Link="CropMath.cs"/>
-    <Compile Include="../ZestDrop/CropFrame.cs" Link="CropFrame.cs"/>
-    <Compile Include="../ZestDrop/BusyLine.cs" Link="BusyLine.cs"/>
-    <Compile Include="../ZestDrop/WelcomeWindow.cs" Link="WelcomeWindow.cs"/>
-    <Compile Include="../ZestDrop/TaskIndicatorWindow.cs" Link="TaskIndicatorWindow.cs"/>
-    <Compile Include="../ZestDrop/ProcessTreePause.cs" Link="ProcessTreePause.cs"/>
-    <Compile Include="../ZestDrop/Catalog.cs" Link="Catalog.cs"/>
-    <Compile Include="../ZestDrop/OfficeBridge.cs" Link="OfficeBridge.cs"/>
-    <Compile Include="../ZestDrop/JobValidation.cs" Link="JobValidation.cs"/>
-    <EmbeddedResource Include="../ZestDrop/assets/zestdrop.ico" LogicalName="ZestDrop.AppIcon" />
-    <Resource Include="../ZestDrop/assets/fonts/SourceHanSansCN-Medium.otf" Link="assets/fonts/SourceHanSansCN-Medium.otf" />
-    <Compile Include="../ZestDrop/Flows.cs" Link="Flows.cs"/>
-    <Compile Include="../ZestDrop/Presets.cs" Link="Presets.cs"/>
-    <Compile Include="../ZestDrop/OutputFolder.cs" Link="OutputFolder.cs"/>
+    <Compile Include="../Lotus/Models.cs" Link="Models.cs"/>
+    <Compile Include="../Lotus/Strings.cs" Link="Strings.cs"/>
+    <Compile Include="../Lotus/ProgressReader.cs" Link="ProgressReader.cs"/>
+    <Compile Include="../Lotus/Backend.cs" Link="Backend.cs"/>
+    <Compile Include="../Lotus/ActivityIndicator.cs" Link="ActivityIndicator.cs"/>
+    <Compile Include="../Lotus/UiTheme.cs" Link="UiTheme.cs"/>
+    <Compile Include="../Lotus/ContinuousFrame.cs" Link="ContinuousFrame.cs"/>
+    <Compile Include="../Lotus/AppIcon.cs" Link="AppIcon.cs"/>
+    <Compile Include="../Lotus/DragShortcutTracker.cs" Link="DragShortcutTracker.cs"/>
+    <Compile Include="../Lotus/MediaSegment.cs" Link="MediaSegment.cs"/>
+    <Compile Include="../Lotus/TrimRange.cs" Link="TrimRange.cs"/>
+    <Compile Include="../Lotus/TempSweep.cs" Link="TempSweep.cs"/>
+    <Compile Include="../Lotus/Native.cs" Link="Native.cs"/>
+    <Compile Include="../Lotus/FloatingWheel.cs" Link="FloatingWheel.cs"/>
+    <Compile Include="../Lotus/JobCard.cs" Link="JobCard.cs"/>
+    <Compile Include="../Lotus/Settings.cs" Link="Settings.cs"/>
+    <Compile Include="../Lotus/StartupManager.cs" Link="StartupManager.cs"/>
+    <Compile Include="../Lotus/CropMath.cs" Link="CropMath.cs"/>
+    <Compile Include="../Lotus/CropFrame.cs" Link="CropFrame.cs"/>
+    <Compile Include="../Lotus/BusyLine.cs" Link="BusyLine.cs"/>
+    <Compile Include="../Lotus/WelcomeWindow.cs" Link="WelcomeWindow.cs"/>
+    <Compile Include="../Lotus/TaskIndicatorWindow.cs" Link="TaskIndicatorWindow.cs"/>
+    <Compile Include="../Lotus/ProcessTreePause.cs" Link="ProcessTreePause.cs"/>
+    <Compile Include="../Lotus/Catalog.cs" Link="Catalog.cs"/>
+    <Compile Include="../Lotus/OfficeBridge.cs" Link="OfficeBridge.cs"/>
+    <Compile Include="../Lotus/JobValidation.cs" Link="JobValidation.cs"/>
+    <EmbeddedResource Include="../Lotus/assets/lotus.ico" LogicalName="Lotus.AppIcon" />
+    <Compile Include="../Lotus/Flows.cs" Link="Flows.cs"/>
+    <Compile Include="../Lotus/Presets.cs" Link="Presets.cs"/>
+    <Compile Include="../Lotus/OutputFolder.cs" Link="OutputFolder.cs"/>
   </ItemGroup>
 </Project>

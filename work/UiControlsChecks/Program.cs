@@ -12,7 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Interop;
 using System.Windows.Threading;
-using ZestDrop;
+using Lotus;
 
 internal static class Checks
 {
@@ -35,20 +35,20 @@ internal static class Checks
         UiTheme.Apply(window);
         var panel = new StackPanel();
         void Label(string text) => panel.Children.Add(new TextBlock { Text = text, Margin = new Thickness(0, 13, 0, 6) });
-        panel.Children.Add(new TextBlock { Text = "处理参数", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 6) });
-        Label("旋转角度（0–360°，顺时针）");
+        panel.Children.Add(new TextBlock { Text = "Parameters", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 6) });
+        Label("Rotation angle (0–360°, clockwise)");
         var angle = new TextBox { Text = "90" }; panel.Children.Add(angle);
         var slider = new Slider { Minimum = 0, Maximum = 360, Value = 90, SmallChange = 1, LargeChange = 15, Margin = new Thickness(0, 6, 0, 0) };
         slider.ValueChanged += (_, _) => angle.Text = Math.Round(slider.Value).ToString(); panel.Children.Add(slider);
-        Label("翻转");
+        Label("Flip");
         var combo = new ComboBox();
-        foreach (var item in new[] { ("不翻转", "none"), ("水平翻转", "horizontal"), ("垂直翻转", "vertical") })
+        foreach (var item in new[] { ("No flip", "none"), ("Horizontal flip", "horizontal"), ("Vertical flip", "vertical") })
             combo.Items.Add(new ComboBoxItem { Content = item.Item1, Tag = item.Item2 });
         combo.SelectedIndex = 0; panel.Children.Add(combo);
-        Label("非直角旋转时的画布");
+        Label("Canvas on free rotation");
         var canvasChoice = new ComboBox();
-        canvasChoice.Items.Add("放大画布，保留整张画面"); canvasChoice.Items.Add("保留原始画布大小"); canvasChoice.SelectedIndex = 0; panel.Children.Add(canvasChoice);
-        Label("空白处颜色（留空为透明）"); panel.Children.Add(new TextBox());
+        canvasChoice.Items.Add("Expand canvas to keep entire image"); canvasChoice.Items.Add("Keep original canvas size"); canvasChoice.SelectedIndex = 0; panel.Children.Add(canvasChoice);
+        Label("Padding colour (blank for transparent)"); panel.Children.Add(new TextBox());
         var root = UiTheme.Card(panel, new Thickness(20)); root.Margin = new Thickness(12); window.Content = root;
         window.Show(); window.Dispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
         root.Measure(new Size(400, 445)); root.Arrange(new Rect(0, 0, 400, 445)); root.UpdateLayout();
@@ -127,7 +127,7 @@ internal static class Checks
             canvasChoice.IsEditable = true; canvasChoice.ApplyTemplate(); Pump();
             var editor = (TextBox)canvasChoice.Template.FindName("PART_EditableTextBox", canvasChoice);
             Require(editor.Visibility == Visibility.Visible, "Editable input was hidden.");
-            editor.Text = "自定义"; Pump(); Require(canvasChoice.Text == "自定义", "Text binding failed.");
+            editor.Text = "Custom"; Pump(); Require(canvasChoice.Text == "Custom", "Text binding failed.");
             canvasChoice.IsEditable = false; canvasChoice.SelectedIndex = 0;
         });
         slider.Value = 90; combo.SelectedIndex = 0; root.UpdateLayout(); Save(root, Path.Combine(output, "controls.png"));

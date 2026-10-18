@@ -1,4 +1,4 @@
-"""Generate the Store/MSIX logo assets from work/ZestDrop/assets/zestdrop.png.
+"""Generate the Store/MSIX logo assets from work/Lotus/assets/lotus.png.
 
 Usage: python packaging/make-assets.py
 Writes packaging/Assets/*.png at every scale and target size Windows asks for.
@@ -7,7 +7,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent
-SOURCE = ROOT.parent / 'work' / 'ZestDrop' / 'assets' / 'zestdrop.png'
+SOURCE = ROOT.parent / 'work' / 'Lotus' / 'assets' / 'lotus.png'
 OUT = ROOT / 'Assets'
 OUT.mkdir(exist_ok=True)
 for old in OUT.glob('*.png'):

@@ -1,0 +1,88 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using Forms = System.Windows.Forms;
+
+namespace Lotus;
+
+// Lists the watched folders and lets the user add or remove one.
+internal sealed class WatchWindow : Window
+{
+    private readonly List<WatchRule> rules = WatchFolders.Load();
+    private readonly ListBox list = new() { MinHeight = 120, Margin = new Thickness(0, 0, 0, 12) };
+    private readonly TextBox folder = new() { Padding = new Thickness(8), IsReadOnly = true };
+    private readonly ComboBox kind = new() { Margin = new Thickness(0, 8, 0, 0) };
+    private readonly ComboBox action = new() { Margin = new Thickness(0, 8, 0, 0) };
+    private readonly Action changed;
+
+    public WatchWindow(Action changed)
+    {
+        this.changed = changed;
+        Title = L.T("Watched folders");
+        Width = 560;
+        SizeToContent = SizeToContent.Height;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        ResizeMode = ResizeMode.NoResize;
+        UiTheme.Apply(this);
+        var stack = new StackPanel { Margin = new Thickness(28, 4, 28, 24) };
+        stack.Children.Add(new TextBlock { Text = L.F("New files put in these folders are processed automatically; the results go into the “{0}” folder inside each one.", WatchFolders.OutputName), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) });
+        stack.Children.Add(list);
+        var remove = new Button { Content = L.T("Remove the selected folder"), Padding = new Thickness(12, 7, 12, 7), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 16) };
+        remove.Click += (_, _) => { if (list.SelectedIndex >= 0) { rules.RemoveAt(list.SelectedIndex); Commit(); } };
+        stack.Children.Add(remove);
+        stack.Children.Add(new TextBlock { Text = L.T("Add a folder"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 6) });
+        var pick = new DockPanel();
+        var browse = new Button { Content = L.T("Choose…"), Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(8, 0, 0, 0) };
+        DockPanel.SetDock(browse, Dock.Right);
+        browse.Click += (_, _) => { using var dialog = new Forms.FolderBrowserDialog(); if (dialog.ShowDialog() == Forms.DialogResult.OK) folder.Text = dialog.SelectedPath; };
+        pick.Children.Add(browse);
+        pick.Children.Add(folder);
+        stack.Children.Add(pick);
+        foreach (var (id, label) in new[] { ("image", L.T("Pictures")), ("video", L.T("Videos")), ("audio", L.T("Audio")) })
+            kind.Items.Add(new ComboBoxItem { Content = label, Tag = id });
+        kind.SelectionChanged += (_, _) => FillActions();
+        stack.Children.Add(kind);
+        stack.Children.Add(action);
+        var add = new Button { Content = L.T("Add"), Padding = new Thickness(18, 8, 18, 8), HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 14, 0, 0) };
+        add.Click += (_, _) =>
+        {
+            if (string.IsNullOrWhiteSpace(folder.Text) || kind.SelectedItem is not ComboBoxItem { Tag: string type } || action.SelectedItem is not ComboBoxItem { Tag: string chosen })
+                return;
+            rules.Add(new WatchRule(folder.Text, type, chosen));
+            folder.Text = "";
+            Commit();
+        };
+        stack.Children.Add(add);
+        Content = UiTheme.Frame(this, stack, "Lotus  /  " + L.T("Watched folders"));
+        kind.SelectedIndex = 0;
+        Refresh();
+    }
+
+    private void FillActions()
+    {
+        action.Items.Clear();
+        if (kind.SelectedItem is ComboBoxItem { Tag: string type })
+            foreach (var (id, label) in WatchFolders.Actions(type))
+                action.Items.Add(new ComboBoxItem { Content = label, Tag = id });
+        action.SelectedIndex = 0;
+    }
+
+    private void Commit()
+    {
+        WatchFolders.Save(rules);
+        Refresh();
+        changed();
+    }
+
+    private void Refresh()
+    {
+        list.Items.Clear();
+        foreach (var rule in rules)
+        {
+            string label = WatchFolders.Actions(rule.Kind).FirstOrDefault(a => a.Action == rule.Action).Label ?? rule.Action;
+            list.Items.Add(rule.Folder + "  →  " + label);
+        }
+    }
+}
