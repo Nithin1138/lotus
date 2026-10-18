@@ -56,10 +56,21 @@ done
 cp -R "$ROOT_DIR/work/DropDial/backend/"* "$BACKEND_DIR/"
 find "$BACKEND_DIR" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 
+# 5b. Bundle self-contained Python runtime environment
+if [ -d "$ROOT_DIR/.venv" ]; then
+    echo "Bundling self-contained Python runtime environment..."
+    mkdir -p "$CONTENTS_DIR/runtime"
+    cp -R "$ROOT_DIR/.venv" "$CONTENTS_DIR/runtime/python"
+    find "$CONTENTS_DIR/runtime/python" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+fi
+
 # 6. Make binaries executable
 chmod +x "$MACOS_DIR/DropDial"
 chmod +x "$BACKEND_DIR/ocr-mac"
 chmod +x "$BACKEND_DIR/doc2pdf-mac"
+if [ -d "$CONTENTS_DIR/runtime/python/bin" ]; then
+    chmod -R +x "$CONTENTS_DIR/runtime/python/bin" 2>/dev/null || true
+fi
 
 # 7. Strip quarantine attribute & ad-hoc sign bundle for smooth Gatekeeper launch
 xattr -cr "$APP_BUNDLE" 2>/dev/null || true

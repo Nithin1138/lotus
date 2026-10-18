@@ -59,7 +59,7 @@ internal static class UiTheme
         catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException) { return false; }
     }
 
-    private static Brush Frozen(string color)
+    public static Brush Frozen(string color)
     {
         var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(color));
         brush.Freeze();

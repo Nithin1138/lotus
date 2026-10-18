@@ -7,6 +7,35 @@ final class BackendBridge {
 
     private var cachedPython: String?
 
+    func getPythonPaths(backendDir: String) -> String {
+        let bundleURL = Bundle.main.bundleURL
+        let repoRoot = bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+
+        var paths: [String] = [backendDir]
+        let candidateSitePackages = [
+            bundleURL.appendingPathComponent("Contents/runtime/python/lib/python3.12/site-packages").path,
+            bundleURL.appendingPathComponent("Contents/runtime/python/lib/python3.13/site-packages").path,
+            bundleURL.appendingPathComponent("Contents/runtime/python/lib/python3.14/site-packages").path,
+            repoRoot.appendingPathComponent(".venv/lib/python3.12/site-packages").path,
+            repoRoot.appendingPathComponent(".venv/lib/python3.13/site-packages").path,
+            repoRoot.appendingPathComponent(".venv/lib/python3.14/site-packages").path,
+            FileManager.default.currentDirectoryPath + "/.venv/lib/python3.12/site-packages",
+            NSHomeDirectory() + "/Library/Application Support/DropDial/venv/lib/python3.12/site-packages"
+        ]
+
+        for p in candidateSitePackages {
+            if FileManager.default.fileExists(atPath: p) && !paths.contains(p) {
+                paths.append(p)
+            }
+        }
+
+        if let envPyPath = ProcessInfo.processInfo.environment["PYTHONPATH"], !envPyPath.isEmpty {
+            paths.append(envPyPath)
+        }
+
+        return paths.joined(separator: ":")
+    }
+
     func findPython() -> String {
         if let cached = cachedPython { return cached }
 
@@ -15,19 +44,22 @@ final class BackendBridge {
         
         let candidates = [
             bundleURL.appendingPathComponent("Contents/runtime/python/bin/python3").path,
+            bundleURL.appendingPathComponent("Contents/runtime/python/bin/python").path,
             repoRoot.appendingPathComponent(".venv/bin/python").path,
             FileManager.default.currentDirectoryPath + "/.venv/bin/python",
-            "/Library/Frameworks/Python.framework/Versions/Current/bin/python3",
-            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3",
-            "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
-            "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
-            "/usr/local/bin/python3",
-            "/usr/bin/python3",
+            NSHomeDirectory() + "/Library/Application Support/DropDial/venv/bin/python3",
+            "/opt/homebrew/bin/python3.12",
             "/opt/homebrew/bin/python3",
-            "/opt/homebrew/bin/python3.12"
+            "/usr/local/bin/python3.12",
+            "/usr/local/bin/python3",
+            "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+            "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+            "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3",
+            "/Library/Frameworks/Python.framework/Versions/Current/bin/python3",
+            "/usr/bin/python3"
         ]
 
-        // First pass: test each candidate to ensure it can import PIL
+        // First pass: test each candidate to ensure it can import essential packages (PIL, pypdfium2)
         for path in candidates {
             guard FileManager.default.isExecutableFile(atPath: path) else { continue }
             if verifyPython(path) {
@@ -36,7 +68,7 @@ final class BackendBridge {
             }
         }
 
-        // Fallback: return first existing executable
+        // Second pass: fallback to any working python executable
         for path in candidates {
             if FileManager.default.isExecutableFile(atPath: path) {
                 cachedPython = path
@@ -49,7 +81,12 @@ final class BackendBridge {
     private func verifyPython(_ path: String) -> Bool {
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: path)
-        proc.arguments = ["-c", "import PIL"]
+        proc.arguments = ["-c", "import PIL, pypdfium2"]
+        let worker = findWorkerScript()
+        let backendDir = (worker as NSString).deletingLastPathComponent
+        var env = ProcessInfo.processInfo.environment
+        env["PYTHONPATH"] = getPythonPaths(backendDir: backendDir)
+        proc.environment = env
         do {
             try proc.run()
             proc.waitUntilExit()
@@ -57,6 +94,85 @@ final class BackendBridge {
         } catch {
             return false
         }
+    }
+
+    static func cleanErrorMessage(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return "Processing failed" }
+
+        // Break into lines and remove empty/whitespace lines
+        let lines = trimmed.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+
+        guard !lines.isEmpty else { return "Processing failed" }
+
+        // Find the last line that isn't internal traceback mechanics
+        var candidateLine = lines.last ?? trimmed
+        for line in lines.reversed() {
+            if line.hasPrefix("Traceback") || line.hasPrefix("File \"") || line.hasPrefix("During handling of") {
+                continue
+            }
+            candidateLine = line
+            break
+        }
+
+        // Clean up common exception prefixes
+        var message = candidateLine
+        let prefixes = [
+            "ValueError: ", "TypeError: ", "RuntimeError: ", "IOError: ",
+            "OSError: ", "Exception: ", "KeyError: ", "IndexError: "
+        ]
+        for prefix in prefixes {
+            if message.hasPrefix(prefix) {
+                message = String(message.dropFirst(prefix.count))
+                break
+            }
+        }
+
+        // Pattern matching for user-friendly error translations
+        if message.contains("No module named") || candidateLine.contains("ModuleNotFoundError") {
+            if let range = message.range(of: "'[a-zA-Z0-9_]+'", options: .regularExpression) {
+                let mod = String(message[range]).trimmingCharacters(in: CharacterSet(charactersIn: "'\""))
+                return "Missing required component (\(mod)). Please restart the app."
+            }
+            return "Missing internal component. Please restart the app."
+        }
+
+        if message.contains("FileNotFoundError") || message.contains("No such file or directory") {
+            return "File could not be found or was moved."
+        }
+
+        if message.contains("PermissionError") || message.contains("Permission denied") {
+            return "Permission denied when accessing or saving file."
+        }
+
+        if message.contains("MemoryError") {
+            return "File is too large to process in memory."
+        }
+
+        if message.contains("This document conversion is not supported") {
+            return "This document conversion is not supported."
+        }
+
+        if message.contains("This PDF has no selectable text") {
+            return "This PDF has no selectable text; scanned documents need OCR."
+        }
+
+        if message.contains("Cannot reach the target size") {
+            return "Cannot reach target size; try adjusting compression settings."
+        }
+
+        // Filter out any raw path tracebacks starting with /Library or /usr or /opt
+        if message.hasPrefix("/") || message.contains("/Library/Frameworks") || message.contains(".framework/") {
+            return "Conversion failed for this file format."
+        }
+
+        if message.count > 100 {
+            message = String(message.prefix(97)) + "..."
+        }
+
+        return message
     }
 
     func findWorkerScript() -> String {
@@ -132,7 +248,7 @@ final class BackendBridge {
         let backendDir = (worker as NSString).deletingLastPathComponent
         let existingPath = env["PATH"] ?? ""
         env["PATH"] = ([backendDir] + extraPaths + [existingPath]).joined(separator: ":")
-        env["PYTHONPATH"] = backendDir
+        env["PYTHONPATH"] = getPythonPaths(backendDir: backendDir)
 
         if let customOutput = UserDefaults.standard.string(forKey: "DROPDIAL_OUTPUT_DIR"), !customOutput.isEmpty {
             env["DROPDIAL_OUTPUT_DIR"] = customOutput
@@ -176,8 +292,8 @@ final class BackendBridge {
                 } else {
                     let errData = errorPipe.fileHandleForReading.readDataToEndOfFile()
                     let errText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    let message = errText.isEmpty ? "Processing failed" : errText
-                    completion(.failure(NSError(domain: "DropDial", code: Int(proc.terminationStatus), userInfo: [NSLocalizedDescriptionKey: message])))
+                    let clean = BackendBridge.cleanErrorMessage(errText)
+                    completion(.failure(NSError(domain: "DropDial", code: Int(proc.terminationStatus), userInfo: [NSLocalizedDescriptionKey: clean])))
                 }
 
                 try? FileManager.default.removeItem(at: tempDir)
@@ -209,6 +325,20 @@ final class BackendBridge {
 
         var env = ProcessInfo.processInfo.environment
         env["DROPDIAL_LANG"] = "en"
+        let backendDir = (worker as NSString).deletingLastPathComponent
+        let extraPaths = [
+            "/Library/Frameworks/Python.framework/Versions/Current/bin",
+            "/Library/Frameworks/Python.framework/Versions/3.14/bin",
+            "/Library/Frameworks/Python.framework/Versions/3.13/bin",
+            "/Library/Frameworks/Python.framework/Versions/3.12/bin",
+            "/usr/local/bin",
+            "/opt/homebrew/bin",
+            "/usr/bin",
+            "/bin"
+        ]
+        let existingPath = env["PATH"] ?? ""
+        env["PATH"] = ([backendDir] + extraPaths + [existingPath]).joined(separator: ":")
+        env["PYTHONPATH"] = getPythonPaths(backendDir: backendDir)
         process.environment = env
 
         let errorPipe = Pipe()
@@ -226,8 +356,9 @@ final class BackendBridge {
                     }
                 } else {
                     let errData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                    let errText = String(data: errData, encoding: .utf8) ?? "Failed to inspect file"
-                    completion(.failure(NSError(domain: "DropDial", code: Int(proc.terminationStatus), userInfo: [NSLocalizedDescriptionKey: errText])))
+                    let errText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    let clean = BackendBridge.cleanErrorMessage(errText.isEmpty ? "Failed to inspect file" : errText)
+                    completion(.failure(NSError(domain: "DropDial", code: Int(proc.terminationStatus), userInfo: [NSLocalizedDescriptionKey: clean])))
                 }
             }
         }

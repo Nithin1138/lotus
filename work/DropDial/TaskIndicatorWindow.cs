@@ -75,17 +75,17 @@ internal sealed class TaskIndicatorWindow : Window
 
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal };
-        toggleButton = HeaderButton(L.T("Collapse"), L.T("Pile the cards up and show only the newest job"), () => SetExpanded(!expanded), actions);
-        showAllButton = HeaderButton(L.T("Show all"), L.T("Show hidden cards again"), ShowAll, actions);
-        hideAllButton = HeaderButton(L.T("Hide all"), L.T("Hide progress. Jobs keep running; show them again from the tray menu"), HideAll, actions);
+        toggleButton = HeaderButton(L.T("Collapse"), L.T("Pile the cards up and show only the newest job"), () => SetExpanded(!expanded), actions, TaskButtonStyle.Secondary);
+        showAllButton = HeaderButton(L.T("Show all"), L.T("Show hidden cards again"), ShowAll, actions, TaskButtonStyle.Ghost);
+        hideAllButton = HeaderButton(L.T("Hide all"), L.T("Hide progress. Jobs keep running; show them again from the tray menu"), HideAll, actions, TaskButtonStyle.Ghost);
         var bar = new DockPanel();
         DockPanel.SetDock(actions, Dock.Right);
         bar.Children.Add(actions);
         bar.Children.Add(headerParts);
         header = new Border
         {
-            Child = bar, CornerRadius = new CornerRadius(10), Padding = new Thickness(14, 6, 8, 6), Margin = new Thickness(10, 10, 10, 5), BorderThickness = new Thickness(1),
-            Effect = new DropShadowEffect { BlurRadius = 12, ShadowDepth = 1, Opacity = .1 }
+            Child = bar, CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 8, 8, 8), Margin = new Thickness(10, 10, 10, 5), BorderThickness = new Thickness(1),
+            Effect = new DropShadowEffect { BlurRadius = 12, ShadowDepth = 1, Opacity = .12 }
         };
         // Thin edges under the top card when the stack is collapsed, so it reads as a pile.
         for (int i = 0; i < 2; i++)
@@ -109,11 +109,22 @@ internal sealed class TaskIndicatorWindow : Window
         header.BorderBrush = UiTheme.Line;
         foreach (var edge in pile.Children.OfType<Border>())
         { edge.Background = UiTheme.Surface; edge.BorderBrush = UiTheme.Line; }
+        toggleButton.Style = JobCard.CreateButtonStyle(TaskButtonStyle.Secondary, UiTheme.Dark);
+        showAllButton.Style = JobCard.CreateButtonStyle(TaskButtonStyle.Ghost, UiTheme.Dark);
+        hideAllButton.Style = JobCard.CreateButtonStyle(TaskButtonStyle.Ghost, UiTheme.Dark);
+        foreach (var card in cards)
+            card.ApplyTheme();
     }
 
-    private static Button HeaderButton(string text, string tip, System.Action click, Panel parent)
+    private static Button HeaderButton(string text, string tip, System.Action click, Panel parent, TaskButtonStyle style = TaskButtonStyle.Ghost)
     {
-        var button = new Button { Content = text, ToolTip = tip, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2), MinHeight = 26, BorderThickness = new Thickness(0), Background = Brushes.Transparent };
+        var button = new Button
+        {
+            Content = text,
+            ToolTip = tip,
+            Margin = new Thickness(4, 0, 0, 0),
+            Style = JobCard.CreateButtonStyle(style, UiTheme.Dark)
+        };
         button.Click += (_, _) => click();
         parent.Children.Add(button);
         return button;

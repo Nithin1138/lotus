@@ -341,6 +341,7 @@ final class JobCardView: NSView {
             statusDot.fillColor = NSColor(white: 0.75, alpha: 1.0)
             metaTimingLabel.stringValue = "Queued"
             metaLabel.stringValue = "Starts when a running job finishes"
+            metaLabel.textColor = NSColor(white: 0.72, alpha: 1.0)
             progressBar.isIndeterminate = false
             progressBar.progress = 0.0
 
@@ -360,6 +361,7 @@ final class JobCardView: NSView {
             statusHeadingLabel.stringValue = actionName
             statusHeadingLabel.textColor = .white
             statusDot.fillColor = NSColor(srgbRed: 1.0, green: 0.42, blue: 0.08, alpha: 1.0)
+            metaLabel.textColor = NSColor(white: 0.72, alpha: 1.0)
             updateMetaText()
 
             pauseButton.buttonStyle = .secondary
@@ -382,6 +384,7 @@ final class JobCardView: NSView {
             statusHeadingLabel.textColor = NSColor(srgbRed: 1.0, green: 0.75, blue: 0.30, alpha: 1.0)
             statusDot.fillColor = NSColor(srgbRed: 1.0, green: 0.75, blue: 0.30, alpha: 1.0)
             metaTimingLabel.stringValue = "Paused"
+            metaLabel.textColor = NSColor(white: 0.72, alpha: 1.0)
 
             pauseButton.buttonStyle = .primaryAccent
             pauseButton.title = "Resume"
@@ -403,6 +406,7 @@ final class JobCardView: NSView {
             statusHeadingLabel.textColor = NSColor(srgbRed: 0.32, green: 0.90, blue: 0.52, alpha: 1.0)
             statusDot.fillColor = NSColor(srgbRed: 0.32, green: 0.90, blue: 0.52, alpha: 1.0)
             metaTimingLabel.stringValue = "Done"
+            metaLabel.textColor = NSColor(white: 0.72, alpha: 1.0)
 
             progressBar.isIndeterminate = false
             progressBar.progress = 1.0
@@ -428,6 +432,7 @@ final class JobCardView: NSView {
             statusHeadingLabel.textColor = NSColor(srgbRed: 1.0, green: 0.35, blue: 0.35, alpha: 1.0)
             statusDot.fillColor = NSColor(srgbRed: 1.0, green: 0.35, blue: 0.35, alpha: 1.0)
             metaTimingLabel.stringValue = "Error"
+            metaLabel.textColor = NSColor(srgbRed: 1.0, green: 0.45, blue: 0.45, alpha: 1.0)
 
             progressBar.isIndeterminate = false
             progressBar.progress = 1.0
@@ -558,7 +563,8 @@ final class JobCardView: NSView {
 
         // Check if there are failures and zero outputs
         if successful.isEmpty && !errors.isEmpty {
-            markFailed(error: NSError(domain: "DropDial", code: -1, userInfo: [NSLocalizedDescriptionKey: errors.joined(separator: ", ")]))
+            let cleanMsg = BackendBridge.cleanErrorMessage(errors.first ?? "Processing failed")
+            markFailed(error: NSError(domain: "DropDial", code: -1, userInfo: [NSLocalizedDescriptionKey: cleanMsg]))
             return
         }
 
@@ -595,8 +601,9 @@ final class JobCardView: NSView {
     func markFailed(error: Error) {
         stopTimer()
         self.state = .failed
-        let msg = error.localizedDescription
-        metaLabel.stringValue = msg.isEmpty ? "Failed" : msg
+        let clean = BackendBridge.cleanErrorMessage(error.localizedDescription)
+        metaLabel.stringValue = clean.isEmpty ? "Operation failed" : clean
+        metaLabel.textColor = NSColor(srgbRed: 1.0, green: 0.45, blue: 0.45, alpha: 1.0)
 
         TaskIndicatorManager.shared.onJobStateChanged(card: self)
 
