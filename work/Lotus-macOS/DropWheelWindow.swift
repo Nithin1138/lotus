@@ -86,7 +86,7 @@ final class RadialWheelView: NSView {
     let wheelCenter = CGPoint(x: 170, y: 155)
     let innerRadius: CGFloat = 52
     let outerRadius: CGFloat = 138
-    let backdropRadius: CGFloat = 141
+    let backdropRadius: CGFloat = 144
     let hubRadius: CGFloat = 46
     let topBarRect = NSRect(x: 170 - 110, y: 308, width: 220, height: 32)
 
@@ -494,17 +494,18 @@ final class RadialWheelView: NSView {
     }
 
     // MARK: - Smooth Rounded Cushion Petal Path Generator
-    private func makeCushionPetal(center: CGPoint, innerR: CGFloat, outerR: CGFloat, startDeg: CGFloat, endDeg: CGFloat, cornerRadius: CGFloat = 8.0) -> CGPath {
+    private func makeCushionPetal(center: CGPoint, innerR: CGFloat, outerR: CGFloat, startDeg: CGFloat, endDeg: CGFloat, outerCornerRadius: CGFloat = 16.0, innerCornerRadius: CGFloat = 8.0) -> CGPath {
         let path = CGMutablePath()
-        let cr = cornerRadius
+        let crOuter = outerCornerRadius
+        let crInner = innerCornerRadius
 
         // Radians
         let sRad = startDeg * .pi / 180.0
         let eRad = endDeg * .pi / 180.0
 
         // Angular offset for corner radius along outer and inner concentric arcs
-        let dOuter = cr / outerR
-        let dInner = cr / innerR
+        let dOuter = crOuter / outerR
+        let dInner = crInner / innerR
 
         // Points along the petal:
         let midR = (innerR + outerR) / 2.0
@@ -516,7 +517,7 @@ final class RadialWheelView: NSView {
 
         // Outer-end vertex & tangent point
         let v_oe = CGPoint(x: center.x + outerR * cos(eRad), y: center.y + outerR * sin(eRad))
-        let p_oe_radial = CGPoint(x: center.x + (outerR - cr) * cos(eRad), y: center.y + (outerR - cr) * sin(eRad))
+        let p_oe_radial = CGPoint(x: center.x + (outerR - crOuter) * cos(eRad), y: center.y + (outerR - crOuter) * sin(eRad))
 
         // Inner-end vertex & tangent point
         let v_ie = CGPoint(x: center.x + innerR * cos(eRad), y: center.y + innerR * sin(eRad))
@@ -524,28 +525,28 @@ final class RadialWheelView: NSView {
 
         // Inner-start vertex & tangent point
         let v_is = CGPoint(x: center.x + innerR * cos(sRad), y: center.y + innerR * sin(sRad))
-        let p_is_radial = CGPoint(x: center.x + (innerR + cr) * cos(sRad), y: center.y + (innerR + cr) * sin(sRad))
+        let p_is_radial = CGPoint(x: center.x + (innerR + crInner) * cos(sRad), y: center.y + (innerR + crInner) * sin(sRad))
 
         // Start path at p_start_mid
         path.move(to: p_start_mid)
 
         // 1. Line towards outer-start vertex, curve smoothly into outer arc
-        path.addArc(tangent1End: v_os, tangent2End: p_os_arc, radius: cr)
+        path.addArc(tangent1End: v_os, tangent2End: p_os_arc, radius: crOuter)
 
         // 2. Outer arc clockwise to (eRad + dOuter)
         path.addArc(center: center, radius: outerR, startAngle: sRad - dOuter, endAngle: eRad + dOuter, clockwise: true)
 
         // 3. Curve smoothly around outer-end vertex into end radial line
-        path.addArc(tangent1End: v_oe, tangent2End: p_oe_radial, radius: cr)
+        path.addArc(tangent1End: v_oe, tangent2End: p_oe_radial, radius: crOuter)
 
         // 4. Line along end radial edge towards inner-end vertex, curve into inner arc
-        path.addArc(tangent1End: v_ie, tangent2End: p_ie_arc, radius: cr)
+        path.addArc(tangent1End: v_ie, tangent2End: p_ie_arc, radius: crInner)
 
         // 5. Inner arc counter-clockwise to (sRad - dInner)
         path.addArc(center: center, radius: innerR, startAngle: eRad + dInner, endAngle: sRad - dInner, clockwise: false)
 
         // 6. Curve smoothly around inner-start vertex back into start radial edge
-        path.addArc(tangent1End: v_is, tangent2End: p_is_radial, radius: cr)
+        path.addArc(tangent1End: v_is, tangent2End: p_is_radial, radius: crInner)
 
         path.closeSubpath()
         return path
@@ -580,7 +581,7 @@ final class RadialWheelView: NSView {
 
             let s = 90.0 - CGFloat(i) * angleStep - gap / 2.0
             let e = s - (angleStep - gap)
-            let petal = makeCushionPetal(center: wheelCenter, innerR: innerRadius, outerR: outerRadius, startDeg: s, endDeg: e, cornerRadius: 8.0)
+            let petal = makeCushionPetal(center: wheelCenter, innerR: innerRadius, outerR: outerRadius, startDeg: s, endDeg: e, outerCornerRadius: 16.0, innerCornerRadius: 8.0)
 
             // Fill & Shadow
             context.saveGState()
@@ -1000,10 +1001,17 @@ final class DropWheelWindowController: NSWindowController {
         }
     }
 
+    private var openTimestamp: TimeInterval = 0
+
     private func installOutsideClickMonitors() {
         removeOutsideClickMonitors()
-        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp, .rightMouseDown]) { [weak self] _ in
+        openTimestamp = ProcessInfo.processInfo.systemUptime
+
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             guard let self = self, let win = self.window, win.isVisible else { return }
+            if ProcessInfo.processInfo.systemUptime - self.openTimestamp < 0.25 {
+                return
+            }
             let mouseLoc = NSEvent.mouseLocation
             let clickInWheel: Bool
             if win.frame.contains(mouseLoc) {
@@ -1023,8 +1031,11 @@ final class DropWheelWindowController: NSWindowController {
                 }
             }
         }
-        localOutsideClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp, .rightMouseDown]) { [weak self] event in
+        localOutsideClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             guard let self = self, let win = self.window, win.isVisible else { return event }
+            if ProcessInfo.processInfo.systemUptime - self.openTimestamp < 0.25 {
+                return event
+            }
             let mouseLoc = NSEvent.mouseLocation
             let clickInWheel: Bool
             if win.frame.contains(mouseLoc) {

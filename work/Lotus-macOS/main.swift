@@ -92,6 +92,10 @@ final class StatusBarDropView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     override func mouseDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.control) {
+            onRightClick?()
+            return
+        }
         onClick?()
     }
 
@@ -274,42 +278,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func rebuildMenu() {
         let menu = NSMenu()
+        menu.autoenablesItems = false
 
         // 1. Formats Wheel (F8 / ⇧)
-        let f8Item = NSMenuItem(title: "Formats Wheel (F8 / ⇧)", action: #selector(showFormatsWheel), keyEquivalent: "")
+        let f8Item = NSMenuItem(title: "Formats Wheel (F8 / ⇧)", action: #selector(showFormatsWheel(_:)), keyEquivalent: "")
         f8Item.target = self
+        f8Item.isEnabled = true
         f8Item.image = NSImage(systemSymbolName: "circle.grid.cross", accessibilityDescription: nil)
         menu.addItem(f8Item)
 
         // 2. Tools Wheel (F9 / ⌘)
-        let f9Item = NSMenuItem(title: "Tools Wheel (F9 / ⌘)", action: #selector(showToolsWheel), keyEquivalent: "")
+        let f9Item = NSMenuItem(title: "Tools Wheel (F9 / ⌘)", action: #selector(showToolsWheel(_:)), keyEquivalent: "")
         f9Item.target = self
+        f9Item.isEnabled = true
         f9Item.image = NSImage(systemSymbolName: "slider.horizontal.3", accessibilityDescription: nil)
         menu.addItem(f9Item)
 
         // 3. Actions Wheel (F10 / ⌃)
-        let f10Item = NSMenuItem(title: "File Actions Wheel (F10 / ⌃)", action: #selector(showActionsWheel), keyEquivalent: "")
+        let f10Item = NSMenuItem(title: "File Actions Wheel (F10 / ⌃)", action: #selector(showActionsWheel(_:)), keyEquivalent: "")
         f10Item.target = self
+        f10Item.isEnabled = true
         f10Item.image = NSImage(systemSymbolName: "hand.tap", accessibilityDescription: nil)
         menu.addItem(f10Item)
 
         // 4. Floating Shelf (Show)
-        let shelfItem = NSMenuItem(title: "Floating Shelf", action: #selector(showFloatingShelf), keyEquivalent: "")
+        let shelfItem = NSMenuItem(title: "Floating Shelf", action: #selector(showFloatingShelf(_:)), keyEquivalent: "")
         shelfItem.target = self
+        shelfItem.isEnabled = true
         shelfItem.image = NSImage(systemSymbolName: "pin.fill", accessibilityDescription: nil)
         menu.addItem(shelfItem)
 
         menu.addItem(NSMenuItem.separator())
 
         // 5. Quick Toggle (⌥Space)
-        let toggleItem = NSMenuItem(title: "Quick Toggle Wheel (⌥Space / ⌘⇧L)", action: #selector(toggleWheelTapped), keyEquivalent: "")
+        let toggleItem = NSMenuItem(title: "Quick Toggle Wheel (⌥Space / ⌘⇧L)", action: #selector(toggleWheelTapped(_:)), keyEquivalent: "")
         toggleItem.target = self
+        toggleItem.isEnabled = true
         toggleItem.image = NSImage(systemSymbolName: "command", accessibilityDescription: nil)
         menu.addItem(toggleItem)
 
         // 6. Select files (⌘O)
-        let openItem = NSMenuItem(title: "Select Files to Convert...", action: #selector(selectFilesTapped), keyEquivalent: "o")
+        let openItem = NSMenuItem(title: "Select Files to Convert...", action: #selector(selectFilesTapped(_:)), keyEquivalent: "o")
         openItem.target = self
+        openItem.isEnabled = true
         openItem.image = NSImage(systemSymbolName: "plus.rectangle.on.rectangle", accessibilityDescription: nil)
         menu.addItem(openItem)
 
@@ -318,30 +329,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 7. Theme Submenu (System / Light / Dark)
         let currentTheme = UserDefaults.standard.string(forKey: "LOTUS_THEME") ?? "system"
         let themeMenu = NSMenu()
+        themeMenu.autoenablesItems = false
 
-        let sysItem = NSMenuItem(title: "Follow System (Default)", action: #selector(setThemeSystem), keyEquivalent: "")
+        let sysItem = NSMenuItem(title: "Follow System (Default)", action: #selector(setThemeSystem(_:)), keyEquivalent: "")
         sysItem.target = self
+        sysItem.isEnabled = true
         sysItem.state = (currentTheme == "system") ? .on : .off
         themeMenu.addItem(sysItem)
 
-        let lightItem = NSMenuItem(title: "Light Theme", action: #selector(setThemeLight), keyEquivalent: "")
+        let lightItem = NSMenuItem(title: "Light Theme", action: #selector(setThemeLight(_:)), keyEquivalent: "")
         lightItem.target = self
+        lightItem.isEnabled = true
         lightItem.state = (currentTheme == "light") ? .on : .off
         themeMenu.addItem(lightItem)
 
-        let darkItem = NSMenuItem(title: "Dark Theme", action: #selector(setThemeDark), keyEquivalent: "")
+        let darkItem = NSMenuItem(title: "Dark Theme", action: #selector(setThemeDark(_:)), keyEquivalent: "")
         darkItem.target = self
+        darkItem.isEnabled = true
         darkItem.state = (currentTheme == "dark") ? .on : .off
         themeMenu.addItem(darkItem)
 
         let themeMenuItem = NSMenuItem(title: "Theme", action: nil, keyEquivalent: "")
         themeMenuItem.submenu = themeMenu
+        themeMenuItem.isEnabled = true
         themeMenuItem.image = NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: nil)
         menu.addItem(themeMenuItem)
 
         // Sound Effects toggle
-        let soundItem = NSMenuItem(title: "Sound Effects", action: #selector(toggleSoundEffects), keyEquivalent: "")
+        let soundItem = NSMenuItem(title: "Sound Effects", action: #selector(toggleSoundEffects(_:)), keyEquivalent: "")
         soundItem.target = self
+        soundItem.isEnabled = true
         soundItem.state = SoundManager.isSoundEnabled ? .on : .off
         soundItem.image = NSImage(systemSymbolName: "speaker.wave.2", accessibilityDescription: nil)
         menu.addItem(soundItem)
@@ -349,64 +366,72 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 8. Output Folder menu
         let currentOut = UserDefaults.standard.string(forKey: "LOTUS_OUTPUT_DIR") ?? ""
         let outMenu = NSMenu()
-        let sameItem = NSMenuItem(title: "Same as Source File (Default)", action: #selector(setOutputSame), keyEquivalent: "")
+        outMenu.autoenablesItems = false
+
+        let sameItem = NSMenuItem(title: "Same as Source File (Default)", action: #selector(setOutputSame(_:)), keyEquivalent: "")
         sameItem.target = self
+        sameItem.isEnabled = true
         sameItem.state = currentOut.isEmpty ? .on : .off
         outMenu.addItem(sameItem)
 
-        let customItem = NSMenuItem(title: "Custom Folder...", action: #selector(chooseOutputFolder), keyEquivalent: "")
+        let customItem = NSMenuItem(title: "Custom Folder...", action: #selector(chooseOutputFolder(_:)), keyEquivalent: "")
         customItem.target = self
+        customItem.isEnabled = true
         customItem.state = currentOut.isEmpty ? .off : .on
         outMenu.addItem(customItem)
 
         outMenu.addItem(NSMenuItem.separator())
-        let openFolderItem = NSMenuItem(title: "Open Output Folder in Finder", action: #selector(openOutputFolder), keyEquivalent: "")
+        let openFolderItem = NSMenuItem(title: "Open Output Folder in Finder", action: #selector(openOutputFolder(_:)), keyEquivalent: "")
         openFolderItem.target = self
+        openFolderItem.isEnabled = true
         outMenu.addItem(openFolderItem)
 
         let outMenuItem = NSMenuItem(title: "Output Folder", action: nil, keyEquivalent: "")
         outMenuItem.submenu = outMenu
+        outMenuItem.isEnabled = true
         outMenuItem.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil)
         menu.addItem(outMenuItem)
 
         menu.addItem(NSMenuItem.separator())
 
         // 8. About
-        let aboutItem = NSMenuItem(title: "About Lotus", action: #selector(aboutTapped), keyEquivalent: "")
+        let aboutItem = NSMenuItem(title: "About Lotus", action: #selector(aboutTapped(_:)), keyEquivalent: "")
         aboutItem.target = self
+        aboutItem.isEnabled = true
         menu.addItem(aboutItem)
 
         // 9. Quit
-        let quitItem = NSMenuItem(title: "Quit Lotus", action: #selector(quitTapped), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Quit Lotus", action: #selector(quitTapped(_:)), keyEquivalent: "q")
         quitItem.target = self
+        quitItem.isEnabled = true
         menu.addItem(quitItem)
 
         statusItem.menu = menu
     }
 
-    @objc private func showFormatsWheel() {
+    @objc func showFormatsWheel(_ sender: Any? = nil) {
         DropWheelWindowController.shared.showAtCursor(mode: .conversions)
     }
 
-    @objc private func showToolsWheel() {
+    @objc func showToolsWheel(_ sender: Any? = nil) {
         DropWheelWindowController.shared.showAtCursor(mode: .tools)
     }
 
-    @objc private func showActionsWheel() {
+    @objc func showActionsWheel(_ sender: Any? = nil) {
         DropWheelWindowController.shared.showAtCursor(mode: .actions)
     }
 
-    @objc private func showFloatingShelf() {
+    @objc func showFloatingShelf(_ sender: Any? = nil) {
         FloatShelfWindowController.shared.showWindow(nil)
         FloatShelfWindowController.shared.window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    @objc private func toggleWheelTapped() {
+    @objc func toggleWheelTapped(_ sender: Any? = nil) {
         DropWheelWindowController.shared.toggleWheel()
     }
 
-    @objc private func selectFilesTapped() {
+    @objc func selectFilesTapped(_ sender: Any? = nil) {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -419,12 +444,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc private func setOutputSame() {
+    @objc func setOutputSame(_ sender: Any? = nil) {
         UserDefaults.standard.removeObject(forKey: "LOTUS_OUTPUT_DIR")
         rebuildMenu()
     }
 
-    @objc private func chooseOutputFolder() {
+    @objc func chooseOutputFolder(_ sender: Any? = nil) {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
@@ -438,30 +463,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc private func setThemeSystem() {
+    @objc func setThemeSystem(_ sender: Any? = nil) {
         UserDefaults.standard.set("system", forKey: "LOTUS_THEME")
         DropWheelWindowController.shared.reloadTheme()
         rebuildMenu()
     }
 
-    @objc private func setThemeLight() {
+    @objc func setThemeLight(_ sender: Any? = nil) {
         UserDefaults.standard.set("light", forKey: "LOTUS_THEME")
         DropWheelWindowController.shared.reloadTheme()
         rebuildMenu()
     }
 
-    @objc private func setThemeDark() {
+    @objc func setThemeDark(_ sender: Any? = nil) {
         UserDefaults.standard.set("dark", forKey: "LOTUS_THEME")
         DropWheelWindowController.shared.reloadTheme()
         rebuildMenu()
     }
 
-    @objc private func toggleSoundEffects() {
+    @objc func toggleSoundEffects(_ sender: Any? = nil) {
         SoundManager.isSoundEnabled.toggle()
         rebuildMenu()
     }
 
-    @objc private func openOutputFolder() {
+    @objc func openOutputFolder(_ sender: Any? = nil) {
         if let customOut = UserDefaults.standard.string(forKey: "LOTUS_OUTPUT_DIR"),
            !customOut.isEmpty,
            FileManager.default.fileExists(atPath: customOut) {
@@ -472,7 +497,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc private func aboutTapped() {
+    @objc func aboutTapped(_ sender: Any? = nil) {
         let alert = NSAlert()
         alert.messageText = "Lotus 1.0.0 (macOS Native)"
         alert.informativeText = "Drag. Drop. Convert.\nUniversal desktop file conversion, media tools, and file actions.\nRunning natively on macOS with Python and Apple Vision OCR.\n\n3 Wheels:\n• ⇧ Shift / F8: Formats Wheel\n• ⌘ Command / F9: Tools Wheel\n• ⌃ Control / F10: Universal File Actions (AirDrop, Float Shelf, Copy, Move, Copy Path, Terminal)\n\nControls:\n• Tab: Cycle Wheels\n• Esc: Close Wheel\n• Numbers 1-8: Quick select slice\n• Audio Tick feedback on hover"
@@ -480,8 +505,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
 
-    @objc private func quitTapped() {
+    @objc func quitTapped(_ sender: Any? = nil) {
         NSApp.terminate(nil)
+    }
+}
+
+extension AppDelegate: NSMenuItemValidation {
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        return true
     }
 }
 
