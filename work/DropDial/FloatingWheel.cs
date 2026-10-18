@@ -49,6 +49,22 @@ internal sealed class DropWheel : Window
     private int openGroup = -1;
     private string[] paths = [];
     private bool entered, eligible, tools, allowedCopy;
+
+    // -- Smooth rotation state --
+    /// Full list of operations for the current mode/file (may exceed 8).
+    private List<Operation> allOperations = [];
+    /// How many positions we've logically rotated (index into allOperations).
+    private int rotationOffset = 0;
+    /// The current visual rotation angle applied to petal geometry (degrees), smoothly animated.
+    private double wheelAngle = 0;
+    /// Target angle the spring animation follows.
+    private double targetAngle = 0;
+    /// Accumulated mouse-wheel delta for sub-step smoothness.
+    private double scrollAccum = 0;
+    /// 60 fps animation timer.
+    private readonly System.Windows.Threading.DispatcherTimer rotationTimer;
+    /// True when we have more items than can fit in the ring (more to scroll to).
+    private bool HasMoreItems => allOperations.Count > 8;
     public long Instance { get; private set; }
     public bool ToolsMode => tools;
     public bool HasFileDrag => entered && paths.Length > 0;
@@ -108,6 +124,12 @@ internal sealed class DropWheel : Window
         PreviewDragOver += Over;
         PreviewDragLeave += (_, e) => { var p = e.GetPosition(this); if (p.X < 0 || p.Y < 0 || p.X > ActualWidth || p.Y > ActualHeight) { Highlight(first, -1); Highlight(second, -1); } e.Handled = true; };
         PreviewDrop += OnDrop;
+        // Mouse-wheel rotates the tool ring smoothly.
+        PreviewMouseWheel += OnMouseWheel;
+        // 60-fps spring animation timer.
+        rotationTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render)
+        { Interval = TimeSpan.FromSeconds(1.0 / 60.0) };
+        rotationTimer.Tick += TickRotation;
     }
 
     // Follows a theme change made since the wheel was last shown.
@@ -133,6 +155,8 @@ internal sealed class DropWheel : Window
         this.tools = tools;
         count.Text = L.T("Drop files");
         hint.Text = tools ? L.T("Tools depend on the file type") : L.T("Formats depend on the file type");
+        // Reset rotation when the wheel opens fresh.
+        ResetRotation();
         Render([]);
         Resize(SingleSize);
         if (!IsVisible)
@@ -212,13 +236,84 @@ internal sealed class DropWheel : Window
         groups = tools && paths.Length > 0 && Catalog.TwoWheels ? Catalog.Grouped(all, Catalog.Category(paths[0])) : null;
         openGroup = -1;
         RenderSecond(null);
-        operations = groups == null ? all : groups.Select((g, i) => new Operation("__group:" + i, g.Label)).ToList();
+        // Store the full list; operations is the visible window.
+        allOperations = groups == null ? all : groups.Select((g, i) => new Operation("__group:" + i, g.Label)).ToList();
+        // Reset rotation when the file set changes.
+        ResetRotation();
+        operations = allOperations; // SyncWindow picks the window slice when >8.
+        SyncWindow();
         eligible = allowedCopy && all.Count > 0;
         bool packing = Catalog.PackingOnly(paths);
         count.Text = eligible ? (packing && !tools ? L.T("Packing only") : (paths.Length == 1 ? L.T("1 file") : L.F("{0} files", paths.Length))) : L.T("No actions");
         hint.Text = packing && !tools ? L.T("No conversions for this type") : eligible ? Prompt() : L.T("Esc to cancel");
         Render(operations);
         Resize(groups != null ? DoubleSize : SingleSize);
+    }
+
+    // Keeps `operations` as an 8-item circular window into `allOperations`.
+    private void SyncWindow()
+    {
+        if (allOperations.Count <= 8) { operations = allOperations; return; }
+        int n = allOperations.Count;
+        rotationOffset = ((rotationOffset % n) + n) % n;
+        operations = Enumerable.Range(0, 8).Select(i => allOperations[(rotationOffset + i) % n]).ToList();
+    }
+
+    // Resets rotation state to zero.
+    private void ResetRotation()
+    {
+        rotationTimer.Stop();
+        rotationOffset = 0;
+        wheelAngle = 0;
+        targetAngle = 0;
+        scrollAccum = 0;
+        // Note: callers always follow up with an explicit Render() or Populate() call.
+    }
+
+    // Mouse-wheel handler: rotate the ring smoothly.
+    private void OnMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (allOperations.Count <= 1 || groups != null) return; // Don't rotate category wheels.
+        e.Handled = true;
+
+        scrollAccum += e.Delta; // Delta is in multiples of 120 typically.
+        const double step = 120.0;
+        int steps = (int)(scrollAccum / step);
+        if (steps != 0)
+        {
+            scrollAccum -= steps * step;
+            int oldOffset = rotationOffset;
+            rotationOffset = ((rotationOffset - steps) % allOperations.Count + allOperations.Count) % allOperations.Count;
+            if (rotationOffset != oldOffset)
+            {
+                SoundManager.PlayTick();
+                SyncWindow();
+                Render(operations, wheelAngle);
+            }
+        }
+
+        // Continuous visual angle: each item spans 360/n degrees.
+        double anglePerItem = 360.0 / Math.Max(allOperations.Count, 1);
+        double subStep = (scrollAccum / step) * anglePerItem;
+        targetAngle = -rotationOffset * anglePerItem - subStep;
+        if (!rotationTimer.IsEnabled)
+            rotationTimer.Start();
+    }
+
+    // Spring-follow animation tick.
+    private void TickRotation(object? sender, EventArgs e)
+    {
+        double diff = targetAngle - wheelAngle;
+        if (Math.Abs(diff) < 0.05)
+        {
+            wheelAngle = targetAngle;
+            rotationTimer.Stop();
+        }
+        else
+        {
+            wheelAngle += diff * 0.18;
+        }
+        Render(operations, wheelAngle);
     }
 
     private string Prompt() => groups != null ? L.T("Move onto a category, pick a tool, then release") : L.T("Release on an option");
@@ -336,8 +431,8 @@ internal sealed class DropWheel : Window
         ring.Highlighted = -1;
     }
 
-    // One petal with its label. The label is a title and, for categories, a small preview line of the tools inside.
-    private void AddPetal(Ring ring, double start, double end, double inner, double outer, double labelRadius, double labelWidth, string title, string? preview, double titleSize, Brush face, int layer)
+    // One petal with its label. labelCounterRotDeg counter-rotates the label so text stays upright during wheel rotation.
+    private void AddPetal(Ring ring, double start, double end, double inner, double outer, double labelRadius, double labelWidth, string title, string? preview, double titleSize, Brush face, int layer, double labelCounterRotDeg = 0)
     {
         var geometry = Keycap(start, end, inner, outer);
         var sidewall = new ShapePath { Data = geometry, Fill = RestingSide, IsHitTestVisible = false,
@@ -354,6 +449,12 @@ internal sealed class DropWheel : Window
             label.Children.Add(new TextBlock { Text = preview, FontFamily = UiTheme.Font, Foreground = UiTheme.Muted, FontSize = 9, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.CharacterEllipsis, MaxHeight = 26, Margin = new Thickness(0, 3, 0, 0) });
         label.Measure(new Size(labelWidth, double.PositiveInfinity));
         Point p = Polar(labelRadius, (start + end) / 2);
+        // Apply counter-rotation so the label text stays upright when the ring rotates.
+        if (labelCounterRotDeg != 0)
+        {
+            label.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
+            label.RenderTransform = new RotateTransform(labelCounterRotDeg);
+        }
         Canvas.SetLeft(label, p.X - labelWidth / 2);
         Canvas.SetTop(label, p.Y - label.DesiredSize.Height / 2);
         Canvas.SetZIndex(label, layer + 2);
@@ -361,15 +462,16 @@ internal sealed class DropWheel : Window
         canvas.Children.Add(label);
     }
 
-    private void Render(List<Operation> actions)
+    private void Render(List<Operation> actions, double rotationDeg = 0)
     {
         Clear(first);
+        double rotRad = rotationDeg * Math.PI / 180.0;
         for (int i = 0; i < actions.Count; i++)
         {
-            double angle = -Math.PI / 2 + i * 2 * Math.PI / actions.Count, half = Math.PI / actions.Count;
+            double angle = rotRad + (-Math.PI / 2 + i * 2 * Math.PI / actions.Count), half = Math.PI / actions.Count;
             double labelWidth = Math.Clamp(2 * 119 * Math.Sin(half) - 16, 72, groups != null ? 92 : 112);
             string? preview = groups != null ? Preview(groups[i]) : null;
-            AddPetal(first, angle - half + .016, angle + half - .016, Inner, Outer, 119, labelWidth, (actions[i].Recent ? "↻ " : "") + actions[i].Label, preview, groups != null ? 13 : actions.Count > 7 ? 12 : 14, RestingFace, 1);
+            AddPetal(first, angle - half + .016, angle + half - .016, Inner, Outer, 119, labelWidth, (actions[i].Recent ? "↻ " : "") + actions[i].Label, preview, groups != null ? 13 : actions.Count > 7 ? 12 : 14, RestingFace, 1, -rotationDeg);
         }
         UpdateLayout();
     }

@@ -72,7 +72,25 @@ final class RadialWheelView: NSView {
         let isAction: Bool
     }
 
+    /// The full pool of items for the current mode/file (may be more than 8).
+    var allItems: [SliceItem] = []
+    /// The 8 items currently visible in the wheel (window into allItems).
     var items: [SliceItem] = []
+    /// How many positions we have logically rotated (maps allItems → displayed window).
+    private var rotationItemOffset: Int = 0
+
+    // MARK: - Smooth Rotation Animation
+    /// The visual rotation angle (degrees) applied to petal drawing, smoothly animated.
+    private var wheelRotationAngle: CGFloat = 0
+    /// The target angle we're animating toward.
+    private var targetRotationAngle: CGFloat = 0
+    /// Timer firing at ~60 fps to animate the rotation.
+    private var rotationTimer: Timer?
+    /// Accumulated scroll delta used for momentum-style physics.
+    private var scrollVelocity: CGFloat = 0
+    /// Scratch accumulator so small scrolls snap to item boundaries.
+    private var scrollAccumulator: CGFloat = 0
+
     var hoveredIndex: Int = -1
     var isHubHovered: Bool = false
     var hoveredTopBarIndex: Int = -1 // 0: Convert, 1: Tools, 2: Actions
@@ -90,6 +108,86 @@ final class RadialWheelView: NSView {
     private var dragStartWindowOrigin: NSPoint?
     private var isDraggingWindow: Bool = false
     private var mouseDownHit: Int = -1
+
+    // MARK: - Rotation Helpers
+
+    /// Recomputes `items` from `allItems` using the current `rotationItemOffset`.
+    private func syncDisplayedItems() {
+        guard !allItems.isEmpty else { items = []; return }
+        let n = allItems.count
+        let slotCount = min(n, 8)
+        let offset = ((rotationItemOffset % n) + n) % n
+        items = (0..<slotCount).map { allItems[(offset + $0) % n] }
+    }
+
+    /// True when we have more items than the 8 visible slots.
+    var hasMoreItems: Bool { allItems.count > 8 }
+
+    // MARK: - Scroll-to-rotate
+    override func scrollWheel(with event: NSEvent) {
+        guard allItems.count > 1, mode == .tools || mode == .conversions else { return }
+
+        // Accumulate physical delta (trackpad gives fine-grained deltas).
+        let delta = event.scrollingDeltaX != 0 ? event.scrollingDeltaX : -event.scrollingDeltaY
+        scrollAccumulator += delta
+
+        // Each 28 pt of scroll = rotate by 1 item.
+        let step: CGFloat = 28.0
+        let stepsDelta = Int(scrollAccumulator / step)
+        if stepsDelta != 0 {
+            scrollAccumulator -= CGFloat(stepsDelta) * step
+            let oldOffset = rotationItemOffset
+            rotationItemOffset = ((rotationItemOffset - stepsDelta) % allItems.count + allItems.count) % allItems.count
+            if rotationItemOffset != oldOffset {
+                SoundManager.playTick()
+                syncDisplayedItems()
+                hoveredIndex = -1
+            }
+        }
+
+        // Compute the continuous visual rotation angle that matches the item offset.
+        let anglePerItem = 360.0 / CGFloat(max(allItems.count, 1))
+        // We drive the wheel visually with the sub-step scroll progress (smooth feel).
+        let subStepAngle = (scrollAccumulator / step) * anglePerItem
+        let baseAngle = -CGFloat(rotationItemOffset) * anglePerItem
+        targetRotationAngle = baseAngle - subStepAngle
+
+        // Kick off the animation timer if not already running.
+        startRotationAnimation()
+        needsDisplay = true
+    }
+
+    private func startRotationAnimation() {
+        guard rotationTimer == nil else { return }
+        rotationTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            self?.tickRotation()
+        }
+        rotationTimer?.tolerance = 0.004
+    }
+
+    private func tickRotation() {
+        let diff = targetRotationAngle - wheelRotationAngle
+        if abs(diff) < 0.05 {
+            wheelRotationAngle = targetRotationAngle
+            rotationTimer?.invalidate()
+            rotationTimer = nil
+        } else {
+            // Spring-follow: easing factor 0.18 gives a smooth, physical feel.
+            wheelRotationAngle += diff * 0.18
+        }
+        needsDisplay = true
+    }
+
+    /// Resets rotation state when mode/files change.
+    func resetRotation() {
+        rotationTimer?.invalidate()
+        rotationTimer = nil
+        rotationItemOffset = 0
+        wheelRotationAngle = 0
+        targetRotationAngle = 0
+        scrollAccumulator = 0
+        scrollVelocity = 0
+    }
 
     let wheelCenter = CGPoint(x: 170, y: 155)
     let innerRadius: CGFloat = 52
@@ -163,34 +261,39 @@ final class RadialWheelView: NSView {
     }
 
     func loadDefaultItems() {
+        resetRotation()
         switch mode {
         case .actions:
-            items = Catalog.fileActions.map {
+            allItems = Catalog.fileActions.map {
                 SliceItem(id: $0.id, title: $0.title, iconName: $0.iconName, isTool: false, isAction: true)
             }
         case .tools:
-            items = [
-                SliceItem(id: "compress", title: "Compress", iconName: "arrow.down.circle", isTool: true, isAction: false),
-                SliceItem(id: "resizeImage", title: "Resize", iconName: "arrow.up.left.and.arrow.down.right", isTool: true, isAction: false),
-                SliceItem(id: "cropImage", title: "Crop", iconName: "crop", isTool: true, isAction: false),
-                SliceItem(id: "editImage", title: "Adjust", iconName: "slider.horizontal.3", isTool: true, isAction: false),
-                SliceItem(id: "frameImage", title: "Frame", iconName: "square.dashed", isTool: true, isAction: false),
-                SliceItem(id: "watermark", title: "Watermark", iconName: "text.bubble", isTool: true, isAction: false),
-                SliceItem(id: "redactImage", title: "Redact", iconName: "eye.slash.fill", isTool: true, isAction: false),
-                SliceItem(id: "ocrImage", title: "OCR", iconName: "doc.text.viewfinder", isTool: true, isAction: false)
+            // Full default image tool palette – scroll to reveal more
+            allItems = [
+                SliceItem(id: "compress",    title: "Compress",  iconName: "arrow.down.circle",                   isTool: true, isAction: false),
+                SliceItem(id: "resizeImage", title: "Resize",     iconName: "arrow.up.left.and.arrow.down.right", isTool: true, isAction: false),
+                SliceItem(id: "cropImage",   title: "Crop",       iconName: "crop",                               isTool: true, isAction: false),
+                SliceItem(id: "editImage",   title: "Adjust",     iconName: "slider.horizontal.3",                isTool: true, isAction: false),
+                SliceItem(id: "frameImage",  title: "Frame",      iconName: "square.dashed",                      isTool: true, isAction: false),
+                SliceItem(id: "watermark",   title: "Watermark",  iconName: "text.bubble",                        isTool: true, isAction: false),
+                SliceItem(id: "redactImage", title: "Redact",     iconName: "eye.slash.fill",                     isTool: true, isAction: false),
+                SliceItem(id: "ocrImage",    title: "OCR",        iconName: "doc.text.viewfinder",                isTool: true, isAction: false),
+                SliceItem(id: "annotateImage", title: "Annotate", iconName: "pencil.tip.crop.circle",             isTool: true, isAction: false),
+                SliceItem(id: "makeIcon",    title: "Make Icon",  iconName: "app.dashed",                         isTool: true, isAction: false)
             ]
         case .conversions:
-            items = [
-                SliceItem(id: "convert:png", title: "PNG", iconName: nil, isTool: false, isAction: false),
+            allItems = [
+                SliceItem(id: "convert:png",  title: "PNG",  iconName: nil, isTool: false, isAction: false),
                 SliceItem(id: "convert:webp", title: "WEBP", iconName: nil, isTool: false, isAction: false),
                 SliceItem(id: "convert:heic", title: "HEIC", iconName: nil, isTool: false, isAction: false),
                 SliceItem(id: "convert:tiff", title: "TIFF", iconName: nil, isTool: false, isAction: false),
                 SliceItem(id: "convert:avif", title: "AVIF", iconName: nil, isTool: false, isAction: false),
-                SliceItem(id: "convert:bmp", title: "BMP", iconName: nil, isTool: false, isAction: false),
-                SliceItem(id: "convert:pdf", title: "PDF", iconName: nil, isTool: false, isAction: false),
-                SliceItem(id: "convert:jpg", title: "JPG", iconName: nil, isTool: false, isAction: false)
+                SliceItem(id: "convert:bmp",  title: "BMP",  iconName: nil, isTool: false, isAction: false),
+                SliceItem(id: "convert:pdf",  title: "PDF",  iconName: nil, isTool: false, isAction: false),
+                SliceItem(id: "convert:jpg",  title: "JPG",  iconName: nil, isTool: false, isAction: false)
             ]
         }
+        syncDisplayedItems()
         hubThumbnail = nil
         hoveredIndex = -1
         needsDisplay = true
@@ -199,6 +302,7 @@ final class RadialWheelView: NSView {
     func configure(paths: [String], mode: WheelMode) {
         self.currentPaths = paths
         self.mode = mode
+        resetRotation()
 
         guard let first = paths.first else {
             loadDefaultItems()
@@ -207,36 +311,36 @@ final class RadialWheelView: NSView {
 
         switch mode {
         case .actions:
-            items = Catalog.fileActions.map {
+            allItems = Catalog.fileActions.map {
                 SliceItem(id: $0.id, title: $0.title, iconName: $0.iconName, isTool: false, isAction: true)
             }
         case .tools:
             if paths.count > 1 {
                 let multi = Catalog.multiFileTools(for: paths)
                 if !multi.isEmpty {
-                    items = multi.prefix(8).map {
+                    allItems = multi.map {
                         SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
                     }
                 } else {
                     let cat = Catalog.category(for: first)
-                    items = Catalog.tools(for: cat).prefix(8).map {
+                    allItems = Catalog.tools(for: cat).map {
                         SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
                     }
                 }
             } else {
                 let cat = Catalog.category(for: first)
-                let tools = Catalog.tools(for: cat)
-                items = tools.prefix(8).map {
+                allItems = Catalog.tools(for: cat).map {
                     SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
                 }
             }
         case .conversions:
             let formats = Catalog.targetFormats(for: first)
-            items = formats.prefix(8).map {
+            allItems = formats.map {
                 SliceItem(id: "convert:\($0)", title: $0.uppercased(), iconName: nil, isTool: false, isAction: false)
             }
         }
 
+        syncDisplayedItems()
         hoveredIndex = -1
 
         PreviewService.shared.loadPreview(for: first, targetSize: CGSize(width: 80, height: 80)) { [weak self] img in
@@ -363,7 +467,10 @@ final class RadialWheelView: NSView {
 
         let rad = atan2(dy, dx)
         var deg = rad * 180.0 / .pi
-        deg = 90.0 - deg
+        // Subtract the live rotation angle so hit-testing tracks the visual wheel.
+        deg = 90.0 - deg - wheelRotationAngle
+        // Normalise to [0, 360)
+        deg = deg.truncatingRemainder(dividingBy: 360.0)
         if deg < 0 { deg += 360.0 }
 
         let angle = sliceAngle()
@@ -696,7 +803,8 @@ final class RadialWheelView: NSView {
         for (i, item) in items.enumerated() {
             let isHovered = (i == hoveredIndex)
 
-            let s = 90.0 - CGFloat(i) * angleStep - gap / 2.0
+            // Apply the smooth rotation offset so the whole ring spins together.
+            let s = 90.0 - CGFloat(i) * angleStep - gap / 2.0 + wheelRotationAngle
             let e = s - (angleStep - gap)
             let petal = makeCushionPetal(center: wheelCenter, innerR: innerRadius, outerR: outerRadius, startDeg: s, endDeg: e, outerCornerRadius: outerCR, innerCornerRadius: innerCR)
 
@@ -730,7 +838,7 @@ final class RadialWheelView: NSView {
             context.strokePath()
             context.restoreGState()
 
-            // Label & Icon
+            // Label & Icon  (midpoint of the petal arc, already includes rotationAngle)
             let midDeg = (s + e) / 2.0
             let midRad = midDeg * .pi / 180.0
             let midRadius = (innerRadius + outerRadius) / 2.0
@@ -768,6 +876,45 @@ final class RadialWheelView: NSView {
                 let str = NSAttributedString(string: item.title, attributes: attrs)
                 let sz = str.size()
                 str.draw(at: NSPoint(x: tx - sz.width / 2.0, y: ty - sz.height / 2.0))
+            }
+        }
+
+        // 2b. "More items" arc-dot indicator – shown at outer rim when allItems.count > 8
+        if hasMoreItems {
+            let dotCount = 5
+            let indicatorRadius = outerRadius + 14.0
+            let arcSpan: CGFloat = 40.0 // degrees, centred at bottom of wheel
+            let anchorDeg: CGFloat = 270.0 + wheelRotationAngle // bottom, rotates with wheel
+            context.saveGState()
+            for di in 0..<dotCount {
+                let fraction = CGFloat(di) / CGFloat(dotCount - 1) - 0.5
+                let dotDeg = anchorDeg + fraction * arcSpan
+                let dotRad = dotDeg * .pi / 180.0
+                let cx = wheelCenter.x + indicatorRadius * cos(dotRad)
+                let cy = wheelCenter.y + indicatorRadius * sin(dotRad)
+                // Centre dot slightly bigger and brighter
+                let isCentre = (di == dotCount / 2)
+                let dotSize: CGFloat = isCentre ? 4.5 : 3.0
+                let alpha: CGFloat = isCentre ? 0.75 : 0.35
+                let dotColor = dark
+                    ? NSColor(white: 1.0, alpha: alpha)
+                    : NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: alpha)
+                dotColor.setFill()
+                let dotRect = CGRect(x: cx - dotSize / 2, y: cy - dotSize / 2, width: dotSize, height: dotSize)
+                let dotPath = CGPath(ellipseIn: dotRect, transform: nil)
+                context.addPath(dotPath)
+                context.fillPath()
+            }
+            context.restoreGState()
+
+            // Tiny "scroll" hint label — only when not hovering a petal
+            if hoveredIndex < 0 {
+                let hintFont = NSFont.systemFont(ofSize: 8.0, weight: .medium)
+                let hintColor = dark ? NSColor(white: 0.55, alpha: 0.90) : NSColor(white: 0.45, alpha: 0.80)
+                let hintAttrs: [NSAttributedString.Key: Any] = [.font: hintFont, .foregroundColor: hintColor]
+                let hintStr = NSAttributedString(string: "scroll to rotate", attributes: hintAttrs)
+                let hSz = hintStr.size()
+                hintStr.draw(at: NSPoint(x: wheelCenter.x - hSz.width / 2, y: wheelCenter.y - outerRadius - 28))
             }
         }
 
