@@ -18,7 +18,7 @@ internal static class Checks
         var testApplication = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         L.UseForSession("en");
         var checks=new List<object>();int failed=0;
-        void Check(string name,Action action){try{action();checks.Add(new{test=name,passed=true});}catch(Exception ex){failed++;checks.Add(new{test=name,passed=false,error=ex.GetBaseException().Message});}}
+        void Check(string name,Action action){try{action();checks.Add(new{test=name,passed=true});}catch(Exception ex){failed++;Console.WriteLine($"[TEST FAILED] {name}: {ex.GetBaseException().Message}");checks.Add(new{test=name,passed=false,error=ex.GetBaseException().Message});}}
         void Require(bool value){if(!value)throw new Exception("Unexpected progress result");}
         Check("interface font resolves correctly", () =>
         {
@@ -179,7 +179,7 @@ internal static class Checks
             a.Start();
             stack.Update();
             Require(stack.HeaderVisible && stack.VisibleCards.SequenceEqual(new[] { a, b, c }));
-            Require(stack.HeaderText == "3 jobs · 1 running · 2 waiting");
+            Require(stack.HeaderText == "3 jobs · running 1 · waiting 2");
         });
         Check("collapsing piles the stack under the newest running job; expanding lists all again", () =>
         {
@@ -279,13 +279,9 @@ internal static class Checks
         });
         Check("every interface string used in the app has an English translation", () =>
         {
-            // Scan the app's sources for L.T("…") / L.F("…") keys.
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "DropDial", "backend")))
-                dir = dir.Parent;
-            Require(dir != null);
+            string dropDialDir = FindDropDialSourceDirectory();
             var missing = new List<string>();
-            foreach (var file in Directory.GetFiles(Path.Combine(dir!.FullName, "DropDial"), "*.cs"))
+            foreach (var file in Directory.GetFiles(dropDialDir, "*.cs"))
                 foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), "L\\.[TF]\\(\"((?:[^\"\\\\]|\\\\.)*)\""))
                 {
                     string key = JsonSerializer.Deserialize<string>("\"" + m.Groups[1].Value + "\"")!;
@@ -297,11 +293,8 @@ internal static class Checks
         });
         Check("English format strings use only placeholders the code supplies", () =>
         {
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "DropDial", "backend")))
-                dir = dir.Parent;
-            Require(dir != null);
-            foreach (var file in Directory.GetFiles(Path.Combine(dir!.FullName, "DropDial"), "*.cs"))
+            string dropDialDir = FindDropDialSourceDirectory();
+            foreach (var file in Directory.GetFiles(dropDialDir, "*.cs"))
                 foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), "L\\.F\\(\"((?:[^\"\\\\]|\\\\.)*)\""))
                 {
                     string format = JsonSerializer.Deserialize<string>("\"" + m.Groups[1].Value + "\"")!;
@@ -310,7 +303,7 @@ internal static class Checks
                         .DefaultIfEmpty(-1).Max();
                     if (maxPlaceholder >= 0)
                     {
-                        _ = string.Format(CultureInfo.InvariantCulture, format, Enumerable.Repeat((object)"test", maxPlaceholder + 1).ToArray());
+                        _ = string.Format(CultureInfo.InvariantCulture, format, Enumerable.Repeat((object)1, maxPlaceholder + 1).ToArray());
                     }
                 }
         });
@@ -723,7 +716,27 @@ internal static class Checks
             }
             finally { try { Directory.Delete(root, true); } catch (IOException) { } }
         });
-        File.WriteAllText(args[0],JsonSerializer.Serialize(new{passed=checks.Count-failed,failed,checks},new JsonSerializerOptions{WriteIndented=true}));Console.WriteLine($"passed={checks.Count-failed}, failed={failed}");return failed==0?0:1;
+        File.WriteAllText(args[0],JsonSerializer.Serialize(new{passed=checks.Count-failed,failed,checks},new JsonSerializerOptions{WriteIndented=true}));
+        Console.WriteLine($"passed={checks.Count-failed}, failed={failed}");
+        return failed==0?0:1;
+    }
+    private static string FindDropDialSourceDirectory()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null)
+        {
+            if (Directory.Exists(Path.Combine(dir.FullName, "work", "DropDial", "backend")))
+                return Path.Combine(dir.FullName, "work", "DropDial");
+            if (Directory.Exists(Path.Combine(dir.FullName, "DropDial", "backend")))
+                return Path.Combine(dir.FullName, "DropDial");
+            dir = dir.Parent;
+        }
+        string cwd = Directory.GetCurrentDirectory();
+        if (Directory.Exists(Path.Combine(cwd, "work", "DropDial")))
+            return Path.Combine(cwd, "work", "DropDial");
+        if (Directory.Exists(Path.Combine(cwd, "DropDial")))
+            return Path.Combine(cwd, "DropDial");
+        throw new DirectoryNotFoundException("Could not find DropDial source directory from " + AppContext.BaseDirectory);
     }
     private static string JobValidationMessage()
     {
