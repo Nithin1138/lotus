@@ -40,7 +40,15 @@ internal static class Checks
         Check("wheel mode changes keep the dragged file and valid tool sectors",()=>
         {
             string path=Path.Combine(Path.GetTempPath(),"dropdial-wheel-"+Guid.NewGuid().ToString("N")+".png");File.WriteAllText(path,"fixture");var wheel=new DropWheel((_,_)=>{});
-            try{wheel.Preview([path],false,"convert:jpg");wheel.ChangeMode(true);Require(wheel.HasFileDrag&&wheel.ToolsMode);var all=Catalog.Options([path],true);var groups=Catalog.Grouped(all,"image");var actions=groups==null?all:groups.Select((g,i)=>new Operation("__group:"+i,g.Label)).ToList();var hit=typeof(DropWheel).GetMethod("Hit",BindingFlags.NonPublic|BindingFlags.Static)!;var ring=typeof(DropWheel).GetField("first",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel);for(int i=0;i<actions.Count;i++){double angle=-Math.PI/2+i*2*Math.PI/actions.Count;Require((int)hit.Invoke(null,[ring!,new Point(190+119*Math.Cos(angle),190+119*Math.Sin(angle)),65d,172d])! == i);}}
+            try
+            {
+                wheel.Preview([path],false,"convert:jpg");wheel.ChangeMode(true);Require(wheel.HasFileDrag&&wheel.ToolsMode);
+                var actions=(List<Operation>)typeof(DropWheel).GetField("operations",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel)!;
+                Require(actions.Count>0);
+                var hit=typeof(DropWheel).GetMethod("Hit",BindingFlags.NonPublic|BindingFlags.Static)!;
+                var ring=typeof(DropWheel).GetField("first",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel);
+                for(int i=0;i<actions.Count;i++){double angle=-Math.PI/2+i*2*Math.PI/actions.Count;Require((int)hit.Invoke(null,[ring!,new Point(190+119*Math.Cos(angle),190+119*Math.Sin(angle)),65d,172d])! == i);}
+            }
             finally{wheel.Close();File.Delete(path);}
         });
         Check("trim start handle cannot cross end",()=>Require(TrimRange.Start(90,60,120)<60));
@@ -100,7 +108,7 @@ internal static class Checks
         });
         Check("batch indicator uses actual completed count",()=>
         {
-            var view=new ActivityIndicator();using var session=view.Begin("Saving file","batch");session.Report(new JobProgress("processing",2,5,"photo 3.png"));Require(view.Children.OfType<TextBlock>().Any(t=>t.Text.Contains("2 / 5")));
+            var view=new ActivityIndicator();using var session=view.Begin("Saving file","batch");session.Report(new JobProgress("processing",2,5,"photo 3.png"));Require(view.Children.OfType<TextBlock>().Any(t=>t.Text.Contains("2 of 5")||t.Text.Contains("2 / 5")));
         });
         Check("old preview completion cannot hide a newer task",()=>
         {

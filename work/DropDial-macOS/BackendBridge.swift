@@ -129,9 +129,9 @@ final class BackendBridge {
             "/usr/sbin",
             "/sbin"
         ]
-        let existingPath = env["PATH"] ?? ""
-        env["PATH"] = (extraPaths + [existingPath]).joined(separator: ":")
         let backendDir = (worker as NSString).deletingLastPathComponent
+        let existingPath = env["PATH"] ?? ""
+        env["PATH"] = ([backendDir] + extraPaths + [existingPath]).joined(separator: ":")
         env["PYTHONPATH"] = backendDir
 
         if let customOutput = UserDefaults.standard.string(forKey: "DROPDIAL_OUTPUT_DIR"), !customOutput.isEmpty {

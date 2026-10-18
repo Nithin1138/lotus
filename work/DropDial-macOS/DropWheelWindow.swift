@@ -1331,21 +1331,21 @@ final class DropWheelWindowController: NSWindowController {
 
     private func executeJob(action: String, paths: [String], params: [String: String]?) {
         let job = ConversionJob(Paths: paths, Action: action, Parameters: params)
-        let card = TaskIndicatorManager.shared.addJob(job)
+        TaskIndicatorManager.shared.enqueue(job: job) { card in
+            BackendBridge.shared.execute(
+                job: job,
+                onStart: { process in card.process = process },
+                progressHandler: { prog in card.updateProgress(prog) },
+                completion: { result in
+                    switch result {
+                    case .success(let batch): card.markCompleted(result: batch)
+                    case .failure(let err): card.markFailed(error: err)
+                    }
+                }
+            )
+        }
         self.currentPaths = []
         self.wheelView.loadDefaultItems()
         hideWheel()
-
-        BackendBridge.shared.execute(
-            job: job,
-            onStart: { process in card.process = process },
-            progressHandler: { prog in card.updateProgress(prog) },
-            completion: { result in
-                switch result {
-                case .success(let batch): card.markCompleted(result: batch)
-                case .failure(let err): card.markFailed(error: err)
-                }
-            }
-        )
     }
 }

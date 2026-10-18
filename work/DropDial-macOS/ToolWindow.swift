@@ -2843,28 +2843,28 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             }
 
             let job = ConversionJob(Paths: paths, Action: finalAction, Parameters: params)
-            let card = TaskIndicatorManager.shared.addJob(job)
-
             window?.close()
             onClose?()
 
-            BackendBridge.shared.execute(
-                job: job,
-                onStart: { process in
-                    card.process = process
-                },
-                progressHandler: { prog in
-                    card.updateProgress(prog)
-                },
-                completion: { result in
-                    switch result {
-                    case .success(let batch):
-                        card.markCompleted(result: batch)
-                    case .failure(let err):
-                        card.markFailed(error: err)
+            TaskIndicatorManager.shared.enqueue(job: job) { card in
+                BackendBridge.shared.execute(
+                    job: job,
+                    onStart: { process in
+                        card.process = process
+                    },
+                    progressHandler: { prog in
+                        card.updateProgress(prog)
+                    },
+                    completion: { result in
+                        switch result {
+                        case .success(let batch):
+                            card.markCompleted(result: batch)
+                        case .failure(let err):
+                            card.markFailed(error: err)
+                        }
                     }
-                }
-            )
+                )
+            }
             return
         }
 
@@ -3065,27 +3065,27 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         }
 
         let job = ConversionJob(Paths: paths, Action: tool.id, Parameters: params)
-        let card = TaskIndicatorManager.shared.addJob(job)
-
         window?.close()
         onClose?()
 
-        BackendBridge.shared.execute(
-            job: job,
-            onStart: { process in
-                card.process = process
-            },
-            progressHandler: { prog in
-                card.updateProgress(prog)
-            },
-            completion: { result in
-                switch result {
-                case .success(let batch):
-                    card.markCompleted(result: batch)
-                case .failure(let err):
-                    card.markFailed(error: err)
+        TaskIndicatorManager.shared.enqueue(job: job) { card in
+            BackendBridge.shared.execute(
+                job: job,
+                onStart: { process in
+                    card.process = process
+                },
+                progressHandler: { prog in
+                    card.updateProgress(prog)
+                },
+                completion: { result in
+                    switch result {
+                    case .success(let batch):
+                        card.markCompleted(result: batch)
+                    case .failure(let err):
+                        card.markFailed(error: err)
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
