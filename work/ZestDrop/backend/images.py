@@ -176,6 +176,31 @@ def collage(paths,params,preview=False):
     with output_file(paths[0],'collage','.png') as state: canvas.save(state['temp'])
     return state['output']
 
+def annotate(image, params):
+    image = image.convert('RGBA')
+    draw = ImageDraw.Draw(image)
+    text = str(params.get('text', 'APPROVED') or 'APPROVED').strip()
+    color = params.get('color', '#ff6500')
+    font_size = max(20, min(image.width, image.height) // 20)
+    pos_name = params.get('position', 'bottom_right')
+    try:
+        font = ImageFont.truetype(str(FONT), font_size) if FONT else ImageFont.load_default()
+    except Exception:
+        font = ImageFont.load_default()
+    bbox = draw.textbbox((0, 0), text, font=font)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+    pad = max(16, int(font_size * 0.5))
+    if pos_name == 'top_left': x, y = pad, pad
+    elif pos_name == 'top_right': x, y = image.width - tw - pad, pad
+    elif pos_name == 'bottom_left': x, y = pad, image.height - th - pad
+    elif pos_name == 'center': x, y = (image.width - tw) // 2, (image.height - th) // 2
+    else: x, y = image.width - tw - pad, image.height - th - pad
+    badge = [x - 12, y - 8, x + tw + 12, y + th + 8]
+    draw.rounded_rectangle(badge, radius=8, fill=(0, 0, 0, 180) if color != '#000000' else (255, 255, 255, 200))
+    draw.text((x, y), text, fill=color, font=font)
+    return image
+
 def tool(path,action,params):
     if action=='makeIcon': return imagetools.make_icon(path,params)
     image=open_image(path,params.get('imageFrame'))
@@ -190,6 +215,7 @@ def tool(path,action,params):
     elif action=='watermark': image=Image.alpha_composite(image.convert('RGBA'),imagetools.watermark_layer(image.size,params))
     elif action=='editImage': image=edit(image,params)
     elif action=='frameImage': image=framed(image,params); fmt='png'
+    elif action=='annotateImage': image=annotate(image,params)
     elif action=='compress':
         max_edge=int(number(params,'maxEdge',0))
         if max_edge>0: image.thumbnail((max_edge,max_edge),Image.Resampling.LANCZOS)

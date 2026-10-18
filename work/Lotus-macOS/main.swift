@@ -339,6 +339,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         themeMenuItem.image = NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: nil)
         menu.addItem(themeMenuItem)
 
+        // Sound Effects toggle
+        let soundItem = NSMenuItem(title: "Sound Effects", action: #selector(toggleSoundEffects), keyEquivalent: "")
+        soundItem.target = self
+        soundItem.state = SoundManager.isSoundEnabled ? .on : .off
+        soundItem.image = NSImage(systemSymbolName: "speaker.wave.2", accessibilityDescription: nil)
+        menu.addItem(soundItem)
+
         // 8. Output Folder menu
         let currentOut = UserDefaults.standard.string(forKey: "LOTUS_OUTPUT_DIR") ?? ""
         let outMenu = NSMenu()
@@ -446,6 +453,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func setThemeDark() {
         UserDefaults.standard.set("dark", forKey: "LOTUS_THEME")
         DropWheelWindowController.shared.reloadTheme()
+        rebuildMenu()
+    }
+
+    @objc private func toggleSoundEffects() {
+        SoundManager.isSoundEnabled.toggle()
         rebuildMenu()
     }
 

@@ -100,4 +100,44 @@ def redaction_preview(path,params,folder):
     result={'Preview':str(target),'SourcePreview':str(source),'PageWidth':page.rect.width,'PageHeight':page.rect.height,'Page':index+1,'Pages':len(doc)}
     doc.close(); return result
 
-ACTIONS={'redactPDF':redact,'pdfPassword':password,'pdfNumbers':numbers,'extractPdfImages':extract_images,'watermark':watermark}
+def organize(path, params):
+    """Reorders, rotates, or extracts pages from a PDF."""
+    import pymupdf as fitz
+    doc = open_pdf(path, params)
+    action = params.get('action', 'Reverse All Pages')
+    total = len(doc)
+    if total == 0:
+        doc.close()
+        raise ValueError(T('PDF has no pages'))
+    
+    if action == 'Reverse All Pages':
+        doc.select(list(range(total - 1, -1, -1)))
+    elif 'Rotate All 90' in action:
+        for page in doc:
+            page.set_rotation((page.rotation + 90) % 360)
+    elif 'Rotate All 180' in action:
+        for page in doc:
+            page.set_rotation((page.rotation + 180) % 360)
+    elif 'Rotate All 270' in action:
+        for page in doc:
+            page.set_rotation((page.rotation + 270) % 360)
+    elif action == 'Extract Even Pages':
+        even = [i for i in range(total) if (i + 1) % 2 == 0]
+        if not even: raise ValueError(T('No even pages found'))
+        doc.select(even)
+    elif action == 'Extract Odd Pages':
+        odd = [i for i in range(total) if (i + 1) % 2 != 0]
+        doc.select(odd)
+    elif action == 'Delete First Page':
+        if total <= 1: raise ValueError(T('Cannot delete the only page'))
+        doc.delete_page(0)
+    elif action == 'Delete Last Page':
+        if total <= 1: raise ValueError(T('Cannot delete the only page'))
+        doc.delete_page(total - 1)
+    
+    with output_file(path, 'organized', '.pdf') as state:
+        doc.save(state['temp'], garbage=3, deflate=True)
+    doc.close()
+    return state['output']
+
+ACTIONS={'redactPDF':redact,'pdfPassword':password,'pdfNumbers':numbers,'extractPdfImages':extract_images,'watermark':watermark,'organizePDF':organize}

@@ -46,8 +46,8 @@ enum Catalog {
     static let imageExts: Set<String> = ["jpg", "jpeg", "png", "webp", "heic", "heif", "tif", "tiff", "svg", "avif", "bmp"]
     static let videoExts: Set<String> = ["mp4", "mov", "mkv", "webm", "avi", "wmv", "gif"]
     static let audioExts: Set<String> = ["mp3", "m4a", "wav", "flac", "ogg", "opus", "aiff", "aif", "wma"]
-    static let docExts: Set<String> = ["pdf", "txt", "srt", "vtt", "md", "markdown"]
-    static let officeExts: Set<String> = ["ppt", "pptx", "pptm", "pps", "ppsx", "odp", "doc", "docx", "docm", "rtf", "odt", "xls", "xlsx", "xlsm", "xlsb", "ods", "csv", "tsv", "pages", "key", "numbers"]
+    static let docExts: Set<String> = ["pdf", "txt", "srt", "vtt", "md", "markdown", "epub"]
+    static let officeExts: Set<String> = ["ppt", "pptx", "pptm", "pps", "ppsx", "odp", "doc", "docx", "docm", "rtf", "rtfd", "odt", "xls", "xlsx", "xlsm", "xlsb", "ods", "csv", "tsv", "pages", "key", "numbers"]
     static let archiveExts: Set<String> = ["zip", "tar", "gz", "tgz", "rar", "7z"]
 
     static func category(for path: String) -> String {
@@ -62,6 +62,10 @@ enum Catalog {
 
     static func targetFormats(for path: String) -> [String] {
         let ext = URL(fileURLWithPath: path).pathExtension.lowercased()
+        if ext == "epub" {
+            // EPUB -> PDF, DOCX, TXT, MD, HTML
+            return ["pdf", "docx", "txt", "md", "html"]
+        }
         if ext == "md" || ext == "markdown" {
             // Markdown -> PDF, DOCX, HTML, TXT
             return ["pdf", "docx", "html", "txt"]
@@ -82,7 +86,10 @@ enum Catalog {
             // Apple Numbers -> PDF, XLSX, CSV
             return ["pdf", "xlsx", "csv"]
         }
-        if ["docx", "doc", "odt", "rtf", "docm"].contains(ext) {
+        if ["rtf", "rtfd"].contains(ext) {
+            return ["pdf", "docx", "txt", "html"]
+        }
+        if ["docx", "doc", "odt", "docm"].contains(ext) {
             // Word / DOCX -> PDF, TXT
             return ["pdf", "txt"]
         }
@@ -146,7 +153,11 @@ enum Catalog {
         var options: [ToolOption] = []
         if exts.allSatisfy({ imageExts.contains($0) }) {
             options.append(ToolOption(id: "createPDF", label: "Combine to PDF", iconName: "doc.on.doc", fields: []))
-            options.append(ToolOption(id: "createCollage", label: "Make Collage", iconName: "rectangle.3.group", fields: []))
+            options.append(ToolOption(id: "createCollage", label: "Make Collage", iconName: "rectangle.3.group", fields: [
+                ToolField(name: "layout", label: "Layout", defaultValue: "grid", kind: "select", choices: ["grid", "featured", "row", "column"]),
+                ToolField(name: "gap", label: "Gap (px)", defaultValue: "16", kind: "number", choices: nil),
+                ToolField(name: "background", label: "Background", defaultValue: "#ffffff", kind: "select", choices: ["#ffffff", "#18181b", "#f0ebff"])
+            ]))
             options.append(ToolOption(id: "compress", label: "Compress All", iconName: "arrow.down.circle", fields: []))
         } else if exts.allSatisfy({ videoExts.contains($0) }) {
             options.append(ToolOption(id: "joinVideos", label: "Join Videos", iconName: "film.stack", fields: []))
@@ -180,6 +191,30 @@ enum Catalog {
                 ToolOption(id: "cropImage", label: "Crop", iconName: "crop", fields: [
                     ToolField(name: "ratio", label: "Aspect Ratio", defaultValue: "Free Style (Custom Drag)", kind: "select", choices: ["Free Style (Custom Drag)", "1:1 (Square)", "16:9 (Widescreen)", "4:3 (Standard)", "9:16 (Story / Reel)", "3:2 (Classic Photo)", "Original Ratio"])
                 ]),
+                ToolOption(id: "editImage", label: "Adjust", iconName: "slider.horizontal.3", fields: [
+                    ToolField(name: "exposure", label: "Exposure", defaultValue: "0", kind: "slider", choices: nil),
+                    ToolField(name: "contrast", label: "Contrast", defaultValue: "1.0", kind: "slider", choices: nil),
+                    ToolField(name: "saturation", label: "Saturation", defaultValue: "1.0", kind: "slider", choices: nil),
+                    ToolField(name: "temperature", label: "Temperature", defaultValue: "0", kind: "slider", choices: nil),
+                    ToolField(name: "shadows", label: "Shadows", defaultValue: "0", kind: "slider", choices: nil),
+                    ToolField(name: "highlights", label: "Highlights", defaultValue: "0", kind: "slider", choices: nil),
+                    ToolField(name: "clarity", label: "Clarity", defaultValue: "0", kind: "slider", choices: nil)
+                ]),
+                ToolOption(id: "frameImage", label: "Frame", iconName: "square.dashed", fields: [
+                    ToolField(name: "background", label: "Background", defaultValue: "#F0EBFF", kind: "select", choices: ["#F0EBFF", "#FFFFFF", "#18181B", "#FF6500", "#3B82F6", "#10B981"]),
+                    ToolField(name: "padding", label: "Padding (px)", defaultValue: "80", kind: "number", choices: nil),
+                    ToolField(name: "radius", label: "Corner Radius", defaultValue: "24", kind: "number", choices: nil),
+                    ToolField(name: "shadow", label: "Shadow Blur", defaultValue: "20", kind: "number", choices: nil)
+                ]),
+                ToolOption(id: "redactImage", label: "Redact", iconName: "eye.slash.fill", fields: [
+                    ToolField(name: "style", label: "Redaction Style", defaultValue: "solid", kind: "select", choices: ["solid", "blur", "pixelate"]),
+                    ToolField(name: "blockSize", label: "Mosaic Block Size", defaultValue: "18", kind: "number", choices: nil)
+                ]),
+                ToolOption(id: "annotateImage", label: "Annotate", iconName: "pencil.and.outline", fields: [
+                    ToolField(name: "text", label: "Text", defaultValue: "APPROVED", kind: "text", choices: nil),
+                    ToolField(name: "color", label: "Color", defaultValue: "#ff6500", kind: "select", choices: ["#ff6500", "#ef4444", "#3b82f6", "#10b981", "#ffffff", "#000000"]),
+                    ToolField(name: "position", label: "Position", defaultValue: "bottom_right", kind: "select", choices: ["bottom_right", "bottom_left", "top_right", "top_left", "center"])
+                ]),
                 ToolOption(id: "rotateImage", label: "Rotate", iconName: "rotate.right", fields: [
                     ToolField(name: "angle", label: "Rotation Angle", defaultValue: "90", kind: "select", choices: ["90", "180", "270"])
                 ]),
@@ -201,6 +236,12 @@ enum Catalog {
                 ToolOption(id: "trimVideo", label: "Trim", iconName: "timeline.selection", fields: [
                     ToolField(name: "start", label: "Start (s)", defaultValue: "0", kind: "number", choices: nil),
                     ToolField(name: "end", label: "End (s)", defaultValue: "10", kind: "number", choices: nil)
+                ]),
+                ToolOption(id: "cropVideo", label: "Crop", iconName: "crop", fields: [
+                    ToolField(name: "ratio", label: "Aspect Ratio", defaultValue: "Free Style (Custom Drag)", kind: "select", choices: ["Free Style (Custom Drag)", "1:1 (Square)", "16:9 (Widescreen)", "4:3 (Standard)", "9:16 (Story / Reel)", "3:2 (Classic Photo)"])
+                ]),
+                ToolOption(id: "splitVideo", label: "Split", iconName: "square.split.2x1", fields: [
+                    ToolField(name: "parts", label: "Equal Parts", defaultValue: "2", kind: "select", choices: ["2", "3", "4", "5", "6"])
                 ]),
                 ToolOption(id: "videoToGif", label: "To GIF", iconName: "photo.on.rectangle.angled", fields: [
                     ToolField(name: "fps", label: "FPS", defaultValue: "15", kind: "select", choices: ["10", "15", "24"]),
@@ -224,12 +265,31 @@ enum Catalog {
                 ToolOption(id: "audioChannels", label: "Channels", iconName: "hifispeaker.2", fields: [
                     ToolField(name: "channels", label: "Channels", defaultValue: "2", kind: "select", choices: ["1 (Mono)", "2 (Stereo)"])
                 ]),
+                ToolOption(id: "audioToVideo", label: "Visualizer", iconName: "waveform.path.badge.plus", fields: [
+                    ToolField(name: "aspect", label: "Aspect Ratio", defaultValue: "landscape", kind: "select", choices: ["landscape", "portrait", "square"])
+                ]),
+                ToolOption(id: "redactAudio", label: "Bleep / Mute", iconName: "waveform.badge.minus", fields: [
+                    ToolField(name: "start", label: "Start (s)", defaultValue: "0", kind: "number", choices: nil),
+                    ToolField(name: "end", label: "End (s)", defaultValue: "3", kind: "number", choices: nil)
+                ]),
                 ToolOption(id: "ringtone", label: "Ringtone", iconName: "bell", fields: [])
             ]
         case "document":
             return [
                 ToolOption(id: "compress", label: "Compress", iconName: "arrow.down.circle", fields: []),
                 ToolOption(id: "splitPDF", label: "Split PDF", iconName: "square.split.2x1", fields: []),
+                ToolOption(id: "organizePDF", label: "Organize", iconName: "rectangle.stack", fields: [
+                    ToolField(name: "action", label: "Action", defaultValue: "Reverse All Pages", kind: "select", choices: [
+                        "Reverse All Pages",
+                        "Rotate All 90° Clockwise",
+                        "Rotate All 180°",
+                        "Rotate All 270°",
+                        "Extract Even Pages",
+                        "Extract Odd Pages",
+                        "Delete First Page",
+                        "Delete Last Page"
+                    ])
+                ]),
                 ToolOption(id: "mergePDF", label: "Merge PDF", iconName: "doc.on.doc", fields: []),
                 ToolOption(id: "ocrPDF", label: "OCR", iconName: "doc.text.viewfinder", fields: [
                     ToolField(name: "language", label: "Language", defaultValue: "en", kind: "select", choices: ["en", "auto", "zh"]),

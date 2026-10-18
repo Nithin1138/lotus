@@ -114,6 +114,7 @@ def preview(path,action,params,folder,paths=None):
         elif action=='watermark': image=Image.alpha_composite(image.convert('RGBA'),imagetools.watermark_layer(image.size,params))
         elif action=='redactImage': image=images.redact(image,params)
         elif action=='frameImage': image=images.framed(image,params)
+        elif action=='annotateImage': image=images.annotate(image,params)
         elif action=='createCollage': image=images.collage(paths or [path],params,preview=True)
         image.thumbnail((1200,900)); target=folder/'live-preview.png'; image.save(target); return {'Preview':str(target)}
     if category(path)=='video':

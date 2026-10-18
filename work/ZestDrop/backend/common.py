@@ -33,8 +33,8 @@ def category(path):
     if ext in IMAGE_EXT: return 'image'
     if ext in VIDEO_EXT: return 'video'
     if ext in AUDIO_EXT: return 'audio'
-    if ext in {'.ppt','.pptx','.pptm','.pps','.ppsx','.odp','.doc','.docx','.docm','.rtf','.odt','.xls','.xlsx','.xlsm','.xlsb','.ods','.csv','.tsv','.pages','.key','.numbers'}:return 'office'
-    if ext in {'.pdf','.txt','.srt','.vtt','.md','.markdown'}: return 'document'
+    if ext in {'.ppt','.pptx','.pptm','.pps','.ppsx','.odp','.doc','.docx','.docm','.rtf','.rtfd','.odt','.xls','.xlsx','.xlsm','.xlsb','.ods','.csv','.tsv','.pages','.key','.numbers'}:return 'office'
+    if ext in {'.pdf','.txt','.srt','.vtt','.md','.markdown','.epub'}: return 'document'
     return 'archive'
 
 def number(params,name,default=0):

@@ -6,6 +6,30 @@ enum AppTheme: String, CaseIterable {
     case dark = "dark"
 }
 
+enum SoundManager {
+    static var isSoundEnabled: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: "LOTUS_SOUND_EFFECTS") == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: "LOTUS_SOUND_EFFECTS")
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "LOTUS_SOUND_EFFECTS")
+        }
+    }
+
+    static func playTick() {
+        guard isSoundEnabled else { return }
+        NSSound(named: "Tink")?.play()
+    }
+
+    static func playPop() {
+        guard isSoundEnabled else { return }
+        NSSound(named: "Pop")?.play()
+    }
+}
+
 enum WheelMode: String, CaseIterable {
     case conversions = "Convert"
     case tools = "Tools"
@@ -158,25 +182,25 @@ final class RadialWheelView: NSView {
             if paths.count > 1 {
                 let multi = Catalog.multiFileTools(for: paths)
                 if !multi.isEmpty {
-                    items = multi.prefix(8).map {
+                    items = multi.prefix(12).map {
                         SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
                     }
                 } else {
                     let cat = Catalog.category(for: first)
-                    items = Catalog.tools(for: cat).prefix(8).map {
+                    items = Catalog.tools(for: cat).prefix(12).map {
                         SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
                     }
                 }
             } else {
                 let cat = Catalog.category(for: first)
                 let tools = Catalog.tools(for: cat)
-                items = tools.prefix(8).map {
+                items = tools.prefix(12).map {
                     SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
                 }
             }
         case .conversions:
             let formats = Catalog.targetFormats(for: first)
-            items = formats.prefix(8).map {
+            items = formats.prefix(12).map {
                 SliceItem(id: "convert:\($0)", title: $0.uppercased(), iconName: nil, isTool: false, isAction: false)
             }
         }
@@ -194,7 +218,7 @@ final class RadialWheelView: NSView {
     func setMode(_ newMode: WheelMode) {
         guard self.mode != newMode else { return }
         self.mode = newMode
-        NSSound(named: "Pop")?.play()
+        SoundManager.playPop()
         if !currentPaths.isEmpty {
             configure(paths: currentPaths, mode: newMode)
         } else {
@@ -239,7 +263,7 @@ final class RadialWheelView: NSView {
         if code == 123 || code == 126 { // Left or Up arrow
             if !items.isEmpty {
                 hoveredIndex = (hoveredIndex - 1 + items.count) % items.count
-                NSSound(named: "Tink")?.play()
+                SoundManager.playTick()
                 needsDisplay = true
             }
             return
@@ -247,7 +271,7 @@ final class RadialWheelView: NSView {
         if code == 124 || code == 125 { // Right or Down arrow
             if !items.isEmpty {
                 hoveredIndex = (hoveredIndex + 1) % items.count
-                NSSound(named: "Tink")?.play()
+                SoundManager.playTick()
                 needsDisplay = true
             }
             return
@@ -320,7 +344,7 @@ final class RadialWheelView: NSView {
 
         if newIndex != hoveredIndex || newHub != isHubHovered || newTopBar != hoveredTopBarIndex {
             if (newIndex != hoveredIndex && newIndex >= 0) || (newTopBar != hoveredTopBarIndex && newTopBar >= 0) {
-                NSSound(named: "Tink")?.play()
+                SoundManager.playTick()
             }
             hoveredIndex = newIndex
             isHubHovered = newHub
@@ -408,7 +432,7 @@ final class RadialWheelView: NSView {
 
         if newIndex != hoveredIndex || newHub != isHubHovered || newTopBar != hoveredTopBarIndex {
             if (newIndex != hoveredIndex && newIndex >= 0) || (newTopBar != hoveredTopBarIndex && newTopBar >= 0) {
-                NSSound(named: "Tink")?.play()
+                SoundManager.playTick()
             }
             hoveredIndex = newIndex
             isHubHovered = newHub
@@ -1028,9 +1052,24 @@ final class DropWheelWindowController: NSWindowController {
         if item.isTool {
             if activePaths.count > 1 {
                 let multi = Catalog.multiFileTools(for: activePaths)
-                if let matched = multi.first(where: { $0.id == item.id }), matched.fields.isEmpty {
-                    executeJob(action: item.id, paths: activePaths, params: nil)
-                    return
+                if let matched = multi.first(where: { $0.id == item.id }) {
+                    if matched.fields.isEmpty {
+                        executeJob(action: item.id, paths: activePaths, params: nil)
+                        return
+                    } else {
+                        let toolCtrl = ToolWindowController(paths: activePaths, tool: matched)
+                        activeToolControllers.append(toolCtrl)
+                        toolCtrl.onClose = { [weak self, weak toolCtrl] in
+                            self?.activeToolControllers.removeAll(where: { $0 === toolCtrl })
+                        }
+                        toolCtrl.showWindow(nil)
+                        toolCtrl.window?.makeKeyAndOrderFront(nil)
+                        NSApp.activate(ignoringOtherApps: true)
+                        self.currentPaths = []
+                        self.wheelView.loadDefaultItems()
+                        hideWheel()
+                        return
+                    }
                 }
             }
 

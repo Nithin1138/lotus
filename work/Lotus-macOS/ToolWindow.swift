@@ -411,6 +411,10 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     var onClose: (() -> Void)?
 
     private var fieldInputs: [String: NSControl] = [:]
+    private var fieldSliders: [String: NSSlider] = [:]
+    private var sliderLabels: [String: NSTextField] = [:]
+    private var editSliders: [(key: String, label: String, minVal: Double, maxVal: Double, defVal: Double, unit: String, slider: NSSlider, badge: NSTextField)] = []
+
     private let previewImageView = NSImageView()
     private let cropOverlayView = CropOverlayView()
     private let titleLabel = NSTextField(labelWithString: "")
@@ -429,8 +433,17 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         self.paths = paths
         self.tool = tool
 
+        let winH: CGFloat
+        if tool.id == "editImage" {
+            winH = 680
+        } else if tool.id == "frameImage" || tool.id == "annotateImage" || tool.id == "createCollage" || tool.id == "splitVideo" {
+            winH = 580
+        } else {
+            winH = 540
+        }
+
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 530),
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: winH),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -442,7 +455,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         super.init(window: window)
 
         window.delegate = self
-        setupUI()
+        setupUI(winH: winH)
         loadFilePreview()
     }
 
@@ -452,7 +465,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         onClose?()
     }
 
-    private func setupUI() {
+    private func setupUI(winH: CGFloat) {
         guard let contentView = window?.contentView else { return }
         contentView.wantsLayer = true
 
@@ -471,7 +484,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         contentView.addSubview(container)
 
         // Top File Header Card
-        let iconView = NSImageView(frame: NSRect(x: 20, y: 476, width: 32, height: 32))
+        let topY = winH - 54
+        let iconView = NSImageView(frame: NSRect(x: 20, y: topY, width: 32, height: 32))
         if let first = paths.first {
             iconView.image = NSWorkspace.shared.icon(forFile: first)
         } else {
@@ -481,21 +495,23 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
         let fileName = URL(fileURLWithPath: paths.first ?? "").lastPathComponent
         let countSuffix = paths.count > 1 ? " (+\(paths.count - 1) files)" : ""
-        titleLabel.frame = NSRect(x: 60, y: 488, width: 400, height: 20)
+        titleLabel.frame = NSRect(x: 60, y: topY + 12, width: 400, height: 20)
         titleLabel.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
         titleLabel.textColor = .white
         titleLabel.stringValue = fileName + countSuffix
         titleLabel.lineBreakMode = .byTruncatingMiddle
         container.addSubview(titleLabel)
 
-        infoLabel.frame = NSRect(x: 60, y: 472, width: 400, height: 16)
+        infoLabel.frame = NSRect(x: 60, y: topY - 4, width: 400, height: 16)
         infoLabel.font = NSFont.systemFont(ofSize: 11)
         infoLabel.textColor = NSColor(white: 0.8, alpha: 1.0)
         infoLabel.stringValue = "Loading..."
         container.addSubview(infoLabel)
 
         // Preview Container Card
-        let previewContainer = NSView(frame: NSRect(x: 20, y: 200, width: 440, height: 260))
+        let previewH: CGFloat = (tool.id == "editImage") ? 220 : 250
+        let previewY = topY - previewH - 12
+        let previewContainer = NSView(frame: NSRect(x: 20, y: previewY, width: 440, height: previewH))
         previewContainer.wantsLayer = true
         previewContainer.layer?.backgroundColor = NSColor(white: 0.08, alpha: 0.95).cgColor
         previewContainer.layer?.cornerRadius = 10
@@ -516,22 +532,42 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         // Crop overlay sits on top of image
         cropOverlayView.frame = imageFrame
         cropOverlayView.autoresizingMask = [.width, .height]
-        cropOverlayView.isHidden = (tool.id != "cropImage")
+        cropOverlayView.isHidden = (tool.id != "cropImage" && tool.id != "cropVideo" && tool.id != "redactImage")
         previewContainer.addSubview(cropOverlayView)
 
         container.addSubview(previewContainer)
 
         // Settings Form Container
-        let formContainer = NSView(frame: NSRect(x: 20, y: 64, width: 440, height: 125))
+        let formY: CGFloat = 64
+        let formH: CGFloat = previewY - formY - 10
+        let formContainer = NSView(frame: NSRect(x: 20, y: formY, width: 440, height: formH))
         formContainer.wantsLayer = true
         container.addSubview(formContainer)
 
-        if tool.id == "cropImage" {
+        if tool.id == "cropImage" || tool.id == "cropVideo" {
             setupCropForm(in: formContainer)
+        } else if tool.id == "redactImage" {
+            setupRedactForm(in: formContainer)
         } else if tool.id == "compress" {
             setupCompressForm(in: formContainer)
         } else if tool.id == "resizeImage" {
             setupResizeForm(in: formContainer)
+        } else if tool.id == "editImage" {
+            setupEditImageForm(in: formContainer)
+        } else if tool.id == "frameImage" {
+            setupFrameForm(in: formContainer)
+        } else if tool.id == "annotateImage" {
+            setupAnnotateForm(in: formContainer)
+        } else if tool.id == "createCollage" {
+            setupCollageForm(in: formContainer)
+        } else if tool.id == "splitVideo" {
+            setupSplitVideoForm(in: formContainer)
+        } else if tool.id == "audioToVideo" {
+            setupAudioToVideoForm(in: formContainer)
+        } else if tool.id == "redactAudio" {
+            setupRedactAudioForm(in: formContainer)
+        } else if tool.id == "organizePDF" {
+            setupOrganizePDFForm(in: formContainer)
         } else {
             setupGenericForm(in: formContainer)
         }
@@ -726,10 +762,416 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         fieldInputs["height"] = hField
     }
 
+    // MARK: - Redact Form
+    private func setupRedactForm(in container: NSView) {
+        let styleLabel = NSTextField(labelWithString: "Redact Style:")
+        styleLabel.frame = NSRect(x: 0, y: 88, width: 110, height: 20)
+        styleLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        styleLabel.textColor = .white
+        container.addSubview(styleLabel)
+
+        let stylePopup = NSPopUpButton(frame: NSRect(x: 120, y: 86, width: 220, height: 26))
+        stylePopup.addItem(withTitle: "Solid Blackout")
+        stylePopup.addItem(withTitle: "Gaussian Blur")
+        stylePopup.addItem(withTitle: "Mosaic (Pixelate)")
+        container.addSubview(stylePopup)
+        fieldInputs["style"] = stylePopup
+
+        let blockLabel = NSTextField(labelWithString: "Mosaic Grid:")
+        blockLabel.frame = NSRect(x: 0, y: 52, width: 110, height: 20)
+        blockLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        blockLabel.textColor = .white
+        container.addSubview(blockLabel)
+
+        let blockSlider = NSSlider(value: 18, minValue: 4, maxValue: 50, target: self, action: #selector(toolSliderChanged(_:)))
+        blockSlider.frame = NSRect(x: 120, y: 50, width: 220, height: 22)
+        container.addSubview(blockSlider)
+        fieldSliders["blockSize"] = blockSlider
+
+        let badge = NSTextField(labelWithString: "18 px")
+        badge.frame = NSRect(x: 350, y: 52, width: 80, height: 20)
+        badge.font = NSFont.systemFont(ofSize: 12, weight: .bold)
+        badge.textColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
+        container.addSubview(badge)
+        sliderLabels["blockSize"] = badge
+
+        cropInfoLabel.frame = NSRect(x: 0, y: 14, width: 440, height: 20)
+        cropInfoLabel.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        cropInfoLabel.textColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
+        cropInfoLabel.stringValue = "Redaction Box: Drag handles on image to place blackout/blur box"
+        container.addSubview(cropInfoLabel)
+
+        cropOverlayView.onCropChanged = { [weak self] (rect, _) in
+            guard let self = self else { return }
+            let w = Int(rect.width)
+            let h = Int(rect.height)
+            self.cropInfoLabel.stringValue = "Redaction Area: \(w) × \(h) px · Drag handles to adjust"
+        }
+    }
+
+    // MARK: - Image Adjustments Form (editImage)
+    private func setupEditImageForm(in container: NSView) {
+        let specs: [(key: String, label: String, minVal: Double, maxVal: Double, defVal: Double, unit: String)] = [
+            ("exposure", "Exposure", -2.0, 2.0, 0.0, "EV"),
+            ("contrast", "Contrast", 0.0, 2.0, 1.0, "x"),
+            ("saturation", "Saturation", 0.0, 2.0, 1.0, "x"),
+            ("temperature", "Warmth", -100.0, 100.0, 0.0, ""),
+            ("shadows", "Shadows", -100.0, 100.0, 0.0, "%"),
+            ("highlights", "Highlights", -100.0, 100.0, 0.0, "%"),
+            ("clarity", "Clarity", 0.0, 100.0, 0.0, "%")
+        ]
+
+        var y: CGFloat = 224
+        for item in specs {
+            let label = NSTextField(labelWithString: item.label + ":")
+            label.frame = NSRect(x: 0, y: y, width: 85, height: 18)
+            label.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+            label.textColor = .white
+            container.addSubview(label)
+
+            let slider = NSSlider(value: item.defVal, minValue: item.minVal, maxValue: item.maxVal, target: self, action: #selector(editSliderDragged(_:)))
+            slider.frame = NSRect(x: 90, y: y - 2, width: 275, height: 20)
+            container.addSubview(slider)
+            fieldSliders[item.key] = slider
+
+            let badge = NSTextField(labelWithString: formatEditVal(item.defVal, unit: item.unit))
+            badge.frame = NSRect(x: 375, y: y, width: 60, height: 18)
+            badge.alignment = .right
+            badge.font = NSFont.systemFont(ofSize: 11, weight: .bold)
+            badge.textColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
+            container.addSubview(badge)
+            sliderLabels[item.key] = badge
+
+            editSliders.append((item.key, item.label, item.minVal, item.maxVal, item.defVal, item.unit, slider, badge))
+            y -= 31
+        }
+
+        let resetBtn = NSButton(frame: NSRect(x: 0, y: 0, width: 140, height: 24))
+        resetBtn.title = "Reset Adjustments"
+        resetBtn.bezelStyle = .inline
+        resetBtn.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+        resetBtn.target = self
+        resetBtn.action = #selector(resetEditSliders)
+        container.addSubview(resetBtn)
+    }
+
+    private func formatEditVal(_ val: Double, unit: String) -> String {
+        if unit == "EV" {
+            return String(format: "%+.2f EV", val)
+        } else if unit == "x" {
+            return String(format: "%.2fx", val)
+        } else if unit == "%" {
+            return String(format: "%+d%%", Int(val))
+        } else {
+            return String(format: "%+d", Int(val))
+        }
+    }
+
+    @objc private func editSliderDragged(_ sender: NSSlider) {
+        for item in editSliders {
+            if item.slider === sender {
+                item.badge.stringValue = formatEditVal(sender.doubleValue, unit: item.unit)
+                break
+            }
+        }
+    }
+
+    @objc private func resetEditSliders() {
+        for item in editSliders {
+            item.slider.doubleValue = item.defVal
+            item.badge.stringValue = formatEditVal(item.defVal, unit: item.unit)
+        }
+    }
+
+    // MARK: - Image Frame / Background Form
+    private func setupFrameForm(in container: NSView) {
+        var y: CGFloat = 135
+
+        let bgLabel = NSTextField(labelWithString: "Background:")
+        bgLabel.frame = NSRect(x: 0, y: y, width: 110, height: 20)
+        bgLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        bgLabel.textColor = .white
+        container.addSubview(bgLabel)
+
+        let bgPopup = NSPopUpButton(frame: NSRect(x: 120, y: y - 2, width: 220, height: 24))
+        let colors = [
+            "#F0EBFF (Soft Lilac)",
+            "#FFFFFF (Pure White)",
+            "#18181B (Dark Graphite)",
+            "#FF6500 (Lotus Orange)",
+            "#3B82F6 (Royal Blue)",
+            "#10B981 (Emerald Green)"
+        ]
+        for c in colors { bgPopup.addItem(withTitle: c) }
+        container.addSubview(bgPopup)
+        fieldInputs["background"] = bgPopup
+        y -= 36
+
+        let slidersConfig: [(key: String, label: String, min: Double, max: Double, def: Double, unit: String)] = [
+            ("padding", "Padding:", 10, 200, 80, "px"),
+            ("radius", "Corner Radius:", 0, 60, 24, "px"),
+            ("shadow", "Shadow Blur:", 0, 50, 20, "px")
+        ]
+        for item in slidersConfig {
+            let label = NSTextField(labelWithString: item.label)
+            label.frame = NSRect(x: 0, y: y, width: 110, height: 20)
+            label.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+            label.textColor = .white
+            container.addSubview(label)
+
+            let slider = NSSlider(value: item.def, minValue: item.min, maxValue: item.max, target: self, action: #selector(toolSliderChanged(_:)))
+            slider.frame = NSRect(x: 120, y: y - 2, width: 220, height: 22)
+            container.addSubview(slider)
+            fieldSliders[item.key] = slider
+
+            let badge = NSTextField(labelWithString: "\(Int(item.def)) \(item.unit)")
+            badge.frame = NSRect(x: 350, y: y, width: 80, height: 20)
+            badge.font = NSFont.systemFont(ofSize: 12, weight: .bold)
+            badge.textColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
+            container.addSubview(badge)
+            sliderLabels[item.key] = badge
+
+            y -= 36
+        }
+    }
+
+    // MARK: - Image Annotate Form
+    private func setupAnnotateForm(in container: NSView) {
+        var y: CGFloat = 110
+
+        let textLabel = NSTextField(labelWithString: "Stamp Text:")
+        textLabel.frame = NSRect(x: 0, y: y, width: 110, height: 20)
+        textLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        textLabel.textColor = .white
+        container.addSubview(textLabel)
+
+        let textField = NSTextField(frame: NSRect(x: 120, y: y, width: 240, height: 24))
+        textField.stringValue = "APPROVED"
+        textField.placeholderString = "Enter text..."
+        container.addSubview(textField)
+        fieldInputs["text"] = textField
+        y -= 38
+
+        let colorLabel = NSTextField(labelWithString: "Badge Color:")
+        colorLabel.frame = NSRect(x: 0, y: y, width: 110, height: 20)
+        colorLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        colorLabel.textColor = .white
+        container.addSubview(colorLabel)
+
+        let colorPopup = NSPopUpButton(frame: NSRect(x: 120, y: y - 2, width: 240, height: 24))
+        let colors = [
+            "#ff6500 (Lotus Orange)",
+            "#ef4444 (Bold Red)",
+            "#3b82f6 (Royal Blue)",
+            "#10b981 (Forest Green)",
+            "#ffffff (Pure White)",
+            "#000000 (Black)"
+        ]
+        for c in colors { colorPopup.addItem(withTitle: c) }
+        container.addSubview(colorPopup)
+        fieldInputs["color"] = colorPopup
+        y -= 38
+
+        let posLabel = NSTextField(labelWithString: "Position:")
+        posLabel.frame = NSRect(x: 0, y: y, width: 110, height: 20)
+        posLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        posLabel.textColor = .white
+        container.addSubview(posLabel)
+
+        let posPopup = NSPopUpButton(frame: NSRect(x: 120, y: y - 2, width: 240, height: 24))
+        posPopup.addItem(withTitle: "Bottom Right (Default)")
+        posPopup.addItem(withTitle: "Bottom Left")
+        posPopup.addItem(withTitle: "Top Right")
+        posPopup.addItem(withTitle: "Top Left")
+        posPopup.addItem(withTitle: "Center")
+        container.addSubview(posPopup)
+        fieldInputs["position"] = posPopup
+    }
+
+    // MARK: - Multi-Image Collage Form
+    private func setupCollageForm(in container: NSView) {
+        var y: CGFloat = 110
+
+        let layoutLabel = NSTextField(labelWithString: "Layout Style:")
+        layoutLabel.frame = NSRect(x: 0, y: y, width: 110, height: 20)
+        layoutLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        layoutLabel.textColor = .white
+        container.addSubview(layoutLabel)
+
+        let layoutPopup = NSPopUpButton(frame: NSRect(x: 120, y: y - 2, width: 240, height: 24))
+        layoutPopup.addItem(withTitle: "Grid (Auto Balance)")
+        layoutPopup.addItem(withTitle: "Hero (Featured + Thumbnails)")
+        layoutPopup.addItem(withTitle: "Horizontal Row")
+        layoutPopup.addItem(withTitle: "Vertical Column")
+        container.addSubview(layoutPopup)
+        fieldInputs["layout"] = layoutPopup
+        y -= 38
+
+        let gapLabel = NSTextField(labelWithString: "Tile Gap:")
+        gapLabel.frame = NSRect(x: 0, y: y, width: 110, height: 20)
+        gapLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        gapLabel.textColor = .white
+        container.addSubview(gapLabel)
+
+        let gapSlider = NSSlider(value: 16, minValue: 0, maxValue: 40, target: self, action: #selector(toolSliderChanged(_:)))
+        gapSlider.frame = NSRect(x: 120, y: y - 2, width: 210, height: 22)
+        container.addSubview(gapSlider)
+        fieldSliders["gap"] = gapSlider
+
+        let gapBadge = NSTextField(labelWithString: "16 px")
+        gapBadge.frame = NSRect(x: 340, y: y, width: 70, height: 20)
+        gapBadge.font = NSFont.systemFont(ofSize: 12, weight: .bold)
+        gapBadge.textColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
+        container.addSubview(gapBadge)
+        sliderLabels["gap"] = gapBadge
+        y -= 38
+
+        let bgLabel = NSTextField(labelWithString: "Background:")
+        bgLabel.frame = NSRect(x: 0, y: y, width: 110, height: 20)
+        bgLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        bgLabel.textColor = .white
+        container.addSubview(bgLabel)
+
+        let bgPopup = NSPopUpButton(frame: NSRect(x: 120, y: y - 2, width: 240, height: 24))
+        bgPopup.addItem(withTitle: "#ffffff (White)")
+        bgPopup.addItem(withTitle: "#18181b (Dark Graphite)")
+        bgPopup.addItem(withTitle: "#f0ebff (Soft Lavender)")
+        container.addSubview(bgPopup)
+        fieldInputs["background"] = bgPopup
+    }
+
+    // MARK: - Split Video Form
+    private func setupSplitVideoForm(in container: NSView) {
+        var y: CGFloat = 85
+
+        let partsLabel = NSTextField(labelWithString: "Equal Parts:")
+        partsLabel.frame = NSRect(x: 0, y: y, width: 110, height: 20)
+        partsLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        partsLabel.textColor = .white
+        container.addSubview(partsLabel)
+
+        let partsPopup = NSPopUpButton(frame: NSRect(x: 120, y: y - 2, width: 220, height: 24))
+        for i in 2...6 { partsPopup.addItem(withTitle: "\(i) Equal Parts") }
+        container.addSubview(partsPopup)
+        fieldInputs["parts"] = partsPopup
+        y -= 36
+
+        let pointsLabel = NSTextField(labelWithString: "Custom Points:")
+        pointsLabel.frame = NSRect(x: 0, y: y, width: 110, height: 20)
+        pointsLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        pointsLabel.textColor = .white
+        container.addSubview(pointsLabel)
+
+        let pointsField = NSTextField(frame: NSRect(x: 120, y: y, width: 220, height: 22))
+        pointsField.placeholderString = "e.g. 10.0, 25.5 (Optional)"
+        container.addSubview(pointsField)
+        fieldInputs["splitPoints"] = pointsField
+        y -= 28
+
+        let note = NSTextField(labelWithString: "Splits video into standalone clips cleanly along keyframes.")
+        note.frame = NSRect(x: 0, y: y, width: 440, height: 20)
+        note.font = NSFont.systemFont(ofSize: 11)
+        note.textColor = NSColor(white: 0.7, alpha: 1.0)
+        container.addSubview(note)
+    }
+
+    // MARK: - Audio Visualizer Form
+    private func setupAudioToVideoForm(in container: NSView) {
+        let aspectLabel = NSTextField(labelWithString: "Video Aspect:")
+        aspectLabel.frame = NSRect(x: 0, y: 70, width: 110, height: 20)
+        aspectLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        aspectLabel.textColor = .white
+        container.addSubview(aspectLabel)
+
+        let aspectPopup = NSPopUpButton(frame: NSRect(x: 120, y: 68, width: 240, height: 24))
+        aspectPopup.addItem(withTitle: "Landscape (16:9 Widescreen)")
+        aspectPopup.addItem(withTitle: "Portrait (9:16 Reel / Story)")
+        aspectPopup.addItem(withTitle: "Square (1:1 Social)")
+        container.addSubview(aspectPopup)
+        fieldInputs["aspect"] = aspectPopup
+
+        let desc = NSTextField(labelWithString: "Generates an animated audio visualizer video synchronized with track.")
+        desc.frame = NSRect(x: 0, y: 25, width: 440, height: 20)
+        desc.font = NSFont.systemFont(ofSize: 11)
+        desc.textColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
+        container.addSubview(desc)
+    }
+
+    // MARK: - Redact Audio (Bleep) Form
+    private func setupRedactAudioForm(in container: NSView) {
+        let startLabel = NSTextField(labelWithString: "Bleep Start (s):")
+        startLabel.frame = NSRect(x: 0, y: 80, width: 110, height: 20)
+        startLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        startLabel.textColor = .white
+        container.addSubview(startLabel)
+
+        let startField = NSTextField(frame: NSRect(x: 120, y: 78, width: 100, height: 24))
+        startField.stringValue = "0.0"
+        container.addSubview(startField)
+        fieldInputs["start"] = startField
+
+        let endLabel = NSTextField(labelWithString: "Bleep End (s):")
+        endLabel.frame = NSRect(x: 230, y: 80, width: 90, height: 20)
+        endLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        endLabel.textColor = .white
+        container.addSubview(endLabel)
+
+        let endField = NSTextField(frame: NSRect(x: 325, y: 78, width: 100, height: 24))
+        endField.stringValue = "3.0"
+        container.addSubview(endField)
+        fieldInputs["end"] = endField
+
+        let desc = NSTextField(labelWithString: "Silences the specified interval and replaces it with a soft 1 kHz tone.")
+        desc.frame = NSRect(x: 0, y: 35, width: 440, height: 20)
+        desc.font = NSFont.systemFont(ofSize: 11)
+        desc.textColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
+        container.addSubview(desc)
+    }
+
+    // MARK: - Organize PDF Form
+    private func setupOrganizePDFForm(in container: NSView) {
+        let actLabel = NSTextField(labelWithString: "Page Action:")
+        actLabel.frame = NSRect(x: 0, y: 70, width: 110, height: 20)
+        actLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        actLabel.textColor = .white
+        container.addSubview(actLabel)
+
+        let actPopup = NSPopUpButton(frame: NSRect(x: 120, y: 68, width: 260, height: 24))
+        let actions = [
+            "Reverse All Pages",
+            "Rotate All 90° Clockwise",
+            "Rotate All 180°",
+            "Rotate All 270°",
+            "Extract Even Pages",
+            "Extract Odd Pages",
+            "Delete First Page",
+            "Delete Last Page"
+        ]
+        for a in actions { actPopup.addItem(withTitle: a) }
+        container.addSubview(actPopup)
+        fieldInputs["action"] = actPopup
+
+        let desc = NSTextField(labelWithString: "Rearranges or rotates pages cleanly without lossy re-rendering.")
+        desc.frame = NSRect(x: 0, y: 25, width: 440, height: 20)
+        desc.font = NSFont.systemFont(ofSize: 11)
+        desc.textColor = NSColor(white: 0.8, alpha: 1.0)
+        container.addSubview(desc)
+    }
+
+    @objc private func toolSliderChanged(_ sender: NSSlider) {
+        for (key, slider) in fieldSliders {
+            if slider === sender, let label = sliderLabels[key] {
+                let unit = (key == "padding" || key == "radius" || key == "shadow" || key == "blockSize" || key == "gap") ? "px" : ""
+                label.stringValue = "\(slider.integerValue) \(unit)"
+                break
+            }
+        }
+    }
+
     // MARK: - Generic Form
     private func setupGenericForm(in container: NSView) {
-        var yOffset: CGFloat = 75
-        for field in tool.fields.prefix(3) {
+        var yOffset: CGFloat = 85
+        for field in tool.fields {
             let label = NSTextField(labelWithString: field.label + ":")
             label.frame = NSRect(x: 0, y: yOffset, width: 140, height: 22)
             label.alignment = .right
@@ -785,8 +1227,10 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
             if self.tool.id == "compress" {
                 self.updateCompressInfo(quality: self.qualitySlider?.integerValue ?? 80)
-            } else if self.tool.id == "cropImage" {
+            } else if self.tool.id == "cropImage" || self.tool.id == "cropVideo" {
                 self.cropOverlayView.notifyCropChanged()
+            } else if self.tool.id == "redactImage" {
+                self.cropInfoLabel.stringValue = "Redaction Area: Drag handles on image to select area to redact"
             }
         }
     }
@@ -814,13 +1258,93 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     @objc private func saveClicked() {
         var params: [String: String] = [:]
 
-        if tool.id == "cropImage" {
+        if tool.id == "cropImage" || tool.id == "cropVideo" {
             let px = cropOverlayView.currentPixelRect()
             params["x"] = "\(Int(px.origin.x))"
             params["y"] = "\(Int(px.origin.y))"
             params["width"] = "\(Int(px.width))"
             params["height"] = "\(Int(px.height))"
             params["ratio"] = cropOverlayView.currentRatioKey
+        } else if tool.id == "redactImage" {
+            let px = cropOverlayView.currentPixelRect()
+            params["x"] = "\(Int(px.origin.x))"
+            params["y"] = "\(Int(px.origin.y))"
+            params["width"] = "\(Int(px.width))"
+            params["height"] = "\(Int(px.height))"
+            if let stylePopup = fieldInputs["style"] as? NSPopUpButton {
+                let title = stylePopup.titleOfSelectedItem?.lowercased() ?? "solid"
+                if title.contains("blur") { params["style"] = "blur" }
+                else if title.contains("pixel") { params["style"] = "pixelate" }
+                else { params["style"] = "solid" }
+            }
+            if let slider = fieldSliders["blockSize"] {
+                params["blockSize"] = "\(slider.integerValue)"
+            }
+        } else if tool.id == "editImage" {
+            for (name, slider) in fieldSliders {
+                params[name] = String(format: "%.2f", slider.doubleValue)
+            }
+        } else if tool.id == "frameImage" {
+            if let bgPopup = fieldInputs["background"] as? NSPopUpButton {
+                let title = bgPopup.titleOfSelectedItem ?? "#F0EBFF"
+                let hex = title.split(separator: " ").first.map(String.init) ?? "#F0EBFF"
+                params["background"] = hex
+            }
+            if let pSlider = fieldSliders["padding"] { params["padding"] = "\(pSlider.integerValue)" }
+            if let rSlider = fieldSliders["radius"] { params["radius"] = "\(rSlider.integerValue)" }
+            if let sSlider = fieldSliders["shadow"] { params["shadow"] = "\(sSlider.integerValue)" }
+        } else if tool.id == "annotateImage" {
+            if let tf = fieldInputs["text"] as? NSTextField { params["text"] = tf.stringValue }
+            if let cPopup = fieldInputs["color"] as? NSPopUpButton {
+                let title = cPopup.titleOfSelectedItem ?? "#ff6500"
+                let hex = title.split(separator: " ").first.map(String.init) ?? "#ff6500"
+                params["color"] = hex
+            }
+            if let pPopup = fieldInputs["position"] as? NSPopUpButton {
+                let title = pPopup.titleOfSelectedItem?.lowercased() ?? "bottom_right"
+                if title.contains("top") && title.contains("left") { params["position"] = "top_left" }
+                else if title.contains("top") && title.contains("right") { params["position"] = "top_right" }
+                else if title.contains("bottom") && title.contains("left") { params["position"] = "bottom_left" }
+                else if title.contains("center") { params["position"] = "center" }
+                else { params["position"] = "bottom_right" }
+            }
+        } else if tool.id == "createCollage" {
+            if let lPopup = fieldInputs["layout"] as? NSPopUpButton {
+                let title = lPopup.titleOfSelectedItem?.lowercased() ?? "grid"
+                if title.contains("hero") || title.contains("featured") { params["layout"] = "featured" }
+                else if title.contains("row") { params["layout"] = "row" }
+                else if title.contains("column") { params["layout"] = "column" }
+                else { params["layout"] = "grid" }
+            }
+            if let gSlider = fieldSliders["gap"] { params["gap"] = "\(gSlider.integerValue)" }
+            if let bgPopup = fieldInputs["background"] as? NSPopUpButton {
+                let title = bgPopup.titleOfSelectedItem ?? "#ffffff"
+                let hex = title.split(separator: " ").first.map(String.init) ?? "#ffffff"
+                params["background"] = hex
+            }
+        } else if tool.id == "splitVideo" {
+            if let partsPopup = fieldInputs["parts"] as? NSPopUpButton {
+                let title = partsPopup.titleOfSelectedItem ?? "2"
+                let num = title.components(separatedBy: CharacterSet.decimalDigits.inverted).first { !$0.isEmpty } ?? "2"
+                params["parts"] = num
+            }
+            if let tf = fieldInputs["splitPoints"] as? NSTextField, !tf.stringValue.trimmingCharacters(in: .whitespaces).isEmpty {
+                params["splitPoints"] = tf.stringValue
+            }
+        } else if tool.id == "audioToVideo" {
+            if let aPopup = fieldInputs["aspect"] as? NSPopUpButton {
+                let title = aPopup.titleOfSelectedItem?.lowercased() ?? "landscape"
+                if title.contains("portrait") { params["aspect"] = "portrait" }
+                else if title.contains("square") { params["aspect"] = "square" }
+                else { params["aspect"] = "landscape" }
+            }
+        } else if tool.id == "redactAudio" {
+            if let sField = fieldInputs["start"] as? NSTextField { params["start"] = sField.stringValue }
+            if let eField = fieldInputs["end"] as? NSTextField { params["end"] = eField.stringValue }
+        } else if tool.id == "organizePDF" {
+            if let aPopup = fieldInputs["action"] as? NSPopUpButton {
+                params["action"] = aPopup.titleOfSelectedItem ?? "Reverse All Pages"
+            }
         } else if tool.id == "compress" {
             let q = qualitySlider?.integerValue ?? 80
             params["quality"] = "\(q)"

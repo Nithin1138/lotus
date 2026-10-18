@@ -328,10 +328,49 @@ def convert_md(path, fmt, params):
             word.save(state['temp'])
         return state['output']
         
+def convert_epub(path, fmt, params):
+    import pymupdf as fitz
+    doc = fitz.open(path)
+    if fmt == 'txt':
+        text = "\n\n".join(page.get_text() for page in doc)
+        with output_file(path, 'converted', '.txt') as state:
+            state['temp'].write_text(text, encoding='utf8')
+        doc.close()
+        return state['output']
+    if fmt == 'pdf':
+        pdf_bytes = doc.convert_to_pdf()
+        pdf_doc = fitz.open("pdf", pdf_bytes)
+        with output_file(path, 'converted', '.pdf') as state:
+            pdf_doc.save(str(state['temp']), garbage=4, deflate=True)
+        pdf_doc.close()
+        doc.close()
+        return state['output']
+    if fmt in ('docx', 'doc'):
+        pdf_out = convert_epub(path, 'pdf', params)
+        res = pdf_word(pdf_out, params)
+        Path(pdf_out).unlink(missing_ok=True)
+        doc.close()
+        return res
+    if fmt == 'md':
+        text = "\n\n".join(page.get_text() for page in doc)
+        with output_file(path, 'converted', '.md') as state:
+            state['temp'].write_text(text, encoding='utf8')
+        doc.close()
+        return state['output']
+    if fmt == 'html':
+        text = "\n\n".join(page.get_text() for page in doc)
+        html_content = markdown_to_html(text)
+        with output_file(path, 'converted', '.html') as state:
+            state['temp'].write_text(html_content, encoding='utf8')
+        doc.close()
+        return state['output']
+    doc.close()
     raise ValueError(T('This document conversion is not supported'))
 
 def convert(path,fmt,params):
     source=Path(path).suffix.lower()
+    if source == '.epub':
+        return convert_epub(path, fmt, params)
     if source in ('.srt','.vtt') or fmt in ('srt','vtt'): return subtitles(path,fmt,params)
     if source in ('.md', '.markdown'):
         return convert_md(path, fmt, params)

@@ -71,6 +71,15 @@ def native(path,fmt,target):
                         return
                 except Exception: pass
 
+        # Native textutil for RTF / RTFD -> DOCX / TXT / HTML
+        if path.suffix.lower() in ('.rtf', '.rtfd') and fmt in ('docx', 'doc', 'txt', 'html'):
+            t_fmt = 'docx' if fmt in ('docx', 'doc') else fmt
+            try:
+                res = subprocess.run(['textutil', '-convert', t_fmt, '-output', str(target), str(path)], capture_output=True, timeout=30)
+                if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
+                    return
+            except Exception: pass
+
         # 1. Try LibreOffice if installed
         for soffice in ['/Applications/LibreOffice.app/Contents/MacOS/soffice', 'soffice']:
             if shutil.which(soffice) or Path(soffice).exists():
