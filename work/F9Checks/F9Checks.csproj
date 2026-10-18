@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
   <ItemGroup>
-    <Compile Include="../Lotus/Models.cs" Link="Models.cs"/>
-    <Compile Include="../Lotus/Strings.cs" Link="Strings.cs"/>
-    <Compile Include="../Lotus/Settings.cs" Link="Settings.cs"/>
-    <Compile Include="../Lotus/Catalog.cs" Link="Catalog.cs"/>
-    <Compile Include="../Lotus/JobValidation.cs" Link="JobValidation.cs"/>
-    <Compile Include="../Lotus/OfficeBridge.cs" Link="OfficeBridge.cs"/>
-    <Compile Include="../Lotus/Flows.cs" Link="Flows.cs"/>
-    <Compile Include="../Lotus/Presets.cs" Link="Presets.cs"/>
+    <Compile Include="../DropDial/Models.cs" Link="Models.cs"/>
+    <Compile Include="../DropDial/Strings.cs" Link="Strings.cs"/>
+    <Compile Include="../DropDial/Settings.cs" Link="Settings.cs"/>
+    <Compile Include="../DropDial/Catalog.cs" Link="Catalog.cs"/>
+    <Compile Include="../DropDial/JobValidation.cs" Link="JobValidation.cs"/>
+    <Compile Include="../DropDial/OfficeBridge.cs" Link="OfficeBridge.cs"/>
+    <Compile Include="../DropDial/Flows.cs" Link="Flows.cs"/>
+    <Compile Include="../DropDial/Presets.cs" Link="Presets.cs"/>
   </ItemGroup>
 </Project>

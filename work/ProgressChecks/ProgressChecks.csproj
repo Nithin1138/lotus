@@ -1,35 +1,35 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms></PropertyGroup>
   <ItemGroup>
-    <Compile Include="../Lotus/Models.cs" Link="Models.cs"/>
-    <Compile Include="../Lotus/Strings.cs" Link="Strings.cs"/>
-    <Compile Include="../Lotus/ProgressReader.cs" Link="ProgressReader.cs"/>
-    <Compile Include="../Lotus/Backend.cs" Link="Backend.cs"/>
-    <Compile Include="../Lotus/ActivityIndicator.cs" Link="ActivityIndicator.cs"/>
-    <Compile Include="../Lotus/UiTheme.cs" Link="UiTheme.cs"/>
-    <Compile Include="../Lotus/ContinuousFrame.cs" Link="ContinuousFrame.cs"/>
-    <Compile Include="../Lotus/AppIcon.cs" Link="AppIcon.cs"/>
-    <Compile Include="../Lotus/DragShortcutTracker.cs" Link="DragShortcutTracker.cs"/>
-    <Compile Include="../Lotus/MediaSegment.cs" Link="MediaSegment.cs"/>
-    <Compile Include="../Lotus/TrimRange.cs" Link="TrimRange.cs"/>
-    <Compile Include="../Lotus/TempSweep.cs" Link="TempSweep.cs"/>
-    <Compile Include="../Lotus/Native.cs" Link="Native.cs"/>
-    <Compile Include="../Lotus/FloatingWheel.cs" Link="FloatingWheel.cs"/>
-    <Compile Include="../Lotus/JobCard.cs" Link="JobCard.cs"/>
-    <Compile Include="../Lotus/Settings.cs" Link="Settings.cs"/>
-    <Compile Include="../Lotus/StartupManager.cs" Link="StartupManager.cs"/>
-    <Compile Include="../Lotus/CropMath.cs" Link="CropMath.cs"/>
-    <Compile Include="../Lotus/CropFrame.cs" Link="CropFrame.cs"/>
-    <Compile Include="../Lotus/BusyLine.cs" Link="BusyLine.cs"/>
-    <Compile Include="../Lotus/WelcomeWindow.cs" Link="WelcomeWindow.cs"/>
-    <Compile Include="../Lotus/TaskIndicatorWindow.cs" Link="TaskIndicatorWindow.cs"/>
-    <Compile Include="../Lotus/ProcessTreePause.cs" Link="ProcessTreePause.cs"/>
-    <Compile Include="../Lotus/Catalog.cs" Link="Catalog.cs"/>
-    <Compile Include="../Lotus/OfficeBridge.cs" Link="OfficeBridge.cs"/>
-    <Compile Include="../Lotus/JobValidation.cs" Link="JobValidation.cs"/>
-    <EmbeddedResource Include="../Lotus/assets/lotus.ico" LogicalName="Lotus.AppIcon" />
-    <Compile Include="../Lotus/Flows.cs" Link="Flows.cs"/>
-    <Compile Include="../Lotus/Presets.cs" Link="Presets.cs"/>
-    <Compile Include="../Lotus/OutputFolder.cs" Link="OutputFolder.cs"/>
+    <Compile Include="../DropDial/Models.cs" Link="Models.cs"/>
+    <Compile Include="../DropDial/Strings.cs" Link="Strings.cs"/>
+    <Compile Include="../DropDial/ProgressReader.cs" Link="ProgressReader.cs"/>
+    <Compile Include="../DropDial/Backend.cs" Link="Backend.cs"/>
+    <Compile Include="../DropDial/ActivityIndicator.cs" Link="ActivityIndicator.cs"/>
+    <Compile Include="../DropDial/UiTheme.cs" Link="UiTheme.cs"/>
+    <Compile Include="../DropDial/ContinuousFrame.cs" Link="ContinuousFrame.cs"/>
+    <Compile Include="../DropDial/AppIcon.cs" Link="AppIcon.cs"/>
+    <Compile Include="../DropDial/DragShortcutTracker.cs" Link="DragShortcutTracker.cs"/>
+    <Compile Include="../DropDial/MediaSegment.cs" Link="MediaSegment.cs"/>
+    <Compile Include="../DropDial/TrimRange.cs" Link="TrimRange.cs"/>
+    <Compile Include="../DropDial/TempSweep.cs" Link="TempSweep.cs"/>
+    <Compile Include="../DropDial/Native.cs" Link="Native.cs"/>
+    <Compile Include="../DropDial/FloatingWheel.cs" Link="FloatingWheel.cs"/>
+    <Compile Include="../DropDial/JobCard.cs" Link="JobCard.cs"/>
+    <Compile Include="../DropDial/Settings.cs" Link="Settings.cs"/>
+    <Compile Include="../DropDial/StartupManager.cs" Link="StartupManager.cs"/>
+    <Compile Include="../DropDial/CropMath.cs" Link="CropMath.cs"/>
+    <Compile Include="../DropDial/CropFrame.cs" Link="CropFrame.cs"/>
+    <Compile Include="../DropDial/BusyLine.cs" Link="BusyLine.cs"/>
+    <Compile Include="../DropDial/WelcomeWindow.cs" Link="WelcomeWindow.cs"/>
+    <Compile Include="../DropDial/TaskIndicatorWindow.cs" Link="TaskIndicatorWindow.cs"/>
+    <Compile Include="../DropDial/ProcessTreePause.cs" Link="ProcessTreePause.cs"/>
+    <Compile Include="../DropDial/Catalog.cs" Link="Catalog.cs"/>
+    <Compile Include="../DropDial/OfficeBridge.cs" Link="OfficeBridge.cs"/>
+    <Compile Include="../DropDial/JobValidation.cs" Link="JobValidation.cs"/>
+    <EmbeddedResource Include="../DropDial/assets/dropdial.ico" LogicalName="DropDial.AppIcon" />
+    <Compile Include="../DropDial/Flows.cs" Link="Flows.cs"/>
+    <Compile Include="../DropDial/Presets.cs" Link="Presets.cs"/>
+    <Compile Include="../DropDial/OutputFolder.cs" Link="OutputFolder.cs"/>
   </ItemGroup>
 </Project>

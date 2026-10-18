@@ -10,14 +10,14 @@
   IgnorableNamespaces="uap desktop uap10 rescap">
 
   <Identity
-    Name="FA719600.Lotus"
+    Name="FA719600.DropDial"
     Publisher="CN=80670B7C-C8DB-4B1C-85C4-E1E97A9CE270"
     Version="__VERSION__"
     ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>Lotus</DisplayName>
-    <PublisherDisplayName>Lotus</PublisherDisplayName>
+    <DisplayName>DropDial</DisplayName>
+    <PublisherDisplayName>DropDial</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <Description>Drag. Drop. Convert. Hold Shift while dragging files to convert them, or Ctrl+Shift for tools.</Description>
   </Properties>
@@ -31,9 +31,9 @@
   </Resources>
 
   <Applications>
-    <Application Id="Lotus" Executable="Lotus.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="DropDial" Executable="DropDial.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Lotus"
+        DisplayName="DropDial"
         Description="Drag. Drop. Convert. Hold Shift while dragging files to convert them, or Ctrl+Shift for tools."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
@@ -41,8 +41,8 @@
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" Square71x71Logo="Assets\SmallTile.png" Square310x310Logo="Assets\LargeTile.png" />
       </uap:VisualElements>
       <Extensions>
-        <desktop:Extension Category="windows.startupTask" Executable="Lotus.exe" EntryPoint="Windows.FullTrustApplication" uap10:Parameters="--startup">
-          <desktop:StartupTask TaskId="LotusStartup" Enabled="false" DisplayName="Lotus" />
+        <desktop:Extension Category="windows.startupTask" Executable="DropDial.exe" EntryPoint="Windows.FullTrustApplication" uap10:Parameters="--startup">
+          <desktop:StartupTask TaskId="DropDialStartup" Enabled="false" DisplayName="DropDial" />
         </desktop:Extension>
       </Extensions>
     </Application>

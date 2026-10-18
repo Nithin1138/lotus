@@ -1,6 +1,6 @@
 """Static pre-submission checks for the Microsoft Store package.
 
-    ./outputs/Lotus/runtime/python/python.exe packaging/check-package.py [path-to.msix]
+    ./outputs/DropDial/runtime/python/python.exe packaging/check-package.py [path-to.msix]
 
 Reads the .msix as a zip (no install, no certificate needed) and checks the things Partner Center and the Store's
 install test commonly reject: manifest problems, wrong logo sizes, file paths that are too long once installed,
@@ -26,7 +26,7 @@ NS = {
     'rescap': 'http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities',
 }
 # "C:\Program Files\WindowsApps\<Name>_<Version>_x64__<13-char publisher id>\" plus slack for a longer name/version.
-INSTALL_PREFIX = len(r'C:\Program Files\WindowsApps\FA719600.Lotus_0.1.1.0_x64__0123456789abc') + 8
+INSTALL_PREFIX = len(r'C:\Program Files\WindowsApps\FA719600.DropDial_0.1.1.0_x64__0123456789abc') + 8
 MAX_PATH = 260
 RESERVED = {'con', 'prn', 'aux', 'nul', *(f'com{i}' for i in range(1, 10)), *(f'lpt{i}' for i in range(1, 10))}
 results = []
@@ -48,7 +48,7 @@ def check(condition, name, detail=''):
 def package_path():
     if len(sys.argv) > 1:
         return Path(sys.argv[1])
-    found = sorted((ROOT / 'outputs' / 'msix').glob('Lotus_*_x64.msix'))
+    found = sorted((ROOT / 'outputs' / 'msix').glob('DropDial_*_x64.msix'))
     if not found:
         sys.exit('No .msix found in outputs/msix. Run ./package-msix.ps1 first, or pass the path.')
     return found[-1]
@@ -162,7 +162,7 @@ invalid = [n for n in names if any(part.rstrip() != part or part.endswith('.') o
                                    for part in n.split('/'))]
 check(not invalid, 'no file names Windows cannot create', ', '.join(invalid[:3]))
 
-forbidden = [n for n in names if re.search(r'(^|/)(__pycache__|logs|\.lotus-[^/]*)(/|$)|\.pdb$|events\.jsonl$|settings\.json$|last-cli-result|\.pyc$', n)]
+forbidden = [n for n in names if re.search(r'(^|/)(__pycache__|logs|\.dropdial-[^/]*)(/|$)|\.pdb$|events\.jsonl$|settings\.json$|last-cli-result|\.pyc$', n)]
 check(not forbidden, 'no logs, caches, debug symbols or personal data', ', '.join(forbidden[:4]))
 for needed in ('THIRD-PARTY-NOTICES.txt', 'LICENSE', 'runtime/python/python.exe', 'runtime/ffmpeg/ffmpeg.exe', 'runtime/ffmpeg/ffprobe.exe', 'runtime/7zip/7z.exe', 'backend/worker.py'):
     check(needed in nameset, f'{needed} is included')

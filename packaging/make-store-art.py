@@ -17,7 +17,7 @@ OUT.mkdir(exist_ok=True)
 for old in OUT.glob('*.png'):
     old.unlink()
 
-logo = Image.open(ROOT.parent / 'work' / 'Lotus' / 'assets' / 'lotus.png').convert('RGBA')
+logo = Image.open(ROOT.parent / 'work' / 'DropDial' / 'assets' / 'dropdial.png').convert('RGBA')
 logo = logo.crop(logo.getchannel('A').getbbox())
 
 BG, INK, MUTED, ACCENT = (250, 248, 245), (31, 34, 38), (95, 101, 109), (213, 84, 24)
@@ -45,7 +45,7 @@ def card(size, lang, logo_w, logo_y, name_size, name_y, tag_size, tag_y):
     img.alpha_composite(m, ((w - m.width) // 2, logo_y))
     d = ImageDraw.Draw(img)
     bold, regular = (ImageFont.truetype(f, s) for f, s in ((FONTS[lang][0], name_size), (FONTS[lang][1], tag_size)))
-    centered(d, 'Lotus', bold, name_y, INK, w)
+    centered(d, 'DropDial', bold, name_y, INK, w)
     centered(d, TAGLINE[lang], regular, tag_y, ACCENT if lang == 'en' else MUTED, w)
     return img
 

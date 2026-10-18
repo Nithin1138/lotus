@@ -4,8 +4,8 @@ import hashlib, json, sys
 from PIL import Image, ImageChops
 
 ROOT = Path(__file__).resolve().parent.parent
-APP = ROOT / 'outputs/Lotus'
-sys.path.insert(0, str(ROOT / 'work/Lotus/backend'))
+APP = ROOT / 'outputs/DropDial'
+sys.path.insert(0, str(ROOT / 'work/DropDial/backend'))
 import common, images, worker
 common.FFMPEG = APP / 'runtime/ffmpeg/ffmpeg.exe'
 common.FFPROBE = APP / 'runtime/ffmpeg/ffprobe.exe'

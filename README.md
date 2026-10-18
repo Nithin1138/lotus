@@ -1,6 +1,6 @@
-# Lotus
+# DropDial
 
-<img src="work/Lotus/assets/lotus.png" alt="Lotus icon" width="112" />
+<img src="work/DropDial/assets/dropdial.png" alt="DropDial icon" width="112" />
 
 **Drag. Drop. Convert.**
 
@@ -30,12 +30,12 @@ A desktop file conversion and media utility running in the system tray / menu ba
 ./build-mac.sh
 ```
 
-This compiles the native Swift application, integrates the Python engine and Apple Vision OCR, and produces `outputs/Lotus-macOS/Lotus.app`.
+This compiles the native Swift application, integrates the Python engine and Apple Vision OCR, and produces `outputs/DropDial-macOS/DropDial.app`.
 
 ### Run
 
 ```bash
-open outputs/Lotus-macOS/Lotus.app
+open outputs/DropDial-macOS/DropDial.app
 ```
 
 See the [macOS User Guide](docs/usage-mac.md) for detailed instructions.
@@ -56,7 +56,7 @@ python work/prepare-runtime.py
 ./build.ps1
 
 # Start the application
-./outputs/Lotus/Lotus.exe
+./outputs/DropDial/DropDial.exe
 ```
 
 See the [User Guide](docs/usage.md) for full features and details.
@@ -67,11 +67,11 @@ See the [User Guide](docs/usage.md) for full features and details.
 
 | Path | Contents |
 | --- | --- |
-| `work/Lotus-macOS/` | Native Swift macOS application, menu bar status item, floating wheel, tool windows |
-| `work/Lotus/` | C# WPF application, global shortcuts, drag menu, Office bridge, and progress indicators |
-| `work/Lotus/backend/` | Python engines for images, media, documents, and archives |
-| `build-mac.sh` | macOS build script producing `outputs/Lotus-macOS/Lotus.app` |
-| `build.ps1` | Windows build script producing `outputs/Lotus/Lotus.exe` |
+| `work/DropDial-macOS/` | Native Swift macOS application, menu bar status item, floating wheel, tool windows |
+| `work/DropDial/` | C# WPF application, global shortcuts, drag menu, Office bridge, and progress indicators |
+| `work/DropDial/backend/` | Python engines for images, media, documents, and archives |
+| `build-mac.sh` | macOS build script producing `outputs/DropDial-macOS/DropDial.app` |
+| `build.ps1` | Windows build script producing `outputs/DropDial/DropDial.exe` |
 | `docs/` | User documentation and usage guides |
 
 ---

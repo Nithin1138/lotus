@@ -1,4 +1,4 @@
-# Store listing fields for Lotus 1.0.0: ready to paste
+# Store listing fields for DropDial 1.0.0: ready to paste
 
 Fill in each language on its own listing page (Store listings > click the language). Leave every field that is not listed here empty.
 Images are in `packaging/store-art/` (logos, hero) and `packaging/screenshots/` (screenshots). Regenerate with `make-store-art.py`, `make-screenshots.py` and this script.
@@ -7,11 +7,11 @@ Images are in `packaging/store-art/` (logos, hero) and `packaging/screenshots/` 
 
 | Field on the page | What to enter |
 |---|---|
-| Product name | Lotus (pick it in the drop-down) |
+| Product name | DropDial (pick it in the drop-down) |
 | What's new in this version | the text under "What's new" below |
 | Short title, Voice title | **leave empty** (Xbox only) |
-| Copyright and trademark info | © 2026 Lotus |
-| Developed by | Lotus |
+| Copyright and trademark info | © 2026 DropDial |
+| Developed by | DropDial |
 | Screenshots > Desktop | `screenshots/en-1.png` … `en-4.png`, in that order, with the captions below |
 | Store logos > Poster art (720 x 1080) | `store-art/poster-720x1080-en.png` |
 | Store logos > Box art (1080 x 1080) | `store-art/box-art-1080-en.png` |
@@ -22,7 +22,7 @@ Images are in `packaging/store-art/` (logos, hero) and `packaging/screenshots/` 
 ### What's new in this version (1068 of 1,500 characters)
 
 ```text
-The first full release: Lotus grows from a converter into a small toolbox.
+The first full release: DropDial grows from a converter into a small toolbox.
 
 • About twenty new tools: rotate by any angle, resize, watermark, make icons, text recognition (OCR) for pictures and scanned PDFs, GIF and slideshow makers, video fade/reverse/loop, subtitles and soundtrack tools, audio volume, noise reduction, join and phone ringtone, PDF passwords, page numbers and image extraction, and password-protected ZIP and 7z.
 • Related tools now share one window with tabs, so the wheel stays at eight entries. Apply changes step by step and undo the last one.
@@ -37,7 +37,7 @@ Fixes: photos keep their EXIF in the Metadata tool, removing metadata from HEIC 
 ### Description (2715 of 10,000 characters)
 
 ```text
-Lotus turns the drag you already make into a file converter and a small toolbox.
+DropDial turns the drag you already make into a file converter and a small toolbox.
 
 Select files on the desktop or in File Explorer and start dragging. Press Shift and a format wheel appears under your cursor; release on the format you want. Press Ctrl+Shift instead for tools such as compress, resize, rotate, crop, watermark or redact. For pictures and videos, related tools share one window so the wheel stays simple. The new file is saved next to the original, which is never overwritten.
 
@@ -101,7 +101,7 @@ Convert files without opening an app. Hold Shift while you drag any file, and a 
 ### Additional license terms
 
 ```text
-Lotus is licensed under the MIT License. It includes third-party components under their own licenses, including FFmpeg (GPLv3), 7-Zip (LGPL) and PyMuPDF (AGPLv3). See "Third-party notices" in the tray menu.
+DropDial is licensed under the MIT License. It includes third-party components under their own licenses, including FFmpeg (GPLv3), 7-Zip (LGPL) and PyMuPDF (AGPLv3). See "Third-party notices" in the tray menu.
 ```
 
 ### Screenshot captions (200 characters or fewer)

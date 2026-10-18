@@ -1,4 +1,4 @@
-# Lotus for macOS - User Guide
+# DropDial for macOS - User Guide
 
 Version 1.0.0 (macOS Native). Runs in the macOS Menu Bar (Status Item) with a lightweight, clean, and modern interface. No bulky main window needed.
 
@@ -10,7 +10,7 @@ Version 1.0.0 (macOS Native). Runs in the macOS Menu Bar (Status Item) with a li
 | **F9** (or `Fn+F9` / `⌘9`) | **Summon Tools Wheel** directly under your mouse cursor |
 | **Drag files + Shift** | Summons the Formats Wheel while dragging files from Finder |
 | **Drag files + Cmd+Shift** | Summons the Tools Wheel while dragging files from Finder |
-| **Option + Space** / **⌘⇧L** | Global hotkey to toggle the Lotus Wheel |
+| **Option + Space** / **⌘⇧L** | Global hotkey to toggle the DropDial Wheel |
 | **Escape (Esc)** | Dismiss the Wheel immediately |
 | **Tab** | Switch between Formats and Tools mode on the Wheel |
 | **Arrow Keys (← / → / ↑ / ↓)** | Rotate slice selection on the Wheel |
@@ -22,7 +22,7 @@ Version 1.0.0 (macOS Native). Runs in the macOS Menu Bar (Status Item) with a li
 ## Key Features
 
 1. **Menu Bar Resident & Quick Drag-and-Drop**:
-   - Lotus stays in the top-right menu bar.
+   - DropDial stays in the top-right menu bar.
    - **Click the menu bar icon** to toggle the wheel or right-click to open options.
    - **Drag and drop files directly onto the menu bar icon** from Finder to immediately open format conversion and tool menus.
 
@@ -55,10 +55,10 @@ Version 1.0.0 (macOS Native). Runs in the macOS Menu Bar (Status Item) with a li
 ```
 
 This compiles the native Swift application, bundles the backend engines, and produces:
-`outputs/Lotus-macOS/Lotus.app`
+`outputs/DropDial-macOS/DropDial.app`
 
 ### Running the Application
 
 ```bash
-open outputs/Lotus-macOS/Lotus.app
+open outputs/DropDial-macOS/DropDial.app
 ```

@@ -1,4 +1,4 @@
-using Lotus;
+using DropDial;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +26,7 @@ internal static class Checks
         });
         Check("layered wheel retains each visible sector's drop target",()=>
         {
-            string path=Path.Combine(Path.GetTempPath(),"lotus-wheel-"+Guid.NewGuid().ToString("N")+".png");File.WriteAllText(path,"fixture");
+            string path=Path.Combine(Path.GetTempPath(),"dropdial-wheel-"+Guid.NewGuid().ToString("N")+".png");File.WriteAllText(path,"fixture");
             var wheel=new DropWheel((_,_)=>{});
             try
             {
@@ -38,7 +38,7 @@ internal static class Checks
         });
         Check("wheel mode changes keep the dragged file and valid tool sectors",()=>
         {
-            string path=Path.Combine(Path.GetTempPath(),"lotus-wheel-"+Guid.NewGuid().ToString("N")+".png");File.WriteAllText(path,"fixture");var wheel=new DropWheel((_,_)=>{});
+            string path=Path.Combine(Path.GetTempPath(),"dropdial-wheel-"+Guid.NewGuid().ToString("N")+".png");File.WriteAllText(path,"fixture");var wheel=new DropWheel((_,_)=>{});
             try{wheel.Preview([path],false,"convert:jpg");wheel.ChangeMode(true);Require(wheel.HasFileDrag&&wheel.ToolsMode);var all=Catalog.Options([path],true);var groups=Catalog.Grouped(all,"image");var actions=groups==null?all:groups.Select((g,i)=>new Operation("__group:"+i,g.Label)).ToList();var hit=typeof(DropWheel).GetMethod("Hit",BindingFlags.NonPublic|BindingFlags.Static)!;var ring=typeof(DropWheel).GetField("first",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel);for(int i=0;i<actions.Count;i++){double angle=-Math.PI/2+i*2*Math.PI/actions.Count;Require((int)hit.Invoke(null,[ring!,new Point(190+119*Math.Cos(angle),190+119*Math.Sin(angle)),65d,172d])! == i);}}
             finally{wheel.Close();File.Delete(path);}
         });
@@ -119,13 +119,13 @@ internal static class Checks
         });
         Check("temp sweep removes only staging entries created after the job started",()=>
         {
-            string root=Path.Combine(Path.GetTempPath(),"lotus-sweep-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);
+            string root=Path.Combine(Path.GetTempPath(),"dropdial-sweep-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);
             try
             {
-                string input=Path.Combine(root,"clip.mp4"),older=Path.Combine(root,".lotus-older.mp4"),user=Path.Combine(root,"notes.txt");
+                string input=Path.Combine(root,"clip.mp4"),older=Path.Combine(root,".dropdial-older.mp4"),user=Path.Combine(root,"notes.txt");
                 File.WriteAllText(input,"x");File.WriteAllText(older,"x");
                 var sweep=new TempSweep([input]);
-                string partial=Path.Combine(root,".lotus-partial.mp4"),folder=Path.Combine(root,".lotus-abc");
+                string partial=Path.Combine(root,".dropdial-partial.mp4"),folder=Path.Combine(root,".dropdial-abc");
                 File.WriteAllText(partial,"x");Directory.CreateDirectory(folder);File.WriteAllText(Path.Combine(folder,"frame-0001.png"),"x");File.WriteAllText(user,"x");
                 sweep.Run().GetAwaiter().GetResult();
                 Require(!File.Exists(partial)&&!Directory.Exists(folder)&&File.Exists(older)&&File.Exists(input)&&File.Exists(user));
@@ -134,11 +134,11 @@ internal static class Checks
         });
         Check("temp sweep retries while a killed encoder still holds the file",()=>
         {
-            string root=Path.Combine(Path.GetTempPath(),"lotus-sweep-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);
+            string root=Path.Combine(Path.GetTempPath(),"dropdial-sweep-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);
             try
             {
                 string input=Path.Combine(root,"clip.mp4");File.WriteAllText(input,"x");var sweep=new TempSweep([input]);
-                string partial=Path.Combine(root,".lotus-locked.mp4");var handle=new FileStream(partial,FileMode.CreateNew,FileAccess.Write,FileShare.None);
+                string partial=Path.Combine(root,".dropdial-locked.mp4");var handle=new FileStream(partial,FileMode.CreateNew,FileAccess.Write,FileShare.None);
                 var release=new Timer(_=>handle.Dispose(),null,500,Timeout.Infinite);
                 sweep.Run().GetAwaiter().GetResult();release.Dispose();
                 Require(!File.Exists(partial)&&File.Exists(input));
@@ -226,14 +226,14 @@ internal static class Checks
         });
         Check("cancelling one job never removes another job's staging files in the same folder", () =>
         {
-            string root = Path.Combine(Path.GetTempPath(), "lotus-sweep-" + Guid.NewGuid().ToString("N"));
+            string root = Path.Combine(Path.GetTempPath(), "dropdial-sweep-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
             try
             {
                 string input = Path.Combine(root, "clip.mp4");
                 File.WriteAllText(input, "x");
                 var sweepA = new TempSweep([input], "aaaa");
-                string mine = Path.Combine(root, ".lotus-aaaa-1.webm"), theirs = Path.Combine(root, ".lotus-bbbb-1.webm");
+                string mine = Path.Combine(root, ".dropdial-aaaa-1.webm"), theirs = Path.Combine(root, ".dropdial-bbbb-1.webm");
                 File.WriteAllText(mine, "x");
                 File.WriteAllText(theirs, "x");
                 sweepA.Run().GetAwaiter().GetResult();
@@ -243,7 +243,7 @@ internal static class Checks
         });
         Check("pausing freezes a whole process tree and resuming continues it", () =>
         {
-            string output = Path.Combine(Path.GetTempPath(), "lotus-pause-" + Guid.NewGuid().ToString("N") + ".txt");
+            string output = Path.Combine(Path.GetTempPath(), "dropdial-pause-" + Guid.NewGuid().ToString("N") + ".txt");
             // cmd starts ping as a child; ping writes one line per second, so the file only grows while both run.
             var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c ping -n 40 127.0.0.1 > \"{output}\"") { CreateNoWindow = true, UseShellExecute = false })!;
             try
@@ -280,11 +280,11 @@ internal static class Checks
         {
             // Scan the app's sources for L.T("…") / L.F("…") keys.
             var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "Lotus", "backend")))
+            while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "DropDial", "backend")))
                 dir = dir.Parent;
             Require(dir != null);
             var missing = new List<string>();
-            foreach (var file in Directory.GetFiles(Path.Combine(dir!.FullName, "Lotus"), "*.cs"))
+            foreach (var file in Directory.GetFiles(Path.Combine(dir!.FullName, "DropDial"), "*.cs"))
                 foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), "L\\.[TF]\\(\"((?:[^\"\\\\]|\\\\.)*)\""))
                 {
                     string key = JsonSerializer.Deserialize<string>("\"" + m.Groups[1].Value + "\"")!;
@@ -328,7 +328,7 @@ internal static class Checks
         });
         Check("settings keep each other's values and survive a damaged file", () =>
         {
-            string file = Path.Combine(Path.GetTempPath(), "lotus-settings-" + Guid.NewGuid().ToString("N") + ".json");
+            string file = Path.Combine(Path.GetTempPath(), "dropdial-settings-" + Guid.NewGuid().ToString("N") + ".json");
             Settings.PathOverride = file;
             try
             {
@@ -350,17 +350,17 @@ internal static class Checks
         });
         Check("the welcome window explains the app in both languages and remembers the startup choice", () =>
         {
-            string file = Path.Combine(Path.GetTempPath(), "lotus-welcome-" + Guid.NewGuid().ToString("N") + ".json");
+            string file = Path.Combine(Path.GetTempPath(), "dropdial-welcome-" + Guid.NewGuid().ToString("N") + ".json");
             Settings.PathOverride = file;
             try
             {
                 L.UseForSession("en");
                 var window = new WelcomeWindow();
                 var english = Texts(window);
-                Require(english.Contains("Welcome to Lotus") && english.Contains("Drag files") && english.Contains("Press Shift") && english.Contains("Got it"));
+                Require(english.Contains("Welcome to DropDial") && english.Contains("Drag files") && english.Contains("Press Shift") && english.Contains("Got it"));
                 Require(english.Any(t => t.Contains("notification area")) && english.Any(t => t.Contains("never connects to the internet")));
                 Require(english.Contains("English") && english.Contains("English"));
-                var box = FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("Don't show this window when Lotus starts")));
+                var box = FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("Don't show this window when DropDial starts")));
                 Require(box.IsChecked == false);
                 box.IsChecked = true;
                 box.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
@@ -368,7 +368,7 @@ internal static class Checks
                 // Changing the language rebuilds the open window, and the checkbox still reflects the saved choice.
                 L.Language = "zh"; // the same setter the language buttons and the tray menu use
                 var chinese = Texts(window);
-                Require(chinese.Contains("Welcome to Lotus") && chinese.Contains("Got it") && FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("Don't show this window when Lotus starts"))).IsChecked == true);
+                Require(chinese.Contains("Welcome to DropDial") && chinese.Contains("Got it") && FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("Don't show this window when DropDial starts"))).IsChecked == true);
                 window.Close();
             }
             finally
@@ -589,11 +589,11 @@ internal static class Checks
             session.Report(new JobProgress("processing", 0, 1, "c"));
             Require(line.Fraction == null);
         });
-        // End to end with the real worker and FFmpeg. Needs the portable runtime: set LOTUS_APP to outputs/Lotus.
-        string? app = Environment.GetEnvironmentVariable("LOTUS_APP");
+        // End to end with the real worker and FFmpeg. Needs the portable runtime: set DROPDIAL_APP to outputs/DropDial.
+        string? app = Environment.GetEnvironmentVariable("DROPDIAL_APP");
         if (app != null) Check("a real conversion pauses mid-encode, resumes, and still produces a valid file", () =>
         {
-            string root = Path.Combine(Path.GetTempPath(), "lotus-e2e-" + Guid.NewGuid().ToString("N"));
+            string root = Path.Combine(Path.GetTempPath(), "dropdial-e2e-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
             void Must(bool ok, string what) { if (!ok) throw new Exception(what); }
             // The directory listing lags while FFmpeg writes, so read the live size through a handle.
@@ -609,13 +609,13 @@ internal static class Checks
                 var start = new System.Diagnostics.ProcessStartInfo(Path.Combine(app, "runtime", "python", "python.exe")) { CreateNoWindow = true, UseShellExecute = false };
                 foreach (var arg in new[] { Path.Combine(app, "backend", "worker.py"), "--job", request, response })
                     start.ArgumentList.Add(arg);
-                start.Environment["LOTUS_JOB"] = "e2etoken";
+                start.Environment["DROPDIAL_JOB"] = "e2etoken";
                 worker = System.Diagnostics.Process.Start(start)!;
                 string? staging = null;
                 for (int i = 0; i < 300 && staging == null; i++)
                 {
                     Thread.Sleep(100);
-                    staging = Directory.GetFiles(root, ".lotus-e2etoken-*").FirstOrDefault(f => Live(f) > 0);
+                    staging = Directory.GetFiles(root, ".dropdial-e2etoken-*").FirstOrDefault(f => Live(f) > 0);
                 }
                 Must(staging != null, "no tagged staging file appeared"); // the job tags its staging file with its own id
                 using (var pause = ProcessTreePause.Suspend(worker))
@@ -629,7 +629,7 @@ internal static class Checks
                 using var result = JsonDocument.Parse(File.ReadAllText(response));
                 var file = result.RootElement.GetProperty("Files")[0];
                 string? output = file.GetProperty("Output").GetString();
-                Must(output != null && new FileInfo(output).Length > 10000 && !Directory.GetFiles(root, ".lotus-*").Any(), "bad output or leftover staging files");
+                Must(output != null && new FileInfo(output).Length > 10000 && !Directory.GetFiles(root, ".dropdial-*").Any(), "bad output or leftover staging files");
             }
             finally
             {
@@ -640,7 +640,7 @@ internal static class Checks
         // The frame must be saved as shown. This feeds frames the UI can produce to the real backend (needs the portable runtime).
         if (app != null) Check("the backend saves every frame the crop UI can produce at exactly the size shown", () =>
         {
-            string root = Path.Combine(Path.GetTempPath(), "lotus-cropcheck-" + Guid.NewGuid().ToString("N"));
+            string root = Path.Combine(Path.GetTempPath(), "dropdial-cropcheck-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
             try
             {

@@ -11,10 +11,10 @@ VERSION = '1.0.0'
 L = {}
 L['en'] = dict(
     heading='English (United States)',
-    name='Lotus',
+    name='DropDial',
     short=("Convert files without opening an app. Hold Shift while you drag any file, and a format wheel opens under your "
            "cursor. Release on the format you want. Images, video, audio, PDF, Office and archives, all processed on your PC."),
-    whatsnew="""The first full release: Lotus grows from a converter into a small toolbox.
+    whatsnew="""The first full release: DropDial grows from a converter into a small toolbox.
 
 • About twenty new tools: rotate by any angle, resize, watermark, make icons, text recognition (OCR) for pictures and scanned PDFs, GIF and slideshow makers, video fade/reverse/loop, subtitles and soundtrack tools, audio volume, noise reduction, join and phone ringtone, PDF passwords, page numbers and image extraction, and password-protected ZIP and 7z.
 • Related tools now share one window with tabs, so the wheel stays at eight entries. Apply changes step by step and undo the last one.
@@ -24,7 +24,7 @@ L['en'] = dict(
 • Cropping with a draggable frame, and a new look for the wheel.
 
 Fixes: photos keep their EXIF in the Metadata tool, removing metadata from HEIC photos now removes EXIF and XMP, and a failed job shows the engine's real reason.""",
-    description="""Lotus turns the drag you already make into a file converter and a small toolbox.
+    description="""DropDial turns the drag you already make into a file converter and a small toolbox.
 
 Select files on the desktop or in File Explorer and start dragging. Press Shift and a format wheel appears under your cursor; release on the format you want. Press Ctrl+Shift instead for tools such as compress, resize, rotate, crop, watermark or redact. For pictures and videos, related tools share one window so the wheel stays simple. The new file is saved next to the original, which is never overwritten.
 
@@ -67,10 +67,10 @@ Free and open source under the MIT License.""",
         'Free and open source',
     ],
     keywords=['file converter', 'video converter', 'image converter', 'audio converter', 'PDF converter', 'compress video', 'drag and drop'],
-    copyright='© 2026 Lotus',
-    license=("Lotus is licensed under the MIT License. It includes third-party components under their own licenses, including "
+    copyright='© 2026 DropDial',
+    license=("DropDial is licensed under the MIT License. It includes third-party components under their own licenses, including "
              "FFmpeg (GPLv3), 7-Zip (LGPL) and PyMuPDF (AGPLv3). See \"Third-party notices\" in the tray menu."),
-    developer='Lotus',
+    developer='DropDial',
     captions=[
         'Hold Shift while dragging a file and a format wheel opens under your cursor. Release on JPG, PDF, MP3 or any other format.',
         'Press Ctrl+Shift for tools. Related tools share one wheel entry, so the wheel stays simple.',
@@ -96,7 +96,7 @@ def block(text):
     return '```text\n' + text + '\n```\n'
 
 
-lines = [f'# Store listing fields for Lotus {VERSION}: ready to paste',
+lines = [f'# Store listing fields for DropDial {VERSION}: ready to paste',
          '',
          'Fill in each language on its own listing page (Store listings > click the language). Leave every field that is not listed here empty.',
          'Images are in `packaging/store-art/` (logos, hero) and `packaging/screenshots/` (screenshots). Regenerate with `make-store-art.py`, `make-screenshots.py` and this script.',

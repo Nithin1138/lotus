@@ -1,4 +1,4 @@
-# Lotus - File Tool & Conversion Guide
+# DropDial - File Tool & Conversion Guide
 
 Version 1.0.0. Lightweight desktop file conversion and utility tool that resides in the system menu bar / tray with no unnecessary main window.
 

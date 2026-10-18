@@ -1,4 +1,4 @@
-name: Lotus CI/CD
+name: DropDial CI/CD
 
 on:
   push:
@@ -30,14 +30,14 @@ jobs:
       - name: Verify Python backend integrity
         run: |
           python3 work/test-i18n.py
-          python3 -m py_compile work/Lotus/backend/*.py
+          python3 -m py_compile work/DropDial/backend/*.py
 
       - name: Build macOS application bundle
         run: ./build-mac.sh
 
       - name: Verify macOS app bundle & binaries
         run: |
-          APP_PATH="outputs/Lotus-macOS/Lotus.app"
+          APP_PATH="outputs/DropDial-macOS/DropDial.app"
           if [ ! -d "$APP_PATH" ]; then
             echo "Error: $APP_PATH was not created!" && exit 1
           fi
@@ -46,7 +46,7 @@ jobs:
           plutil -lint "$APP_PATH/Contents/Info.plist"
 
           echo "Checking main executable..."
-          MAIN_BIN="$APP_PATH/Contents/MacOS/Lotus"
+          MAIN_BIN="$APP_PATH/Contents/MacOS/DropDial"
           if [ ! -x "$MAIN_BIN" ]; then
             echo "Error: $MAIN_BIN is missing or not executable!" && exit 1
           fi
@@ -64,13 +64,13 @@ jobs:
 
       - name: Package macOS application
         run: |
-          ditto -c -k --sequesterRsrc --keepParent outputs/Lotus-macOS/Lotus.app outputs/Lotus-macOS.zip
+          ditto -c -k --sequesterRsrc --keepParent outputs/DropDial-macOS/DropDial.app outputs/DropDial-macOS.zip
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Lotus-macOS
-          path: outputs/Lotus-macOS.zip
+          name: DropDial-macOS
+          path: outputs/DropDial-macOS.zip
           if-no-files-found: error
 
   windows:
@@ -93,7 +93,7 @@ jobs:
       - name: Verify Python backend syntax
         shell: pwsh
         run: |
-          python -m py_compile (Get-ChildItem work/Lotus/backend/*.py).FullName
+          python -m py_compile (Get-ChildItem work/DropDial/backend/*.py).FullName
           python work/test-i18n.py
 
       - name: Build Windows application
@@ -103,7 +103,7 @@ jobs:
       - name: Verify Windows executable
         shell: pwsh
         run: |
-          $exePath = "outputs/Lotus/Lotus.exe"
+          $exePath = "outputs/DropDial/DropDial.exe"
           if (-not (Test-Path $exePath)) {
             throw "Error: $exePath was not generated."
           }
@@ -122,11 +122,11 @@ jobs:
       - name: Package Windows binaries
         shell: pwsh
         run: |
-          Compress-Archive -Path outputs/Lotus -DestinationPath outputs/Lotus-Windows-x64.zip -Force
+          Compress-Archive -Path outputs/DropDial -DestinationPath outputs/DropDial-Windows-x64.zip -Force
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Lotus-Windows-x64
-          path: outputs/Lotus-Windows-x64.zip
+          name: DropDial-Windows-x64
+          path: outputs/DropDial-Windows-x64.zip
           if-no-files-found: error

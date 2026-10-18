@@ -2,11 +2,11 @@
 
 Usage: python packaging/make-screenshots.py <renders folder>
 The folder must contain:
-  wheel-en-holiday.png.png   Lotus.exe --debug-wheel-render formats <holiday.png> convert:jpg <out>
-  wheel-en-trip.mp4.png      Lotus.exe --debug-wheel-render tools <trip.mp4> trimVideo <out>
-  tool-en.png                a capture of the combined window: Lotus.exe --debug-tool merge:trimSplit <video>, then PrintWindow
-  stack-en-expanded.png      Lotus.exe --debug-indicator <folder>/stack-en
-(set LOTUS_LANG=en when rendering). Output: packaging/screenshots/<lang>-<n>.png
+  wheel-en-holiday.png.png   DropDial.exe --debug-wheel-render formats <holiday.png> convert:jpg <out>
+  wheel-en-trip.mp4.png      DropDial.exe --debug-wheel-render tools <trip.mp4> trimVideo <out>
+  tool-en.png                a capture of the combined window: DropDial.exe --debug-tool merge:trimSplit <video>, then PrintWindow
+  stack-en-expanded.png      DropDial.exe --debug-indicator <folder>/stack-en
+(set DROPDIAL_LANG=en when rendering). Output: packaging/screenshots/<lang>-<n>.png
 """
 from pathlib import Path
 import sys

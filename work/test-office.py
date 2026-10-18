@@ -7,7 +7,7 @@ from openpyxl import Workbook,load_workbook
 from PIL import Image
 from pypdf import PdfReader
 
-ROOT=Path(__file__).resolve().parent.parent;APP=ROOT/'outputs/Lotus';EXE=APP/'Lotus.exe';DIR=ROOT/'work/office-fixtures';DIR.mkdir(exist_ok=True)
+ROOT=Path(__file__).resolve().parent.parent;APP=ROOT/'outputs/DropDial';EXE=APP/'DropDial.exe';DIR=ROOT/'work/office-fixtures';DIR.mkdir(exist_ok=True)
 sys.path.insert(0,str(APP/'backend'))
 import worker,office
 deck=Presentation()

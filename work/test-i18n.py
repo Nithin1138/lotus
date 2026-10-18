@@ -1,12 +1,12 @@
 """Checks the backend's English messages.
 
-Run with the portable Python: ./outputs/Lotus/runtime/python/python.exe work/test-i18n.py
+Run with the portable Python: ./outputs/DropDial/runtime/python/python.exe work/test-i18n.py
 """
 from pathlib import Path
 import json, os, re, subprocess, sys, tempfile
 
 ROOT = Path(__file__).resolve().parent
-BACKEND = ROOT / 'Lotus' / 'backend'
+BACKEND = ROOT / 'DropDial' / 'backend'
 sys.path.insert(0, str(BACKEND))
 from translations import EN
 
@@ -33,7 +33,7 @@ def run(language):
         source.write_text('hello', encoding='utf8')
         request, response = Path(temp) / 'request.json', Path(temp) / 'result.json'
         request.write_text(json.dumps({'Paths': [str(source)], 'Action': 'extractArchive'}), encoding='utf8')
-        env = {**os.environ, 'LOTUS_LANG': language}
+        env = {**os.environ, 'DROPDIAL_LANG': language}
         subprocess.run([sys.executable, str(BACKEND / 'worker.py'), '--job', str(request), str(response)], env=env, check=True, timeout=120)
         return json.loads(response.read_text(encoding='utf8'))['Files'][0]['Error']
 

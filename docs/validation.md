@@ -11,5 +11,5 @@ Date: 2026-10-04.
 - Progress indication covers file loading, preview generation, playback preparation, analysis, saving, and background conversion. Batch progress tracks completed tasks; single items show animations and elapsed time without fake percentage estimates. Component tests cover task completion, concurrency, late callbacks, and invalid progress files.
 - Verified using real 4K test images; progress card styling previews clearly separated from real batch execution.
 
-Test details in Lotus/validation/. Test inputs generated from synthetic images, audio/video, PDF, text, and archives; outputs verified by re-reading or unpacking and checking original file hashes.
+Test details in DropDial/validation/. Test inputs generated from synthetic images, audio/video, PDF, text, and archives; outputs verified by re-reading or unpacking and checking original file hashes.
 Manual verification across every multi-monitor DPI, encrypted file, and custom encoding can be supplemented with integration passes. PDF to Word preserves text content, and RAR output utilizes store mode.
