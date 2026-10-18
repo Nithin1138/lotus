@@ -292,7 +292,7 @@ internal static class Catalog
         "redactAudio" => new(id, L.T("Bleep"), true, [.. Times, T("ranges", L.T("Multiple ranges"), "", "json")]),
         "splitPDF" => new(id, L.T("Split PDF"), true, [N("pagesPerFile", L.T("Pages per file"), "1"), T("password", L.T("PDF password (if needed)"), "", "password")]),
         "mergePDF" => new(id, L.T("Merge PDFs"), true, [T("password", L.T("PDF password (if needed)"), "", "password")], true),
-        "organizePDF" => new(id, L.T("Pages"), true, [C("action", L.T("Quick action"), "none", "none", "Reverse All Pages", "Rotate All 90°", "Rotate All 180°", "Rotate All 270°", "Extract Even Pages", "Extract Odd Pages", "Delete First Page", "Delete Last Page"), T("pageOrder", L.T("Page order (pages may repeat or be left out)")), N("rotation", L.T("Rotate all pages (0/90/180/270)"), "0"), T("rotations", L.T("Per-page rotation, e.g. {\"), "{}", "json"), T("password", L.T("PDF password (if needed)"), "", "password")]),
+        "organizePDF" => new(id, L.T("Pages"), true, [C("action", L.T("Quick action"), "none", "none", "Reverse All Pages", "Rotate All 90°", "Rotate All 180°", "Rotate All 270°", "Extract Even Pages", "Extract Odd Pages", "Delete First Page", "Delete Last Page"), T("pageOrder", L.T("Page order (pages may repeat or be left out)")), N("rotation", L.T("Rotate all pages (0/90/180/270)"), "0"), T("rotations", L.T("Per-page rotation, e.g. {\"1\": 90}"), "{}", "json"), T("password", L.T("PDF password (if needed)"), "", "password")]),
         "extractArchive" => new(id, L.T("Extract"), true, [T("password", L.T("Archive password (if needed)"), "", "password")]),
         _ => throw new ArgumentException(L.T("Unknown tool ") + id)
     };
