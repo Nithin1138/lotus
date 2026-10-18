@@ -84,8 +84,23 @@ final class JobProgressBar: NSView {
     }
 }
 
-// Styled button matching the reference design
+// MARK: - Styled Action Button
+enum TaskActionButtonStyle {
+    case primarySuccess
+    case primaryAccent
+    case secondary
+    case destructive
+    case ghost
+}
+
 final class TaskActionButton: NSButton {
+    var buttonStyle: TaskActionButtonStyle = .secondary {
+        didSet { applyStyle() }
+    }
+
+    private var isHovered = false
+    private var trackingArea: NSTrackingArea?
+
     override init(frame: NSRect) {
         super.init(frame: frame)
         setup()
@@ -99,14 +114,86 @@ final class TaskActionButton: NSButton {
     private func setup() {
         bezelStyle = .inline
         isBordered = false
+        alignment = .center
         wantsLayer = true
-        layer?.cornerRadius = 6
+        layer?.cornerRadius = 13
         layer?.masksToBounds = true
-        layer?.backgroundColor = NSColor(white: 0.22, alpha: 0.55).cgColor
-        layer?.borderColor = NSColor(white: 1.0, alpha: 0.18).cgColor
         layer?.borderWidth = 1.0
         font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
-        contentTintColor = .white
+        applyStyle()
+    }
+
+    override func layout() {
+        super.layout()
+        layer?.cornerRadius = bounds.height > 0 ? bounds.height / 2.0 : 13.0
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let ta = trackingArea {
+            removeTrackingArea(ta)
+        }
+        let ta = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeAlways], owner: self, userInfo: nil)
+        addTrackingArea(ta)
+        self.trackingArea = ta
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+        applyStyle()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+        applyStyle()
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    func applyStyle() {
+        switch buttonStyle {
+        case .primarySuccess:
+            let bg = isHovered ? NSColor(srgbRed: 0.18, green: 0.78, blue: 0.42, alpha: 0.38) : NSColor(srgbRed: 0.16, green: 0.74, blue: 0.38, alpha: 0.22)
+            let border = isHovered ? NSColor(srgbRed: 0.32, green: 0.92, blue: 0.55, alpha: 0.75) : NSColor(srgbRed: 0.24, green: 0.84, blue: 0.48, alpha: 0.45)
+            layer?.backgroundColor = bg.cgColor
+            layer?.borderColor = border.cgColor
+            contentTintColor = isHovered ? .white : NSColor(srgbRed: 0.42, green: 0.98, blue: 0.65, alpha: 1.0)
+            font = NSFont.systemFont(ofSize: 11.5, weight: .semibold)
+
+        case .primaryAccent:
+            let bg = isHovered ? NSColor(srgbRed: 1.0, green: 0.45, blue: 0.08, alpha: 0.40) : NSColor(srgbRed: 1.0, green: 0.42, blue: 0.08, alpha: 0.24)
+            let border = isHovered ? NSColor(srgbRed: 1.0, green: 0.62, blue: 0.25, alpha: 0.75) : NSColor(srgbRed: 1.0, green: 0.52, blue: 0.18, alpha: 0.50)
+            layer?.backgroundColor = bg.cgColor
+            layer?.borderColor = border.cgColor
+            contentTintColor = isHovered ? .white : NSColor(srgbRed: 1.0, green: 0.72, blue: 0.42, alpha: 1.0)
+            font = NSFont.systemFont(ofSize: 11.5, weight: .semibold)
+
+        case .secondary:
+            let bg = isHovered ? NSColor(white: 1.0, alpha: 0.18) : NSColor(white: 1.0, alpha: 0.09)
+            let border = isHovered ? NSColor(white: 1.0, alpha: 0.35) : NSColor(white: 1.0, alpha: 0.18)
+            layer?.backgroundColor = bg.cgColor
+            layer?.borderColor = border.cgColor
+            contentTintColor = isHovered ? .white : NSColor(white: 0.94, alpha: 1.0)
+            font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+
+        case .destructive:
+            let bg = isHovered ? NSColor(srgbRed: 1.0, green: 0.25, blue: 0.25, alpha: 0.30) : NSColor(srgbRed: 1.0, green: 0.25, blue: 0.25, alpha: 0.16)
+            let border = isHovered ? NSColor(srgbRed: 1.0, green: 0.40, blue: 0.40, alpha: 0.65) : NSColor(srgbRed: 1.0, green: 0.32, blue: 0.32, alpha: 0.36)
+            layer?.backgroundColor = bg.cgColor
+            layer?.borderColor = border.cgColor
+            contentTintColor = isHovered ? .white : NSColor(srgbRed: 1.0, green: 0.60, blue: 0.60, alpha: 1.0)
+            font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+
+        case .ghost:
+            let bg = isHovered ? NSColor(white: 1.0, alpha: 0.12) : NSColor(white: 1.0, alpha: 0.05)
+            let border = isHovered ? NSColor(white: 1.0, alpha: 0.25) : NSColor(white: 1.0, alpha: 0.12)
+            layer?.backgroundColor = bg.cgColor
+            layer?.borderColor = border.cgColor
+            contentTintColor = isHovered ? NSColor(white: 0.95, alpha: 1.0) : NSColor(white: 0.72, alpha: 1.0)
+            font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
+        }
     }
 }
 
@@ -122,7 +209,9 @@ final class JobCardView: NSView {
     }
 
     private let effectView = NSVisualEffectView()
+    private let statusDot = NSBox()
     private let statusHeadingLabel = NSTextField(labelWithString: "Processing")
+    private let metaTimingLabel = NSTextField(labelWithString: "")
     private let titleLabel = NSTextField(labelWithString: "")
     private let progressBar = JobProgressBar()
     private let metaLabel = NSTextField(labelWithString: "")
@@ -142,12 +231,12 @@ final class JobCardView: NSView {
     var onDismiss: (() -> Void)?
 
     override var intrinsicContentSize: NSSize {
-        return NSSize(width: 336, height: 130)
+        return NSSize(width: 344, height: 146)
     }
 
     init(job: ConversionJob) {
         self.job = job
-        super.init(frame: NSRect(x: 0, y: 0, width: 336, height: 130))
+        super.init(frame: NSRect(x: 0, y: 0, width: 344, height: 146))
         setupUI()
     }
 
@@ -155,11 +244,11 @@ final class JobCardView: NSView {
 
     private func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
-        widthAnchor.constraint(equalToConstant: 336).isActive = true
-        heightAnchor.constraint(equalToConstant: 130).isActive = true
+        widthAnchor.constraint(equalToConstant: 344).isActive = true
+        heightAnchor.constraint(equalToConstant: 146).isActive = true
 
         // 1. Frosted Glass Background
-        effectView.frame = NSRect(x: 0, y: 0, width: 336, height: 130)
+        effectView.frame = NSRect(x: 0, y: 0, width: 344, height: 146)
         effectView.autoresizingMask = [.width, .height]
         effectView.material = .hudWindow
         effectView.blendingMode = .withinWindow
@@ -167,7 +256,7 @@ final class JobCardView: NSView {
         effectView.wantsLayer = true
         effectView.layer?.cornerRadius = 14
         effectView.layer?.masksToBounds = true
-        effectView.layer?.borderColor = NSColor(white: 1.0, alpha: 0.18).cgColor
+        effectView.layer?.borderColor = NSColor(white: 1.0, alpha: 0.16).cgColor
         effectView.layer?.borderWidth = 1.0
         addSubview(effectView)
 
@@ -175,42 +264,57 @@ final class JobCardView: NSView {
         wantsLayer = true
         layer?.masksToBounds = false
         layer?.shadowColor = NSColor.black.cgColor
-        layer?.shadowOpacity = 0.28
-        layer?.shadowOffset = CGSize(width: 0, height: -3)
-        layer?.shadowRadius = 8
+        layer?.shadowOpacity = 0.32
+        layer?.shadowOffset = CGSize(width: 0, height: -4)
+        layer?.shadowRadius = 10
 
-        // 2. Status Heading Label (e.g. "Processing", "Paused", "Waiting", "Completed")
-        statusHeadingLabel.frame = NSRect(x: 18, y: 98, width: 300, height: 20)
-        statusHeadingLabel.font = NSFont.systemFont(ofSize: 14.5, weight: .bold)
+        // 2. Status Dot & Heading (y = 114 to 134)
+        statusDot.frame = NSRect(x: 18, y: 121, width: 7, height: 7)
+        statusDot.boxType = .custom
+        statusDot.cornerRadius = 3.5
+        statusDot.borderWidth = 0
+        statusDot.fillColor = NSColor(srgbRed: 1.0, green: 0.42, blue: 0.08, alpha: 1.0)
+        addSubview(statusDot)
+
+        statusHeadingLabel.frame = NSRect(x: 31, y: 114, width: 175, height: 20)
+        statusHeadingLabel.font = NSFont.systemFont(ofSize: 13.5, weight: .bold)
         statusHeadingLabel.textColor = .white
         addSubview(statusHeadingLabel)
 
-        // 3. Subtitle / Filename
+        metaTimingLabel.frame = NSRect(x: 210, y: 116, width: 116, height: 16)
+        metaTimingLabel.alignment = .right
+        metaTimingLabel.font = NSFont.systemFont(ofSize: 11, weight: .regular)
+        metaTimingLabel.textColor = NSColor(white: 0.65, alpha: 1.0)
+        metaTimingLabel.stringValue = ""
+        addSubview(metaTimingLabel)
+
+        // 3. Subtitle / Filename (y = 92)
         let firstPath = job.Paths.first ?? ""
         let firstName = URL(fileURLWithPath: firstPath).lastPathComponent
         let countSuffix = job.Paths.count > 1 ? " and \(job.Paths.count - 1) more" : ""
-        titleLabel.frame = NSRect(x: 18, y: 76, width: 300, height: 18)
-        titleLabel.font = NSFont.systemFont(ofSize: 12.5, weight: .regular)
-        titleLabel.textColor = NSColor(white: 0.85, alpha: 1.0)
+        titleLabel.frame = NSRect(x: 18, y: 92, width: 308, height: 18)
+        titleLabel.font = NSFont.systemFont(ofSize: 13, weight: .medium)
+        titleLabel.textColor = NSColor(white: 0.95, alpha: 1.0)
         titleLabel.stringValue = firstName + countSuffix
         titleLabel.lineBreakMode = .byTruncatingMiddle
         addSubview(titleLabel)
 
-        // 4. Progress Bar
-        progressBar.frame = NSRect(x: 18, y: 58, width: 300, height: 3.5)
+        // 4. Progress Bar (y = 78)
+        progressBar.frame = NSRect(x: 18, y: 78, width: 308, height: 3.5)
         progressBar.progress = 0.0
         progressBar.isIndeterminate = true
         addSubview(progressBar)
 
-        // 5. Meta / Timing Label
-        metaLabel.frame = NSRect(x: 18, y: 28, width: 140, height: 24)
-        metaLabel.font = NSFont.systemFont(ofSize: 11, weight: .regular)
-        metaLabel.textColor = NSColor(white: 0.65, alpha: 1.0)
+        // 5. Meta / Detail Label (DEDICATED ROW y = 48, full 308pt width)
+        metaLabel.frame = NSRect(x: 18, y: 48, width: 308, height: 20)
+        metaLabel.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
+        metaLabel.textColor = NSColor(white: 0.72, alpha: 1.0)
+        metaLabel.lineBreakMode = .byTruncatingTail
         metaLabel.stringValue = "Elapsed 0 s"
         addSubview(metaLabel)
 
-        // 6. Action Buttons Bar (right aligned)
-        buttonContainer.frame = NSRect(x: 130, y: 12, width: 188, height: 28)
+        // 6. Action Buttons Bar (DEDICATED ROW y = 14, full 308pt width)
+        buttonContainer.frame = NSRect(x: 18, y: 14, width: 308, height: 28)
         addSubview(buttonContainer)
 
         setupButton(pauseButton, title: "Pause", action: #selector(pauseTapped))
@@ -234,32 +338,37 @@ final class JobCardView: NSView {
         case .waiting:
             statusHeadingLabel.stringValue = "Waiting"
             statusHeadingLabel.textColor = NSColor(white: 0.85, alpha: 1.0)
-            metaLabel.frame = NSRect(x: 18, y: 28, width: 180, height: 24)
+            statusDot.fillColor = NSColor(white: 0.75, alpha: 1.0)
+            metaTimingLabel.stringValue = "Queued"
             metaLabel.stringValue = "Starts when a running job finishes"
             progressBar.isIndeterminate = false
             progressBar.progress = 0.0
 
-            pauseButton.title = "Pause"
-            pauseButton.isEnabled = false
-            pauseButton.alphaValue = 0.45
-            pauseButton.isHidden = false
+            cancelButton.buttonStyle = .destructive
+            hideButton.buttonStyle = .ghost
+
+            pauseButton.isHidden = true
             cancelButton.isHidden = false
             hideButton.isHidden = false
             openButton.isHidden = true
             revealButton.isHidden = true
 
-            layoutButtons([pauseButton, cancelButton, hideButton])
+            layoutButtons([cancelButton, hideButton])
 
         case .running:
             let actionName = job.Action.hasPrefix("convert:") ? "Converting" : "Processing"
             statusHeadingLabel.stringValue = actionName
             statusHeadingLabel.textColor = .white
-            metaLabel.frame = NSRect(x: 18, y: 28, width: 140, height: 24)
+            statusDot.fillColor = NSColor(srgbRed: 1.0, green: 0.42, blue: 0.08, alpha: 1.0)
             updateMetaText()
 
+            pauseButton.buttonStyle = .secondary
             pauseButton.title = "Pause"
-            pauseButton.isEnabled = true
-            pauseButton.alphaValue = 1.0
+            cancelButton.buttonStyle = .destructive
+            cancelButton.title = "Cancel"
+            hideButton.buttonStyle = .ghost
+            hideButton.title = "Hide"
+
             pauseButton.isHidden = false
             cancelButton.isHidden = false
             hideButton.isHidden = false
@@ -270,13 +379,17 @@ final class JobCardView: NSView {
 
         case .paused:
             statusHeadingLabel.stringValue = "Paused"
-            statusHeadingLabel.textColor = NSColor(srgbRed: 1.0, green: 0.75, blue: 0.35, alpha: 1.0)
-            metaLabel.frame = NSRect(x: 18, y: 28, width: 140, height: 24)
-            updateMetaText()
+            statusHeadingLabel.textColor = NSColor(srgbRed: 1.0, green: 0.75, blue: 0.30, alpha: 1.0)
+            statusDot.fillColor = NSColor(srgbRed: 1.0, green: 0.75, blue: 0.30, alpha: 1.0)
+            metaTimingLabel.stringValue = "Paused"
 
+            pauseButton.buttonStyle = .primaryAccent
             pauseButton.title = "Resume"
-            pauseButton.isEnabled = true
-            pauseButton.alphaValue = 1.0
+            cancelButton.buttonStyle = .destructive
+            cancelButton.title = "Cancel"
+            hideButton.buttonStyle = .ghost
+            hideButton.title = "Hide"
+
             pauseButton.isHidden = false
             cancelButton.isHidden = false
             hideButton.isHidden = false
@@ -287,10 +400,20 @@ final class JobCardView: NSView {
 
         case .completed:
             statusHeadingLabel.stringValue = "Completed"
-            statusHeadingLabel.textColor = NSColor(srgbRed: 0.30, green: 0.85, blue: 0.45, alpha: 1.0)
+            statusHeadingLabel.textColor = NSColor(srgbRed: 0.32, green: 0.90, blue: 0.52, alpha: 1.0)
+            statusDot.fillColor = NSColor(srgbRed: 0.32, green: 0.90, blue: 0.52, alpha: 1.0)
+            metaTimingLabel.stringValue = "Done"
+
             progressBar.isIndeterminate = false
             progressBar.progress = 1.0
-            progressBar.fillColor = NSColor(srgbRed: 0.30, green: 0.85, blue: 0.45, alpha: 1.0)
+            progressBar.fillColor = NSColor(srgbRed: 0.32, green: 0.90, blue: 0.52, alpha: 1.0)
+
+            openButton.buttonStyle = .primarySuccess
+            openButton.title = "Open"
+            revealButton.buttonStyle = .secondary
+            revealButton.title = "Show in Finder"
+            hideButton.buttonStyle = .ghost
+            hideButton.title = "Hide"
 
             pauseButton.isHidden = true
             cancelButton.isHidden = true
@@ -298,16 +421,20 @@ final class JobCardView: NSView {
             revealButton.isHidden = false
             hideButton.isHidden = false
 
-            metaLabel.frame = NSRect(x: 18, y: 12, width: 130, height: 38)
-
             layoutButtons([openButton, revealButton, hideButton])
 
         case .failed:
             statusHeadingLabel.stringValue = "Failed"
             statusHeadingLabel.textColor = NSColor(srgbRed: 1.0, green: 0.35, blue: 0.35, alpha: 1.0)
+            statusDot.fillColor = NSColor(srgbRed: 1.0, green: 0.35, blue: 0.35, alpha: 1.0)
+            metaTimingLabel.stringValue = "Error"
+
             progressBar.isIndeterminate = false
             progressBar.progress = 1.0
             progressBar.fillColor = NSColor(srgbRed: 1.0, green: 0.35, blue: 0.35, alpha: 1.0)
+
+            hideButton.buttonStyle = .ghost
+            hideButton.title = "Dismiss"
 
             pauseButton.isHidden = true
             cancelButton.isHidden = true
@@ -315,27 +442,45 @@ final class JobCardView: NSView {
             revealButton.isHidden = true
             hideButton.isHidden = false
 
-            metaLabel.frame = NSRect(x: 18, y: 12, width: 230, height: 38)
             layoutButtons([hideButton])
         }
     }
 
     private func layoutButtons(_ buttons: [TaskActionButton]) {
-        let spacing: CGFloat = 6
-        var x = buttonContainer.bounds.width
+        let spacing: CGFloat = 8
+        var totalW: CGFloat = 0
+        var widths: [CGFloat] = []
 
-        for btn in buttons.reversed() {
+        for btn in buttons {
             let width: CGFloat
             if btn == revealButton {
-                width = 94
+                width = 114
             } else if btn == openButton {
-                width = 54
+                width = 58
+            } else if btn == pauseButton && state == .paused {
+                width = 72
+            } else if btn == pauseButton {
+                width = 62
+            } else if btn == cancelButton {
+                width = 66
+            } else if btn == hideButton && state == .failed {
+                width = 68
             } else {
-                width = 56
+                width = 50
             }
-            x -= width
-            btn.frame = NSRect(x: x, y: 2, width: width, height: 24)
-            x -= spacing
+            widths.append(width)
+            totalW += width
+        }
+        if !buttons.isEmpty {
+            totalW += CGFloat(buttons.count - 1) * spacing
+        }
+
+        // Right-align inside buttonContainer (width 308)
+        var x = max(0, buttonContainer.bounds.width - totalW)
+        for (i, btn) in buttons.enumerated() {
+            let w = widths[i]
+            btn.frame = NSRect(x: x, y: 1, width: w, height: 26)
+            x += w + spacing
         }
     }
 
@@ -357,12 +502,17 @@ final class JobCardView: NSView {
     }
 
     private func updateMetaText() {
+        let timeStr: String
         if elapsedSeconds < 60 {
-            metaLabel.stringValue = "Elapsed \(elapsedSeconds) s"
+            timeStr = "Elapsed \(elapsedSeconds) s"
         } else {
             let mins = elapsedSeconds / 60
             let secs = elapsedSeconds % 60
-            metaLabel.stringValue = "Elapsed \(mins)m \(secs)s"
+            timeStr = "Elapsed \(mins)m \(secs)s"
+        }
+        metaTimingLabel.stringValue = timeStr
+        if metaLabel.stringValue.hasPrefix("Elapsed ") || metaLabel.stringValue.isEmpty {
+            metaLabel.stringValue = timeStr
         }
     }
 
@@ -509,8 +659,8 @@ final class JobCardView: NSView {
 final class TaskIndicatorHeaderView: NSView {
     private let effectView = NSVisualEffectView()
     private let summaryLabel = NSTextField(labelWithString: "")
-    private let collapseButton = NSButton()
-    private let hideAllButton = NSButton()
+    private let collapseButton = TaskActionButton()
+    private let hideAllButton = TaskActionButton()
 
     var isCollapsed = false {
         didSet {
@@ -522,11 +672,11 @@ final class TaskIndicatorHeaderView: NSView {
     var onHideAll: (() -> Void)?
 
     override var intrinsicContentSize: NSSize {
-        return NSSize(width: 336, height: 48)
+        return NSSize(width: 344, height: 48)
     }
 
     init() {
-        super.init(frame: NSRect(x: 0, y: 0, width: 336, height: 48))
+        super.init(frame: NSRect(x: 0, y: 0, width: 344, height: 48))
         setupUI()
     }
 
@@ -534,10 +684,10 @@ final class TaskIndicatorHeaderView: NSView {
 
     private func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
-        widthAnchor.constraint(equalToConstant: 336).isActive = true
+        widthAnchor.constraint(equalToConstant: 344).isActive = true
         heightAnchor.constraint(equalToConstant: 48).isActive = true
 
-        effectView.frame = NSRect(x: 0, y: 0, width: 336, height: 48)
+        effectView.frame = NSRect(x: 0, y: 0, width: 344, height: 48)
         effectView.autoresizingMask = [.width, .height]
         effectView.material = .hudWindow
         effectView.blendingMode = .withinWindow
@@ -556,7 +706,7 @@ final class TaskIndicatorHeaderView: NSView {
         layer?.shadowOffset = CGSize(width: 0, height: -2)
         layer?.shadowRadius = 6
 
-        summaryLabel.frame = NSRect(x: 14, y: 6, width: 195, height: 34)
+        summaryLabel.frame = NSRect(x: 14, y: 6, width: 185, height: 34)
         summaryLabel.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
         summaryLabel.textColor = NSColor(white: 0.75, alpha: 1.0)
         summaryLabel.maximumNumberOfLines = 2
@@ -564,21 +714,19 @@ final class TaskIndicatorHeaderView: NSView {
         summaryLabel.stringValue = "2 jobs · running 1"
         addSubview(summaryLabel)
 
-        // Actions: Collapse and Hide all
-        setupActionBtn(hideAllButton, title: "Hide all", frame: NSRect(x: 270, y: 11, width: 56, height: 26), action: #selector(hideAllClicked))
-        setupActionBtn(collapseButton, title: "Collapse", frame: NSRect(x: 205, y: 11, width: 62, height: 26), action: #selector(collapseClicked))
-    }
+        collapseButton.buttonStyle = .secondary
+        collapseButton.title = "Collapse"
+        collapseButton.frame = NSRect(x: 202, y: 11, width: 68, height: 26)
+        collapseButton.target = self
+        collapseButton.action = #selector(collapseClicked)
+        addSubview(collapseButton)
 
-    private func setupActionBtn(_ btn: NSButton, title: String, frame: NSRect, action: Selector) {
-        btn.frame = frame
-        btn.title = title
-        btn.bezelStyle = .inline
-        btn.isBordered = false
-        btn.font = NSFont.systemFont(ofSize: 12, weight: .medium)
-        btn.contentTintColor = .white
-        btn.target = self
-        btn.action = action
-        addSubview(btn)
+        hideAllButton.buttonStyle = .ghost
+        hideAllButton.title = "Hide all"
+        hideAllButton.frame = NSRect(x: 276, y: 11, width: 58, height: 26)
+        hideAllButton.target = self
+        hideAllButton.action = #selector(hideAllClicked)
+        addSubview(hideAllButton)
     }
 
     func updateSummary(total: Int, running: Int, paused: Int, waiting: Int, completed: Int) {
@@ -622,7 +770,7 @@ final class TaskIndicatorManager {
 
     private func setupPanel() {
         let p = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 350, height: 100),
+            contentRect: NSRect(x: 0, y: 0, width: 360, height: 100),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: true
@@ -814,13 +962,13 @@ final class TaskIndicatorManager {
         }
 
         if isCollapsed && cards.count > 1 {
-            totalHeight += 138.0
+            totalHeight += 154.0
         } else {
-            totalHeight += CGFloat(cards.count) * 138.0
+            totalHeight += CGFloat(cards.count) * 154.0
         }
 
-        let x = screen.visibleFrame.maxX - 360.0
+        let x = screen.visibleFrame.maxX - 376.0
         let y = screen.visibleFrame.minY + 24.0
-        panel?.setFrame(NSRect(x: x, y: y, width: 350.0, height: totalHeight), display: true)
+        panel?.setFrame(NSRect(x: x, y: y, width: 360.0, height: totalHeight), display: true)
     }
 }

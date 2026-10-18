@@ -102,6 +102,9 @@ enum Catalog {
         if ext == "txt" {
             return ["md", "pdf", "docx", "png"]
         }
+        if ext == "pdf" {
+            return ["docx", "png", "jpg", "txt", "md", "html"]
+        }
         return targetFormats(forCategory: category(for: path))
     }
 

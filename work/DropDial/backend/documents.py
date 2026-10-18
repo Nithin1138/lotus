@@ -382,6 +382,23 @@ def convert(path,fmt,params):
             if not text.strip(): raise ValueError(T('This PDF has no selectable text; scanned documents need OCR first'))
             with output_file(path,'converted','.txt') as state: state['temp'].write_text(text,encoding='utf8')
             return state['output']
+        if fmt=='md':
+            import pymupdf as fitz
+            doc=fitz.open(path)
+            text='\n\n'.join(page.get_text() for page in doc)
+            doc.close()
+            if not text.strip(): raise ValueError(T('This PDF has no selectable text; scanned documents need OCR first'))
+            with output_file(path,'converted','.md') as state: state['temp'].write_text(text,encoding='utf8')
+            return state['output']
+        if fmt=='html':
+            import pymupdf as fitz
+            doc=fitz.open(path)
+            text='\n\n'.join(page.get_text() for page in doc)
+            doc.close()
+            if not text.strip(): raise ValueError(T('This PDF has no selectable text; scanned documents need OCR first'))
+            html_content = markdown_to_html(text)
+            with output_file(path,'converted','.html') as state: state['temp'].write_text(html_content,encoding='utf8')
+            return state['output']
     if source=='.txt':
         text=Path(path).read_text(encoding='utf-8-sig', errors='replace')
         if fmt=='md':
