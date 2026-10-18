@@ -141,7 +141,9 @@ internal sealed class DropWheel : Window
         var area = Forms.Screen.FromPoint(new System.Drawing.Point(point.X, point.Y)).WorkingArea;
         Native.SetWindowPos(hwnd, new IntPtr(-1), point.X, point.Y, 0, 0, 0x0001 | 0x0010);
         int size = (int)Math.Round(SingleSize * Native.GetDpiForWindow(hwnd) / 96.0);
-        int x = Math.Clamp(point.X - size / 2, area.Left, Math.Max(area.Left, area.Right - size)), y = Math.Clamp(point.Y - size / 2, area.Top, Math.Max(area.Top, area.Bottom - size));
+        int radius = (int)Math.Round(180.0 * Native.GetDpiForWindow(hwnd) / 96.0);
+        int targetX = (point.X + radius + size / 2 <= area.Right) ? (point.X + radius - size / 2) : (point.X - radius - size / 2);
+        int x = Math.Clamp(targetX, area.Left, Math.Max(area.Left, area.Right - size)), y = Math.Clamp(point.Y - size / 2, area.Top, Math.Max(area.Top, area.Bottom - size));
         Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, size, size, 0x0010 | 0x0040);
         UpdateLayout();
     }

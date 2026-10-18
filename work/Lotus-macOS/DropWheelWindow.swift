@@ -83,13 +83,12 @@ final class RadialWheelView: NSView {
     var onHubClicked: (() -> Void)?
     var onFilesDropped: (([String]) -> Void)?
 
-    let wheelCenter = CGPoint(x: 175, y: 158)
-    let innerRadius: CGFloat = 56
-    let outerRadius: CGFloat = 142
-    let backdropRadius: CGFloat = 148
-    let circleRadius: CGFloat = 47
-    let topBarRect = NSRect(x: 175 - 114, y: 338, width: 228, height: 32)
-    let statusPillRect = NSRect(x: 175 - 110, y: 304, width: 220, height: 22)
+    let wheelCenter = CGPoint(x: 170, y: 155)
+    let innerRadius: CGFloat = 52
+    let outerRadius: CGFloat = 138
+    let backdropRadius: CGFloat = 150
+    let hubRadius: CGFloat = 46
+    let topBarRect = NSRect(x: 170 - 110, y: 304, width: 220, height: 32)
 
     var isDarkMode: Bool {
         let t = UserDefaults.standard.string(forKey: "LOTUS_THEME") ?? "system"
@@ -142,10 +141,6 @@ final class RadialWheelView: NSView {
                 SliceItem(id: "compress", title: "Compress", iconName: "arrow.down.circle", isTool: true, isAction: false),
                 SliceItem(id: "resizeImage", title: "Resize", iconName: "arrow.up.left.and.arrow.down.right", isTool: true, isAction: false),
                 SliceItem(id: "cropImage", title: "Crop", iconName: "crop", isTool: true, isAction: false),
-                SliceItem(id: "editImage", title: "Adjust", iconName: "slider.horizontal.3", isTool: true, isAction: false),
-                SliceItem(id: "frameImage", title: "Frame", iconName: "square.dashed", isTool: true, isAction: false),
-                SliceItem(id: "redactImage", title: "Redact", iconName: "eye.slash.fill", isTool: true, isAction: false),
-                SliceItem(id: "annotateImage", title: "Annotate", iconName: "pencil.and.outline", isTool: true, isAction: false),
                 SliceItem(id: "rotateImage", title: "Rotate", iconName: "rotate.right", isTool: true, isAction: false),
                 SliceItem(id: "ocrImage", title: "OCR", iconName: "doc.text.viewfinder", isTool: true, isAction: false),
                 SliceItem(id: "watermark", title: "Watermark", iconName: "text.bubble", isTool: true, isAction: false),
@@ -306,57 +301,6 @@ final class RadialWheelView: NSView {
         return 360.0 / CGFloat(items.count)
     }
 
-    func description(for item: SliceItem) -> String {
-        switch item.id {
-        // Image & Video Tools
-        case "compress": return "Reduce file size with smart compression"
-        case "resizeImage": return "Scale dimensions and DPI resolution"
-        case "cropImage": return "Custom aspect ratios & free-style crop"
-        case "editImage": return "Exposure, contrast, saturation & clarity"
-        case "frameImage": return "Background padding, borders & shadow"
-        case "redactImage": return "Solid blackout, blur & pixelation"
-        case "annotateImage": return "Text stamps, highlights & badges"
-        case "rotateImage": return "Rotate 90°, 180°, 270° or arbitrary angle"
-        case "ocrImage": return "Extract text & create searchable PDF"
-        case "watermark": return "Confidentiality stamps & text overlays"
-        case "removeMetadata": return "Strip EXIF, GPS & privacy metadata"
-        case "createPDF": return "Package image into single-page PDF"
-        case "trimVideo": return "Cut video start and end times"
-        case "cropVideo": return "Crop video frame to aspect ratios"
-        case "splitVideo": return "Divide video into equal parts"
-        case "videoToGif": return "Convert video clip to animated GIF"
-        case "muteVideo": return "Strip audio tracks from video"
-        case "changeVideoSpeed": return "Speed up or slow down video playback"
-        case "videoSnapshots": return "Extract still photo frames from video"
-        // PDF Tools
-        case "organizePDF": return "Reorder, rotate, split & merge pages"
-        case "pdfToImages": return "Export each page as PNG/JPG"
-        case "protectPDF": return "Add password encryption"
-        case "splitPDF": return "Extract page ranges"
-        case "mergePDF": return "Combine multiple PDFs into one"
-        case "flattenPDF": return "Flatten annotations & form fields"
-        // Audio Tools
-        case "trimAudio": return "Trim audio clip start and end"
-        case "audioToVideo": return "Create video with waveform visualizer"
-        case "redactAudio": return "Beep or mute sensitive audio segments"
-        // Conversions
-        case let c where c.hasPrefix("convert:"):
-            let ext = c.replacingOccurrences(of: "convert:", with: "").uppercased()
-            return "Convert file to \(ext) format"
-        // Actions
-        case "action:open": return "Open file in default application"
-        case "action:reveal": return "Show and highlight file in Finder"
-        case "action:quicklook": return "Instant full-screen preview"
-        case "action:copy": return "Copy file to clipboard"
-        case "action:copypath": return "Copy absolute file path to clipboard"
-        case "action:trash": return "Move file to Trash safely"
-        case "action:share": return "Send via AirDrop, Mail, or Messages"
-        case "action:duplicate": return "Create a duplicate copy in folder"
-        default:
-            return item.title
-        }
-    }
-
     private func indexForPoint(_ point: NSPoint) -> Int {
         // 1. Check top pill bar
         if topBarRect.contains(point) {
@@ -366,20 +310,15 @@ final class RadialWheelView: NSView {
             return -10 - max(0, min(2, btnIdx)) // -10: Convert, -11: Tools, -12: Actions
         }
 
-        // 2. Check status pill
-        if statusPillRect.contains(point) {
-            return -4
-        }
-
         let dx = point.x - wheelCenter.x
         let dy = point.y - wheelCenter.y
         let dist = sqrt(dx * dx + dy * dy)
 
-        if dist <= circleRadius {
-            return -2 // Center Aperture
+        if dist <= hubRadius {
+            return -2 // Center Hub
         }
         if dist < innerRadius {
-            return -3 // Gap between center circle and petals
+            return -3 // Gap between hub and petals
         }
         if dist > outerRadius {
             return -1 // Outside
@@ -393,6 +332,19 @@ final class RadialWheelView: NSView {
         let angle = sliceAngle()
         let idx = Int(deg / angle)
         return (idx >= 0 && idx < items.count) ? idx : -1
+    }
+
+    // MARK: - Hit Testing
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let dx = point.x - wheelCenter.x
+        let dy = point.y - wheelCenter.y
+        let dist = sqrt(dx * dx + dy * dy)
+        let inCircle = (dist <= backdropRadius)
+        let inTopBar = topBarRect.contains(point)
+        if !inCircle && !inTopBar {
+            return nil
+        }
+        return super.hitTest(point)
     }
 
     // MARK: - Mouse Events
@@ -434,15 +386,9 @@ final class RadialWheelView: NSView {
         }
 
         if hit == -2 {
-            if currentPaths.isEmpty {
-                onHubClicked?()
-            } else {
-                DropWheelWindowController.shared.hideWheel()
-            }
+            onHubClicked?()
         } else if hit >= 0 && hit < items.count {
             onSelectSlice?(items[hit], currentPaths)
-        } else if hit == -1 {
-            DropWheelWindowController.shared.hideWheel()
         }
     }
 
@@ -611,45 +557,43 @@ final class RadialWheelView: NSView {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         let dark = isDarkMode
 
-        // 1. Soft Donut Backing Halo (Zero paint inside center aperture!)
+        // 1. Soft Outer Halo / Backing Disc with Decreased Outer Shadow
         context.saveGState()
-        let halo = CGMutablePath()
-        halo.addEllipse(in: CGRect(x: wheelCenter.x - backdropRadius, y: wheelCenter.y - backdropRadius, width: backdropRadius * 2, height: backdropRadius * 2))
-        halo.addEllipse(in: CGRect(x: wheelCenter.x - (innerRadius - 3), y: wheelCenter.y - (innerRadius - 3), width: (innerRadius - 3) * 2, height: (innerRadius - 3) * 2))
-        context.addPath(halo)
+        let haloPath = CGPath(ellipseIn: CGRect(x: wheelCenter.x - backdropRadius, y: wheelCenter.y - backdropRadius, width: backdropRadius * 2, height: backdropRadius * 2), transform: nil)
+        context.addPath(haloPath)
         if dark {
             context.setFillColor(NSColor(srgbRed: 0.14, green: 0.16, blue: 0.19, alpha: 0.85).cgColor)
-            context.setShadow(offset: CGSize(width: 0, height: -2), blur: 6, color: NSColor.black.withAlphaComponent(0.20).cgColor)
+            context.setShadow(offset: CGSize(width: 0, height: -2), blur: 8, color: NSColor.black.withAlphaComponent(0.18).cgColor)
         } else {
-            context.setFillColor(NSColor(srgbRed: 0.88, green: 0.90, blue: 0.92, alpha: 0.45).cgColor)
-            context.setShadow(offset: CGSize(width: 0, height: -2), blur: 6, color: NSColor.black.withAlphaComponent(0.06).cgColor)
+            context.setFillColor(NSColor(srgbRed: 0.90, green: 0.92, blue: 0.94, alpha: 0.40).cgColor)
+            context.setShadow(offset: CGSize(width: 0, height: -2), blur: 8, color: NSColor.black.withAlphaComponent(0.05).cgColor)
         }
-        context.fillPath(using: .evenOdd)
+        context.fillPath()
         context.restoreGState()
 
-        // 2. Draw Petals with Smooth Cushion Fillets & Uniform Gaps
+        // 2. Draw Petals with Smooth Cushion Fillets & Gaps
         let angleStep = sliceAngle()
-        let gapDeg: CGFloat = items.count > 10 ? 3.0 : 3.5
+        let gap: CGFloat = 3.5
 
         for (i, item) in items.enumerated() {
             let isHovered = (i == hoveredIndex)
 
-            let s = 90.0 - CGFloat(i) * angleStep - gapDeg / 2.0
-            let e = s - (angleStep - gapDeg)
-            let petal = makeCushionPetal(center: wheelCenter, innerR: innerRadius, outerR: outerRadius, startDeg: s, endDeg: e, cornerRadius: 6.5)
+            let s = 90.0 - CGFloat(i) * angleStep - gap / 2.0
+            let e = s - (angleStep - gap)
+            let petal = makeCushionPetal(center: wheelCenter, innerR: innerRadius, outerR: outerRadius, startDeg: s, endDeg: e, cornerRadius: 8.0)
 
             // Fill & Shadow
             context.saveGState()
             context.addPath(petal)
             if isHovered {
-                context.setFillColor(NSColor(srgbRed: 1.0, green: 0.38, blue: 0.03, alpha: 1.0).cgColor)
-                context.setShadow(offset: CGSize(width: 0, height: -1), blur: 6, color: NSColor(srgbRed: 1.0, green: 0.38, blue: 0.03, alpha: 0.40).cgColor)
+                context.setFillColor(NSColor(srgbRed: 1.0, green: 0.33, blue: 0.0, alpha: 1.0).cgColor)
+                context.setShadow(offset: CGSize(width: 0, height: -1), blur: 4, color: NSColor(srgbRed: 1.0, green: 0.33, blue: 0.0, alpha: 0.35).cgColor)
             } else if dark {
                 context.setFillColor(NSColor(srgbRed: 0.20, green: 0.22, blue: 0.25, alpha: 0.98).cgColor)
-                context.setShadow(offset: CGSize(width: 0, height: -1), blur: 2, color: NSColor.black.withAlphaComponent(0.18).cgColor)
+                context.setShadow(offset: CGSize(width: 0, height: -1), blur: 2, color: NSColor.black.withAlphaComponent(0.15).cgColor)
             } else {
-                context.setFillColor(NSColor(srgbRed: 0.96, green: 0.97, blue: 0.98, alpha: 0.98).cgColor)
-                context.setShadow(offset: CGSize(width: 0, height: -1), blur: 2, color: NSColor.black.withAlphaComponent(0.05).cgColor)
+                context.setFillColor(NSColor(srgbRed: 0.94, green: 0.95, blue: 0.96, alpha: 0.98).cgColor)
+                context.setShadow(offset: CGSize(width: 0, height: -1), blur: 2, color: NSColor.black.withAlphaComponent(0.04).cgColor)
             }
             context.fillPath()
             context.restoreGState()
@@ -658,11 +602,11 @@ final class RadialWheelView: NSView {
             context.saveGState()
             context.addPath(petal)
             if isHovered {
-                context.setStrokeColor(NSColor(srgbRed: 1.0, green: 0.55, blue: 0.25, alpha: 0.90).cgColor)
+                context.setStrokeColor(NSColor(srgbRed: 0.90, green: 0.28, blue: 0.0, alpha: 0.8).cgColor)
             } else if dark {
-                context.setStrokeColor(NSColor(white: 1.0, alpha: 0.12).cgColor)
+                context.setStrokeColor(NSColor(white: 1.0, alpha: 0.10).cgColor)
             } else {
-                context.setStrokeColor(NSColor(white: 1.0, alpha: 0.95).cgColor)
+                context.setStrokeColor(NSColor(white: 1.0, alpha: 0.8).cgColor)
             }
             context.setLineWidth(1.0)
             context.strokePath()
@@ -679,26 +623,26 @@ final class RadialWheelView: NSView {
             if isHovered {
                 textColor = .white
             } else if dark {
-                textColor = NSColor(srgbRed: 0.94, green: 0.95, blue: 0.97, alpha: 1.0)
+                textColor = NSColor(srgbRed: 0.92, green: 0.94, blue: 0.96, alpha: 1.0)
             } else {
-                textColor = NSColor(srgbRed: 0.16, green: 0.18, blue: 0.21, alpha: 1.0)
+                textColor = NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0)
             }
 
             if let iconName = item.iconName, let symbol = NSImage(systemSymbolName: iconName, accessibilityDescription: nil) {
-                let iconSize: CGFloat = 16
-                let iconRect = NSRect(x: tx - iconSize / 2, y: ty + 3, width: iconSize, height: iconSize)
+                let iconSize: CGFloat = 15
+                let iconRect = NSRect(x: tx - iconSize / 2, y: ty + 2, width: iconSize, height: iconSize)
                 let tinted = symbol.copy() as! NSImage
                 tinted.isTemplate = true
                 textColor.set()
                 tinted.draw(in: iconRect)
 
-                let font = NSFont.systemFont(ofSize: 9.5, weight: .semibold)
+                let font = NSFont.systemFont(ofSize: 10, weight: .bold)
                 let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: textColor]
                 let str = NSAttributedString(string: item.title, attributes: attrs)
                 let sz = str.size()
-                str.draw(at: NSPoint(x: tx - sz.width / 2, y: ty - sz.height - 3))
+                str.draw(at: NSPoint(x: tx - sz.width / 2, y: ty - sz.height - 2))
             } else {
-                let font = NSFont.systemFont(ofSize: 12.5, weight: .bold)
+                let font = NSFont.systemFont(ofSize: 13, weight: .bold)
                 let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: textColor]
                 let str = NSAttributedString(string: item.title, attributes: attrs)
                 let sz = str.size()
@@ -706,95 +650,132 @@ final class RadialWheelView: NSView {
             }
         }
 
-        // 3. Circle Line at Cursor (100% Transparent Aperture to view selected file!)
+        // 3. Center Circle Hub: Lotus / Drag & Drop / Selected File Name / Hovered Slice
+        let hubRect = NSRect(x: wheelCenter.x - hubRadius, y: wheelCenter.y - hubRadius, width: hubRadius * 2, height: hubRadius * 2)
+        let hubPath = NSBezierPath(ovalIn: hubRect)
+
         context.saveGState()
-        let orangeColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: isHubHovered ? 1.0 : 0.92)
-
-        // Faint outer luminous glow
-        context.addEllipse(in: CGRect(x: wheelCenter.x - circleRadius - 1.5, y: wheelCenter.y - circleRadius - 1.5, width: (circleRadius + 1.5) * 2, height: (circleRadius + 1.5) * 2))
-        context.setStrokeColor(NSColor(srgbRed: 1.0, green: 0.40, blue: 0.05, alpha: isHubHovered ? 0.45 : 0.25).cgColor)
-        context.setLineWidth(2.5)
-        context.strokePath()
-
-        // Primary crisp circle line
-        context.addEllipse(in: CGRect(x: wheelCenter.x - circleRadius, y: wheelCenter.y - circleRadius, width: circleRadius * 2, height: circleRadius * 2))
-        context.setStrokeColor(orangeColor.cgColor)
-        context.setLineWidth(isHubHovered ? 2.25 : 1.75)
-        context.strokePath()
-
-        // Delicate inner highlight rim
-        context.addEllipse(in: CGRect(x: wheelCenter.x - circleRadius + 1.5, y: wheelCenter.y - circleRadius + 1.5, width: (circleRadius - 1.5) * 2, height: (circleRadius - 1.5) * 2))
-        context.setStrokeColor(NSColor(white: 1.0, alpha: dark ? 0.22 : 0.60).cgColor)
-        context.setLineWidth(0.75)
-        context.strokePath()
-        context.restoreGState()
-
-        // 4. Status Pill below Top Bar
-        context.saveGState()
-        let pillPath = NSBezierPath(roundedRect: statusPillRect, xRadius: statusPillRect.height / 2, yRadius: statusPillRect.height / 2)
-        context.setShadow(offset: CGSize(width: 0, height: -1), blur: 3, color: NSColor.black.withAlphaComponent(dark ? 0.25 : 0.08).cgColor)
+        context.setShadow(offset: CGSize(width: 0, height: -1), blur: 5, color: NSColor.black.withAlphaComponent(dark ? 0.25 : 0.06).cgColor)
         if dark {
-            NSColor(srgbRed: 0.16, green: 0.18, blue: 0.22, alpha: 0.92).setFill()
-            pillPath.fill()
-            NSColor(white: 1.0, alpha: 0.10).setStroke()
+            NSColor(srgbRed: 0.16, green: 0.18, blue: 0.21, alpha: 0.98).setFill()
         } else {
-            NSColor(white: 0.98, alpha: 0.95).setFill()
-            pillPath.fill()
-            NSColor(white: 1.0, alpha: 0.85).setStroke()
+            NSColor(srgbRed: 0.98, green: 0.98, blue: 0.99, alpha: 0.98).setFill()
         }
-        pillPath.lineWidth = 0.75
-        pillPath.stroke()
+        hubPath.fill()
         context.restoreGState()
+
+        let orangeColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: isHubHovered ? 1.0 : 0.85)
+        orangeColor.setStroke()
+        hubPath.lineWidth = isHubHovered ? 2.0 : 1.5
+        hubPath.stroke()
 
         if hoveredIndex >= 0 && hoveredIndex < items.count {
+            // Hovered Slice Preview inside Hub
             let item = items[hoveredIndex]
-            let desc = description(for: item)
-            let pTitleFont = NSFont.systemFont(ofSize: 9.5, weight: .bold)
-            let pDescFont = NSFont.systemFont(ofSize: 9.5, weight: .medium)
-            let pOrange = NSColor(srgbRed: 1.0, green: 0.42, blue: 0.05, alpha: 1.0)
-            let descColor = dark ? NSColor(white: 0.85, alpha: 1.0) : NSColor(white: 0.25, alpha: 1.0)
+            let modeTitle = mode == .conversions ? "CONVERT" : (mode == .tools ? "TOOL" : "ACTION")
+            let modeFont = NSFont.systemFont(ofSize: 8, weight: .bold)
+            let modeAttrs: [NSAttributedString.Key: Any] = [.font: modeFont, .foregroundColor: orangeColor]
+            let modeStr = NSAttributedString(string: modeTitle, attributes: modeAttrs)
+            let mSz = modeStr.size()
+            modeStr.draw(at: NSPoint(x: wheelCenter.x - mSz.width / 2, y: wheelCenter.y + 11))
 
-            let pText = NSMutableAttributedString()
-            pText.append(NSAttributedString(string: item.title + "  ", attributes: [.font: pTitleFont, .foregroundColor: pOrange]))
-            pText.append(NSAttributedString(string: "• " + desc, attributes: [.font: pDescFont, .foregroundColor: descColor]))
-            let pSz = pText.size()
-            let drawX = max(statusPillRect.minX + 10, statusPillRect.midX - pSz.width / 2)
-            pText.draw(at: NSPoint(x: drawX, y: statusPillRect.midY - pSz.height / 2))
+            let titleFont = NSFont.systemFont(ofSize: 13, weight: .bold)
+            let titleColor = dark ? NSColor.white : NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0)
+            let titleAttrs: [NSAttributedString.Key: Any] = [.font: titleFont, .foregroundColor: titleColor]
+            let titleStr = NSAttributedString(string: item.title, attributes: titleAttrs)
+            let tSz = titleStr.size()
+            titleStr.draw(at: NSPoint(x: wheelCenter.x - tSz.width / 2, y: wheelCenter.y - tSz.height / 2 + 1))
+
+            let subFont = NSFont.systemFont(ofSize: 8, weight: .medium)
+            let subColor = dark ? NSColor(white: 0.65, alpha: 1.0) : NSColor(white: 0.50, alpha: 1.0)
+            let subAttrs: [NSAttributedString.Key: Any] = [.font: subFont, .foregroundColor: subColor]
+            let subStr = NSAttributedString(string: "Click or drop", attributes: subAttrs)
+            let sSz = subStr.size()
+            subStr.draw(at: NSPoint(x: wheelCenter.x - sSz.width / 2, y: wheelCenter.y - 18))
         } else if !currentPaths.isEmpty {
+            // Showing Selected File Name & Thumbnail
             let first = currentPaths.first!
             let fileName = URL(fileURLWithPath: first).lastPathComponent
             let count = currentPaths.count
+
             let iconImage = hubThumbnail ?? NSWorkspace.shared.icon(forFile: first)
-            let iconSize: CGFloat = 13
-            let iconRect = NSRect(x: statusPillRect.minX + 8, y: statusPillRect.midY - iconSize / 2, width: iconSize, height: iconSize)
+            let iconSize: CGFloat = count > 1 ? 22 : 24
+            let iconRect = NSRect(x: wheelCenter.x - iconSize / 2, y: wheelCenter.y + (count > 1 ? 4 : 2), width: iconSize, height: iconSize)
             iconImage.draw(in: iconRect)
 
-            let pFont = NSFont.systemFont(ofSize: 9.0, weight: .semibold)
-            let pColor = dark ? NSColor.white : NSColor(srgbRed: 0.12, green: 0.14, blue: 0.16, alpha: 1.0)
-            let label = count > 1 ? "\(count) files selected • \(items.count) options" : "\(fileName) • \(items.count) tools"
-            let pText = NSAttributedString(string: label, attributes: [.font: pFont, .foregroundColor: pColor])
-            let textRect = NSRect(x: iconRect.maxX + 5, y: statusPillRect.midY - pText.size().height / 2, width: statusPillRect.width - iconSize - 20, height: 14)
-            pText.draw(in: textRect)
+            if count > 1 {
+                let badgeAttrs: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.systemFont(ofSize: 8.5, weight: .bold),
+                    .foregroundColor: orangeColor
+                ]
+                let badgeStr = NSAttributedString(string: "\(count) files", attributes: badgeAttrs)
+                let bSz = badgeStr.size()
+                badgeStr.draw(at: NSPoint(x: wheelCenter.x - bSz.width / 2, y: wheelCenter.y - 12))
+
+                let subAttrs: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.systemFont(ofSize: 7.5, weight: .medium),
+                    .foregroundColor: dark ? NSColor(white: 0.65, alpha: 1.0) : NSColor(white: 0.50, alpha: 1.0)
+                ]
+                let subStr = NSAttributedString(string: "click to switch", attributes: subAttrs)
+                let sSz = subStr.size()
+                subStr.draw(at: NSPoint(x: wheelCenter.x - sSz.width / 2, y: wheelCenter.y - 23))
+            } else {
+                let nameFont = NSFont.systemFont(ofSize: 8.5, weight: .semibold)
+                let nameColor = dark ? NSColor.white : NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0)
+                let style = NSMutableParagraphStyle()
+                style.lineBreakMode = .byTruncatingMiddle
+                style.alignment = .center
+
+                let nameAttrs: [NSAttributedString.Key: Any] = [
+                    .font: nameFont,
+                    .foregroundColor: nameColor,
+                    .paragraphStyle: style
+                ]
+                let maxNameW: CGFloat = hubRadius * 1.6
+                let nameRect = NSRect(x: wheelCenter.x - maxNameW / 2, y: wheelCenter.y - 15, width: maxNameW, height: 12)
+                let nameStr = NSAttributedString(string: fileName, attributes: nameAttrs)
+                nameStr.draw(in: nameRect)
+
+                let subAttrs: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.systemFont(ofSize: 7.5, weight: .medium),
+                    .foregroundColor: orangeColor
+                ]
+                let subStr = NSAttributedString(string: mode.title.uppercased(), attributes: subAttrs)
+                let sSz = subStr.size()
+                subStr.draw(at: NSPoint(x: wheelCenter.x - sSz.width / 2, y: wheelCenter.y - 24))
+            }
         } else {
-            let pFont = NSFont.systemFont(ofSize: 9.0, weight: .medium)
-            let pColor = dark ? NSColor(white: 0.70, alpha: 1.0) : NSColor(white: 0.40, alpha: 1.0)
-            let pText = NSAttributedString(string: "🌸 Lotus • Drop files or press shortcut", attributes: [.font: pFont, .foregroundColor: pColor])
-            let pSz = pText.size()
-            pText.draw(at: NSPoint(x: statusPillRect.midX - pSz.width / 2, y: statusPillRect.midY - pSz.height / 2))
+            // Default: Name Lotus & Drag and Drop / Click
+            let lotusAttrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 13, weight: .bold),
+                .foregroundColor: orangeColor
+            ]
+            let lotusStr = NSAttributedString(string: "Lotus", attributes: lotusAttrs)
+            let lSz = lotusStr.size()
+            lotusStr.draw(at: NSPoint(x: wheelCenter.x - lSz.width / 2, y: wheelCenter.y + 3))
+
+            let subColor = dark ? NSColor(white: 0.65, alpha: 1.0) : NSColor(white: 0.50, alpha: 1.0)
+            let subAttrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 8.5, weight: .medium),
+                .foregroundColor: subColor
+            ]
+            let subStr = NSAttributedString(string: "Drop files\nor click", attributes: subAttrs)
+            let sSz = subStr.size()
+            subStr.draw(at: NSPoint(x: wheelCenter.x - sSz.width / 2, y: wheelCenter.y - 18))
         }
 
-        // 5. Floating Pill Toolbar Above Wheel: [ ⇧ Convert ]  [ ⌘ Tools ]  [ ⌃ Actions ]
+        // 4. Floating Pill Toolbar Above Wheel: [ ⇧ Convert ]  [ ⌘ Tools ]  [ ⌃ Actions ]
         context.saveGState()
-        context.setShadow(offset: CGSize(width: 0, height: -3), blur: 10, color: NSColor.black.withAlphaComponent(dark ? 0.32 : 0.10).cgColor)
+        context.setShadow(offset: CGSize(width: 0, height: -3), blur: 12, color: NSColor.black.withAlphaComponent(dark ? 0.35 : 0.12).cgColor)
         let barPath = NSBezierPath(roundedRect: topBarRect, xRadius: topBarRect.height / 2, yRadius: topBarRect.height / 2)
         if dark {
-            NSColor(srgbRed: 0.14, green: 0.16, blue: 0.19, alpha: 0.96).setFill()
+            NSColor(srgbRed: 0.14, green: 0.16, blue: 0.19, alpha: 0.95).setFill()
             barPath.fill()
             NSColor(white: 1.0, alpha: 0.12).setStroke()
         } else {
-            NSColor(white: 0.96, alpha: 0.96).setFill()
+            NSColor(white: 0.96, alpha: 0.95).setFill()
             barPath.fill()
-            NSColor(white: 1.0, alpha: 0.90).setStroke()
+            NSColor(white: 1.0, alpha: 0.8).setStroke()
         }
         barPath.lineWidth = 1.0
         barPath.stroke()
@@ -880,8 +861,8 @@ final class DropWheelWindowController: NSWindowController {
     private var localOutsideClickMonitor: Any?
 
     init() {
-        let width: CGFloat = 350
-        let height: CGFloat = 385
+        let width: CGFloat = 340
+        let height: CGFloat = 370
         let panel = KeyPanel(
             contentRect: NSRect(x: 0, y: 0, width: width, height: height),
             styleMask: [.borderless, .nonactivatingPanel],
@@ -946,48 +927,22 @@ final class DropWheelWindowController: NSWindowController {
         showAtCursor(mode: currentMode)
     }
 
-    private func getFinderSelection() -> [String] {
-        let script = """
-        tell application "Finder"
-            set sel to selection as alias list
-            set posixPaths to {}
-            repeat with itemRef in sel
-                set end of posixPaths to POSIX path of itemRef
-            end repeat
-            return posixPaths
-        end tell
-        """
-        var error: NSDictionary?
-        if let appleScript = NSAppleScript(source: script) {
-            let output = appleScript.executeAndReturnError(&error)
-            if error == nil {
-                var paths: [String] = []
-                let count = output.numberOfItems
-                if count > 0 {
-                    for i in 1...count {
-                        if let item = output.atIndex(i)?.stringValue, !item.isEmpty {
-                            paths.append(item)
-                        }
-                    }
-                } else if let single = output.stringValue, !single.isEmpty {
-                    paths.append(single)
-                }
-                return paths
-            }
-        }
-        return []
-    }
-
     func showAtCursor(mode: WheelMode) {
         let mouse = NSEvent.mouseLocation
-        let width: CGFloat = 350
-        let height: CGFloat = 385
+        let width: CGFloat = 340
+        let height: CGFloat = 370
         let screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) }) ?? NSScreen.main ?? NSScreen()
         let frame = screen.visibleFrame
 
-        // Center transparent hole of the wheel directly over the cursor & file
-        var x = mouse.x - wheelView.wheelCenter.x
-        var y = mouse.y - wheelView.wheelCenter.y
+        // Outer line of the circular wheel placed at pointer (cursor) instead of center
+        // so the wheel does not block the file underneath the cursor.
+        let radius: CGFloat = wheelView.backdropRadius // 150 pt
+        let canOpenRight = (mouse.x + radius + (width - wheelView.wheelCenter.x)) <= (frame.maxX - 10)
+        let screenCenterX: CGFloat = canOpenRight ? (mouse.x + radius) : (mouse.x - radius)
+        let screenCenterY: CGFloat = mouse.y
+
+        var x = screenCenterX - wheelView.wheelCenter.x
+        var y = screenCenterY - wheelView.wheelCenter.y
 
         // Clamp to screen bounds
         x = max(frame.minX + 10, min(frame.maxX - width - 10, x))
@@ -995,13 +950,6 @@ final class DropWheelWindowController: NSWindowController {
 
         window?.setFrame(NSRect(x: x, y: y, width: width, height: height), display: true)
         self.currentMode = mode
-
-        // Automatically detect selected file in Finder / Desktop when invoked
-        let sel = getFinderSelection()
-        if !sel.isEmpty {
-            self.currentPaths = sel
-        }
-
         if !currentPaths.isEmpty {
             wheelView.configure(paths: currentPaths, mode: mode)
         } else {
@@ -1057,7 +1005,19 @@ final class DropWheelWindowController: NSWindowController {
         outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp, .rightMouseDown]) { [weak self] _ in
             guard let self = self, let win = self.window, win.isVisible else { return }
             let mouseLoc = NSEvent.mouseLocation
-            if !win.frame.contains(mouseLoc) {
+            let clickInWheel: Bool
+            if win.frame.contains(mouseLoc) {
+                let local = win.contentView?.convert(mouseLoc, from: nil) ?? .zero
+                let dx = local.x - self.wheelView.wheelCenter.x
+                let dy = local.y - self.wheelView.wheelCenter.y
+                let dist = sqrt(dx * dx + dy * dy)
+                let inCircle = (dist <= self.wheelView.backdropRadius)
+                let inTopBar = self.wheelView.topBarRect.contains(local)
+                clickInWheel = inCircle || inTopBar
+            } else {
+                clickInWheel = false
+            }
+            if !clickInWheel {
                 DispatchQueue.main.async {
                     self.hideWheel()
                 }
@@ -1066,7 +1026,19 @@ final class DropWheelWindowController: NSWindowController {
         localOutsideClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp, .rightMouseDown]) { [weak self] event in
             guard let self = self, let win = self.window, win.isVisible else { return event }
             let mouseLoc = NSEvent.mouseLocation
-            if !win.frame.contains(mouseLoc) {
+            let clickInWheel: Bool
+            if win.frame.contains(mouseLoc) {
+                let local = win.contentView?.convert(mouseLoc, from: nil) ?? .zero
+                let dx = local.x - self.wheelView.wheelCenter.x
+                let dy = local.y - self.wheelView.wheelCenter.y
+                let dist = sqrt(dx * dx + dy * dy)
+                let inCircle = (dist <= self.wheelView.backdropRadius)
+                let inTopBar = self.wheelView.topBarRect.contains(local)
+                clickInWheel = inCircle || inTopBar
+            } else {
+                clickInWheel = false
+            }
+            if !clickInWheel {
                 DispatchQueue.main.async {
                     self.hideWheel()
                 }
