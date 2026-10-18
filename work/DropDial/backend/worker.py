@@ -1,33 +1,54 @@
 from pathlib import Path
 import sys,json,os
-from PIL import Image
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from common import *
-import images,documents,media,archives,office,mediatools,imagetools
 
 def one(path,action,params):
     kind=category(path)
-    if action.startswith('pack:'):return archives.convert([path],action.split(':',1)[1],{**params,'_pack':True})
+    if action.startswith('pack:'):
+        import archives
+        return archives.convert([path],action.split(':',1)[1],{**params,'_pack':True})
     if action.startswith('convert:'):
         fmt=action.split(':',1)[1]
-        if kind=='image': return images.convert(path,fmt,params)
-        if kind in ('video','audio'): return media.convert(path,fmt,params)
-        if kind=='document': return documents.convert(path,fmt,params)
-        if kind=='office':return office.convert(path,fmt,params)
+        if kind=='image':
+            import images
+            return images.convert(path,fmt,params)
+        if kind in ('video','audio'):
+            import media
+            return media.convert(path,fmt,params)
+        if kind=='document':
+            import documents
+            return documents.convert(path,fmt,params)
+        if kind=='office':
+            import office
+            return office.convert(path,fmt,params)
+        import archives
         return archives.convert([path],fmt,params)
     if action=='flow': return run_flow(path,params)
-    if action=='extractArchive': return archives.extract(path,params)
+    if action=='extractArchive':
+        import archives
+        return archives.extract(path,params)
     if action=='location':
         import location
         return location.run(path,params)
     if action in ('ocrImage','ocrPDF'):
         import ocr
         return ocr.run(path,action,params)
-    if kind=='office':return office.edit_metadata(path,params) if action=='removeMetadata' else office.selected_pdf(path,params)
-    if kind=='image': return images.tool(path,action,params)
-    if kind=='video': return media.video_tool(path,action,params)
-    if kind=='audio': return media.audio_tool(path,action,params)
-    if kind=='document': return documents.tool(path,action,params)
+    if kind=='office':
+        import office
+        return office.edit_metadata(path,params) if action=='removeMetadata' else office.selected_pdf(path,params)
+    if kind=='image':
+        import images
+        return images.tool(path,action,params)
+    if kind=='video':
+        import media
+        return media.video_tool(path,action,params)
+    if kind=='audio':
+        import media
+        return media.audio_tool(path,action,params)
+    if kind=='document':
+        import documents
+        return documents.tool(path,action,params)
     raise ValueError(T('This file does not support the selected tool'))
 
 def run_flow(path,params):
@@ -61,13 +82,30 @@ def execute(job,result_path):
         except OSError:pass
     progress('processing',0,Path(paths[0]).name)
     if grouped:
-        # Tools that turn the whole selection into one result.
-        together={'officeMergePDF':office.merge,'joinAudio':mediatools.join_audio,'createAnimation':imagetools.animation,'packArchive':archives.pack_archive,
-            'createCollage':images.collage,'createPDF':lambda p,o:documents.images_document(p,'pdf',o),'mergePDF':documents.merge,'joinVideos':media.join}
+        def _call_together(act, pths, prms):
+            if act == 'officeMergePDF':
+                import office; return office.merge(pths, prms)
+            if act == 'joinAudio':
+                import mediatools; return mediatools.join_audio(pths, prms)
+            if act == 'createAnimation':
+                import imagetools; return imagetools.animation(pths, prms)
+            if act == 'packArchive':
+                import archives; return archives.pack_archive(pths, prms)
+            if act == 'createCollage':
+                import images; return images.collage(pths, prms)
+            if act == 'createPDF':
+                import documents; return documents.images_document(pths, 'pdf', prms)
+            if act == 'mergePDF':
+                import documents; return documents.merge(pths, prms)
+            if act == 'joinVideos':
+                import media; return media.join(pths, prms)
+            import archives
+            return archives.convert(pths, act.split(':')[1], {**prms, '_pack': act.startswith('pack:')})
         try:
-            output=together[action](paths,params) if action in together else archives.convert(paths,action.split(':')[1],{**params,'_pack':action.startswith('pack:')})
-            files.append({'Input':paths[0],'Output':output,'Error':None})
-        except Exception as error: files.append({'Input':paths[0],'Output':None,'Error':str(error)})
+            output = _call_together(action, paths, params)
+            files.append({'Input': paths[0], 'Output': output, 'Error': None})
+        except Exception as error:
+            files.append({'Input': paths[0], 'Output': None, 'Error': str(error)})
     else:
         for path in paths:
             progress('processing',len(files),Path(path).name)
@@ -87,6 +125,7 @@ def inspect(path,folder,frame=None):
     import location
     folder=Path(folder); folder.mkdir(parents=True,exist_ok=True); kind=category(path); result={'Kind':kind,'Preview':None,'Width':0,'Height':0,'Duration':0,'FrameRate':0,'Metadata':{},'Pages':0}
     if kind=='image':
+        import images
         image=open_image(path,frame); result.update(Width=image.width,Height=image.height,Frames=image.info.get('source_frames',1),Frame=image.info.get('source_frame',0),Metadata=images.metadata(path),Location=location_text(lambda:location.from_gps(image.getexif().get_ifd(location.GPS)))); image.thumbnail((1000,800)); preview=folder/'preview.png'; image.save(preview); result['Preview']=str(preview)
     elif kind in ('audio','video'):
         info=probe(path); result['Duration']=duration(info); result['Location']=location_text(lambda:location.from_tags(info))
@@ -96,17 +135,23 @@ def inspect(path,folder,frame=None):
             preview=folder/'preview.png'; ffmpeg(['-i',path,'-frames:v','1','-vf',r'scale=min(1000\,iw):-2',preview]); result['Preview']=str(preview)
         else:
             preview=folder/'waveform.png'; ffmpeg(['-i',path,'-filter_complex','aformat=channel_layouts=mono,showwavespic=s=1000x260:colors=0xff6500','-frames:v','1',preview]); result['Preview']=str(preview)
-    elif kind=='office':return office.inspect(path,folder)
+    elif kind=='office':
+        import office
+        return office.inspect(path,folder)
     elif Path(path).suffix.lower()=='.pdf':
-        import pypdfium2 as pdfium
+        import pypdfium2 as pdfium, documents
         doc=pdfium.PdfDocument(path); result['Pages']=len(doc); result['Metadata']=documents.metadata(path)
         preview=folder/'preview.png'; doc[0].render(scale=1.3).to_pil().save(preview); result['Preview']=str(preview); doc.close()
     return result
 
 def preview(path,action,params,folder,paths=None):
     folder=Path(folder); folder.mkdir(parents=True,exist_ok=True)
-    if category(path)=='office':return office.inspect(path,folder)
+    if category(path)=='office':
+        import office
+        return office.inspect(path,folder)
     if category(path)=='image':
+        from PIL import Image
+        import images, imagetools
         image=open_image(path,params.get('imageFrame'))
         if action=='editImage': image=images.edit(image,params)
         elif action=='cropImage': image=images.crop(image,params)
@@ -118,6 +163,7 @@ def preview(path,action,params,folder,paths=None):
         elif action=='createCollage': image=images.collage(paths or [path],params,preview=True)
         image.thumbnail((1200,900)); target=folder/'live-preview.png'; image.save(target); return {'Preview':str(target)}
     if category(path)=='video':
+        import images
         info=probe(path); t=max(0,min(number(params,'time',0)+number(params,'frame',0)/(number(params,'fps',30)),max(0,duration(info)-.04)))
         target=folder/'live-preview.png'; raw=folder/'source-frame.png'; ffmpeg(['-ss',t,'-i',path,'-frames:v','1',raw]); image=open_image(raw)
         if action=='cropVideo': image=images.crop(image,params)
@@ -139,6 +185,7 @@ def preview(path,action,params,folder,paths=None):
     return inspect(path,folder)
 
 def playback(path,action,params,folder):
+    import media
     folder=Path(folder);folder.mkdir(parents=True,exist_ok=True);kind=category(path);info=probe(path);start=max(0,min(number(params,'time',0),max(0,duration(info)-.1)));length=min(30,duration(info)-start)
     if action=='preview-original' and truth(params.get('fullPreview','false')):start=0;length=duration(info)
     if action in ('trimAudio','trimVideo'):

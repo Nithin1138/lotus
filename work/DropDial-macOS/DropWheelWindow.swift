@@ -173,11 +173,11 @@ final class RadialWheelView: NSView {
                 SliceItem(id: "compress", title: "Compress", iconName: "arrow.down.circle", isTool: true, isAction: false),
                 SliceItem(id: "resizeImage", title: "Resize", iconName: "arrow.up.left.and.arrow.down.right", isTool: true, isAction: false),
                 SliceItem(id: "cropImage", title: "Crop", iconName: "crop", isTool: true, isAction: false),
-                SliceItem(id: "rotateImage", title: "Rotate", iconName: "rotate.right", isTool: true, isAction: false),
-                SliceItem(id: "ocrImage", title: "OCR", iconName: "doc.text.viewfinder", isTool: true, isAction: false),
+                SliceItem(id: "editImage", title: "Adjust", iconName: "slider.horizontal.3", isTool: true, isAction: false),
+                SliceItem(id: "frameImage", title: "Frame", iconName: "square.dashed", isTool: true, isAction: false),
                 SliceItem(id: "watermark", title: "Watermark", iconName: "text.bubble", isTool: true, isAction: false),
-                SliceItem(id: "removeMetadata", title: "Metadata", iconName: "eye.slash", isTool: true, isAction: false),
-                SliceItem(id: "createPDF", title: "To PDF", iconName: "doc.on.doc", isTool: true, isAction: false)
+                SliceItem(id: "redactImage", title: "Redact", iconName: "eye.slash.fill", isTool: true, isAction: false),
+                SliceItem(id: "ocrImage", title: "OCR", iconName: "doc.text.viewfinder", isTool: true, isAction: false)
             ]
         case .conversions:
             items = [
@@ -214,25 +214,25 @@ final class RadialWheelView: NSView {
             if paths.count > 1 {
                 let multi = Catalog.multiFileTools(for: paths)
                 if !multi.isEmpty {
-                    items = multi.prefix(12).map {
+                    items = multi.prefix(8).map {
                         SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
                     }
                 } else {
                     let cat = Catalog.category(for: first)
-                    items = Catalog.tools(for: cat).prefix(12).map {
+                    items = Catalog.tools(for: cat).prefix(8).map {
                         SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
                     }
                 }
             } else {
                 let cat = Catalog.category(for: first)
                 let tools = Catalog.tools(for: cat)
-                items = tools.prefix(12).map {
+                items = tools.prefix(8).map {
                     SliceItem(id: $0.id, title: $0.label, iconName: $0.iconName, isTool: true, isAction: false)
                 }
             }
         case .conversions:
             let formats = Catalog.targetFormats(for: first)
-            items = formats.prefix(12).map {
+            items = formats.prefix(8).map {
                 SliceItem(id: "convert:\($0)", title: $0.uppercased(), iconName: nil, isTool: false, isAction: false)
             }
         }
@@ -688,14 +688,17 @@ final class RadialWheelView: NSView {
 
         // 2. Draw Petals with Smooth Cushion Fillets & Gaps
         let angleStep = sliceAngle()
-        let gap: CGFloat = 3.5
+        let isDense = items.count > 8
+        let gap: CGFloat = isDense ? 2.5 : 3.5
+        let outerCR: CGFloat = isDense ? 10.0 : 14.0
+        let innerCR: CGFloat = isDense ? 5.0 : 7.0
 
         for (i, item) in items.enumerated() {
             let isHovered = (i == hoveredIndex)
 
             let s = 90.0 - CGFloat(i) * angleStep - gap / 2.0
             let e = s - (angleStep - gap)
-            let petal = makeCushionPetal(center: wheelCenter, innerR: innerRadius, outerR: outerRadius, startDeg: s, endDeg: e, outerCornerRadius: 16.0, innerCornerRadius: 8.0)
+            let petal = makeCushionPetal(center: wheelCenter, innerR: innerRadius, outerR: outerRadius, startDeg: s, endDeg: e, outerCornerRadius: outerCR, innerCornerRadius: innerCR)
 
             // Fill & Shadow
             context.saveGState()
@@ -743,16 +746,22 @@ final class RadialWheelView: NSView {
                 textColor = NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0)
             }
 
-            if let iconName = item.iconName, let tinted = tintedSymbol(name: iconName, color: textColor, size: 16) {
-                let iconSize: CGFloat = 16
-                let iconRect = NSRect(x: tx - iconSize / 2, y: ty + 2, width: iconSize, height: iconSize)
-                tinted.draw(in: iconRect)
-
-                let font = NSFont.systemFont(ofSize: 10, weight: .bold)
+            if let iconName = item.iconName, let tinted = tintedSymbol(name: iconName, color: textColor, size: isDense ? 15 : 18) {
+                let iconSize: CGFloat = isDense ? 15 : 18
+                let fontSize: CGFloat = isDense ? 9.5 : 11.0
+                let font = NSFont.systemFont(ofSize: fontSize, weight: .semibold)
                 let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: textColor]
                 let str = NSAttributedString(string: item.title, attributes: attrs)
                 let sz = str.size()
-                str.draw(at: NSPoint(x: tx - sz.width / 2, y: ty - sz.height - 2))
+
+                // Total height of the icon + gap + text, perfectly centered at (tx, ty)
+                let totalHeight = iconSize + 3.0 + sz.height
+                let textY = ty - totalHeight / 2.0
+                let iconY = textY + sz.height + 3.0
+
+                let iconRect = NSRect(x: tx - iconSize / 2.0, y: iconY, width: iconSize, height: iconSize)
+                tinted.draw(in: iconRect)
+                str.draw(at: NSPoint(x: tx - sz.width / 2.0, y: textY))
             } else {
                 let font = NSFont.systemFont(ofSize: 13, weight: .bold)
                 let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: textColor]
@@ -1311,6 +1320,9 @@ final class DropWheelWindowController: NSWindowController {
                 var error: NSDictionary?
                 NSAppleScript(source: script)?.executeAndReturnError(&error)
             }
+
+        case "action:metadata", "removeMetadata":
+            executeJob(action: "removeMetadata", paths: paths, params: nil)
 
         default:
             break

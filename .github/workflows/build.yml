@@ -27,6 +27,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install Python dependencies
+        run: python3 -m pip install pillow
+
       - name: Verify Python backend integrity
         run: |
           python3 work/test-i18n.py
@@ -89,6 +92,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Install Python dependencies
+        shell: pwsh
+        run: python -m pip install pillow
 
       - name: Verify Python backend syntax
         shell: pwsh
