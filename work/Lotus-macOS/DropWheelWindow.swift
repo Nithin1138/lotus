@@ -86,9 +86,9 @@ final class RadialWheelView: NSView {
     let wheelCenter = CGPoint(x: 170, y: 155)
     let innerRadius: CGFloat = 52
     let outerRadius: CGFloat = 138
-    let backdropRadius: CGFloat = 150
+    let backdropRadius: CGFloat = 141
     let hubRadius: CGFloat = 46
-    let topBarRect = NSRect(x: 170 - 110, y: 304, width: 220, height: 32)
+    let topBarRect = NSRect(x: 170 - 110, y: 308, width: 220, height: 32)
 
     var isDarkMode: Bool {
         let t = UserDefaults.standard.string(forKey: "LOTUS_THEME") ?? "system"
