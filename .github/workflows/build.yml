@@ -1,21 +1,115 @@
-name: Windows build and checks
+name: Lotus CI/CD
+
 on:
   push:
+    branches: [ main, advance-features ]
   pull_request:
+    branches: [ main, advance-features ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+
 jobs:
+  macos:
+    name: macOS Build & Verification
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify Python backend integrity
+        run: |
+          python3 work/test-i18n.py
+          python3 -m py_compile work/Lotus/backend/*.py
+
+      - name: Build macOS application bundle
+        run: ./build-mac.sh
+
+      - name: Verify macOS app bundle & binaries
+        run: |
+          APP_PATH="outputs/Lotus-macOS/Lotus.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Error: $APP_PATH was not created!" && exit 1
+          fi
+
+          echo "Checking Info.plist..."
+          plutil -lint "$APP_PATH/Contents/Info.plist"
+
+          echo "Checking main executable..."
+          MAIN_BIN="$APP_PATH/Contents/MacOS/Lotus"
+          if [ ! -x "$MAIN_BIN" ]; then
+            echo "Error: $MAIN_BIN is missing or not executable!" && exit 1
+          fi
+          file "$MAIN_BIN"
+
+          echo "Checking helper binaries..."
+          OCR_BIN="$APP_PATH/Contents/backend/ocr-mac"
+          DOC_BIN="$APP_PATH/Contents/backend/doc2pdf-mac"
+          if [ ! -x "$OCR_BIN" ] || [ ! -x "$DOC_BIN" ]; then
+            echo "Error: Helper binaries are missing or not executable!" && exit 1
+          fi
+          "$OCR_BIN" 2>&1 | grep -q "Usage: ocr-mac"
+          "$DOC_BIN" 2>&1 | grep -q "Usage: doc2pdf-mac"
+          echo "All macOS binaries verified successfully!"
+
+      - name: Package macOS application
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent outputs/Lotus-macOS/Lotus.app outputs/Lotus-macOS.zip
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lotus-macOS
+          path: outputs/Lotus-macOS.zip
+          if-no-files-found: error
+
   windows:
+    name: Windows Build & Checks
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify Python backend syntax
+        shell: pwsh
+        run: |
+          python -m py_compile (Get-ChildItem work/Lotus/backend/*.py).FullName
+          python work/test-i18n.py
+
       - name: Build Windows application
         shell: pwsh
         run: ./build.ps1 -SkipRuntimeCheck
-      - name: Check tool parameters and progress lifecycle
+
+      - name: Verify Windows executable
+        shell: pwsh
+        run: |
+          $exePath = "outputs/Lotus/Lotus.exe"
+          if (-not (Test-Path $exePath)) {
+            throw "Error: $exePath was not generated."
+          }
+          Write-Host "Verified Windows binary: $exePath"
+
+      - name: Run Windows UI & parameter checks
         shell: pwsh
         run: |
           dotnet run --project work/F9Checks -- outputs/f9-parameter-tests.json
@@ -24,3 +118,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Progress lifecycle checks failed.' }
           dotnet run --project work/UiControlsChecks -- outputs/ui-controls
           if ($LASTEXITCODE -ne 0) { throw 'Selection and slider controls failed.' }
+
+      - name: Package Windows binaries
+        shell: pwsh
+        run: |
+          Compress-Archive -Path outputs/Lotus -DestinationPath outputs/Lotus-Windows-x64.zip -Force
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lotus-Windows-x64
+          path: outputs/Lotus-Windows-x64.zip
+          if-no-files-found: error

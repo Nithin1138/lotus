@@ -19,7 +19,7 @@ internal static class Checks
     [STAThread] public static int Main(string[] args)
     {
         var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-        L.UseForSession("zh");
+        L.UseForSession("en");
         string output = args.Length > 0 ? Path.GetFullPath(args[0]) : Path.GetFullPath("outputs/ui-controls");
         Directory.CreateDirectory(output);
         var results = new List<object>();

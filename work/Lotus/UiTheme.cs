@@ -10,10 +10,9 @@ namespace Lotus;
 internal static class UiTheme
 {
     public const double WindowCornerRadius = 20;
-    private static readonly Uri FontBase = new($"pack://application:,,,/{typeof(UiTheme).Assembly.GetName().Name};component/");
-    public static readonly FontFamily ChineseFont = new(FontBase, "./assets/fonts/#Source Han Sans CN Medium");
-    // Latin uses Segoe UI; Chinese resolves to the bundled physical Medium face.
-    public static readonly FontFamily Font = new(FontBase, "Segoe UI, ./assets/fonts/#Source Han Sans CN Medium");
+    public static readonly FontFamily InterfaceFont = new("Segoe UI, -apple-system, BlinkMacSystemFont, sans-serif");
+    public static readonly FontFamily Font = InterfaceFont;
+    public static readonly FontFamily ChineseFont = InterfaceFont;
 
     // --- light and dark ------------------------------------------------------------------------------------------
     // "system" follows the Windows app colour (Settings → Personalisation → Colours); "light" and "dark" fix it.
