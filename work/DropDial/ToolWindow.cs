@@ -24,6 +24,12 @@ internal sealed class ToolWindow : Window
     private readonly Func<ConversionJob, CancellationToken, IProgress<JobProgress>?, Task<BatchResult>> submit;
     private readonly Dictionary<string, FrameworkElement> controls = [];
     private readonly Dictionary<string, TextBlock> fieldLabels = [];
+    private readonly Dictionary<string, Slider> sliders = [];
+    private readonly Dictionary<string, TextBlock> sliderValLabels = [];
+    private readonly Dictionary<string, FrameworkElement> fieldContainers = [];
+    private BitmapSource? originalBitmapSource;
+    private BitmapSource? cachedPreviewBase;
+    private bool syncingSlider;
     private readonly TextBlock status = new(), details = new();
     private readonly Image image = new() { Stretch = Stretch.Uniform };
     private readonly Canvas overlay = new() { Background = Brushes.Transparent };
@@ -65,8 +71,9 @@ internal sealed class ToolWindow : Window
     private readonly Grid rotateStage = new();
     private readonly Border rotatePlate = new() { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
     // Cropping is previewed by the frame itself, so the preview is not regenerated while its settings change.
-    private bool LivePreview => RefreshFrame && !HasMedia && operation.Id != "cropImage";
+    private bool LivePreview => RefreshFrame && !HasMedia && operation.Id != "cropImage" && !IsRealtimePreviewTool;
     private bool VisualPreview => operation.Id == "watermark" && Catalog.Category(paths[0]) == "image" || operation.Id is "compress" or "editImage" or "frameImage" or "cropImage" or "cropVideo" or "redactImage" or "annotateImage" or "redactVideo" or "redactPDF" or "organizePDF" or "createCollage";
+    private bool IsRealtimePreviewTool => !HasMedia && operation.Id is "editImage" or "frameImage" or "watermark" or "annotateImage" or "redactImage" or "createCollage";
     private bool ProcessedPlayback => operation.Id is "normalizeAudio" or "audioChannels" or "audioToVideo" or "redactAudio" or "trimAudio" or "trimVideo" or "cropVideo" or "changeVideoSpeed" or "redactVideo" or "muteVideo";
     private bool HasMedia => Catalog.Category(paths[0]) is "audio" or "video";
     private MediaTransport? transport;
@@ -192,9 +199,32 @@ internal sealed class ToolWindow : Window
             compareButton = Button(L.T("Show result"), async () =>
             {
                 if (showingOriginal)
-                { await UpdatePreview(); }
-                else if (originalPreview != null)
-                { player.Stop(); player.Visibility = Visibility.Collapsed; SetImage(originalPreview); showingOriginal = true; compareButton!.Content = L.T("Show result"); status.Text = L.T("Showing the original."); UpdateCropVisibility(); }
+                {
+                    if (IsRealtimePreviewTool)
+                    {
+                        showingOriginal = false;
+                        compareButton!.Content = L.T("Show original");
+                        RenderRealtimePreview();
+                        status.Text = L.T("Showing result preview.");
+                    }
+                    else
+                    {
+                        await UpdatePreview();
+                    }
+                }
+                else if (originalBitmapSource != null || originalPreview != null)
+                {
+                    player.Stop();
+                    player.Visibility = Visibility.Collapsed;
+                    if (originalBitmapSource != null)
+                        image.Source = originalBitmapSource;
+                    else if (originalPreview != null)
+                        SetImage(originalPreview);
+                    showingOriginal = true;
+                    compareButton!.Content = L.T("Show result");
+                    status.Text = L.T("Showing the original.");
+                    UpdateCropVisibility();
+                }
             });
             previewButtons.Children.Add(compareButton);
         }
@@ -330,35 +360,124 @@ internal sealed class ToolWindow : Window
             if (Rotating && field.Name == "background" && Path.GetExtension(paths[0]).ToLowerInvariant() is ".jpg" or ".jpeg" or ".bmp")
                 fieldLabel.Text = L.T("Empty corners (blank means white)");
             fieldLabels[field.Name] = fieldLabel;
-            fieldHost.Children.Add(fieldLabel);
             FrameworkElement control;
-            if (field.Name == "metadata")
-                control = new MetadataEditor();
-            else if (field.Kind == "bool")
-                control = new CheckBox { IsChecked = field.Default == "true", Content = L.T("On") };
-            else if (field.Kind == "choice")
+            var sliderBounds = GetSliderBounds(field.Name, operation.Id);
+            if (sliderBounds != null)
             {
-                var combo = new ComboBox();
-                foreach (string choice in field.Choices ?? [])
-                    combo.Items.Add(new ComboBoxItem { Content = Choice(choice), Tag = choice });
-                combo.SelectedIndex = Array.IndexOf(field.Choices ?? [], field.Default);
-                control = combo;
+                var (min, max, def, step, unit) = sliderBounds.Value;
+                double curVal = def;
+                if (double.TryParse(field.Default, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedDef))
+                    curVal = Math.Clamp(parsedDef, min, max);
+
+                var box = new TextBox
+                {
+                    Text = curVal.ToString(CultureInfo.InvariantCulture),
+                    Visibility = Visibility.Collapsed
+                };
+                box.TextChanged += (_, _) =>
+                {
+                    if (loaded && !syncingSlider)
+                    {
+                        if (double.TryParse(box.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
+                        {
+                            syncingSlider = true;
+                            if (sliders.TryGetValue(field.Name, out var s)) s.Value = Math.Clamp(v, min, max);
+                            if (sliderValLabels.TryGetValue(field.Name, out var l)) l.Text = FormatSliderValue(v, unit, field.Name);
+                            syncingSlider = false;
+                        }
+                        editedField = field.Name;
+                        ParameterChanged();
+                    }
+                };
+                control = box;
+                controls[field.Name] = control;
+
+                var slider = new Slider
+                {
+                    Minimum = min,
+                    Maximum = max,
+                    Value = curVal,
+                    SmallChange = step,
+                    LargeChange = step * 5,
+                    IsMoveToPointEnabled = true,
+                    Margin = new Thickness(0, 3, 0, 6),
+                    HorizontalAlignment = HorizontalAlignment.Stretch
+                };
+
+                var valLabel = new TextBlock
+                {
+                    Text = FormatSliderValue(curVal, unit, field.Name),
+                    Foreground = UiTheme.Accent,
+                    FontWeight = FontWeights.Bold,
+                    FontSize = 11,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Right
+                };
+
+                slider.ValueChanged += (_, e) =>
+                {
+                    if (syncingSlider) return;
+                    syncingSlider = true;
+                    double rounded = step < 1 ? Math.Round(e.NewValue / step) * step : Math.Round(e.NewValue);
+                    string formattedText = step < 1 ? rounded.ToString("0.##", CultureInfo.InvariantCulture) : ((int)rounded).ToString(CultureInfo.InvariantCulture);
+                    box.Text = formattedText;
+                    valLabel.Text = FormatSliderValue(rounded, unit, field.Name);
+                    syncingSlider = false;
+                    if (loaded)
+                    {
+                        editedField = field.Name;
+                        ParameterChanged();
+                    }
+                };
+
+                sliders[field.Name] = slider;
+                sliderValLabels[field.Name] = valLabel;
+
+                var headerRow = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 8, 0, 2) };
+                DockPanel.SetDock(valLabel, Dock.Right);
+                headerRow.Children.Add(valLabel);
+                headerRow.Children.Add(fieldLabel);
+
+                var sliderGroup = new StackPanel();
+                sliderGroup.Children.Add(headerRow);
+                sliderGroup.Children.Add(slider);
+                sliderGroup.Children.Add(box);
+
+                fieldContainers[field.Name] = sliderGroup;
+                fieldHost.Children.Add(sliderGroup);
             }
-            else if (field.Kind == "password")
-                control = new PasswordBox();
             else
             {
-                var box = new TextBox { Text = field.Default, Padding = new Thickness(10, 8, 10, 8), AcceptsReturn = field.Kind == "json", TextWrapping = field.Kind == "json" ? TextWrapping.Wrap : TextWrapping.NoWrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-                if (field.Kind == "json")
-                { box.Height = 105; box.FontFamily = new FontFamily("Consolas"); }
-                box.TextChanged += (_, _) => { if (loaded) { editedField = field.Name; if (new[] { "x", "y", "width", "height", "start", "end" }.Contains(field.Name)) rangeEdited = true; if (field.Name == "search") FilterMetadata(box.Text); else ParameterChanged(); } };
-                // While a number is being typed the frame follows it; once the box is left, the box shows what the frame really is.
-                if (Cropping && field.Name is "x" or "y" or "width" or "height")
-                    box.LostKeyboardFocus += (_, _) => { if (loaded) WriteCropFields(); };
-                control = box;
+                fieldHost.Children.Add(fieldLabel);
+                if (field.Name == "metadata")
+                    control = new MetadataEditor();
+                else if (field.Kind == "bool")
+                    control = new CheckBox { IsChecked = field.Default == "true", Content = L.T("On") };
+                else if (field.Kind == "choice")
+                {
+                    var combo = new ComboBox();
+                    foreach (string choice in field.Choices ?? [])
+                        combo.Items.Add(new ComboBoxItem { Content = Choice(choice), Tag = choice });
+                    combo.SelectedIndex = Array.IndexOf(field.Choices ?? [], field.Default);
+                    control = combo;
+                }
+                else if (field.Kind == "password")
+                    control = new PasswordBox();
+                else
+                {
+                    var box = new TextBox { Text = field.Default, Padding = new Thickness(10, 8, 10, 8), AcceptsReturn = field.Kind == "json", TextWrapping = field.Kind == "json" ? TextWrapping.Wrap : TextWrapping.NoWrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+                    if (field.Kind == "json")
+                    { box.Height = 105; box.FontFamily = new FontFamily("Consolas"); }
+                    box.TextChanged += (_, _) => { if (loaded) { editedField = field.Name; if (new[] { "x", "y", "width", "height", "start", "end" }.Contains(field.Name)) rangeEdited = true; if (field.Name == "search") FilterMetadata(box.Text); else ParameterChanged(); } };
+                    // While a number is being typed the frame follows it; once the box is left, the box shows what the frame really is.
+                    if (Cropping && field.Name is "x" or "y" or "width" or "height")
+                        box.LostKeyboardFocus += (_, _) => { if (loaded) WriteCropFields(); };
+                    control = box;
+                }
+                controls[field.Name] = control;
+                fieldContainers[field.Name] = control;
+                fieldHost.Children.Add(control);
             }
-            controls[field.Name] = control;
-            fieldHost.Children.Add(control);
             System.Windows.Automation.AutomationProperties.SetName(control, field.Label);
             if (control is ComboBox choiceControl)
                 choiceControl.SelectionChanged += (_, _) => { if (loaded && (VisualPreview || Rotating)) { editedField = field.Name; ParameterChanged(); } };
@@ -377,8 +496,12 @@ internal sealed class ToolWindow : Window
         }
         void ShowField(string name, bool visible)
         {
-            if (controls.TryGetValue(name, out var shown))
-                shown.Visibility = fieldLabels[name].Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            if (fieldLabels.TryGetValue(name, out var lbl))
+                lbl.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            if (fieldContainers.TryGetValue(name, out var container))
+                container.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            else if (controls.TryGetValue(name, out var shown))
+                shown.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         }
         void WhenChanged(string name, Action update)
         {
@@ -415,6 +538,60 @@ internal sealed class ToolWindow : Window
                 limits.Children.Add(Button(megabytes + " MB", () => { Set("targetKB", (megabytes * 1024).ToString()); return Task.CompletedTask; }));
             limits.Children.Add(Button(L.T("No limit"), () => { Set("targetKB", "0"); return Task.CompletedTask; }));
             parameters.Children.Insert(parameters.Children.IndexOf(controls["targetKB"]) + 1, limits);
+        }
+        if (operation.Id == "editImage")
+        {
+            var resetBtn = Button(L.T("Reset adjustments"), () =>
+            {
+                foreach (var key in new[] { "exposure", "temperature", "shadows", "highlights", "clarity", "dehaze", "denoise", "grain" })
+                    Set(key, "0");
+                foreach (var key in new[] { "contrast", "saturation" })
+                    Set(key, "1");
+                ParameterChanged();
+                return Task.CompletedTask;
+            });
+            resetBtn.Margin = new Thickness(0, 8, 0, 8);
+            parameters.Children.Add(resetBtn);
+        }
+        if (operation.Id == "frameImage")
+        {
+            var colorRow = new WrapPanel { Margin = new Thickness(0, 4, 0, 8) };
+            var colorPresets = new (string Hex, string Label)[]
+            {
+                ("#f0ebff", L.T("Lilac")),
+                ("#ffffff", L.T("White")),
+                ("#18181b", L.T("Graphite")),
+                ("#ff6500", L.T("Orange")),
+                ("#3b82f6", L.T("Blue")),
+                ("#10b981", L.T("Green"))
+            };
+            foreach (var (hex, label) in colorPresets)
+                colorRow.Children.Add(Button(label, () => { Set("background", hex); ParameterChanged(); return Task.CompletedTask; }));
+            if (fieldContainers.TryGetValue("background", out var bgContainer))
+                parameters.Children.Insert(parameters.Children.IndexOf(bgContainer) + 1, colorRow);
+        }
+        if (operation.Id == "annotateImage")
+        {
+            var stampRow = new WrapPanel { Margin = new Thickness(0, 4, 0, 8) };
+            foreach (string word in new[] { "APPROVED", "CONFIDENTIAL", "DRAFT", "SAMPLE", "REJECTED" })
+                stampRow.Children.Add(Button(word, () => { Set("text", word); ParameterChanged(); return Task.CompletedTask; }));
+            if (fieldContainers.TryGetValue("text", out var textContainer))
+                parameters.Children.Insert(parameters.Children.IndexOf(textContainer) + 1, stampRow);
+
+            var colorRow = new WrapPanel { Margin = new Thickness(0, 4, 0, 8) };
+            var badgeColors = new (string Hex, string Label)[]
+            {
+                ("#ff6500", L.T("Orange")),
+                ("#ef4444", L.T("Red")),
+                ("#3b82f6", L.T("Blue")),
+                ("#10b981", L.T("Green")),
+                ("#ffffff", L.T("White")),
+                ("#000000", L.T("Black"))
+            };
+            foreach (var (hex, label) in badgeColors)
+                colorRow.Children.Add(Button(label, () => { Set("color", hex); ParameterChanged(); return Task.CompletedTask; }));
+            if (fieldContainers.TryGetValue("color", out var colContainer))
+                parameters.Children.Insert(parameters.Children.IndexOf(colContainer) + 1, colorRow);
         }
         if (Presets.Supported(operation.Id))
             AddPresetBar(parameters);
@@ -618,11 +795,28 @@ internal sealed class ToolWindow : Window
         UpdateCropVisibility();
         if (operation.Id == "redactPDF")
             SchedulePreview();
+        if (IsRealtimePreviewTool)
+        {
+            showingOriginal = false;
+            if (compareButton != null) compareButton.Content = L.T("Show original");
+            RenderRealtimePreview();
+        }
     }
     private int CurrentPage() => Math.Clamp(int.TryParse(Get("pageNumber", "1"), out int page) ? page : 1, 1, Math.Max(1, pages));
     private void TurnPage(int by) => Set("pageNumber", Math.Clamp(CurrentPage() + by, 1, Math.Max(1, pages)).ToString());
     private void Set(string name, string value)
     {
+        if (sliders.TryGetValue(name, out var slider) && double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double sVal))
+        {
+            syncingSlider = true;
+            slider.Value = Math.Clamp(sVal, slider.Minimum, slider.Maximum);
+            if (sliderValLabels.TryGetValue(name, out var badge))
+            {
+                var bounds = GetSliderBounds(name, operation.Id);
+                badge.Text = bounds != null ? FormatSliderValue(sVal, bounds.Value.Unit, name) : sVal.ToString(CultureInfo.InvariantCulture);
+            }
+            syncingSlider = false;
+        }
         if (!controls.TryGetValue(name, out var control))
             return;
         if (control is TextBox text)
@@ -771,6 +965,730 @@ internal sealed class ToolWindow : Window
             details.Text = L.F("{0} × {1} px", originalWidth, originalHeight) + (outWidth == originalWidth && outHeight == originalHeight ? "" : L.F(" → {0} × {1} px", outWidth, outHeight));
         }
     }
+    private static double ParseDouble(string? value, double fallback = 0.0)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return fallback;
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double result) ? result : fallback;
+    }
+    private (double Min, double Max, double Def, double Step, string Unit)? GetSliderBounds(string name, string toolId)
+    {
+        if (toolId == "editImage")
+        {
+            return name switch
+            {
+                "exposure" => (-2.0, 2.0, 0.0, 0.05, "EV"),
+                "contrast" => (0.0, 2.0, 1.0, 0.05, "x"),
+                "saturation" => (0.0, 2.0, 1.0, 0.05, "x"),
+                "temperature" => (-100.0, 100.0, 0.0, 1.0, ""),
+                "shadows" => (-100.0, 100.0, 0.0, 1.0, "%"),
+                "highlights" => (-100.0, 100.0, 0.0, 1.0, "%"),
+                "clarity" => (0.0, 100.0, 0.0, 1.0, "%"),
+                "dehaze" => (0.0, 100.0, 0.0, 1.0, "%"),
+                "denoise" => (0.0, 30.0, 0.0, 1.0, ""),
+                "grain" => (0.0, 100.0, 0.0, 1.0, "%"),
+                _ => null
+            };
+        }
+        if (toolId == "frameImage")
+        {
+            return name switch
+            {
+                "padding" => (10.0, 300.0, 80.0, 1.0, "px"),
+                "radius" => (0.0, 100.0, 24.0, 1.0, "px"),
+                "shadow" => (0.0, 80.0, 20.0, 1.0, "px"),
+                "backgroundBlur" => (0.0, 100.0, 0.0, 1.0, "%"),
+                _ => null
+            };
+        }
+        if (toolId == "watermark")
+        {
+            return name switch
+            {
+                "opacity" => (0.0, 100.0, 60.0, 1.0, "%"),
+                "textSize" => (1.0, 25.0, 5.0, 0.5, "%"),
+                "rotation" => (-180.0, 180.0, 0.0, 5.0, "°"),
+                "margin" => (0.0, 20.0, 3.0, 0.5, "%"),
+                "scale" => (5.0, 80.0, 20.0, 1.0, "%"),
+                _ => null
+            };
+        }
+        if (toolId == "redactImage")
+        {
+            return name switch
+            {
+                "blockSize" => (2.0, 64.0, 12.0, 1.0, "px"),
+                _ => null
+            };
+        }
+        if (toolId == "createCollage")
+        {
+            return name switch
+            {
+                "gap" => (0.0, 60.0, 16.0, 1.0, "px"),
+                "radius" => (0.0, 50.0, 0.0, 1.0, "px"),
+                _ => null
+            };
+        }
+        if (toolId == "compress" && name == "quality")
+        {
+            return (1.0, 100.0, 75.0, 1.0, "%");
+        }
+        if (toolId == "resizeImage" && name == "percent")
+        {
+            return (1.0, 200.0, 50.0, 1.0, "%");
+        }
+        return null;
+    }
+    private static string FormatSliderValue(double val, string unit, string fieldName = "")
+    {
+        if (unit == "EV")
+            return val.ToString("+0.00;-0.00;0.00", CultureInfo.InvariantCulture) + " EV";
+        if (unit == "x")
+            return val.ToString("0.00", CultureInfo.InvariantCulture) + "x";
+        if (unit == "%")
+        {
+            int rounded = (int)Math.Round(val);
+            if (fieldName is "shadows" or "highlights")
+                return (rounded > 0 ? "+" : "") + rounded + "%";
+            return rounded + "%";
+        }
+        if (unit == "°")
+            return (int)Math.Round(val) + "°";
+        if (unit == "px")
+            return (int)Math.Round(val) + " px";
+        if (string.IsNullOrEmpty(unit))
+        {
+            int rounded = (int)Math.Round(val);
+            if (fieldName == "temperature")
+                return (rounded > 0 ? "+" : "") + rounded;
+            return rounded.ToString(CultureInfo.InvariantCulture);
+        }
+        return val.ToString("0.##", CultureInfo.InvariantCulture) + " " + unit;
+    }
+    private BitmapSource? GetCachedPreviewBase()
+    {
+        if (cachedPreviewBase != null)
+            return cachedPreviewBase;
+        if (originalBitmapSource == null)
+            return null;
+
+        int maxDim = 1000;
+        int srcW = originalBitmapSource.PixelWidth;
+        int srcH = originalBitmapSource.PixelHeight;
+        if (srcW <= 0 || srcH <= 0)
+            return null;
+
+        BitmapSource baseSource = originalBitmapSource;
+        if (srcW > maxDim || srcH > maxDim)
+        {
+            double scale = (double)maxDim / Math.Max(srcW, srcH);
+            int targetW = Math.Max(1, (int)Math.Round(srcW * scale));
+            int targetH = Math.Max(1, (int)Math.Round(srcH * scale));
+            baseSource = new TransformedBitmap(originalBitmapSource, new ScaleTransform((double)targetW / srcW, (double)targetH / srcH));
+        }
+
+        if (baseSource.Format != PixelFormats.Bgra32)
+        {
+            var converted = new FormatConvertedBitmap(baseSource, PixelFormats.Bgra32, null, 0);
+            converted.Freeze();
+            cachedPreviewBase = converted;
+        }
+        else
+        {
+            if (baseSource.CanFreeze)
+                baseSource.Freeze();
+            cachedPreviewBase = baseSource;
+        }
+        return cachedPreviewBase;
+    }
+    private void RenderRealtimePreview()
+    {
+        if (!loaded || originalBitmapSource == null || showingOriginal)
+            return;
+        try
+        {
+            switch (operation.Id)
+            {
+                case "editImage":
+                    UpdateEditImagePreview();
+                    break;
+                case "frameImage":
+                    UpdateFramePreview();
+                    break;
+                case "watermark":
+                    UpdateWatermarkPreview();
+                    break;
+                case "annotateImage":
+                    UpdateAnnotatePreview();
+                    break;
+                case "redactImage":
+                    UpdateRedactPreview();
+                    break;
+                case "createCollage":
+                    UpdateCollagePreview();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            status.Text = L.T("Preview: ") + ex.Message;
+        }
+    }
+    private void UpdateEditImagePreview()
+    {
+        var baseSource = GetCachedPreviewBase();
+        if (baseSource == null) return;
+
+        double exp = ParseDouble(Get("exposure", "0"), 0.0);
+        double contrast = ParseDouble(Get("contrast", "1"), 1.0);
+        double saturation = ParseDouble(Get("saturation", "1"), 1.0);
+        double temperature = ParseDouble(Get("temperature", "0"), 0.0);
+        double shadows = ParseDouble(Get("shadows", "0"), 0.0);
+        double highlights = ParseDouble(Get("highlights", "0"), 0.0);
+        double clarity = ParseDouble(Get("clarity", "0"), 0.0);
+        double dehaze = ParseDouble(Get("dehaze", "0"), 0.0);
+        double grain = ParseDouble(Get("grain", "0"), 0.0);
+
+        bool isDefault = Math.Abs(exp) < 0.001 &&
+                         Math.Abs(contrast - 1.0) < 0.001 &&
+                         Math.Abs(saturation - 1.0) < 0.001 &&
+                         Math.Abs(temperature) < 0.1 &&
+                         Math.Abs(shadows) < 0.1 &&
+                         Math.Abs(highlights) < 0.1 &&
+                         clarity < 0.1 &&
+                         dehaze < 0.1 &&
+                         grain < 0.1;
+
+        if (isDefault)
+        {
+            image.Source = baseSource;
+            return;
+        }
+
+        int w = baseSource.PixelWidth;
+        int h = baseSource.PixelHeight;
+        int stride = w * 4;
+        int totalBytes = h * stride;
+
+        byte[] srcPixels = new byte[totalBytes];
+        baseSource.CopyPixels(srcPixels, stride, 0);
+
+        byte[] destPixels = new byte[totalBytes];
+
+        byte[] lutR = new byte[256];
+        byte[] lutG = new byte[256];
+        byte[] lutB = new byte[256];
+
+        double expFactor = Math.Pow(2.0, exp);
+        double sAmt = shadows / 100.0;
+        double hAmt = highlights / 100.0;
+        double effContrast = contrast * (1.0 + dehaze * 0.004);
+        double effSat = saturation * (1.0 + dehaze * 0.003);
+        double warmShift = temperature * 0.4;
+
+        for (int i = 0; i < 256; i++)
+        {
+            double v = i * expFactor;
+            double norm = Math.Clamp(v / 255.0, 0.0, 1.0);
+            if (sAmt != 0 && norm < 0.5)
+            {
+                double shadowFactor = (0.5 - norm) * 2.0;
+                v += sAmt * 55.0 * shadowFactor * shadowFactor;
+            }
+            if (hAmt != 0 && norm >= 0.5)
+            {
+                double highlightFactor = (norm - 0.5) * 2.0;
+                v += hAmt * 55.0 * highlightFactor * highlightFactor;
+            }
+            v = 128.0 + (v - 128.0) * effContrast;
+            if (clarity > 0)
+            {
+                double mid = 1.0 - Math.Abs(norm - 0.5) * 2.0;
+                if (mid > 0)
+                    v += (v - 128.0) * (clarity / 100.0) * 0.4 * mid;
+            }
+
+            lutR[i] = (byte)Math.Clamp((int)Math.Round(v + warmShift), 0, 255);
+            lutG[i] = (byte)Math.Clamp((int)Math.Round(v), 0, 255);
+            lutB[i] = (byte)Math.Clamp((int)Math.Round(v - warmShift), 0, 255);
+        }
+
+        bool hasSat = Math.Abs(effSat - 1.0) > 0.005;
+        bool hasGrain = grain > 0.5;
+        double grainScale = (grain / 100.0) * 0.25;
+
+        for (int i = 0; i < totalBytes; i += 4)
+        {
+            byte b = lutB[srcPixels[i + 0]];
+            byte g = lutG[srcPixels[i + 1]];
+            byte r = lutR[srcPixels[i + 2]];
+            byte a = srcPixels[i + 3];
+
+            int outB = b;
+            int outG = g;
+            int outR = r;
+
+            if (hasSat)
+            {
+                int y = (r * 77 + g * 150 + b * 29) >> 8;
+                outB = Math.Clamp((int)(y + (b - y) * effSat), 0, 255);
+                outG = Math.Clamp((int)(y + (g - y) * effSat), 0, 255);
+                outR = Math.Clamp((int)(y + (r - y) * effSat), 0, 255);
+            }
+
+            if (hasGrain)
+            {
+                int noise = (int)((((i * 1103515245 + 12345) & 0x7FFFFFFF) % 100 - 50) * grainScale);
+                outB = Math.Clamp(outB + noise, 0, 255);
+                outG = Math.Clamp(outG + noise, 0, 255);
+                outR = Math.Clamp(outR + noise, 0, 255);
+            }
+
+            destPixels[i + 0] = (byte)outB;
+            destPixels[i + 1] = (byte)outG;
+            destPixels[i + 2] = (byte)outR;
+            destPixels[i + 3] = a;
+        }
+
+        var wb = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
+        wb.WritePixels(new Int32Rect(0, 0, w, h), destPixels, stride, 0);
+        wb.Freeze();
+        image.Source = wb;
+    }
+    private void UpdateFramePreview()
+    {
+        var baseSource = GetCachedPreviewBase();
+        if (baseSource == null) return;
+
+        double pad = ParseDouble(Get("padding", "80"), 80.0);
+        double radius = ParseDouble(Get("radius", "24"), 24.0);
+        double shadow = ParseDouble(Get("shadow", "20"), 20.0);
+        string bgStr = Get("background", "#f0ebff").Trim();
+        string gradStr = Get("gradient", "").Trim();
+
+        Color bgColor = Color.FromRgb(240, 235, 255);
+        try { if (!string.IsNullOrEmpty(bgStr) && ColorConverter.ConvertFromString(bgStr) is Color c) bgColor = c; } catch { }
+
+        Color? gradColor = null;
+        try { if (!string.IsNullOrEmpty(gradStr) && ColorConverter.ConvertFromString(gradStr) is Color gc) gradColor = gc; } catch { }
+
+        int srcW = baseSource.PixelWidth;
+        int srcH = baseSource.PixelHeight;
+        double scale = Math.Min(1.0, 800.0 / Math.Max(srcW, srcH));
+        double imgW = srcW * scale;
+        double imgH = srcH * scale;
+        double scaledPad = pad * scale;
+        double scaledRadius = radius * scale;
+        double scaledShadow = shadow * scale;
+
+        int canvasW = (int)Math.Max(10, Math.Round(imgW + scaledPad * 2));
+        int canvasH = (int)Math.Max(10, Math.Round(imgH + scaledPad * 2));
+
+        var rtb = new RenderTargetBitmap(canvasW, canvasH, 96, 96, PixelFormats.Pbgra32);
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+            Brush bgBrush = gradColor != null
+                ? new LinearGradientBrush(bgColor, gradColor.Value, 45.0)
+                : new SolidColorBrush(bgColor);
+            dc.DrawRectangle(bgBrush, null, new Rect(0, 0, canvasW, canvasH));
+
+            var imgRect = new Rect(scaledPad, scaledPad, imgW, imgH);
+
+            if (scaledShadow > 0)
+            {
+                int steps = Math.Clamp((int)scaledShadow, 2, 20);
+                for (int s = steps; s >= 1; s -= Math.Max(1, steps / 4))
+                {
+                    double op = 0.08 * (1.0 - (double)s / (steps + 1));
+                    var sRect = new Rect(imgRect.X - s * 0.4, imgRect.Y + s * 0.3, imgRect.Width + s * 0.8, imgRect.Height + s * 0.8);
+                    dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb((byte)(op * 255), 0, 0, 0)), null, sRect, scaledRadius + s * 0.4, scaledRadius + s * 0.4);
+                }
+            }
+
+            dc.PushClip(new RectangleGeometry(imgRect, scaledRadius, scaledRadius));
+            dc.DrawImage(baseSource, imgRect);
+            dc.Pop();
+        }
+        rtb.Render(dv);
+        rtb.Freeze();
+        image.Source = rtb;
+    }
+    private void UpdateWatermarkPreview()
+    {
+        var baseSource = GetCachedPreviewBase();
+        if (baseSource == null) return;
+
+        string text = Get("text", "CONFIDENTIAL");
+        if (string.IsNullOrWhiteSpace(text)) text = "CONFIDENTIAL";
+        string colorHex = Get("color", "#ffffff").Trim();
+        Color textColor = Colors.White;
+        try { if (!string.IsNullOrEmpty(colorHex) && ColorConverter.ConvertFromString(colorHex) is Color tc) textColor = tc; } catch { }
+
+        double opacity = Math.Clamp(ParseDouble(Get("opacity", "60"), 60.0) / 100.0, 0.0, 1.0);
+        double textSizePercent = Math.Clamp(ParseDouble(Get("textSize", "5"), 5.0), 1.0, 30.0);
+        double rotation = ParseDouble(Get("rotation", "0"), 0.0);
+        double marginPercent = Math.Clamp(ParseDouble(Get("margin", "3"), 3.0), 0.0, 25.0);
+        string layout = Get("layout", "single");
+        string position = Get("position", "center");
+
+        int w = baseSource.PixelWidth;
+        int h = baseSource.PixelHeight;
+        double shortSide = Math.Min(w, h);
+        double fontSize = Math.Max(12.0, shortSide * (textSizePercent / 100.0));
+        double margin = shortSide * (marginPercent / 100.0);
+
+        var rtb = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+            dc.DrawImage(baseSource, new Rect(0, 0, w, h));
+
+            Color fontColorWithAlpha = Color.FromArgb((byte)(opacity * 255), textColor.R, textColor.G, textColor.B);
+            var brush = new SolidColorBrush(fontColorWithAlpha);
+            var typeface = new Typeface(new FontFamily("Segoe UI, Arial, sans-serif"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+
+            var ft = new FormattedText(
+                text,
+                CultureInfo.CurrentUICulture,
+                FlowDirection.LeftToRight,
+                typeface,
+                fontSize,
+                brush,
+                1.0
+            );
+
+            void DrawWatermarkAt(Point center)
+            {
+                dc.PushTransform(new RotateTransform(rotation, center.X, center.Y));
+                dc.DrawText(ft, new Point(center.X - ft.Width / 2.0, center.Y - ft.Height / 2.0));
+                dc.Pop();
+            }
+
+            if (layout == "tiled")
+            {
+                int cols = 3, rows = 3;
+                for (int r = 0; r < rows; r++)
+                {
+                    for (int c = 0; c < cols; c++)
+                    {
+                        double cx = w * (c + 0.5) / cols;
+                        double cy = h * (r + 0.5) / rows;
+                        DrawWatermarkAt(new Point(cx, cy));
+                    }
+                }
+            }
+            else
+            {
+                double cx = w / 2.0;
+                double cy = h / 2.0;
+                switch (position)
+                {
+                    case "topLeft":
+                        cx = margin + ft.Width / 2.0;
+                        cy = margin + ft.Height / 2.0;
+                        break;
+                    case "topCenter":
+                        cx = w / 2.0;
+                        cy = margin + ft.Height / 2.0;
+                        break;
+                    case "topRight":
+                        cx = w - margin - ft.Width / 2.0;
+                        cy = margin + ft.Height / 2.0;
+                        break;
+                    case "middleLeft":
+                        cx = margin + ft.Width / 2.0;
+                        cy = h / 2.0;
+                        break;
+                    case "center":
+                        cx = w / 2.0;
+                        cy = h / 2.0;
+                        break;
+                    case "middleRight":
+                        cx = w - margin - ft.Width / 2.0;
+                        cy = h / 2.0;
+                        break;
+                    case "bottomLeft":
+                        cx = margin + ft.Width / 2.0;
+                        cy = h - margin - ft.Height / 2.0;
+                        break;
+                    case "bottomCenter":
+                        cx = w / 2.0;
+                        cy = h - margin - ft.Height / 2.0;
+                        break;
+                    case "bottomRight":
+                    default:
+                        cx = w - margin - ft.Width / 2.0;
+                        cy = h - margin - ft.Height / 2.0;
+                        break;
+                }
+                DrawWatermarkAt(new Point(cx, cy));
+            }
+        }
+        rtb.Render(dv);
+        rtb.Freeze();
+        image.Source = rtb;
+    }
+    private void UpdateAnnotatePreview()
+    {
+        var baseSource = GetCachedPreviewBase();
+        if (baseSource == null) return;
+
+        string text = Get("text", "APPROVED").Trim();
+        if (string.IsNullOrEmpty(text)) text = "APPROVED";
+        string colorHex = Get("color", "#ff6500").Trim();
+        Color badgeColor = Color.FromRgb(255, 101, 0);
+        try { if (!string.IsNullOrEmpty(colorHex) && ColorConverter.ConvertFromString(colorHex) is Color bc) badgeColor = bc; } catch { }
+
+        string pos = Get("position", "bottom_right");
+
+        int w = baseSource.PixelWidth;
+        int h = baseSource.PixelHeight;
+
+        double scale = Math.Max(1.0, Math.Min(w, h) / 700.0);
+        double fontSize = 22.0 * scale;
+        double padH = 20.0 * scale;
+        double padV = 10.0 * scale;
+        double margin = 35.0 * scale;
+
+        var rtb = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+            dc.DrawImage(baseSource, new Rect(0, 0, w, h));
+
+            Color textCol = (badgeColor.R > 220 && badgeColor.G > 220 && badgeColor.B > 220) ? Colors.Black : Colors.White;
+            var tf = new Typeface(new FontFamily("Segoe UI, Arial, sans-serif"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+            var ft = new FormattedText(
+                text,
+                CultureInfo.CurrentUICulture,
+                FlowDirection.LeftToRight,
+                tf,
+                fontSize,
+                new SolidColorBrush(textCol),
+                1.0
+            );
+
+            double badgeW = ft.Width + padH * 2;
+            double badgeH = ft.Height + padV * 2;
+            double radius = badgeH / 2.0;
+
+            double badgeX = w - badgeW - margin;
+            double badgeY = h - badgeH - margin;
+            if (pos is "bottom_left" or "bottomLeft")
+            {
+                badgeX = margin;
+                badgeY = h - badgeH - margin;
+            }
+            else if (pos is "top_right" or "topRight")
+            {
+                badgeX = w - badgeW - margin;
+                badgeY = margin;
+            }
+            else if (pos is "top_left" or "topLeft")
+            {
+                badgeX = margin;
+                badgeY = margin;
+            }
+            else if (pos == "center")
+            {
+                badgeX = (w - badgeW) / 2.0;
+                badgeY = (h - badgeH) / 2.0;
+            }
+
+            var badgeRect = new Rect(badgeX, badgeY, badgeW, badgeH);
+
+            var shadowRect = new Rect(badgeX, badgeY + 3 * scale, badgeW, badgeH);
+            dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(90, 0, 0, 0)), null, shadowRect, radius, radius);
+
+            dc.DrawRoundedRectangle(new SolidColorBrush(badgeColor), null, badgeRect, radius, radius);
+
+            dc.DrawText(ft, new Point(badgeX + padH, badgeY + padV));
+        }
+        rtb.Render(dv);
+        rtb.Freeze();
+        image.Source = rtb;
+    }
+    private void UpdateRedactPreview()
+    {
+        var baseSource = GetCachedPreviewBase();
+        if (baseSource == null) return;
+
+        string style = Get("style", "pixelate");
+        double blockSize = Math.Max(2.0, ParseDouble(Get("blockSize", "12"), 12.0));
+        string colorHex = Get("color", "#000000").Trim();
+        Color solidColor = Colors.Black;
+        try { if (!string.IsNullOrEmpty(colorHex) && ColorConverter.ConvertFromString(colorHex) is Color sc) solidColor = sc; } catch { }
+
+        int srcW = baseSource.PixelWidth;
+        int srcH = baseSource.PixelHeight;
+
+        var areaList = new List<Rect>();
+        foreach (var r in regions)
+        {
+            if (r.TryGetValue("x", out var xo) && r.TryGetValue("y", out var yo) &&
+                r.TryGetValue("width", out var wo) && r.TryGetValue("height", out var ho))
+            {
+                double rx = Convert.ToDouble(xo, CultureInfo.InvariantCulture);
+                double ry = Convert.ToDouble(yo, CultureInfo.InvariantCulture);
+                double rw = Convert.ToDouble(wo, CultureInfo.InvariantCulture);
+                double rh = Convert.ToDouble(ho, CultureInfo.InvariantCulture);
+                if (rw > 0 && rh > 0)
+                    areaList.Add(new Rect(rx, ry, rw, rh));
+            }
+        }
+
+        if (areaList.Count == 0)
+        {
+            double x = ParseDouble(Get("x", "0"), 0);
+            double y = ParseDouble(Get("y", "0"), 0);
+            double w = ParseDouble(Get("width", "0"), 0);
+            double h = ParseDouble(Get("height", "0"), 0);
+            if (w > 0 && h > 0)
+                areaList.Add(new Rect(x, y, w, h));
+        }
+
+        if (areaList.Count == 0)
+        {
+            image.Source = baseSource;
+            return;
+        }
+
+        double scaleX = (double)srcW / Math.Max(1, originalWidth);
+        double scaleY = (double)srcH / Math.Max(1, originalHeight);
+
+        int stride = srcW * 4;
+        byte[]? pixelBuffer = null;
+        if (style is "pixelate" or "blur")
+        {
+            pixelBuffer = new byte[srcH * stride];
+            baseSource.CopyPixels(pixelBuffer, stride, 0);
+        }
+
+        var rtb = new RenderTargetBitmap(srcW, srcH, 96, 96, PixelFormats.Pbgra32);
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+            dc.DrawImage(baseSource, new Rect(0, 0, srcW, srcH));
+
+            foreach (var originalRect in areaList)
+            {
+                var r = new Rect(
+                    Math.Clamp(originalRect.X * scaleX, 0, srcW),
+                    Math.Clamp(originalRect.Y * scaleY, 0, srcH),
+                    Math.Clamp(originalRect.Width * scaleX, 1, srcW),
+                    Math.Clamp(originalRect.Height * scaleY, 1, srcH)
+                );
+
+                if (style == "solid")
+                {
+                    dc.DrawRectangle(new SolidColorBrush(solidColor), null, r);
+                }
+                else if (style == "pixelate" && pixelBuffer != null)
+                {
+                    double bs = Math.Max(3.0, blockSize * scaleX);
+                    for (double by = r.Y; by < r.Bottom; by += bs)
+                    {
+                        for (double bx = r.X; bx < r.Right; bx += bs)
+                        {
+                            double bw = Math.Min(bs, r.Right - bx);
+                            double bh = Math.Min(bs, r.Bottom - by);
+                            int sampleX = Math.Clamp((int)(bx + bw / 2.0), 0, srcW - 1);
+                            int sampleY = Math.Clamp((int)(by + bh / 2.0), 0, srcH - 1);
+                            int idx = sampleY * stride + sampleX * 4;
+                            byte b = pixelBuffer[idx + 0];
+                            byte g = pixelBuffer[idx + 1];
+                            byte rCol = pixelBuffer[idx + 2];
+                            byte a = pixelBuffer[idx + 3];
+                            dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(a, rCol, g, b)), null, new Rect(bx, by, bw, bh));
+                        }
+                    }
+                }
+                else if (style == "blur")
+                {
+                    dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(190, 30, 30, 30)), null, r);
+                    dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromArgb(120, 255, 255, 255)), 1), r);
+                }
+            }
+        }
+        rtb.Render(dv);
+        rtb.Freeze();
+        image.Source = rtb;
+    }
+    private void UpdateCollagePreview()
+    {
+        var baseSource = GetCachedPreviewBase();
+        if (baseSource == null) return;
+
+        string layout = Get("layout", "grid");
+        double gap = Math.Max(0.0, ParseDouble(Get("gap", "16"), 16.0));
+        double radius = Math.Max(0.0, ParseDouble(Get("radius", "0"), 0.0));
+        string bgHex = Get("background", "#ffffff").Trim();
+        Color bgColor = Colors.White;
+        try { if (!string.IsNullOrEmpty(bgHex) && ColorConverter.ConvertFromString(bgHex) is Color bc) bgColor = bc; } catch { }
+
+        int canvasW = 800;
+        int canvasH = 600;
+
+        var rtb = new RenderTargetBitmap(canvasW, canvasH, 96, 96, PixelFormats.Pbgra32);
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+            dc.DrawRectangle(new SolidColorBrush(bgColor), null, new Rect(0, 0, canvasW, canvasH));
+
+            void DrawTile(Rect tileRect)
+            {
+                if (radius > 0)
+                {
+                    dc.PushClip(new RectangleGeometry(tileRect, radius, radius));
+                    dc.DrawImage(baseSource, tileRect);
+                    dc.Pop();
+                }
+                else
+                {
+                    dc.DrawImage(baseSource, tileRect);
+                }
+            }
+
+            if (layout == "featured")
+            {
+                double innerW = canvasW - gap * 3;
+                double innerH = canvasH - gap * 2;
+                double heroW = innerW * 0.58;
+                double rightW = innerW * 0.42;
+                double tileH = (innerH - gap) / 2.0;
+
+                DrawTile(new Rect(gap, gap, heroW, innerH));
+                DrawTile(new Rect(gap * 2 + heroW, gap, rightW, tileH));
+                DrawTile(new Rect(gap * 2 + heroW, gap * 2 + tileH, rightW, tileH));
+            }
+            else if (layout == "row")
+            {
+                double tileW = (canvasW - gap * 4) / 3.0;
+                double tileH = canvasH - gap * 2;
+                for (int i = 0; i < 3; i++)
+                    DrawTile(new Rect(gap + i * (tileW + gap), gap, tileW, tileH));
+            }
+            else if (layout == "column")
+            {
+                double tileW = canvasW - gap * 2;
+                double tileH = (canvasH - gap * 4) / 3.0;
+                for (int i = 0; i < 3; i++)
+                    DrawTile(new Rect(gap, gap + i * (tileH + gap), tileW, tileH));
+            }
+            else
+            {
+                double tileW = (canvasW - gap * 3) / 2.0;
+                double tileH = (canvasH - gap * 3) / 2.0;
+                for (int row = 0; row < 2; row++)
+                    for (int col = 0; col < 2; col++)
+                        DrawTile(new Rect(gap + col * (tileW + gap), gap + row * (tileH + gap), tileW, tileH));
+            }
+        }
+        rtb.Render(dv);
+        rtb.Freeze();
+        image.Source = rtb;
+    }
     private void ApplyValues(Dictionary<string, string> values)
     {
         foreach (var (name, value) in values)
@@ -859,6 +1777,11 @@ internal sealed class ToolWindow : Window
         bitmap.StreamSource = stream;
         bitmap.EndInit();
         bitmap.Freeze();
+        if (showingOriginal || originalBitmapSource == null)
+        {
+            originalBitmapSource = bitmap;
+            cachedPreviewBase = null;
+        }
         image.Source = bitmap;
         image.Visibility = Visibility.Visible;
     }
@@ -955,7 +1878,9 @@ internal sealed class ToolWindow : Window
     }
     private void ShowOriginalWithFrame()
     {
-        if (originalPreview != null)
+        if (originalBitmapSource != null)
+        { player.Stop(); player.Visibility = Visibility.Collapsed; image.Source = originalBitmapSource; }
+        else if (originalPreview != null)
         { player.Stop(); player.Visibility = Visibility.Collapsed; SetImage(originalPreview); }
         showingOriginal = true;
         if (compareButton != null)
@@ -1082,7 +2007,18 @@ internal sealed class ToolWindow : Window
             status.Text = L.F("{0} area(s) added.", regions.Count);
         }
         if (!HasMedia)
-            SchedulePreview();
+        {
+            if (IsRealtimePreviewTool)
+            {
+                showingOriginal = false;
+                if (compareButton != null) compareButton.Content = L.T("Show original");
+                RenderRealtimePreview();
+            }
+            else
+            {
+                SchedulePreview();
+            }
+        }
     }
     private static double TimeValue(string value) => JobValidation.Time(value);
     private void SetMetadataState() { if (controls.TryGetValue("metadata", out var table) && table is MetadataEditor editor) editor.IsReadOnly = Get("remove") == "true"; }
@@ -1108,6 +2044,14 @@ internal sealed class ToolWindow : Window
             try
             { range["start"] = TimeValue(Get("start", "0")); range["end"] = TimeValue(Get("end", "0")); audioItem.Content = L.F("{0:0.000}–{1:0.000} s", range["start"], range["end"]); }
             catch (ArgumentException) { }
+        }
+        if (IsRealtimePreviewTool)
+        {
+            showingOriginal = false;
+            if (compareButton != null)
+                compareButton.Content = L.T("Show original");
+            RenderRealtimePreview();
+            return;
         }
         if (LivePreview)
             SchedulePreview();
