@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using System.Threading.Channels;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Threading;
 using Forms = System.Windows.Forms;
 
@@ -346,6 +347,14 @@ internal sealed class Resident : IDisposable
     private readonly EventWaitHandle openRequest = new(false, EventResetMode.AutoReset, ExplorerIntegration.EventName);
 
     private Forms.ToolStripMenuItem? startupMenu;
+    private HwndSource? hotkeySource;
+    private const int HOTKEY_ID_F8 = 9001;
+    private const int HOTKEY_ID_F9 = 9002;
+    private const int HOTKEY_ID_F10 = 9003;
+    private const int HOTKEY_ID_ALTSPACE = 9004;
+    private const int HOTKEY_ID_WINSHIFTL = 9005;
+    private const int HOTKEY_ID_CTRLSHIFTL = 9006;
+
     public Resident(System.Windows.Application app, EventWaitHandle showRequest, bool startupLaunch = false)
     {
         this.app = app;
@@ -353,6 +362,7 @@ internal sealed class Resident : IDisposable
         Journal.Prune();
         wheel = new DropWheel(BeginOperation);
         FloatShelfWindow.Instance.OnExecuteOperation = (files, op) => BeginOperation(files, op);
+        SetupGlobalHotKeys();
         trayIcon = AppIcon.CreateTrayIcon();
         tray = new Forms.NotifyIcon { Icon = trayIcon, Visible = true };
         BuildTrayMenu();
@@ -389,6 +399,75 @@ internal sealed class Resident : IDisposable
         else
             ShowWelcome();
         WatchForSecondLaunch(showRequest);
+    }
+
+    private void SetupGlobalHotKeys()
+    {
+        try
+        {
+            var parameters = new HwndSourceParameters("DropDialHotkeySink") { WindowStyle = 0 };
+            hotkeySource = new HwndSource(parameters);
+            hotkeySource.AddHook(HwndHook);
+            IntPtr handle = hotkeySource.Handle;
+
+            Native.RegisterHotKey(handle, HOTKEY_ID_F8, Native.MOD_NOREPEAT, 0x77);
+            Native.RegisterHotKey(handle, HOTKEY_ID_F9, Native.MOD_NOREPEAT, 0x78);
+            Native.RegisterHotKey(handle, HOTKEY_ID_F10, Native.MOD_NOREPEAT, 0x79);
+            Native.RegisterHotKey(handle, HOTKEY_ID_ALTSPACE, Native.MOD_ALT | Native.MOD_NOREPEAT, 0x20);
+            Native.RegisterHotKey(handle, HOTKEY_ID_WINSHIFTL, Native.MOD_WIN | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C);
+            Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTL, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C);
+        }
+        catch { }
+    }
+
+    private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == Native.WM_HOTKEY)
+        {
+            int id = wParam.ToInt32();
+            switch (id)
+            {
+                case HOTKEY_ID_F8:
+                    app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Convert));
+                    handled = true;
+                    break;
+                case HOTKEY_ID_F9:
+                    app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Tools));
+                    handled = true;
+                    break;
+                case HOTKEY_ID_F10:
+                    app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Actions));
+                    handled = true;
+                    break;
+                case HOTKEY_ID_ALTSPACE:
+                case HOTKEY_ID_WINSHIFTL:
+                case HOTKEY_ID_CTRLSHIFTL:
+                    app.Dispatcher.InvokeAsync(() => ToggleWheel());
+                    handled = true;
+                    break;
+            }
+        }
+        return IntPtr.Zero;
+    }
+
+    private void ToggleWheel(WheelMode? targetMode = null)
+    {
+        if (wheel.IsVisible)
+        {
+            if (targetMode.HasValue && wheel.CurrentMode != targetMode.Value)
+            {
+                wheel.ChangeMode(targetMode.Value);
+                activated = DateTime.UtcNow;
+            }
+            else
+            {
+                wheel.Dismiss("HotkeyToggle");
+            }
+        }
+        else
+        {
+            Activate(targetMode ?? WheelMode.Convert, "Hotkey");
+        }
     }
 
     // Shows the welcome window, or brings it to the front if it is already open.
@@ -509,6 +588,7 @@ internal sealed class Resident : IDisposable
         tray.Text = L.T("DropDial · Drag + Shift to convert / Ctrl+Shift tools / Alt actions");
         var old = tray.ContextMenuStrip;
         var items = new Forms.ContextMenuStrip();
+        items.Items.Add(L.T("Toggle Wheel") + "\tAlt+Space", null, (_, _) => ToggleWheel());
         items.Items.Add(L.T("Formats Wheel") + "\tF8", null, (_, _) => Activate(WheelMode.Convert, "TrayMenu"));
         items.Items.Add(L.T("Tools Wheel") + "\tF9", null, (_, _) => Activate(WheelMode.Tools, "TrayMenu"));
         items.Items.Add(L.T("Actions Wheel") + "\tF10", null, (_, _) => Activate(WheelMode.Actions, "TrayMenu"));
@@ -687,8 +767,6 @@ internal sealed class Resident : IDisposable
             delay.Tick += (_, _) => { delay.Stop(); if (wheel.IsVisible && wheel.Instance == instance) wheel.Dismiss("ReleasedOutside"); };
             delay.Start();
         }
-        if (wheel.IsVisible && !nextMouse && (DateTime.UtcNow - activated).TotalSeconds > 10)
-            wheel.Dismiss("IdleTimeout");
         f8 = nextF8;
         f9 = nextF9;
         f10 = nextF10;
@@ -838,7 +916,26 @@ internal sealed class Resident : IDisposable
                 try
                 {
                     string folder = Directory.Exists(paths[0]) ? paths[0] : (Path.GetDirectoryName(paths[0]) ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-                    Process.Start(new ProcessStartInfo("cmd.exe") { WorkingDirectory = folder, UseShellExecute = true });
+                    bool launched = false;
+                    try
+                    {
+                        Process.Start(new ProcessStartInfo("wt.exe", $"-d \"{folder}\"") { UseShellExecute = true });
+                        launched = true;
+                    }
+                    catch { }
+                    if (!launched)
+                    {
+                        try
+                        {
+                            Process.Start(new ProcessStartInfo("powershell.exe") { WorkingDirectory = folder, UseShellExecute = true });
+                            launched = true;
+                        }
+                        catch { }
+                    }
+                    if (!launched)
+                    {
+                        Process.Start(new ProcessStartInfo("cmd.exe") { WorkingDirectory = folder, UseShellExecute = true });
+                    }
                 }
                 catch (Exception ex) { Notify(L.T("Terminal"), ex.Message); }
                 break;
@@ -846,9 +943,16 @@ internal sealed class Resident : IDisposable
             case "action:share":
                 try
                 {
+                    var list = new System.Collections.Specialized.StringCollection();
+                    list.AddRange(paths);
+                    System.Windows.Clipboard.SetFileDropList(list);
                     ExplorerIntegration.Reveal(paths[0]);
+                    Notify("DropDial", paths.Length == 1 ? L.T("Ready to share (copied to clipboard & revealed)") : L.F("{0} files ready to share", paths.Length));
                 }
-                catch { }
+                catch
+                {
+                    try { ExplorerIntegration.Reveal(paths[0]); } catch { }
+                }
                 break;
 
             case "action:metadata":
@@ -1044,6 +1148,22 @@ internal sealed class Resident : IDisposable
         }
         watch?.Dispose();
         openRequest.Dispose();
+        if (hotkeySource != null)
+        {
+            try
+            {
+                IntPtr handle = hotkeySource.Handle;
+                Native.UnregisterHotKey(handle, HOTKEY_ID_F8);
+                Native.UnregisterHotKey(handle, HOTKEY_ID_F9);
+                Native.UnregisterHotKey(handle, HOTKEY_ID_F10);
+                Native.UnregisterHotKey(handle, HOTKEY_ID_ALTSPACE);
+                Native.UnregisterHotKey(handle, HOTKEY_ID_WINSHIFTL);
+                Native.UnregisterHotKey(handle, HOTKEY_ID_CTRLSHIFTL);
+            }
+            catch { }
+            hotkeySource.Dispose();
+            hotkeySource = null;
+        }
         tray.Dispose();
         trayIcon.Dispose();
         welcome?.Close();

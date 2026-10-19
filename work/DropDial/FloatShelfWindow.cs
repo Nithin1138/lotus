@@ -104,13 +104,24 @@ internal sealed class FloatShelfItemCard : Border
         Grid.SetColumn(textStack, 1);
         grid.Children.Add(textStack);
 
-        // 3. Hover Actions (Reveal, Remove)
+        // 3. Hover Actions (Convert, Tools, Reveal, Remove)
         var actionsPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
             Visibility = Visibility.Collapsed
         };
+
+        if (onConvert != null)
+        {
+            var convertBtn = CreateHoverButton("🔄", "Convert with DropDial", () => onConvert([filePath]));
+            actionsPanel.Children.Add(convertBtn);
+        }
+        if (onTools != null)
+        {
+            var toolsBtn = CreateHoverButton("🛠", "Tools in DropDial", () => onTools([filePath]));
+            actionsPanel.Children.Add(toolsBtn);
+        }
 
         var revealBtn = CreateHoverButton("📁", "Reveal in File Explorer", () => ExplorerIntegration.Reveal(filePath));
         var removeBtn = CreateHoverButton("×", "Remove from Shelf", () => onRemove(filePath));
@@ -329,6 +340,7 @@ internal sealed class FloatShelfWindow : Window
     }
 
     private readonly List<string> floatedPaths = [];
+    private string? selectedPath;
     private readonly StackPanel itemsStack;
     private readonly ScrollViewer scroller;
     private readonly Border emptyState;
@@ -470,8 +482,9 @@ internal sealed class FloatShelfWindow : Window
         Grid.SetRow(emptyState, 1);
         contentGrid.Children.Add(emptyState);
 
-        // 3. Bottom Action Bar: Clear, Convert, Drag All
+        // 3. Bottom Action Bar: Clear, Share, Drag All
         var bottomGrid = new Grid { Margin = new Thickness(0, 10, 0, 0) };
+        bottomGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         bottomGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         bottomGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
@@ -479,7 +492,7 @@ internal sealed class FloatShelfWindow : Window
         {
             Content = "Clear",
             Height = 28,
-            Padding = new Thickness(12, 0, 12, 0),
+            Padding = new Thickness(10, 0, 10, 0),
             Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)),
             Foreground = new SolidColorBrush(Color.FromRgb(200, 206, 216)),
             BorderThickness = new Thickness(0),
@@ -490,11 +503,28 @@ internal sealed class FloatShelfWindow : Window
         Grid.SetColumn(clearBtn, 0);
         bottomGrid.Children.Add(clearBtn);
 
+        var shareBtn = new Button
+        {
+            Content = "Share",
+            Height = 28,
+            Margin = new Thickness(6, 0, 0, 0),
+            Padding = new Thickness(10, 0, 10, 0),
+            Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)),
+            Foreground = new SolidColorBrush(Color.FromRgb(200, 206, 216)),
+            BorderThickness = new Thickness(0),
+            FontSize = 11,
+            Cursor = Cursors.Hand,
+            ToolTip = "Copy files to clipboard & reveal in Explorer"
+        };
+        shareBtn.Click += (_, _) => ShareAll();
+        Grid.SetColumn(shareBtn, 1);
+        bottomGrid.Children.Add(shareBtn);
+
         dragAllBtn = new Button
         {
             Content = "Drag All",
             Height = 28,
-            Margin = new Thickness(8, 0, 0, 0),
+            Margin = new Thickness(6, 0, 0, 0),
             Background = UiTheme.Accent,
             Foreground = Brushes.White,
             BorderThickness = new Thickness(0),
@@ -504,7 +534,7 @@ internal sealed class FloatShelfWindow : Window
             ToolTip = "Drag this button to drop all files, or click to copy them"
         };
         SetupDragAllButton(dragAllBtn);
-        Grid.SetColumn(dragAllBtn, 1);
+        Grid.SetColumn(dragAllBtn, 2);
         bottomGrid.Children.Add(dragAllBtn);
 
         Grid.SetRow(bottomGrid, 2);
@@ -565,11 +595,20 @@ internal sealed class FloatShelfWindow : Window
             }
         };
 
-        // ESC key hides shelf
+        // ESC key hides shelf, Space key triggers quick preview
         KeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape)
                 HideShelf();
+            else if (e.Key == Key.Space)
+            {
+                string? target = selectedPath ?? floatedPaths.FirstOrDefault();
+                if (!string.IsNullOrEmpty(target))
+                {
+                    e.Handled = true;
+                    try { Process.Start(new ProcessStartInfo(target) { UseShellExecute = true }); } catch { }
+                }
+            }
         };
 
         RefreshUI();
@@ -726,12 +765,16 @@ internal sealed class FloatShelfWindow : Window
 
         if (floatedPaths.Count == 0)
         {
+            selectedPath = null;
             emptyState.Visibility = Visibility.Visible;
             scroller.Visibility = Visibility.Collapsed;
             dragAllBtn.IsEnabled = false;
         }
         else
         {
+            if (selectedPath == null || !floatedPaths.Contains(selectedPath))
+                selectedPath = floatedPaths[0];
+
             emptyState.Visibility = Visibility.Collapsed;
             scroller.Visibility = Visibility.Visible;
             dragAllBtn.IsEnabled = true;
@@ -741,13 +784,26 @@ internal sealed class FloatShelfWindow : Window
                 var card = new FloatShelfItemCard(
                     p,
                     onRemove: RemoveFile,
-                    onSelect: selected => { },
+                    onSelect: selected => { selectedPath = selected; },
                     onConvert: files => TriggerWheelForFiles(files, tools: false),
                     onTools: files => TriggerWheelForFiles(files, tools: true)
                 );
                 itemsStack.Children.Add(card);
             }
         }
+    }
+
+    public void ShareAll()
+    {
+        if (floatedPaths.Count == 0) return;
+        try
+        {
+            var col = new StringCollection();
+            col.AddRange(floatedPaths.ToArray());
+            Clipboard.SetFileDropList(col);
+            ExplorerIntegration.Reveal(floatedPaths[0]);
+        }
+        catch { }
     }
 
     private void TriggerWheelForFiles(string[] files, bool tools)

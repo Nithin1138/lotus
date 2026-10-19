@@ -1362,6 +1362,18 @@ internal sealed class DropWheel : Window
     private static string TruncateMiddle(string text, int maxLen = 14)
     {
         if (string.IsNullOrEmpty(text) || text.Length <= maxLen) return text;
+        string ext = System.IO.Path.GetExtension(text);
+        if (!string.IsNullOrEmpty(ext) && ext.Length < maxLen - 4)
+        {
+            string name = System.IO.Path.GetFileNameWithoutExtension(text);
+            int availableForName = maxLen - ext.Length - 1;
+            if (availableForName > 3)
+            {
+                int prefixLen = Math.Max(2, availableForName / 2);
+                int suffixLen = Math.Max(1, availableForName - prefixLen);
+                return name[..prefixLen] + "…" + name[^suffixLen..] + ext;
+            }
+        }
         int keep = Math.Max(2, (maxLen - 3) / 2);
         return text[..keep] + "…" + text[^keep..];
     }
