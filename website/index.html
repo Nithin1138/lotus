@@ -3,31 +3,49 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DropDial · Drag. Drop. Convert.</title>
-<meta name="description" content="DropDial is a free, open-source file converter for macOS and Windows. Hold Shift while dragging any file and drop it on the format you want. Images, video, audio, PDF, Office and archives, all processed locally.">
-<link rel="canonical" href="https://dropdial.org/">
+<title>DropDial · Instant Drag-and-Drop File Converter &amp; Media Suite</title>
+<meta name="description" content="DropDial is an instant drag-and-drop file converter and native media suite for macOS and Windows. Hold Shift to convert formats, or hold Control for instant universal file actions. 100% offline, zero cloud uploads.">
+<link rel="canonical" href="https://dropdial.com/">
 <meta name="theme-color" content="#FAF8F5" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#141516" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/assets/img/icon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://dropdial.org/">
+<meta property="og:url" content="https://dropdial.com/">
 <meta property="og:site_name" content="DropDial">
-<meta property="og:title" content="DropDial · Drag. Drop. Convert.">
-<meta property="og:description" content="Free file converter for macOS and Windows. Hold Shift while dragging any file and drop it on the format you want.">
-<meta property="og:image" content="https://dropdial.org/assets/img/og-image.png?v=2">
+<meta property="og:title" content="DropDial · Instant Drag-and-Drop File Converter &amp; Media Suite">
+<meta property="og:description" content="Native desktop file converter, media suite, and universal actions dial for macOS and Windows. 100% offline and private.">
+<meta property="og:image" content="https://dropdial.com/assets/img/og-image.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="/assets/css/site.css?v=6">
+<link rel="stylesheet" href="/assets/css/site.css?v=10">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"DropDial","operatingSystem":"macOS, Windows","applicationCategory":"UtilitiesApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://opensource.org/licenses/MIT","url":"https://dropdial.org/","downloadUrl":"https://github.com/Nithin1138/lotus/releases/latest","softwareVersion":"0.1.1"}
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "DropDial",
+  "operatingSystem": "macOS 12+, Windows 10/11",
+  "applicationCategory": "UtilitiesApplication",
+  "offers": [
+    {
+      "@type": "Offer",
+      "name": "7-Day Free Trial",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    {
+      "@type": "Offer",
+      "name": "DropDial Pro Lifetime",
+      "price": "19",
+      "priceCurrency": "USD"
+    }
+  ],
+  "url": "https://dropdial.com/",
+  "softwareVersion": "1.2.0"
+}
 </script>
-<!--
-  Visitor statistics: on Cloudflare Pages, enable Web Analytics in the project's Metrics tab; no snippet is needed.
-  On other hosts, create a site in Cloudflare Web Analytics and paste the beacon script it gives you here.
--->
 </head>
 <body>
 <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
@@ -41,32 +59,35 @@
     <nav class="nav-links" aria-label="Primary">
       <a href="#how" data-i18n="nav.how">How it works</a>
       <a href="#features" data-i18n="nav.features">Features</a>
+      <a href="#actions" data-i18n="nav.actions">Actions Dial</a>
+      <a href="#tools" data-i18n="nav.tools">Media Tools</a>
+      <a href="#mac" data-i18n="nav.mac">macOS &amp; PC</a>
+      <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
       <a href="#faq" data-i18n="nav.faq">FAQ</a>
     </nav>
     <div class="nav-actions">
-      <a class="icon-link" href="https://github.com/Nithin1138/lotus" aria-label="DropDial on GitHub">
-        <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-      </a>
-      <a class="btn btn-small" href="#download" data-i18n="nav.download">Download</a>
+      <a class="btn btn-small" href="#pricing" style="background:var(--accent);color:#fff;border-color:var(--accent);">Buy Pro ($19)</a>
+      <a class="btn btn-small btn-ghost" href="#download" data-i18n="nav.download">Free Download</a>
     </div>
   </div>
 </header>
 
 <main id="main">
+  <!-- Hero Section -->
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow" data-i18n="hero.eyebrow">Free · Open source · macOS &amp; Windows</p>
+        <p class="eyebrow" data-i18n="hero.eyebrow">7-Day Free Trial · macOS &amp; Windows · 100% Offline</p>
         <h1 data-i18n="hero.title">Drag. Drop. <em>Convert.</em></h1>
-        <p class="lead" data-i18n="hero.lead">Hold <kbd>Shift</kbd> while you drag any file, and a format wheel opens under your cursor. Release on the format you want. No app window, no upload, no browser tab.</p>
+        <p class="lead" data-i18n="hero.lead">Hold <kbd>Shift</kbd> to convert formats or <kbd>⌃</kbd> for universal file actions at your cursor. Instant offline file conversions, media tools, and desktop shortcuts with zero cloud uploads.</p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="https://github.com/Nithin1138/lotus/releases" data-download>
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>
-            <span data-i18n="cta.download">Download DropDial</span>
+          <a class="btn btn-primary" href="#download" data-download>
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>
+            <span>Download Free Trial</span>
           </a>
-          <a class="btn btn-ghost" href="https://github.com/Nithin1138/lotus" data-i18n="cta.source">View source on GitHub</a>
+          <a class="btn" href="#pricing" style="background:var(--accent);color:#fff;border:1px solid var(--accent);font-weight:700;">Buy Pro ($19 / ₹999)</a>
         </div>
-        <p class="fineprint"><span data-release-meta>macOS &amp; Windows · Fast, local, private</span> · <span data-i18n="cta.fine">100% Free &amp; Open Source</span></p>
+        <p class="fineprint"><span data-release-meta>macOS (Apple Silicon &amp; Intel) &amp; Windows</span> · <span>7-day free trial · 100% private</span></p>
       </div>
 
       <div class="demo" id="demo">
@@ -95,15 +116,17 @@
     </div>
   </section>
 
+  <!-- Highlights Strip -->
   <section class="strip" aria-label="Highlights">
     <ul class="wrap strip-row">
-      <li><b data-i18n="strip.local">100% local</b><span data-i18n="strip.local.d">Files never leave your PC</span></li>
-      <li><b data-i18n="strip.free">Free &amp; open source</b><span data-i18n="strip.free.d">MIT licensed</span></li>
-      <li><b data-i18n="strip.portable">Portable</b><span data-i18n="strip.portable.d">No installer, nothing else to install</span></li>
+      <li><b data-i18n="strip.local">100% local</b><span data-i18n="strip.local.d">Files never leave your computer</span></li>
+      <li><b data-i18n="strip.actions">Actions Dial</b><span data-i18n="strip.actions.d">AirDrop, Copy Path, Terminal &amp; more</span></li>
+      <li><b data-i18n="strip.portable">Universal Mac &amp; PC</b><span data-i18n="strip.portable.d">Apple Silicon native &amp; Windows Fluent</span></li>
       <li><b data-i18n="strip.safe">Originals untouched</b><span data-i18n="strip.safe.d">New files are saved alongside</span></li>
     </ul>
   </section>
 
+  <!-- How It Works Section -->
   <section class="section" id="how">
     <div class="wrap">
       <h2 data-i18n="how.title">Three moves. No windows.</h2>
@@ -112,32 +135,32 @@
         <li>
           <span class="step-n">1</span>
           <h3 data-i18n="how.1.t">Start dragging</h3>
-          <p data-i18n="how.1.d">Select one or more files on the desktop or in File Explorer/Finder and start dragging, as if you were moving them.</p>
+          <p data-i18n="how.1.d">Select one or more files in Finder, File Explorer, or any app and start dragging.</p>
         </li>
         <li>
           <span class="step-n">2</span>
           <h3 data-i18n="how.2.t">Press a shortcut</h3>
-          <p data-i18n="how.2.d"><kbd>Shift</kbd> opens formats, <kbd>Ctrl</kbd> + <kbd>Shift</kbd> opens tools. <kbd>F8</kbd> and <kbd>F9</kbd> work too. Once the wheel is open you can let go of the keys.</p>
+          <p data-i18n="how.2.d"><kbd>Shift</kbd> opens formats, <kbd>⌘</kbd> opens tools, and <kbd>⌃ Control</kbd> (or <kbd>F10</kbd>) opens universal file actions at your cursor.</p>
         </li>
         <li>
           <span class="step-n">3</span>
-          <h3 data-i18n="how.3.t">Release on a petal</h3>
-          <p data-i18n="how.3.d">Drop on the format or tool you want. The new file appears next to the original, which is never overwritten.</p>
+          <h3 data-i18n="how.3.t">Release to convert</h3>
+          <p data-i18n="how.3.d">Drop on the petal you want. The new file appears right next to the original, which is never overwritten.</p>
         </li>
       </ol>
     </div>
   </section>
 
+
+  <!-- Format Showcase Section -->
   <section class="section section-alt" id="features">
     <div class="wrap">
       <h2 data-i18n="feat.title">One gesture for every file on your desktop</h2>
       <p class="section-lead" data-i18n="feat.lead">The wheel only shows what makes sense for the files you are holding. Pick a file type to see its menus.</p>
 
-      <!-- 333 = input-to-output format pairs from Catalog.cs (49 input formats; 145 of them are Office conversions).
-           27 = tool definitions in Catalog.cs. Recount both when the catalog changes. -->
       <div class="stats">
         <div class="stat">
-          <b>333</b>
+          <b>333+</b>
           <h3 data-i18n="stat.conv.t">Conversion options</h3>
           <p data-i18n="stat.conv.d">Input-to-output format pairs across images, video, audio, documents, Office files and archives. 145 of them use your installed Microsoft Office.</p>
         </div>
@@ -153,25 +176,378 @@
           <button class="tab" role="tab" type="button" id="tab-images" data-cat="images" aria-selected="true" aria-controls="show-panel" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5.5-5 3.5 3 3-2.5 4 4.5"/></svg><span>Images</span></button>
           <button class="tab" role="tab" type="button" id="tab-video" data-cat="video" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="13" height="14" rx="2.5"/><path d="m16 10 5-3v10l-5-3"/></svg><span>Video</span></button>
           <button class="tab" role="tab" type="button" id="tab-audio" data-cat="audio" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span>Audio</span></button>
+          <button class="tab" role="tab" type="button" id="tab-pdf" data-cat="pdf" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6M9 11h6M9 19h4"/></svg><span>PDF</span></button>
           <button class="tab" role="tab" type="button" id="tab-documents" data-cat="documents" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg><span>Documents</span></button>
+          <button class="tab" role="tab" type="button" id="tab-slides" data-cat="slides" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><circle cx="8" cy="10" r="2"/><polyline points="12 12 14 9 18 13"/></svg><span>Slides</span></button>
+          <button class="tab" role="tab" type="button" id="tab-spreadsheets" data-cat="spreadsheets" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg><span>Spreadsheets</span></button>
+          <button class="tab" role="tab" type="button" id="tab-epub" data-cat="epub" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="13" y2="11"/></svg><span>EPUB</span></button>
+          <button class="tab" role="tab" type="button" id="tab-subtitles" data-cat="subtitles" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><line x1="6" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="18" y2="14"/><line x1="6" y1="10" x2="18" y2="10"/></svg><span>Subtitles</span></button>
           <button class="tab" role="tab" type="button" id="tab-archives" data-cat="archives" aria-selected="false" aria-controls="show-panel" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v13H4zM3 4h18v3H3zM10 11h4"/></svg><span>Archives</span></button>
         </div>
         <div class="panel" id="show-panel" role="tabpanel" aria-labelledby="tab-images">
           <h3 id="show-title">Image tools</h3>
           <p class="panel-desc" id="show-desc">JPG, PNG, WebP, HEIC, TIFF, AVIF, BMP and SVG. Convert, compress, crop to any ratio, redact, adjust colour, add a background or strip metadata.</p>
-          <div class="duo">
-            <div class="duo-col">
+          <div class="duo" id="show-duo">
+            <div class="duo-col" id="show-col-fmt">
               <div class="keys"><span class="cap"><i aria-hidden="true">⇧</i><span>Shift</span></span></div>
               <p class="duo-label" id="show-fmt-label">Convert formats</p>
-              <svg class="wheel mini" id="show-wheel-fmt" viewBox="0 0 380 380" role="img" tabindex="0"></svg>
+              <div class="wheel-box">
+                <svg class="wheel mini" id="show-wheel-fmt" viewBox="0 0 380 380" role="img" tabindex="0"></svg>
+                <div class="wheel-rotate-control" id="show-fmt-rotate" style="display:none;"></div>
+              </div>
               <p class="duo-caption" id="show-fmt-cap" aria-live="polite"></p>
             </div>
-            <div class="duo-rule" aria-hidden="true"></div>
-            <div class="duo-col">
-              <div class="keys"><span class="cap"><i aria-hidden="true">⌃</i><span>Ctrl</span></span><span class="plus" aria-hidden="true">+</span><span class="cap"><i aria-hidden="true">⇧</i><span>Shift</span></span></div>
-              <p class="duo-label" id="show-tools-label">Advanced tools</p>
-              <svg class="wheel mini" id="show-wheel-tools" viewBox="0 0 380 380" role="img" tabindex="0"></svg>
+            <div class="duo-rule" id="show-rule" aria-hidden="true"></div>
+            <div class="duo-col" id="show-col-tools">
+              <div class="keys"><span class="cap"><i aria-hidden="true">⌘</i><span>command</span></span></div>
+              <p class="duo-label" id="show-tools-label">File tools</p>
+              <div class="wheel-box">
+                <svg class="wheel mini" id="show-wheel-tools" viewBox="0 0 380 380" role="img" tabindex="0"></svg>
+                <div class="wheel-rotate-control" id="show-tools-rotate" style="display:none;"></div>
+              </div>
               <p class="duo-caption" id="show-tools-cap" aria-live="polite"></p>
+            </div>
+          </div>
+          <p class="showcase-drag-hint" id="show-drag-hint">Start dragging, then tap a key. The wheel stays open until you drop. Change the keys in Settings.</p>
+          <div class="showcase-cards-grid" id="show-cards"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Universal Actions Dial Showcase Section -->
+  <section class="section actions-section" id="actions">
+    <div class="wrap">
+      <div class="badge-pill">Instant Productivity · Universal File Actions</div>
+      <h2>The Actions Dial. Superpowers for every file.</h2>
+      <p class="section-lead">Hold <kbd>⌃ Control</kbd> (macOS) or <kbd>Alt</kbd> (Windows) while dragging any file, or press <kbd>F10</kbd>. AirDrop, copy paths, move files, float to shelf, strip metadata, or jump to terminal in a single fluid gesture.</p>
+
+      <div class="actions-showcase-grid">
+        <div>
+          <ul class="actions-feature-list">
+            <li>
+              <div class="actions-feature-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              </div>
+              <div>
+                <h3 class="actions-feature-title">AirDrop &amp; Native Sharing</h3>
+                <p class="actions-feature-desc">Share files instantly to nearby Apple devices or native share recipients in one flick, bypassing deep Finder context menus and extra clicks.</p>
+              </div>
+            </li>
+            <li>
+              <div class="actions-feature-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div>
+                <h3 class="actions-feature-title">Float to Shelf</h3>
+                <p class="actions-feature-desc">Dock files on a floating screen-edge shelf. Batch multiple files from different folders, preview with Quick Look, and drop them together into Slack, Figma, or Mail.</p>
+              </div>
+            </li>
+            <li>
+              <div class="actions-feature-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </div>
+              <div>
+                <h3 class="actions-feature-title">Fast Copy &amp; Move</h3>
+                <p class="actions-feature-desc">Copy items straight to your clipboard ready to paste, or quickly move originals to a selected destination folder without cluttering your screen with extra windows.</p>
+              </div>
+            </li>
+            <li>
+              <div class="actions-feature-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </div>
+              <div>
+                <h3 class="actions-feature-title">Copy Clean File Path</h3>
+                <p class="actions-feature-desc">Copy absolute file paths or POSIX-escaped paths to your clipboard with a single gesture — ideal for terminal commands, scripts, code editors, and documentation.</p>
+              </div>
+            </li>
+            <li>
+              <div class="actions-feature-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+              </div>
+              <div>
+                <h3 class="actions-feature-title">Instant Terminal in Folder</h3>
+                <p class="actions-feature-desc">Open Terminal, iTerm2, or PowerShell directly at the directory of your dragged file or folder, skipping tedious manual <code>cd</code> path typing.</p>
+              </div>
+            </li>
+            <li>
+              <div class="actions-feature-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </div>
+              <div>
+                <h3 class="actions-feature-title">Strip EXIF &amp; Privacy Metadata</h3>
+                <p class="actions-feature-desc">Instantly purge camera metadata, GPS location tags, timestamps, and creator information before uploading or sharing sensitive images and documents.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="actions-preview-card">
+          <div class="duo-col">
+            <div class="keys">
+              <span class="cap"><i aria-hidden="true">⌃</i><span>Control</span></span>
+              <span class="plus" aria-hidden="true">/</span>
+              <span class="cap"><i aria-hidden="true">F10</i><span>Key</span></span>
+            </div>
+            <p class="duo-label" id="actions-wheel-label">Universal file actions</p>
+            <svg class="wheel mini" id="actions-wheel" viewBox="0 0 380 380" role="img" tabindex="0"></svg>
+            <p class="duo-caption" id="actions-cap" aria-live="polite">AIRDROP: Share files through native recipient picker</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15+ Native Media Tools Section -->
+  <section class="section section-alt" id="tools">
+    <div class="wrap">
+      <div class="badge-pill">Built-In Media Suite</div>
+      <h2>15+ Pro Media Tools. Right at your fingertips.</h2>
+      <p class="section-lead">Stop firing up heavy editing software or paying recurring fees for online converters. Edit, compress, trim, and enhance your files instantly.</p>
+
+      <div class="tools-card-grid">
+        <div class="tool-feature-card">
+          <div class="tool-icon-box">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+          </div>
+          <div class="tool-feature-content">
+            <h3>Lossless Video Trimmer</h3>
+            <p>Cut clips with millisecond-exact keyframe accuracy without re-encoding. Timeline preview with draggable start and end handles.</p>
+            <span class="tool-tag">Fast &amp; Lossless</span>
+          </div>
+        </div>
+
+        <div class="tool-feature-card">
+          <div class="tool-icon-box">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+          </div>
+          <div class="tool-feature-content">
+            <h3>Video to High-Res GIF</h3>
+            <p>Convert any video clip into a crisp, smooth animated GIF with custom frame rates (FPS) and palette dithering for Discord and web.</p>
+            <span class="tool-tag">Optimized Palette</span>
+          </div>
+        </div>
+
+        <div class="tool-feature-card">
+          <div class="tool-icon-box">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          </div>
+          <div class="tool-feature-content">
+            <h3>Universal Compressor</h3>
+            <p>Target specific file sizes (e.g., 8MB, 25MB for email and chats) using intelligent 2-pass encoding with quality preservation.</p>
+            <span class="tool-tag">Target Size Slider</span>
+          </div>
+        </div>
+
+        <div class="tool-feature-card">
+          <div class="tool-icon-box">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          </div>
+          <div class="tool-feature-content">
+            <h3>Smart Image Studio</h3>
+            <p>Crop to standard aspect ratios (16:9, 1:1, 4:5), resize intelligently, apply contrast/duotone filters, and strip private EXIF data.</p>
+            <span class="tool-tag">Privacy &amp; Resize</span>
+          </div>
+        </div>
+
+        <div class="tool-feature-card">
+          <div class="tool-icon-box">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="tool-feature-content">
+            <h3>Watermark &amp; Blur Redaction</h3>
+            <p>Blackout or pixelate confidential text, credit card details, license plates, and faces before sharing images or documents.</p>
+            <span class="tool-tag">Confidentiality Safe</span>
+          </div>
+        </div>
+
+        <div class="tool-feature-card">
+          <div class="tool-icon-box">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <div class="tool-feature-content">
+            <h3>EBU R128 Audio Normalizer &amp; Video</h3>
+            <p>Normalize audio loudness to professional broadcast standards (-14 to -23 LUFS) and convert voice clips into animated waveform videos.</p>
+            <span class="tool-tag">Podcast Ready</span>
+          </div>
+        </div>
+
+        <!-- Edit metadata Card (Image 1) -->
+        <div class="tool-feature-card visual-spotlight-card">
+          <div class="spotlight-visual metadata-visual">
+            <div class="metadata-preview-bg">
+              <div class="metadata-tags-bar">
+                <span class="meta-tag"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Location —</span>
+                <span class="meta-tag"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Camera —</span>
+                <span class="meta-tag"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Author —</span>
+              </div>
+            </div>
+          </div>
+          <div class="tool-feature-content">
+            <h3>Edit metadata</h3>
+            <p>Edit camera and location tags, or remove metadata from a selection.</p>
+            <span class="tool-tag">EXIF &amp; Privacy Tags</span>
+          </div>
+        </div>
+
+        <!-- Make a collage Card (Image 2) -->
+        <div class="tool-feature-card visual-spotlight-card">
+          <div class="spotlight-visual collage-visual">
+            <span class="spotlight-badge">Multiple files</span>
+            <div class="collage-preview-grid">
+              <div class="collage-item item-large"></div>
+              <div class="collage-stack">
+                <div class="collage-item item-small item-1"></div>
+                <div class="collage-item item-small item-2"></div>
+              </div>
+            </div>
+          </div>
+          <div class="tool-feature-content">
+            <h3>Make a collage</h3>
+            <p>Combine images in a grid, row, column, or featured layout. Adjust order, spacing, corners, and background.</p>
+            <span class="tool-tag">Multiple Layouts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Supported Formats Reference Matrix (Image 3) -->
+      <div class="format-matrix-section">
+        <div class="format-matrix-header">
+          <div class="badge-pill">Matrix</div>
+          <h3>Supported formats</h3>
+          <p>Drop any file to convert, compress, or edit with local native tooling.</p>
+        </div>
+        <div class="format-matrix-grid">
+          <div class="format-matrix-row">
+            <div class="format-cat-label">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5.5-5 3.5 3 3-2.5 4 4.5"/></svg>
+              <span>Images</span>
+            </div>
+            <div class="format-tags-list">
+              <span class="format-pill">JPG</span>
+              <span class="format-pill">PNG</span>
+              <span class="format-pill">WebP</span>
+              <span class="format-pill">HEIC</span>
+              <span class="format-pill">TIFF</span>
+              <span class="format-pill">AVIF</span>
+              <span class="format-pill">BMP</span>
+            </div>
+          </div>
+
+          <div class="format-matrix-row">
+            <div class="format-cat-label">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>
+              <span>Audio</span>
+            </div>
+            <div class="format-tags-list">
+              <span class="format-pill">MP3</span>
+              <span class="format-pill">M4A</span>
+              <span class="format-pill">WAV</span>
+              <span class="format-pill">FLAC</span>
+              <span class="format-pill">OGG</span>
+              <span class="format-pill">Opus</span>
+              <span class="format-pill">AIFF</span>
+              <span class="format-pill">WMA</span>
+            </div>
+          </div>
+
+          <div class="format-matrix-row">
+            <div class="format-cat-label">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="13" height="14" rx="2.5"/><path d="m16 10 5-3v10l-5-3"/></svg>
+              <span>Video</span>
+            </div>
+            <div class="format-tags-list">
+              <span class="format-pill">MP4</span>
+              <span class="format-pill">MOV</span>
+              <span class="format-pill">MKV</span>
+              <span class="format-pill">WebM</span>
+              <span class="format-pill">AVI</span>
+              <span class="format-pill">WMV</span>
+              <span class="format-pill">GIF</span>
+            </div>
+          </div>
+
+          <div class="format-matrix-row">
+            <div class="format-cat-label">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span>PDF</span>
+            </div>
+            <div class="format-tags-list">
+              <span class="format-pill source">PDF</span>
+              <span class="format-arrow">→</span>
+              <span class="format-pill">DOCX</span>
+              <span class="format-pill">PAGES</span>
+              <span class="format-pill">PPTX</span>
+              <span class="format-pill">XLSX</span>
+              <span class="format-pill">JPG</span>
+              <span class="format-pill">PNG</span>
+              <span class="format-pill">EPUB</span>
+              <span class="format-pill">TXT</span>
+              <span class="format-pill">MD</span>
+            </div>
+          </div>
+
+          <div class="format-matrix-row">
+            <div class="format-cat-label">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg>
+              <span>Documents</span>
+            </div>
+            <div class="format-tags-list">
+              <span class="format-pill">DOCX</span>
+              <span class="format-pill">PAGES</span>
+              <span class="format-pill">Markdown</span>
+              <span class="format-pill">TXT</span>
+              <span class="format-pill">EPUB</span>
+            </div>
+          </div>
+
+          <div class="format-matrix-row">
+            <div class="format-cat-label">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+              <span>Slides</span>
+            </div>
+            <div class="format-tags-list">
+              <span class="format-pill source">PPT / PPTX</span>
+              <span class="format-arrow">→</span>
+              <span class="format-pill">PDF</span>
+              <span class="format-pill">JPG</span>
+              <span class="format-pill">PNG</span>
+            </div>
+          </div>
+
+          <div class="format-matrix-row">
+            <div class="format-cat-label">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+              <span>Spreadsheets</span>
+            </div>
+            <div class="format-tags-list">
+              <span class="format-pill">XLSX</span>
+              <span class="format-pill">ODS</span>
+              <span class="format-pill">CSV</span>
+              <span class="format-pill">TSV</span>
+            </div>
+          </div>
+
+          <div class="format-matrix-row">
+            <div class="format-cat-label">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="13" y2="13"/></svg>
+              <span>Subtitles</span>
+            </div>
+            <div class="format-tags-list">
+              <span class="format-pill">SRT</span>
+              <span class="format-pill">VTT</span>
+            </div>
+          </div>
+
+          <div class="format-matrix-row">
+            <div class="format-cat-label">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16v13H4zM3 4h18v3H3zM10 11h4"/></svg>
+              <span>Archives</span>
+            </div>
+            <div class="format-tags-list">
+              <span class="format-pill">ZIP</span>
+              <span class="format-pill">TAR</span>
+              <span class="format-pill">GZIP</span>
             </div>
           </div>
         </div>
@@ -179,16 +555,64 @@
     </div>
   </section>
 
-  <section class="section" id="screens">
+  <!-- macOS Native Engineering Section -->
+  <section class="section" id="mac">
+    <div class="wrap">
+      <div class="badge-pill mac">macOS &amp; Windows Native</div>
+      <h2>Engineered for pure speed and native beauty</h2>
+      <p class="section-lead">Zero Electron. Zero bloated web wrappers. DropDial is hand-crafted in Swift, AppKit, and native C++ for macOS, and high-performance WPF for Windows.</p>
+
+      <div class="mac-grid">
+        <div class="mac-card">
+          <div class="mac-card-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>
+          </div>
+          <h3>Apple Silicon &amp; Intel Universal</h3>
+          <p>Native Mach-O 64-bit binary running at peak performance on M1, M2, M3, M4, and Intel Macs. Backed by Metal and Core Animation for responsive 120Hz ProMotion interaction.</p>
+          <div class="mac-card-metric">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm7-3.25v3.5a.75.75 0 0 1-.22.53l-2.25 2.25a.75.75 0 0 1-1.06-1.06L7.25 7.72V4.75a.75.75 0 0 1 1.5 0Z"/></svg>
+            Sub-15ms wake · Under 28 MB idle RAM
+          </div>
+        </div>
+
+        <div class="mac-card">
+          <div class="mac-card-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <h3>On-Device Apple Vision OCR</h3>
+          <p>Extract formatted text, tabular figures, and receipt data directly from images and PDFs using Apple's Neural Engine. Completely air-gapped and private on your Mac.</p>
+          <div class="mac-card-metric">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+            100% Offline · Zero Cloud Latency
+          </div>
+        </div>
+
+        <div class="mac-card">
+          <div class="mac-card-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>
+          </div>
+          <h3>Windows 11 Fluent UI</h3>
+          <p>Modern dark and acrylic backdrops designed specifically for Windows 10 and 11. Native system tray integration, smooth 60 FPS previews, and portable, zero-registry execution.</p>
+          <div class="mac-card-metric">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+            Windows 10/11 x64 · Portable ZIP
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Job Controls Section -->
+  <section class="section section-alt" id="screens">
     <div class="wrap">
       <h2 data-i18n="shots.title">Real tools when you need them</h2>
       <p class="section-lead" data-i18n="shots.lead">Tools that need settings open in their own window with a live preview. Every audio and video tool has a player with a seek bar, and trimming gives you draggable start and end handles.</p>
       <figure class="shot-main">
-        <img src="/assets/img/tool-trim-en.webp?v=2" data-src-en="/assets/img/tool-trim-en.webp?v=2" data-src-zh="/assets/img/tool-trim-en.webp?v=2" width="1040" height="800" loading="lazy" alt="The DropDial trim tool window, with a video preview, a timeline with orange start and end handles, playback controls and start and end time fields." data-i18n-alt="shots.trim.alt">
+        <img src="/assets/img/tool-trim-en.webp?v=2" data-src-en="/assets/img/tool-trim-en.webp?v=2" width="1040" height="800" loading="lazy" alt="The DropDial trim tool window, with a video preview, a timeline with orange start and end handles, playback controls and start and end time fields." data-i18n-alt="shots.trim.alt">
         <figcaption data-i18n="shots.trim">The trim tool: preview, timeline handles, exact times, then save a new file.</figcaption>
       </figure>
       <div class="jobs">
-        <img src="/assets/img/jobs-en.webp?v=2" data-src-en="/assets/img/jobs-en.webp?v=2" data-src-zh="/assets/img/jobs-en.webp?v=2" width="536" height="792" loading="lazy" alt="Three stacked progress cards: one processing with Pause, Cancel and Hide buttons, one paused with Resume, and one waiting for a running job to finish." data-i18n-alt="jobs.alt">
+        <img src="/assets/img/jobs-en.webp?v=2" data-src-en="/assets/img/jobs-en.webp?v=2" width="536" height="792" loading="lazy" alt="Three stacked progress cards: one processing with Pause, Cancel and Hide buttons, one paused with Resume, and one waiting for a running job to finish." data-i18n-alt="jobs.alt">
         <div class="jobs-copy">
           <h3 data-i18n="jobs.title">Every job has its own controls</h3>
           <ul>
@@ -202,137 +626,294 @@
     </div>
   </section>
 
+  <!-- Privacy Section -->
   <section class="section section-dark" id="privacy">
     <div class="wrap privacy-grid">
       <div>
-        <h2 data-i18n="priv.title">Your files stay on your PC</h2>
-        <p class="section-lead" data-i18n="priv.lead">Online converters ask you to upload your photos, contracts and recordings to someone else's server. DropDial does all of the work on your own machine.</p>
+        <h2 data-i18n="priv.title">Your files stay on your machine</h2>
+        <p class="section-lead" data-i18n="priv.lead">Online converters ask you to upload your confidential photos, contracts and recordings to someone else's server. DropDial does 100% of the work on your own hardware.</p>
       </div>
       <ul class="checks">
-        <li data-i18n="priv.1"><b>Nothing is uploaded.</b> Every conversion runs locally and works offline.</li>
+        <li data-i18n="priv.1"><b>Nothing is uploaded.</b> Every conversion runs locally and works completely offline.</li>
         <li data-i18n="priv.2"><b>Originals are never overwritten.</b> Outputs get a clear suffix, and duplicates get a number.</li>
-        <li data-i18n="priv.3"><b>Everything is included.</b> FFmpeg, Python, 7-Zip and system engines ship inside the download.</li>
-        <li data-i18n="priv.4"><b>It stays out of the way.</b> No main window, no installer, no startup entries. Quit from the tray/menu bar at any time.</li>
+        <li data-i18n="priv.3"><b>Everything is included.</b> Native system engines, Apple Vision OCR, FFmpeg and Python ship inside.</li>
+        <li data-i18n="priv.4"><b>Zero background footprint.</b> Stays tucked in the menu bar / system tray. Under 28 MB RAM.</li>
       </ul>
     </div>
   </section>
 
-  <section class="section" id="download">
-    <div class="wrap download">
-      <img src="/assets/img/logo.png" alt="" width="72" height="72">
-      <h2 data-i18n="dl.title">Get DropDial</h2>
-      <p class="section-lead" data-i18n="dl.lead">Free for personal and commercial use. Ready to run.</p>
+  <!-- Pricing Section -->
+  <section class="section" id="pricing">
+    <div class="wrap" style="text-align: center;">
+      <p class="eyebrow" style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">Simple, Transparent Pricing</p>
+      <h2>Pay Once. Own It Forever.</h2>
+      <p class="section-lead" style="max-width: 580px; margin: 0 auto;">No subscriptions, no cloud accounts, and no monthly fees. Try everything free for 7 days, then unlock lifetime access.</p>
 
-      <div class="platform-tabs" role="tablist" aria-label="Select Operating System">
-        <button class="platform-tab active" id="tab-mac" role="tab" aria-selected="true" data-target="panel-mac">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>
-          <span>macOS</span>
-        </button>
-        <button class="platform-tab" id="tab-win" role="tab" aria-selected="false" data-target="panel-win">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>
-          <span>Windows</span>
-        </button>
-      </div>
-
-      <!-- macOS Panel -->
-      <div class="platform-panel active" id="panel-mac" role="tabpanel" aria-labelledby="tab-mac">
-        <!-- Option A: One-line Terminal Install -->
-        <div class="terminal-box">
-          <div class="terminal-header">
-            <div class="terminal-dots">
-              <span class="terminal-dot red"></span>
-              <span class="terminal-dot yellow"></span>
-              <span class="terminal-dot green"></span>
-            </div>
-            <span class="terminal-title">Quick Install via Terminal (Recommended)</span>
-          </div>
-          <div class="terminal-cmd">
-            <code>curl -fsSL https://raw.githubusercontent.com/Nithin1138/lotus/advance-features/install.sh | bash</code>
-            <button class="copy-btn" id="copy-install-cmd" aria-label="Copy terminal install command">
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
-              <span>Copy</span>
-            </button>
-          </div>
-          <p class="terminal-hint">Automatically builds &amp; configures Gatekeeper for seamless first launch.</p>
+      <div class="pricing-grid">
+        <!-- Card 1: Free Trial -->
+        <div class="pricing-card">
+          <h3 class="pricing-title">7-Day Free Trial</h3>
+          <p class="pricing-desc">Full access to test every format conversion, the Actions Dial, and media tools on your Mac or PC.</p>
+          <div class="pricing-price">$0 <span>/ 7 days</span></div>
+          <ul class="pricing-features">
+            <li>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+              All 333+ format conversions &amp; media tools
+            </li>
+            <li>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+              Universal Actions Dial (AirDrop, Terminal, Copy Path, Move)
+            </li>
+            <li>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+              No credit card or account registration required
+            </li>
+            <li>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+              100% private — zero telemetry or tracking
+            </li>
+          </ul>
+          <a class="btn btn-ghost" href="#download" style="text-align: center; justify-content: center;">Download Free Trial</a>
         </div>
 
-        <p style="margin-top: 18px; color: var(--muted); font-size: .88rem;">— OR DIRECT DOWNLOAD —</p>
-
-        <a class="btn btn-primary btn-large" href="https://github.com/Nithin1138/lotus/releases" data-download-mac>
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>
-          <span>Download DropDial for macOS (DMG / ZIP)</span>
-        </a>
-        <p class="fineprint" data-release-meta-mac>macOS 12+ (Apple Silicon &amp; Intel) · Native AppKit</p>
-
-        <ol class="install">
-          <li>Install via Terminal (above) or download and drag <code>DropDial.app</code> to Applications.</li>
-          <li>Launch DropDial. The menu bar icon appears instantly.</li>
-          <li>First time: A smooth welcome assistant prompts for Accessibility so dragging shortcuts work across apps.</li>
-        </ol>
+        <!-- Card 2: Pro Lifetime -->
+        <div class="pricing-card featured">
+          <div class="pricing-badge">LIFETIME ACCESS</div>
+          <h3 class="pricing-title">DropDial Pro</h3>
+          <p class="pricing-desc">One-time payment for lifetime access, all future tool updates, and offline peace of mind.</p>
+          <div class="pricing-price">$19 <span style="font-size: 1.1rem; color: var(--ink);">/ ₹999</span> <span>one-time</span></div>
+          <ul class="pricing-features">
+            <li>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+              <strong>Lifetime License</strong> — zero subscriptions
+            </li>
+            <li>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+              Valid for up to 3 personal Macs and PCs
+            </li>
+            <li>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+              100% offline cryptographic key verification
+            </li>
+            <li>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+              Instant license key delivery
+            </li>
+            <li>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+              Free lifetime updates and new media tools
+            </li>
+            <li>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+              Direct developer priority support
+            </li>
+          </ul>
+          <a class="btn btn-primary" href="https://dropdial.com/buy" style="text-align: center; justify-content: center; background: var(--accent); color: #fff;">Buy DropDial Pro ($19 / ₹999)</a>
+        </div>
       </div>
-
-      <!-- Windows Panel -->
-      <div class="platform-panel" id="panel-win" role="tabpanel" aria-labelledby="tab-win">
-        <a class="btn btn-primary btn-large" href="https://github.com/Nithin1138/lotus/releases" data-download-win>
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>
-          <span>Download DropDial for Windows</span>
-        </a>
-        <p class="fineprint" data-release-meta-win>Windows 10/11 x64 · Portable ZIP</p>
-
-        <ol class="install">
-          <li data-i18n="dl.1">Download and extract the ZIP archive.</li>
-          <li data-i18n="dl.2">Run <code>DropDial.exe</code>. It appears in the system tray.</li>
-          <li data-i18n="dl.3">Drag a file and press <kbd>Shift</kbd>.</li>
-        </ol>
-      </div>
-
-      <p class="links">
-        <a href="https://github.com/Nithin1138/lotus/releases/latest" data-release-notes data-i18n="dl.notes">Release notes &amp; SHA-256 checksum</a>
-        <span aria-hidden="true">·</span>
-        <a href="https://github.com/Nithin1138/lotus/releases" data-i18n="dl.all">All versions</a>
-      </p>
-      <p class="requirements" data-i18n="dl.req">Available natively for macOS and Windows. 100% offline, private, and local.</p>
     </div>
   </section>
 
-  <section class="section section-alt" id="faq">
+  <!-- Download Section -->
+  <section class="section section-alt" id="download">
+    <div class="wrap download-center">
+      <div class="download-header">
+        <div class="download-logo-box">
+          <img src="/assets/img/logo.png" alt="DropDial Logo" width="44" height="44">
+        </div>
+        <h2 data-i18n="dl.title">Get DropDial</h2>
+        <p class="section-lead" data-i18n="dl.lead">Start your 7-day unrestricted free trial today. Ready to run.</p>
+      </div>
+
+      <!-- Both Platforms Visible Side-by-Side -->
+      <div class="download-dual-grid">
+
+        <!-- macOS Card -->
+        <div class="download-platform-card" id="download-mac">
+          <!-- Card Header -->
+          <div class="card-head-row">
+            <div class="platform-icon-squircle mac">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>
+            </div>
+            <div class="platform-meta-block">
+              <div class="platform-tag-line">
+                <span class="platform-tag mac">macOS Universal</span>
+                <span class="detected-chip" id="mac-detected-tag">Your Mac</span>
+              </div>
+              <h3 class="platform-title">DropDial for macOS</h3>
+              <p class="platform-subtitle">Apple Silicon (M1–M4) &amp; Intel · macOS 12 Monterey+</p>
+            </div>
+          </div>
+
+          <!-- Quick Terminal Install (Developer Friendly) -->
+          <div class="terminal-card">
+            <div class="terminal-bar">
+              <div class="mac-traffic-lights">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <span class="terminal-title">Quick Install via Terminal (Recommended)</span>
+            </div>
+            <div class="terminal-code-row">
+              <code class="terminal-cmd">curl -fsSL https://dropdial.com/install.sh | bash</code>
+              <button class="terminal-copy-btn" id="copy-install-cmd" aria-label="Copy terminal install command">
+                <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+                <span>Copy</span>
+              </button>
+            </div>
+            <p class="terminal-note">Automatically configures native Gatekeeper permissions for frictionless launch.</p>
+          </div>
+
+          <!-- Divider -->
+          <div class="dl-divider"><span>or direct download</span></div>
+
+          <!-- Direct Download Action -->
+          <div class="dl-action-block">
+            <a class="btn btn-primary btn-large dl-cta-btn" href="#download" data-download-mac>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>
+              <span>Download DropDial for macOS (Universal DMG)</span>
+            </a>
+            <div class="dl-meta-text" data-release-meta-mac>v1.2.0 · 1.8 MB · macOS 12+ (Apple Silicon &amp; Intel Universal)</div>
+          </div>
+
+          <!-- 3 Simple Installation Steps as Clean Rounded Pills -->
+          <div class="step-pill-list">
+            <div class="step-pill">
+              <span class="step-badge">1</span>
+              <span class="step-text">Download and drag <b>DropDial.app</b> to your Applications folder.</span>
+            </div>
+            <div class="step-pill">
+              <span class="step-badge">2</span>
+              <span class="step-text">Launch DropDial. The flower icon appears in your menu bar instantly.</span>
+            </div>
+            <div class="step-pill">
+              <span class="step-badge">3</span>
+              <span class="step-text">First time: Grant Accessibility permission so DropDial can detect <kbd>Shift</kbd> while dragging.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Windows Card -->
+        <div class="download-platform-card" id="download-win">
+          <!-- Card Header -->
+          <div class="card-head-row">
+            <div class="platform-icon-squircle win">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>
+            </div>
+            <div class="platform-meta-block">
+              <div class="platform-tag-line">
+                <span class="platform-tag win">Windows 64-bit</span>
+                <span class="detected-chip" id="win-detected-tag">Your PC</span>
+              </div>
+              <h3 class="platform-title">DropDial for Windows</h3>
+              <p class="platform-subtitle">Windows 10 &amp; 11 (64-bit) · Portable / Standalone</p>
+            </div>
+          </div>
+
+          <!-- Instant Portable Setup (Windows Power User) -->
+          <div class="terminal-card">
+            <div class="terminal-bar">
+              <div class="mac-traffic-lights win-lights">
+                <span class="dot win-dot"></span>
+                <span class="dot win-dot"></span>
+                <span class="dot win-dot"></span>
+              </div>
+              <span class="terminal-title">Instant Portable Run (No Admin Needed)</span>
+            </div>
+            <div class="terminal-code-row">
+              <code class="terminal-cmd win-cmd">Extract ZIP &rarr; Run DropDial.exe</code>
+              <span class="terminal-tag-pill">Portable</span>
+            </div>
+            <p class="terminal-note">Includes offline Python 3.11, FFmpeg, and 7-Zip engines pre-bundled.</p>
+          </div>
+
+          <!-- Divider -->
+          <div class="dl-divider"><span>or direct download</span></div>
+
+          <!-- Direct Download Action -->
+          <div class="dl-action-block">
+            <a class="btn btn-primary btn-large dl-cta-btn" href="#download" data-download-win>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>
+              <span>Download DropDial for Windows (Portable ZIP)</span>
+            </a>
+            <div class="dl-meta-text" data-release-meta-win>v1.2.0 · 260 MB · Windows 10/11 x64 (Offline Engines Bundled)</div>
+          </div>
+
+          <!-- 3 Simple Installation Steps as Clean Rounded Pills -->
+          <div class="step-pill-list">
+            <div class="step-pill">
+              <span class="step-badge">1</span>
+              <span class="step-text">Extract the downloaded <b>.zip</b> folder anywhere on your PC (Desktop or folder).</span>
+            </div>
+            <div class="step-pill">
+              <span class="step-badge">2</span>
+              <span class="step-text">Double-click <b>DropDial.exe</b>. The flower icon appears in your system tray instantly.</span>
+            </div>
+            <div class="step-pill">
+              <span class="step-badge">3</span>
+              <span class="step-text">Drag any file and hold <kbd>Shift</kbd> to convert, or <kbd>Alt</kbd> for quick actions.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Trust Badges Strip (Refined & Minimalist) -->
+      <div class="download-trust-strip">
+        <div class="trust-features-line">
+          <span>SHA-256 Verified</span>
+          <span class="sep">&middot;</span>
+          <span>Air-Gapped Offline Operation</span>
+          <span class="sep">&middot;</span>
+          <span>Zero Telemetry</span>
+          <span class="sep">&middot;</span>
+          <span>7-Day Unrestricted Free Trial</span>
+        </div>
+        <p class="trust-sub-line">Native performance for macOS and Windows. 100% offline, private, and local.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="section" id="faq">
     <div class="wrap narrow">
-      <h2 data-i18n="faq.title">Questions</h2>
+      <h2 data-i18n="faq.title">Frequently Asked Questions</h2>
       <div class="faq">
         <details>
-          <summary data-i18n="faq.1.q">Is DropDial safe to run?</summary>
-          <div data-i18n="faq.1.a"><p>DropDial is an open source project under the MIT License with full source code available on GitHub. You can verify SHA-256 checksums on the GitHub release page.</p></div>
+          <summary data-i18n="faq.1.q">How does the 7-day free trial work?</summary>
+          <div data-i18n="faq.1.a"><p>You get unrestricted access to all format conversions, the Actions Dial, batch operations, video trimming, and document tools for 7 days. No credit card or account required. After 7 days, you can purchase a lifetime license key to continue using DropDial.</p></div>
         </details>
         <details>
-          <summary data-i18n="faq.2.q">Is it really free?</summary>
-          <div data-i18n="faq.2.a"><p>Yes. DropDial is open source under the MIT License, with no ads, accounts or paid tiers. Bundled components keep their own licenses.</p></div>
+          <summary data-i18n="faq.2.q">How does the DropDial Pro license work?</summary>
+          <div data-i18n="faq.2.a"><p>DropDial Pro is a single one-time payment of $19 / ₹999 with zero subscriptions or recurring fees. One license can be activated on up to 3 personal devices across macOS and Windows, and includes all future updates.</p></div>
+        </details>
+        <details>
+          <summary data-i18n="faq.4.q">Does license activation require internet?</summary>
+          <div data-i18n="faq.4.a"><p>No. DropDial uses offline public-key cryptography (ECDSA P-256). When you enter your key, it is verified 100% locally on your machine with zero server pings or telemetry.</p></div>
         </details>
         <details>
           <summary data-i18n="faq.3.q">Are my files uploaded anywhere?</summary>
-          <div data-i18n="faq.3.a"><p>No. Everything is processed on your computer by the engines bundled in the download, and DropDial works with no internet connection.</p></div>
+          <div data-i18n="faq.3.a"><p>Never. Everything is processed on your computer by native system engines. DropDial works seamlessly in air-gapped environments without any internet connection.</p></div>
         </details>
         <details>
-          <summary data-i18n="faq.4.q">Why is the download package self-contained?</summary>
-          <div data-i18n="faq.4.a"><p>It includes everything it needs to run: native engines, portable Python with libraries, and FFmpeg. You don't have to install anything else.</p></div>
+          <summary data-i18n="faq.6.q">What is the Actions Dial?</summary>
+          <div data-i18n="faq.6.a"><p>The Actions Dial gives you instant universal shortcuts at your cursor. Hold <kbd>⌃ Control</kbd> (macOS) or <kbd>Alt</kbd> (Windows) while dragging any file, or press <kbd>F10</kbd> to AirDrop, copy paths, move files, strip EXIF metadata, float files to shelf, or jump straight into Terminal.</p></div>
         </details>
         <details>
           <summary data-i18n="faq.5.q">Where do the converted files go?</summary>
-          <div data-i18n="faq.5.a"><p>Into the same folder as the original, with a suffix such as <code>photo-converted.jpg</code>. If that name is taken, a number is added. Originals are never changed. Right-click the menu bar / tray icon to open the folder of your latest output.</p></div>
-        </details>
-        <details>
-          <summary data-i18n="faq.6.q">What language is supported?</summary>
-          <div data-i18n="faq.6.a"><p>Yes. DropDial is fully in English.</p></div>
+          <div data-i18n="faq.5.a"><p>Into the same folder as the original, with a suffix such as <code>photo-converted.jpg</code>. If that name exists, a number is appended. Your original files are never altered or overwritten.</p></div>
         </details>
         <details>
           <summary data-i18n="faq.7.q">Do I need Microsoft Office?</summary>
-          <div data-i18n="faq.7.a"><p>Only for layout-exact exports of Word, Excel and PowerPoint files, such as PDF or images. DropDial drives your installed Office to do these. Without Office, you can still extract text and table data from modern Office files.</p></div>
+          <div data-i18n="faq.7.a"><p>Only for layout-exact exports of Word, Excel, and PowerPoint files into PDF or images. DropDial drives your installed Office suite for 100% pixel-perfect fidelity. Without Office, you can still extract raw text and data.</p></div>
         </details>
         <details>
           <summary data-i18n="faq.8.q">How do I update or uninstall it?</summary>
-          <div data-i18n="faq.8.a"><p>Quit DropDial from its menu bar / tray menu. To update, extract the new version into a fresh folder. To uninstall, delete the folder. DropDial adds no installer entries or startup items.</p></div>
+          <div data-i18n="faq.8.a"><p>Quit DropDial from the menu bar / system tray. To update, simply replace the application with the latest release. To uninstall, delete the application. DropDial leaves no registry clutter or startup hooks.</p></div>
         </details>
       </div>
-      <p class="faq-more" data-i18n="faq.more">Found a bug or have an idea? <a href="https://github.com/Nithin1138/lotus/issues">Open an issue on GitHub</a>. Please don't attach private files.</p>
+      <p class="faq-more" data-i18n="faq.more">Have a question or feature request? Contact our team at <a href="mailto:support@dropdial.com">support@dropdial.com</a>.</p>
     </div>
   </section>
 </main>
@@ -343,21 +924,24 @@
       <img src="/assets/img/logo.png" alt="" width="24" height="24">
       <span>DropDial</span>
     </div>
-    <p data-i18n="foot.license">Open source under the MIT License. Bundled third-party components keep their own licenses.</p>
+    <p data-i18n="foot.license">© 2026 DropDial. High-performance offline file conversion &amp; desktop media tools.</p>
     <nav class="footer-links" aria-label="Footer">
-      <a href="https://github.com/Nithin1138/lotus">GitHub</a>
-      <a href="https://github.com/Nithin1138/lotus/releases" data-i18n="foot.releases">Releases</a>
-      <a href="https://github.com/Nithin1138/lotus/issues" data-i18n="foot.issues">Report a bug</a>
-      <a href="https://github.com/Nithin1138/lotus#readme" data-i18n="foot.guide">Usage guide</a>
-      <a href="https://github.com/Nithin1138/lotus/blob/main/LICENSE" data-i18n="foot.licenses">Licenses</a>
-      <a href="/privacy" data-i18n="foot.privacy">Privacy</a>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#actions" data-i18n="foot.actions">Actions Dial</a>
+      <a href="#tools" data-i18n="foot.licenses">Media Tools</a>
+      <a href="#mac" data-i18n="foot.releases">macOS Version</a>
+      <a href="#download" data-i18n="foot.issues">Windows Version</a>
+      <a href="#pricing">Pricing</a>
+      <a href="/privacy" data-i18n="foot.privacy">Privacy Policy</a>
+      <a href="mailto:support@dropdial.com">Support</a>
     </nav>
   </div>
 </footer>
 
-<script src="/assets/js/i18n.js?v=7"></script>
-<script src="/assets/js/wheel-ui.js?v=1"></script>
-<script src="/assets/js/site.js?v=10"></script>
-<script src="/assets/js/showcase.js?v=2"></script>
+<script src="/assets/js/i18n.js?v=9"></script>
+<script src="/assets/js/wheel-ui.js?v=2"></script>
+<script src="/assets/js/site.js?v=11"></script>
+<script src="/assets/js/showcase.js?v=4"></script>
 </body>
 </html>

@@ -2,10 +2,19 @@ from pathlib import Path
 import json
 from common import *
 
+def _detect_ogg_codec():
+    try:
+        import subprocess
+        out = subprocess.run([str(FFMPEG), '-encoders'], capture_output=True, text=True, errors='ignore').stdout
+        if 'libvorbis' in out: return ['-c:a','libvorbis','-q:a','4']
+    except Exception: pass
+    return ['-c:a','libopus','-b:a','128k']
+
 AUDIO_CODECS={
     'mp3':['-c:a','libmp3lame','-b:a','192k'], 'm4a':['-c:a','aac','-b:a','160k'],
+    'aac':['-c:a','aac','-b:a','160k'], 'aif':['-c:a','pcm_s16be'],
     'wav':['-c:a','pcm_s16le'], 'flac':['-c:a','flac','-compression_level','8'],
-    'ogg':['-c:a','libvorbis','-q:a','4'], 'opus':['-c:a','libopus','-b:a','128k'],
+    'ogg':_detect_ogg_codec(), 'opus':['-c:a','libopus','-b:a','128k'],
     'aiff':['-c:a','pcm_s16be'], 'wma':['-c:a','wmav2','-b:a','160k']}
 VIDEO_CODECS={
     'mp4':['-c:v','libx264','-preset','medium','-crf','23','-c:a','aac','-b:a','160k','-movflags','+faststart'],
@@ -222,6 +231,8 @@ def audio_tool(path,action,params):
             return state['output']
         if any(float(r['start'])<0 or float(r['end'])<=float(r['start']) or float(r['end'])>duration(info)+.1 for r in ranges): raise ValueError(T('Invalid bleep time range'))
         args+=['-filter_complex',beep_graph([(float(r['start']),float(r['end'])) for r in ranges],duration(info)),'-map','[a]']
+    elif action in ('changeAudioSpeed', 'speedAudio'):
+        filters.append(tempo(number(params, 'speed', 1)))
     else: raise ValueError(T('Unknown audio tool'))
     if filters: args+=['-af',','.join(filters)]
     with output_file(path,action,'.'+fmt) as state:

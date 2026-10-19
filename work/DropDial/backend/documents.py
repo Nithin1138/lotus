@@ -1,5 +1,5 @@
 from pathlib import Path
-import io,json,re
+import io,json,re,sys,subprocess,os,zipfile,shutil
 from PIL import Image,ImageDraw,ImageFont
 import pypdfium2 as pdfium
 from pypdf import PdfReader,PdfWriter
@@ -328,6 +328,170 @@ def convert_md(path, fmt, params):
             word.save(state['temp'])
         return state['output']
         
+    if fmt == 'epub':
+        title = Path(path).stem
+        with output_file(path, 'converted', '.epub') as state:
+            create_epub(title, [text], state['temp'])
+        return state['output']
+
+def create_epub(title, pages_text, target_path):
+    with zipfile.ZipFile(target_path, 'w') as z:
+        z.writestr('mimetype', 'application/epub+zip', compress_type=zipfile.ZIP_STORED)
+        container_xml = '''<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+    <rootfiles>
+        <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+    </rootfiles>
+</container>'''
+        z.writestr('META-INF/container.xml', container_xml, compress_type=zipfile.ZIP_DEFLATED)
+        manifest_items = []
+        spine_items = []
+        for i, text in enumerate(pages_text):
+            pid = f'page_{i+1}'
+            fn = f'OEBPS/{pid}.xhtml'
+            escaped = (text or '').replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            paragraphs = ''.join(f'<p>{p.strip()}</p>' for p in escaped.split('\n\n') if p.strip())
+            xhtml = f'''<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>{title} - Page {i+1}</title></head>
+<body><h2>Page {i+1}</h2>{paragraphs}</body>
+</html>'''
+            z.writestr(fn, xhtml, compress_type=zipfile.ZIP_DEFLATED)
+            manifest_items.append(f'<item id="{pid}" href="{pid}.xhtml" media-type="application/xhtml+xml"/>')
+            spine_items.append(f'<itemref idref="{pid}"/>')
+        content_opf = f'''<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="2.0">
+    <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+        <dc:title>{title}</dc:title>
+        <dc:language>en</dc:language>
+        <dc:identifier id="BookId">urn:uuid:dropdial-{abs(hash(title))}</dc:identifier>
+    </metadata>
+    <manifest>
+        <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+        {''.join(manifest_items)}
+    </manifest>
+    <spine toc="ncx">
+        {''.join(spine_items)}
+    </spine>
+</package>'''
+        z.writestr('OEBPS/content.opf', content_opf, compress_type=zipfile.ZIP_DEFLATED)
+        toc_ncx = f'''<?xml version="1.0" encoding="UTF-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+    <head><meta name="dtb:uid" content="urn:uuid:dropdial-{abs(hash(title))}"/></head>
+    <docTitle><text>{title}</text></docTitle>
+    <navMap>
+        <navPoint id="navPoint-1" playOrder="1">
+            <navLabel><text>Start</text></navLabel>
+            <content src="page_1.xhtml"/>
+        </navPoint>
+    </navMap>
+</ncx>'''
+        z.writestr('OEBPS/toc.ncx', toc_ncx, compress_type=zipfile.ZIP_DEFLATED)
+
+def pdf_to_pptx(path, params):
+    import pymupdf as fitz
+    import pptx
+    from pptx.util import Pt
+    doc = fitz.open(path)
+    if len(doc) == 0:
+        doc.close()
+        raise ValueError(T('PDF has no pages'))
+    prs = pptx.Presentation()
+    blank_layout = prs.slide_layouts[6]
+    for page in doc:
+        prs.slide_width = Pt(page.rect.width)
+        prs.slide_height = Pt(page.rect.height)
+        slide = prs.slides.add_slide(blank_layout)
+        pix = page.get_pixmap(dpi=150)
+        img_bytes = pix.tobytes('png')
+        slide.shapes.add_picture(io.BytesIO(img_bytes), 0, 0, width=Pt(page.rect.width), height=Pt(page.rect.height))
+    doc.close()
+    with output_file(path, 'converted', '.pptx') as state:
+        prs.save(state['temp'])
+    return state['output']
+
+def pdf_to_excel(path, fmt, params):
+    import pymupdf as fitz
+    import openpyxl, csv
+    doc = fitz.open(path)
+    if len(doc) == 0:
+        doc.close()
+        raise ValueError(T('PDF has no pages'))
+    all_rows = []
+    for page in doc:
+        tables = page.find_tables()
+        found = False
+        for tab in tables:
+            found = True
+            for r in tab.extract():
+                all_rows.append([c if c is not None else '' for c in r])
+        if not found:
+            text = page.get_text()
+            for line in text.splitlines():
+                if not line.strip(): continue
+                parts = line.split('\t') if '\t' in line else [p.strip() for p in re.split(r'\s{2,}', line.strip())]
+                all_rows.append(parts)
+    doc.close()
+    if not all_rows:
+        raise ValueError(T('This PDF has no selectable text; scanned documents need OCR first'))
+    if fmt == 'csv':
+        with output_file(path, 'converted', '.csv') as state:
+            with open(state['temp'], 'w', encoding='utf-8-sig', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerows(all_rows)
+        return state['output']
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Sheet1'
+    for row in all_rows:
+        ws.append(row)
+    with output_file(path, 'converted', '.xlsx') as state:
+        wb.save(state['temp'])
+    return state['output']
+
+def pdf_to_epub(path, params):
+    import pymupdf as fitz
+    doc = fitz.open(path)
+    if len(doc) == 0:
+        doc.close()
+        raise ValueError(T('PDF has no pages'))
+    title = Path(path).stem
+    pages_text = [page.get_text() for page in doc]
+    doc.close()
+    if not any(t.strip() for t in pages_text):
+        raise ValueError(T('This PDF has no selectable text; scanned documents need OCR first'))
+    with output_file(path, 'converted', '.epub') as state:
+        create_epub(title, pages_text, state['temp'])
+    return state['output']
+
+def pdf_to_pages(path, params):
+    docx_out = pdf_word(path, params)
+    err = None
+    with output_file(path, 'converted', '.pages') as state:
+        if sys.platform == 'darwin':
+            subprocess.run(['open', '-g', '-j', '-a', 'Pages'], capture_output=True)
+            as_code = f'''
+tell application "Pages"
+    open (POSIX file "{docx_out}")
+    delay 0.5
+    save front document in (POSIX file "{state['temp']}")
+    close front document saving no
+end tell
+'''
+            try:
+                res = subprocess.run(['osascript', '-e', as_code], capture_output=True, timeout=45)
+                if not (res.returncode == 0 and state['temp'].exists() and state['temp'].stat().st_size > 0):
+                    err = True
+            except Exception:
+                err = True
+        else:
+            err = True
+    Path(docx_out).unlink(missing_ok=True)
+    if err or not state.get('output'):
+        raise ValueError(T('Apple Pages export requires macOS with the Pages app installed'))
+    return state['output']
+
 def convert_epub(path, fmt, params):
     import pymupdf as fitz
     doc = fitz.open(path)
@@ -348,6 +512,12 @@ def convert_epub(path, fmt, params):
     if fmt in ('docx', 'doc'):
         pdf_out = convert_epub(path, 'pdf', params)
         res = pdf_word(pdf_out, params)
+        Path(pdf_out).unlink(missing_ok=True)
+        doc.close()
+        return res
+    if fmt == 'pages':
+        pdf_out = convert_epub(path, 'pdf', params)
+        res = pdf_to_pages(pdf_out, params)
         Path(pdf_out).unlink(missing_ok=True)
         doc.close()
         return res
@@ -377,6 +547,10 @@ def convert(path,fmt,params):
     if source=='.pdf':
         if fmt in ('jpg','png'): return render_pdf(path,fmt,params)
         if fmt=='docx': return pdf_word(path,params)
+        if fmt=='pages': return pdf_to_pages(path,params)
+        if fmt=='pptx': return pdf_to_pptx(path,params)
+        if fmt in ('xlsx','csv'): return pdf_to_excel(path,fmt,params)
+        if fmt=='epub': return pdf_to_epub(path,params)
         if fmt=='txt':
             doc=reader(path,params); text='\n\n'.join(page.extract_text() or '' for page in doc.pages)
             if not text.strip(): raise ValueError(T('This PDF has no selectable text; scanned documents need OCR first'))
@@ -406,14 +580,49 @@ def convert(path,fmt,params):
                 state['temp'].write_text(text, encoding='utf8')
             return state['output']
         if fmt=='pdf': return text_pdf(path,text,params)
-        if fmt=='docx':
+        if fmt=='epub':
+            with output_file(path, 'converted', '.epub') as state:
+                create_epub(Path(path).stem, [text], state['temp'])
+            return state['output']
+        if fmt in ('docx', 'pages'):
             from docx import Document
             doc=Document()
             for line in text.splitlines():
                 doc.add_paragraph(line)
-            with output_file(path,'converted','.docx') as state:
-                doc.save(state['temp'])
-            return state['output']
+            if fmt == 'docx':
+                with output_file(path,'converted','.docx') as state:
+                    doc.save(state['temp'])
+                return state['output']
+            else:
+                with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as tf:
+                    doc.save(tf.name)
+                    tmp_docx = tf.name
+                err = None
+                with output_file(path, 'converted', '.pages') as state:
+                    if sys.platform == 'darwin':
+                        subprocess.run(['open', '-g', '-j', '-a', 'Pages'], capture_output=True)
+                        as_code = f'''
+tell application "Pages"
+    open (POSIX file "{tmp_docx}")
+    delay 0.5
+    save front document in (POSIX file "{state['temp']}")
+    close front document saving no
+end tell
+'''
+                        try:
+                            res = subprocess.run(['osascript', '-e', as_code], capture_output=True, timeout=45)
+                            if not (res.returncode == 0 and state['temp'].exists() and state['temp'].stat().st_size > 0):
+                                err = True
+                        except Exception:
+                            err = True
+                    else:
+                        err = True
+                Path(tmp_docx).unlink(missing_ok=True)
+                if err or not state.get('output'):
+                    raise ValueError(T('Apple Pages export requires macOS with the Pages app installed'))
+                return state['output']
+        if fmt in ('srt', 'vtt'):
+            return subtitles(path, fmt, params)
         with output_file(path,'converted','.'+fmt) as state: save_image(text_image(text),state['temp'],fmt)
         return state['output']
     raise ValueError(T('This document conversion is not supported'))

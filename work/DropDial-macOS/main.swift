@@ -149,6 +149,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        // 3. Setup update status listener & auto-check for updates after 3 seconds
+        UpdateService.shared.onUpdateStatusChanged = { [weak self] in
+            self?.rebuildMenu()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            UpdateService.shared.checkForUpdates(isUserInitiated: false)
+        }
+
+        // 4. Setup licensing & trial status listener
+        LicenseManager.shared.initialize()
+        LicenseManager.shared.onStatusChanged = { [weak self] in
+            self?.rebuildMenu()
+        }
+
+        if CommandLine.arguments.contains("--show-license") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                LicenseWindowController.shared.show()
+            }
+            return
+        }
+        if CommandLine.arguments.contains("--show-permission") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                PermissionWelcomeWindowController.shared.show()
+            }
+            return
+        }
+
         let args = Array(CommandLine.arguments.dropFirst())
         let files = args.filter { FileManager.default.fileExists(atPath: $0) && !$0.hasPrefix("-") }
         if !files.isEmpty {
@@ -362,79 +389,81 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
+        // 1. Accessibility banner only when permission is missing
         if !AXIsProcessTrusted() {
-            let warnItem = NSMenuItem(title: "⚠️ Grant Accessibility (Drag Shortcuts)...", action: #selector(showPermissionsWindow(_:)), keyEquivalent: "")
-            warnItem.target = self
-            warnItem.isEnabled = true
-            warnItem.image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: nil)
-            menu.addItem(warnItem)
+            let permItem = NSMenuItem(title: "Grant Accessibility Permission...", action: #selector(showPermissionsWindow(_:)), keyEquivalent: "")
+            permItem.target = self
+            permItem.isEnabled = true
+            menu.addItem(permItem)
             menu.addItem(NSMenuItem.separator())
         }
 
-        // 1. Formats Wheel (F8 / ⇧)
-        let f8Item = NSMenuItem(title: "Formats Wheel (F8 / ⇧)", action: #selector(showFormatsWheel(_:)), keyEquivalent: "")
+        // 2. Wheel Modes & Floating Shelf
+        let f8Char = String(utf16CodeUnits: [UInt16(NSF8FunctionKey)], count: 1)
+        let f8Item = NSMenuItem(title: "Formats Wheel", action: #selector(showFormatsWheel(_:)), keyEquivalent: f8Char)
+        f8Item.keyEquivalentModifierMask = []
         f8Item.target = self
         f8Item.isEnabled = true
-        f8Item.image = NSImage(systemSymbolName: "circle.grid.cross", accessibilityDescription: nil)
+        f8Item.toolTip = "Hold ⇧ Shift while dragging files in Finder"
         menu.addItem(f8Item)
 
-        // 2. Tools Wheel (F9 / ⌘)
-        let f9Item = NSMenuItem(title: "Tools Wheel (F9 / ⌘)", action: #selector(showToolsWheel(_:)), keyEquivalent: "")
+        let f9Char = String(utf16CodeUnits: [UInt16(NSF9FunctionKey)], count: 1)
+        let f9Item = NSMenuItem(title: "Tools Wheel", action: #selector(showToolsWheel(_:)), keyEquivalent: f9Char)
+        f9Item.keyEquivalentModifierMask = []
         f9Item.target = self
         f9Item.isEnabled = true
-        f9Item.image = NSImage(systemSymbolName: "slider.horizontal.3", accessibilityDescription: nil)
+        f9Item.toolTip = "Hold ⌘ Command while dragging files in Finder"
         menu.addItem(f9Item)
 
-        // 3. Actions Wheel (F10 / ⌃)
-        let f10Item = NSMenuItem(title: "File Actions Wheel (F10 / ⌃)", action: #selector(showActionsWheel(_:)), keyEquivalent: "")
+        let f10Char = String(utf16CodeUnits: [UInt16(NSF10FunctionKey)], count: 1)
+        let f10Item = NSMenuItem(title: "Actions Wheel", action: #selector(showActionsWheel(_:)), keyEquivalent: f10Char)
+        f10Item.keyEquivalentModifierMask = []
         f10Item.target = self
         f10Item.isEnabled = true
-        f10Item.image = NSImage(systemSymbolName: "hand.tap", accessibilityDescription: nil)
+        f10Item.toolTip = "Hold ⌃ Control while dragging files in Finder"
         menu.addItem(f10Item)
 
-        // 4. Floating Shelf (Show)
         let shelfItem = NSMenuItem(title: "Floating Shelf", action: #selector(showFloatingShelf(_:)), keyEquivalent: "")
         shelfItem.target = self
         shelfItem.isEnabled = true
-        shelfItem.image = NSImage(systemSymbolName: "pin.fill", accessibilityDescription: nil)
+        shelfItem.toolTip = "Temporarily hold and batch-drag files"
         menu.addItem(shelfItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        // 5. Quick Toggle (⌥Space)
-        let toggleItem = NSMenuItem(title: "Quick Toggle Wheel (⌥Space / ⌘⇧L)", action: #selector(toggleWheelTapped(_:)), keyEquivalent: "")
+        // 3. Quick Actions
+        let toggleItem = NSMenuItem(title: "Toggle Wheel", action: #selector(toggleWheelTapped(_:)), keyEquivalent: " ")
+        toggleItem.keyEquivalentModifierMask = [.option]
         toggleItem.target = self
         toggleItem.isEnabled = true
-        toggleItem.image = NSImage(systemSymbolName: "command", accessibilityDescription: nil)
         menu.addItem(toggleItem)
 
-        // 6. Select files (⌘O)
-        let openItem = NSMenuItem(title: "Select Files to Convert...", action: #selector(selectFilesTapped(_:)), keyEquivalent: "o")
+        let openItem = NSMenuItem(title: "Choose Files...", action: #selector(selectFilesTapped(_:)), keyEquivalent: "o")
+        openItem.keyEquivalentModifierMask = [.command]
         openItem.target = self
         openItem.isEnabled = true
-        openItem.image = NSImage(systemSymbolName: "plus.rectangle.on.rectangle", accessibilityDescription: nil)
         menu.addItem(openItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        // 7. Theme Submenu (System / Light / Dark)
+        // 4. Preferences (Theme, Sounds, Output)
         let currentTheme = UserDefaults.standard.string(forKey: "DROPDIAL_THEME") ?? "system"
         let themeMenu = NSMenu()
         themeMenu.autoenablesItems = false
 
-        let sysItem = NSMenuItem(title: "Follow System (Default)", action: #selector(setThemeSystem(_:)), keyEquivalent: "")
+        let sysItem = NSMenuItem(title: "System", action: #selector(setThemeSystem(_:)), keyEquivalent: "")
         sysItem.target = self
         sysItem.isEnabled = true
         sysItem.state = (currentTheme == "system") ? .on : .off
         themeMenu.addItem(sysItem)
 
-        let lightItem = NSMenuItem(title: "Light Theme", action: #selector(setThemeLight(_:)), keyEquivalent: "")
+        let lightItem = NSMenuItem(title: "Light", action: #selector(setThemeLight(_:)), keyEquivalent: "")
         lightItem.target = self
         lightItem.isEnabled = true
         lightItem.state = (currentTheme == "light") ? .on : .off
         themeMenu.addItem(lightItem)
 
-        let darkItem = NSMenuItem(title: "Dark Theme", action: #selector(setThemeDark(_:)), keyEquivalent: "")
+        let darkItem = NSMenuItem(title: "Dark", action: #selector(setThemeDark(_:)), keyEquivalent: "")
         darkItem.target = self
         darkItem.isEnabled = true
         darkItem.state = (currentTheme == "dark") ? .on : .off
@@ -443,36 +472,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let themeMenuItem = NSMenuItem(title: "Theme", action: nil, keyEquivalent: "")
         themeMenuItem.submenu = themeMenu
         themeMenuItem.isEnabled = true
-        themeMenuItem.image = NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: nil)
         menu.addItem(themeMenuItem)
 
-        // Sound Effects toggle
         let soundItem = NSMenuItem(title: "Sound Effects", action: #selector(toggleSoundEffects(_:)), keyEquivalent: "")
         soundItem.target = self
         soundItem.isEnabled = true
         soundItem.state = SoundManager.isSoundEnabled ? .on : .off
-        soundItem.image = NSImage(systemSymbolName: "speaker.wave.2", accessibilityDescription: nil)
         menu.addItem(soundItem)
 
-        // 8. Output Folder menu
         let currentOut = UserDefaults.standard.string(forKey: "DROPDIAL_OUTPUT_DIR") ?? ""
         let outMenu = NSMenu()
         outMenu.autoenablesItems = false
 
-        let sameItem = NSMenuItem(title: "Same as Source File (Default)", action: #selector(setOutputSame(_:)), keyEquivalent: "")
+        let sameItem = NSMenuItem(title: "Same as Source", action: #selector(setOutputSame(_:)), keyEquivalent: "")
         sameItem.target = self
         sameItem.isEnabled = true
         sameItem.state = currentOut.isEmpty ? .on : .off
         outMenu.addItem(sameItem)
 
-        let customItem = NSMenuItem(title: "Custom Folder...", action: #selector(chooseOutputFolder(_:)), keyEquivalent: "")
+        let customItem = NSMenuItem(title: "Choose Folder...", action: #selector(chooseOutputFolder(_:)), keyEquivalent: "")
         customItem.target = self
         customItem.isEnabled = true
         customItem.state = currentOut.isEmpty ? .off : .on
+        if !currentOut.isEmpty {
+            customItem.toolTip = currentOut
+        }
         outMenu.addItem(customItem)
 
         outMenu.addItem(NSMenuItem.separator())
-        let openFolderItem = NSMenuItem(title: "Open Output Folder in Finder", action: #selector(openOutputFolder(_:)), keyEquivalent: "")
+        let openFolderItem = NSMenuItem(title: "Reveal in Finder", action: #selector(openOutputFolder(_:)), keyEquivalent: "")
         openFolderItem.target = self
         openFolderItem.isEnabled = true
         outMenu.addItem(openFolderItem)
@@ -480,32 +508,67 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let outMenuItem = NSMenuItem(title: "Output Folder", action: nil, keyEquivalent: "")
         outMenuItem.submenu = outMenu
         outMenuItem.isEnabled = true
-        outMenuItem.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil)
         menu.addItem(outMenuItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        // Permissions & Setup
-        let permTitle = AXIsProcessTrusted() ? "Accessibility: ✓ Enabled" : "Permissions & Setup (Accessibility)..."
-        let permItem = NSMenuItem(title: permTitle, action: #selector(showPermissionsWindow(_:)), keyEquivalent: "")
-        permItem.target = self
-        permItem.isEnabled = true
-        permItem.image = NSImage(systemSymbolName: AXIsProcessTrusted() ? "checkmark.shield" : "lock.shield", accessibilityDescription: nil)
-        menu.addItem(permItem)
+        // 5. Licensing & Updates
+        if let update = UpdateService.shared.latestRelease {
+            let updateItem = NSMenuItem(title: "Update Available (\(update.tagName))...", action: #selector(checkForUpdatesTapped(_:)), keyEquivalent: "")
+            updateItem.target = self
+            updateItem.isEnabled = true
+            menu.addItem(updateItem)
+        } else {
+            let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdatesTapped(_:)), keyEquivalent: "")
+            updateItem.target = self
+            updateItem.isEnabled = true
+            menu.addItem(updateItem)
+        }
 
-        // 8. About
+        let licStatus = LicenseManager.shared.status
+        let licTitle: String
+        switch licStatus {
+        case .pro(let info):
+            licTitle = "DropDial Pro (\(info.name.isEmpty ? info.email : info.name))"
+        case .trial(let days):
+            if days <= 0 {
+                licTitle = "Activate Pro (Last day of trial)..."
+            } else if days == 1 {
+                licTitle = "Activate Pro (1 day left)..."
+            } else {
+                licTitle = "Activate Pro (\(days) days left)..."
+            }
+        case .trialExpired:
+            licTitle = "Activate DropDial Pro (Trial Expired)..."
+        }
+        let licItem = NSMenuItem(title: licTitle, action: #selector(showLicenseWindow(_:)), keyEquivalent: "")
+        licItem.target = self
+        licItem.isEnabled = true
+        menu.addItem(licItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        // 6. About & Quit
         let aboutItem = NSMenuItem(title: "About DropDial", action: #selector(aboutTapped(_:)), keyEquivalent: "")
         aboutItem.target = self
         aboutItem.isEnabled = true
         menu.addItem(aboutItem)
 
-        // 9. Quit
         let quitItem = NSMenuItem(title: "Quit DropDial", action: #selector(quitTapped(_:)), keyEquivalent: "q")
+        quitItem.keyEquivalentModifierMask = [.command]
         quitItem.target = self
         quitItem.isEnabled = true
         menu.addItem(quitItem)
 
         statusItem.menu = menu
+    }
+
+    @objc func showLicenseWindow(_ sender: Any? = nil) {
+        LicenseWindowController.shared.show()
+    }
+
+    @objc func checkForUpdatesTapped(_ sender: Any? = nil) {
+        UpdateService.shared.checkForUpdates(isUserInitiated: true)
     }
 
     @objc func showPermissionsWindow(_ sender: Any? = nil) {

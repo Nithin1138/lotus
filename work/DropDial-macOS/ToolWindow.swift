@@ -4,6 +4,13 @@ import AVKit
 import CoreImage
 
 // MARK: - Interactive Crop Overlay View
+struct RedactBox {
+    var normX: CGFloat
+    var normY: CGFloat
+    var normW: CGFloat
+    var normH: CGFloat
+}
+
 final class CropOverlayView: NSView {
     enum DragHandle {
         case none
@@ -29,6 +36,78 @@ final class CropOverlayView: NSView {
     var isRedactMode: Bool = false {
         didSet {
             needsDisplay = true
+        }
+    }
+
+    var redactBoxes: [RedactBox] = [
+        RedactBox(normX: 0.15, normY: 0.20, normW: 0.45, normH: 0.20)
+    ]
+    var activeBoxIndex: Int = 0 {
+        didSet {
+            if isRedactMode && activeBoxIndex >= 0 && activeBoxIndex < redactBoxes.count {
+                normX = redactBoxes[activeBoxIndex].normX
+                normY = redactBoxes[activeBoxIndex].normY
+                normW = redactBoxes[activeBoxIndex].normW
+                normH = redactBoxes[activeBoxIndex].normH
+            }
+            needsDisplay = true
+            window?.invalidateCursorRects(for: self)
+        }
+    }
+
+    func syncActiveRedactBox() {
+        if isRedactMode && activeBoxIndex >= 0 && activeBoxIndex < redactBoxes.count {
+            redactBoxes[activeBoxIndex].normX = normX
+            redactBoxes[activeBoxIndex].normY = normY
+            redactBoxes[activeBoxIndex].normW = normW
+            redactBoxes[activeBoxIndex].normH = normH
+        }
+    }
+
+    func viewRect(for box: RedactBox) -> CGRect {
+        let disp = imageDisplayRect
+        let viewW = max(10, box.normW * disp.width)
+        let viewH = max(10, box.normH * disp.height)
+        let viewX = disp.minX + box.normX * disp.width
+        let viewY = (disp.maxY - box.normY * disp.height) - viewH
+        return CGRect(x: viewX, y: viewY, width: viewW, height: viewH)
+    }
+
+    func addRedactBox() {
+        syncActiveRedactBox()
+        let count = redactBoxes.count
+        let offset = CGFloat(count % 5) * 0.07
+        let newX = min(0.60, 0.18 + offset)
+        let newY = min(0.65, 0.22 + offset)
+        let newBox = RedactBox(normX: newX, normY: newY, normW: 0.35, normH: 0.18)
+        redactBoxes.append(newBox)
+        activeBoxIndex = redactBoxes.count - 1
+        notifyCropChanged()
+        needsDisplay = true
+        window?.invalidateCursorRects(for: self)
+    }
+
+    func removeActiveRedactBox() {
+        guard redactBoxes.count > 1 else { return }
+        redactBoxes.remove(at: activeBoxIndex)
+        activeBoxIndex = max(0, min(activeBoxIndex, redactBoxes.count - 1))
+        notifyCropChanged()
+        needsDisplay = true
+        window?.invalidateCursorRects(for: self)
+    }
+
+    func allPixelRects() -> [CGRect] {
+        guard imageSize.width > 0, imageSize.height > 0 else { return [] }
+        if !isRedactMode {
+            return [currentPixelRect()]
+        }
+        syncActiveRedactBox()
+        return redactBoxes.map { b in
+            let px = max(0, min(Int(imageSize.width) - 1, Int(round(b.normX * imageSize.width))))
+            let py = max(0, min(Int(imageSize.height) - 1, Int(round(b.normY * imageSize.height))))
+            let pw = max(1, min(Int(imageSize.width) - px, Int(round(b.normW * imageSize.width))))
+            let ph = max(1, min(Int(imageSize.height) - py, Int(round(b.normH * imageSize.height))))
+            return CGRect(x: px, y: py, width: pw, height: ph)
         }
     }
 
@@ -115,14 +194,70 @@ final class CropOverlayView: NSView {
             NSColor(white: 1.0, alpha: 0.35).setStroke()
             gridPath.lineWidth = 1.0
             gridPath.stroke()
+        } else {
+            // In Redact Mode: Draw all inactive redaction boxes
+            for (idx, box) in redactBoxes.enumerated() where idx != activeBoxIndex {
+                let bRect = viewRect(for: box)
+
+                // Fill with subtle red
+                NSGraphicsContext.saveGraphicsState()
+                let fillPath = NSBezierPath(roundedRect: bRect, xRadius: 3.0, yRadius: 3.0)
+                NSColor(srgbRed: 1.0, green: 0.20, blue: 0.20, alpha: 0.14).setFill()
+                fillPath.fill()
+
+                // Dashed border
+                NSColor(srgbRed: 1.0, green: 0.35, blue: 0.35, alpha: 0.70).setStroke()
+                let dash: [CGFloat] = [4.0, 3.0]
+                fillPath.setLineDash(dash, count: 2, phase: 0)
+                fillPath.lineWidth = 1.5
+                fillPath.stroke()
+                NSGraphicsContext.restoreGraphicsState()
+
+                // Badge: "Region X"
+                let tagStr = "Region \(idx + 1)"
+                let font = NSFont.systemFont(ofSize: 9.0, weight: .bold)
+                let attrs: [NSAttributedString.Key: Any] = [
+                    .font: font,
+                    .foregroundColor: NSColor.white
+                ]
+                let sz = tagStr.size(withAttributes: attrs)
+                let badgeRect = NSRect(x: bRect.minX + 4, y: bRect.maxY - sz.height - 4, width: sz.width + 8, height: sz.height + 4)
+                let badgePath = NSBezierPath(roundedRect: badgeRect, xRadius: 3.0, yRadius: 3.0)
+                NSColor.black.withAlphaComponent(0.65).setFill()
+                badgePath.fill()
+                tagStr.draw(at: NSPoint(x: badgeRect.minX + 4, y: badgeRect.minY + 2), withAttributes: attrs)
+            }
         }
 
         // 3. Crisp Border (DropDial Orange or Red for Redaction)
         let borderColor = isRedactMode ? NSColor(srgbRed: 1.0, green: 0.25, blue: 0.25, alpha: 0.95) : NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
-        let borderPath = NSBezierPath(roundedRect: crop, xRadius: 2.0, yRadius: 2.0)
+        let borderPath = NSBezierPath(roundedRect: crop, xRadius: 3.0, yRadius: 3.0)
+
+        if isRedactMode {
+            // Fill active box with translucent red
+            NSColor(srgbRed: 1.0, green: 0.20, blue: 0.20, alpha: 0.22).setFill()
+            borderPath.fill()
+        }
+
         borderColor.setStroke()
         borderPath.lineWidth = 2.0
         borderPath.stroke()
+
+        if isRedactMode {
+            // Active badge: "Region X"
+            let tagStr = "Region \(activeBoxIndex + 1)"
+            let font = NSFont.systemFont(ofSize: 9.5, weight: .bold)
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: NSColor.white
+            ]
+            let sz = tagStr.size(withAttributes: attrs)
+            let badgeRect = NSRect(x: crop.minX + 4, y: crop.maxY - sz.height - 4, width: sz.width + 8, height: sz.height + 4)
+            let badgePath = NSBezierPath(roundedRect: badgeRect, xRadius: 3.0, yRadius: 3.0)
+            NSColor(srgbRed: 1.0, green: 0.25, blue: 0.25, alpha: 0.95).setFill()
+            badgePath.fill()
+            tagStr.draw(at: NSPoint(x: badgeRect.minX + 4, y: badgeRect.minY + 2), withAttributes: attrs)
+        }
 
         // 4. 8 Interactive Handles
         let handleFill = NSColor.white
@@ -189,6 +324,17 @@ final class CropOverlayView: NSView {
         // Inside crop rectangle
         if crop.contains(point) { return .move }
 
+        // In Redact mode: check if clicking on an inactive box to select and move it
+        if isRedactMode {
+            for (idx, b) in redactBoxes.enumerated() where idx != activeBoxIndex {
+                let vRect = viewRect(for: b)
+                if vRect.contains(point) {
+                    activeBoxIndex = idx
+                    return .move
+                }
+            }
+        }
+
         // Inside image container -> start creating a new crop box
         if imageDisplayRect.contains(point) { return .create }
 
@@ -220,22 +366,31 @@ final class CropOverlayView: NSView {
     override func mouseDown(with event: NSEvent) {
         let pt = convert(event.locationInWindow, from: nil)
         dragStartMouse = pt
+        syncActiveRedactBox()
+        let handle = hitTestHandle(at: pt)
+        activeHandle = handle
         initialNormRect = CGRect(x: normX, y: normY, width: normW, height: normH)
-        activeHandle = hitTestHandle(at: pt)
+        if isRedactMode {
+            notifyCropChanged()
+        }
 
         if activeHandle == .create {
-            let disp = imageDisplayRect
-            let clickNormX = max(0, min(1, (pt.x - disp.minX) / disp.width))
-            let clickNormY = max(0, min(1, (disp.maxY - pt.y) / disp.height))
-            normX = clickNormX
-            normY = clickNormY
-            normW = 0.02
-            normH = 0.02
-            initialNormRect = CGRect(x: normX, y: normY, width: normW, height: normH)
-            activeHandle = .bottomRight
-            currentRatioKey = "free"
-            notifyCropChanged()
-            needsDisplay = true
+            if !isRedactMode {
+                let disp = imageDisplayRect
+                let clickNormX = max(0, min(1, (pt.x - disp.minX) / disp.width))
+                let clickNormY = max(0, min(1, (disp.maxY - pt.y) / disp.height))
+                normX = clickNormX
+                normY = clickNormY
+                normW = 0.02
+                normH = 0.02
+                initialNormRect = CGRect(x: normX, y: normY, width: normW, height: normH)
+                activeHandle = .bottomRight
+                currentRatioKey = "free"
+                notifyCropChanged()
+                needsDisplay = true
+            } else {
+                activeHandle = .none
+            }
         }
     }
 
@@ -465,6 +620,10 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     private var qualityLabel: NSTextField?
     private var qualitySlider: NSSlider?
 
+    // Redact Region Controls
+    private var redactRegionPopup: NSPopUpButton?
+    private var removeRegionButton: NSButton?
+
     // Video Player & Video Studio State
     private var player: AVPlayer?
     private var playerView: AVPlayerView?
@@ -516,10 +675,10 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             winH = 680
         } else if isVideoStudio {
             winH = 650
-        } else if tool.id == "frameImage" || tool.id == "annotateImage" || tool.id == "createCollage" || tool.id == "watermark" || tool.id == "compress" {
+        } else if tool.id == "frameImage" || tool.id == "annotateImage" || tool.id == "createCollage" || tool.id == "watermark" || tool.id == "compress" || tool.id == "redactImage" {
             winH = 600
         } else {
-            winH = 540
+            winH = max(540, 420 + CGFloat(tool.fields.count) * 44)
         }
 
         let window = NSWindow(
@@ -1842,13 +2001,14 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     private func setupRedactForm(in container: NSView) {
         cropOverlayView.isRedactMode = true
 
+        // Row 1: Style
         let styleLabel = NSTextField(labelWithString: "Redact Style:")
-        styleLabel.frame = NSRect(x: 0, y: 88, width: 110, height: 20)
+        styleLabel.frame = NSRect(x: 0, y: 126, width: 110, height: 20)
         styleLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
         styleLabel.textColor = .white
         container.addSubview(styleLabel)
 
-        let stylePopup = NSPopUpButton(frame: NSRect(x: 120, y: 86, width: 220, height: 26))
+        let stylePopup = NSPopUpButton(frame: NSRect(x: 120, y: 124, width: 220, height: 26))
         stylePopup.addItem(withTitle: "Solid Blackout")
         stylePopup.addItem(withTitle: "Gaussian Blur")
         stylePopup.addItem(withTitle: "Mosaic (Pixelate)")
@@ -1857,38 +2017,106 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         container.addSubview(stylePopup)
         fieldInputs["style"] = stylePopup
 
+        // Row 2: Mosaic Grid
         let blockLabel = NSTextField(labelWithString: "Mosaic Grid:")
-        blockLabel.frame = NSRect(x: 0, y: 52, width: 110, height: 20)
+        blockLabel.frame = NSRect(x: 0, y: 88, width: 110, height: 20)
         blockLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
         blockLabel.textColor = .white
         container.addSubview(blockLabel)
 
         let blockSlider = NSSlider(value: 18, minValue: 4, maxValue: 50, target: self, action: #selector(toolSliderChanged(_:)))
-        blockSlider.frame = NSRect(x: 120, y: 50, width: 220, height: 22)
+        blockSlider.frame = NSRect(x: 120, y: 86, width: 220, height: 22)
         blockSlider.isContinuous = true
         container.addSubview(blockSlider)
         fieldSliders["blockSize"] = blockSlider
 
         let badge = NSTextField(labelWithString: "18 px")
-        badge.frame = NSRect(x: 350, y: 52, width: 80, height: 20)
+        badge.frame = NSRect(x: 350, y: 88, width: 80, height: 20)
         badge.font = NSFont.systemFont(ofSize: 12, weight: .bold)
         badge.textColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
         container.addSubview(badge)
         sliderLabels["blockSize"] = badge
 
-        cropInfoLabel.frame = NSRect(x: 0, y: 14, width: 440, height: 20)
-        cropInfoLabel.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        // Row 3: Multiple Regions Management
+        let regLabel = NSTextField(labelWithString: "Regions:")
+        regLabel.frame = NSRect(x: 0, y: 50, width: 70, height: 20)
+        regLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        regLabel.textColor = .white
+        container.addSubview(regLabel)
+
+        let regPopup = NSPopUpButton(frame: NSRect(x: 75, y: 48, width: 140, height: 26))
+        regPopup.target = self
+        regPopup.action = #selector(redactRegionSelected(_:))
+        container.addSubview(regPopup)
+        self.redactRegionPopup = regPopup
+
+        let addBtn = NSButton(title: "+ Add Region", target: self, action: #selector(addRedactRegionClicked))
+        addBtn.frame = NSRect(x: 225, y: 47, width: 115, height: 28)
+        addBtn.bezelStyle = .rounded
+        addBtn.font = NSFont.systemFont(ofSize: 11.5, weight: .semibold)
+        container.addSubview(addBtn)
+
+        let removeBtn = NSButton(title: "✕ Remove", target: self, action: #selector(removeRedactRegionClicked))
+        removeBtn.frame = NSRect(x: 348, y: 47, width: 92, height: 28)
+        removeBtn.bezelStyle = .rounded
+        removeBtn.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+        container.addSubview(removeBtn)
+        self.removeRegionButton = removeBtn
+
+        // Row 4: Info label
+        cropInfoLabel.frame = NSRect(x: 0, y: 12, width: 440, height: 22)
+        cropInfoLabel.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
         cropInfoLabel.textColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
-        cropInfoLabel.stringValue = "Redaction Box: Drag handles on image to place blackout/blur box"
+        cropInfoLabel.stringValue = "1 Redaction Region · Drag handles on image to place"
         container.addSubview(cropInfoLabel)
+
+        syncRedactRegionControls()
 
         cropOverlayView.onCropChanged = { [weak self] (rect, _) in
             guard let self = self else { return }
+            self.syncRedactRegionControls()
+            let count = self.cropOverlayView.redactBoxes.count
+            let idx = self.cropOverlayView.activeBoxIndex + 1
             let w = Int(rect.width)
             let h = Int(rect.height)
-            self.cropInfoLabel.stringValue = "Redaction Area: \(w) × \(h) px · Drag handles to adjust"
+            self.cropInfoLabel.stringValue = "Region \(idx) of \(count): \(w) × \(h) px · Drag handles or click + to add more"
             self.updateRedactPreview()
         }
+    }
+
+    private func syncRedactRegionControls() {
+        guard let popup = redactRegionPopup else { return }
+        popup.removeAllItems()
+        let count = cropOverlayView.redactBoxes.count
+        for i in 1...max(1, count) {
+            popup.addItem(withTitle: "Region \(i)")
+        }
+        if cropOverlayView.activeBoxIndex >= 0 && cropOverlayView.activeBoxIndex < popup.numberOfItems {
+            popup.selectItem(at: cropOverlayView.activeBoxIndex)
+        }
+        removeRegionButton?.isEnabled = (count > 1)
+    }
+
+    @objc private func redactRegionSelected(_ sender: NSPopUpButton) {
+        let index = sender.indexOfSelectedItem
+        if index >= 0 && index < cropOverlayView.redactBoxes.count {
+            cropOverlayView.syncActiveRedactBox()
+            cropOverlayView.activeBoxIndex = index
+            cropOverlayView.notifyCropChanged()
+            updateRedactPreview()
+        }
+    }
+
+    @objc private func addRedactRegionClicked() {
+        cropOverlayView.addRedactBox()
+        syncRedactRegionControls()
+        updateRedactPreview()
+    }
+
+    @objc private func removeRedactRegionClicked() {
+        cropOverlayView.removeActiveRedactBox()
+        syncRedactRegionControls()
+        updateRedactPreview()
     }
 
     @objc private func redactParamChanged() {
@@ -1902,8 +2130,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         let style = stylePopup?.titleOfSelectedItem ?? "Solid Blackout"
         let blockSize = CGFloat(fieldSliders["blockSize"]?.integerValue ?? 18)
 
-        let px = cropOverlayView.currentPixelRect()
-        guard px.width > 0, px.height > 0 else {
+        let pixelRects = cropOverlayView.allPixelRects()
+        guard !pixelRects.isEmpty else {
             self.previewImageView.image = originalImage
             return
         }
@@ -1914,39 +2142,47 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         let scaleX = ciInput.extent.width / fullW
         let scaleY = ciInput.extent.height / fullH
 
-        // In CIImage, coordinate (0,0) is at bottom-left:
-        let ciX = px.origin.x * scaleX
-        let ciY = (fullH - (px.origin.y + px.size.height)) * scaleY
-        let ciW = max(1.0, px.size.width * scaleX)
-        let ciH = max(1.0, px.size.height * scaleY)
-        let ciRect = CGRect(x: ciX, y: ciY, width: ciW, height: ciH)
-
         var compositedCI = ciInput
 
+        var fullBlurredCI: CIImage?
         if style.contains("Blur") {
             let clamped = ciInput.clampedToExtent()
             if let blurFilter = CIFilter(name: "CIGaussianBlur") {
                 blurFilter.setValue(clamped, forKey: kCIInputImageKey)
                 blurFilter.setValue(22.0, forKey: kCIInputRadiusKey)
-                if let blurred = blurFilter.outputImage {
-                    let effect = blurred.cropped(to: ciRect)
-                    compositedCI = effect.composited(over: ciInput)
-                }
+                fullBlurredCI = blurFilter.outputImage
             }
-        } else if style.contains("Mosaic") || style.contains("Pixelate") {
+        }
+
+        var fullPixellatedCI: CIImage?
+        if style.contains("Mosaic") || style.contains("Pixelate") {
             if let pixFilter = CIFilter(name: "CIPixellate") {
                 pixFilter.setValue(ciInput, forKey: kCIInputImageKey)
                 pixFilter.setValue(max(2.0, blockSize * scaleX), forKey: kCIInputScaleKey)
-                pixFilter.setValue(CIVector(x: ciRect.midX, y: ciRect.midY), forKey: kCIInputCenterKey)
-                if let pixellated = pixFilter.outputImage {
-                    let effect = pixellated.cropped(to: ciRect)
-                    compositedCI = effect.composited(over: ciInput)
-                }
+                fullPixellatedCI = pixFilter.outputImage
             }
-        } else {
-            // Solid Blackout
-            let blackCI = CIImage(color: CIColor.black).cropped(to: ciRect)
-            compositedCI = blackCI.composited(over: ciInput)
+        }
+
+        for px in pixelRects {
+            guard px.width > 0, px.height > 0 else { continue }
+            // In CIImage, coordinate (0,0) is at bottom-left:
+            let ciX = px.origin.x * scaleX
+            let ciY = (fullH - (px.origin.y + px.size.height)) * scaleY
+            let ciW = max(1.0, px.size.width * scaleX)
+            let ciH = max(1.0, px.size.height * scaleY)
+            let ciRect = CGRect(x: ciX, y: ciY, width: ciW, height: ciH)
+
+            if style.contains("Blur"), let blurred = fullBlurredCI {
+                let effect = blurred.cropped(to: ciRect)
+                compositedCI = effect.composited(over: compositedCI)
+            } else if style.contains("Mosaic") || style.contains("Pixelate"), let pixellated = fullPixellatedCI {
+                let effect = pixellated.cropped(to: ciRect)
+                compositedCI = effect.composited(over: compositedCI)
+            } else {
+                // Solid Blackout
+                let blackCI = CIImage(color: CIColor.black).cropped(to: ciRect)
+                compositedCI = blackCI.composited(over: compositedCI)
+            }
         }
 
         let extent = ciInput.extent
@@ -2625,31 +2861,64 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
     // MARK: - Generic Form
     private func setupGenericForm(in container: NSView) {
-        var yOffset: CGFloat = 85
+        var yOffset: CGFloat = max(20, container.bounds.height - 30)
         for field in tool.fields {
             let label = NSTextField(labelWithString: field.label + ":")
-            label.frame = NSRect(x: 0, y: yOffset, width: 140, height: 22)
+            label.frame = NSRect(x: 10, y: yOffset, width: 140, height: 22)
             label.alignment = .right
             label.font = NSFont.systemFont(ofSize: 12, weight: .medium)
             label.textColor = .white
             container.addSubview(label)
 
-            if let choices = field.choices {
-                let popup = NSPopUpButton(frame: NSRect(x: 150, y: yOffset - 2, width: 220, height: 24))
+            if field.kind == "slider" {
+                let dVal = Double(field.defaultValue) ?? 50.0
+                let minV: Double = (field.name == "loudness" || field.name == "peak") ? -40.0 : 0.0
+                let maxV: Double = (field.name == "loudness" || field.name == "peak") ? 0.0 : 100.0
+                let slider = NSSlider(value: dVal, minValue: minV, maxValue: maxV, target: self, action: #selector(genericSliderChanged(_:)))
+                slider.frame = NSRect(x: 160, y: yOffset - 2, width: 190, height: 24)
+                slider.identifier = NSUserInterfaceItemIdentifier(field.name)
+                container.addSubview(slider)
+                fieldSliders[field.name] = slider
+
+                let badge = NSTextField(labelWithString: field.defaultValue)
+                badge.frame = NSRect(x: 360, y: yOffset, width: 60, height: 20)
+                badge.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+                badge.textColor = NSColor(white: 0.8, alpha: 1.0)
+                container.addSubview(badge)
+                sliderLabels[field.name] = badge
+            } else if let choices = field.choices, !choices.isEmpty {
+                let popup = NSPopUpButton(frame: NSRect(x: 160, y: yOffset - 2, width: 250, height: 24))
                 for c in choices {
                     popup.addItem(withTitle: c)
                 }
                 popup.selectItem(withTitle: field.defaultValue)
                 container.addSubview(popup)
                 fieldInputs[field.name] = popup
+            } else if field.kind == "password" || field.name.lowercased().contains("password") {
+                let secField = NSSecureTextField(frame: NSRect(x: 160, y: yOffset, width: 250, height: 22))
+                secField.stringValue = field.defaultValue
+                secField.placeholderString = "Enter password..."
+                container.addSubview(secField)
+                fieldInputs[field.name] = secField
             } else {
-                let textField = NSTextField(frame: NSRect(x: 150, y: yOffset, width: 220, height: 22))
+                let textField = NSTextField(frame: NSRect(x: 160, y: yOffset, width: 250, height: 22))
                 textField.stringValue = field.defaultValue
                 container.addSubview(textField)
                 fieldInputs[field.name] = textField
             }
 
-            yOffset -= 34
+            yOffset -= 36
+        }
+    }
+
+    @objc private func genericSliderChanged(_ sender: NSSlider) {
+        guard let name = sender.identifier?.rawValue else { return }
+        if let badge = sliderLabels[name] {
+            if sender.maxValue <= 10 && sender.minValue >= -10 {
+                badge.stringValue = String(format: "%.2f", sender.doubleValue)
+            } else {
+                badge.stringValue = "\(sender.integerValue)"
+            }
         }
     }
 
@@ -2772,7 +3041,12 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
                 self.cropOverlayView.normY = 0.25
                 self.cropOverlayView.normW = 0.70
                 self.cropOverlayView.normH = 0.20
+                self.cropOverlayView.redactBoxes = [
+                    RedactBox(normX: 0.15, normY: 0.25, normW: 0.70, normH: 0.20)
+                ]
+                self.cropOverlayView.activeBoxIndex = 0
                 self.cropOverlayView.needsDisplay = true
+                self.syncRedactRegionControls()
                 self.updateRedactPreview()
             } else if self.tool.id == "annotateImage" {
                 self.updateAnnotatePreview()
@@ -2842,6 +3116,11 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
                 }
             }
 
+            guard LicenseManager.shared.canUseApp() else {
+                LicenseWindowController.shared.show()
+                return
+            }
+
             let job = ConversionJob(Paths: paths, Action: finalAction, Parameters: params)
             window?.close()
             onClose?()
@@ -2888,14 +3167,38 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             params["y"] = "\(Int(px.origin.y))"
             params["width"] = "\(Int(px.width))"
             params["height"] = "\(Int(px.height))"
+
+            var styleStr = "solid"
             if let stylePopup = fieldInputs["style"] as? NSPopUpButton {
                 let title = stylePopup.titleOfSelectedItem?.lowercased() ?? "solid"
-                if title.contains("blur") { params["style"] = "blur" }
-                else if title.contains("pixel") { params["style"] = "pixelate" }
-                else { params["style"] = "solid" }
+                if title.contains("blur") { styleStr = "blur" }
+                else if title.contains("pixel") { styleStr = "pixelate" }
+                else { styleStr = "solid" }
             }
+            params["style"] = styleStr
+
+            var blockSizeVal = 18
             if let slider = fieldSliders["blockSize"] {
-                params["blockSize"] = "\(slider.integerValue)"
+                blockSizeVal = slider.integerValue
+                params["blockSize"] = "\(blockSizeVal)"
+            }
+
+            // Serialize all defined regions into JSON array for backend execution
+            let allRects = cropOverlayView.allPixelRects()
+            var regionDicts: [[String: Any]] = []
+            for r in allRects {
+                regionDicts.append([
+                    "x": Int(r.origin.x),
+                    "y": Int(r.origin.y),
+                    "width": Int(r.size.width),
+                    "height": Int(r.size.height),
+                    "style": styleStr,
+                    "blockSize": blockSizeVal
+                ])
+            }
+            if let jsonData = try? JSONSerialization.data(withJSONObject: regionDicts, options: []),
+               let jsonStr = String(data: jsonData, encoding: .utf8) {
+                params["regions"] = jsonStr
             }
         } else if tool.id == "editImage" {
             for (name, slider) in fieldSliders {
@@ -3057,11 +3360,32 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         } else {
             for (name, control) in fieldInputs {
                 if let popup = control as? NSPopUpButton {
-                    params[name] = popup.titleOfSelectedItem ?? ""
+                    let sel = popup.titleOfSelectedItem ?? ""
+                    if name == "angle" || name == "rotation" {
+                        if sel.contains("90") { params[name] = "90" }
+                        else if sel.contains("180") { params[name] = "180" }
+                        else if sel.contains("270") { params[name] = "270" }
+                        else if sel.contains("0") { params[name] = "0" }
+                        else { params[name] = sel }
+                    } else {
+                        params[name] = sel
+                    }
                 } else if let textField = control as? NSTextField {
                     params[name] = textField.stringValue
                 }
             }
+            for (name, slider) in fieldSliders {
+                if slider.maxValue <= 10 && slider.minValue >= -10 {
+                    params[name] = String(format: "%.2f", slider.doubleValue)
+                } else {
+                    params[name] = "\(slider.integerValue)"
+                }
+            }
+        }
+
+        guard LicenseManager.shared.canUseApp() else {
+            LicenseWindowController.shared.show()
+            return
         }
 
         let job = ConversionJob(Paths: paths, Action: tool.id, Parameters: params)

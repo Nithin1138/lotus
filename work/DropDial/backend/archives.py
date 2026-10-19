@@ -108,8 +108,8 @@ def pack(folder,path,fmt):
         with zipfile.ZipFile(path,'w',zipfile.ZIP_DEFLATED,compresslevel=8) as archive:
             for file in files:
                 archive.write(file,file.relative_to(folder).as_posix()+('/' if file.is_dir() else ''))
-    elif fmt in ('tar','gz'):
-        with tarfile.open(path,'w:gz' if fmt=='gz' else 'w') as archive:
+    elif fmt in ('tar','gz','gzip'):
+        with tarfile.open(path,'w:gz' if fmt in ('gz','gzip') else 'w') as archive:
             for file in folder.iterdir(): archive.add(file,arcname=file.name)
     elif fmt=='rar':
         stored_rar(folder,path)
@@ -127,7 +127,7 @@ def convert(paths,fmt,params):
         folder=Path(temp)
         if not params.get('_pack') and len(paths)==1 and Path(paths[0]).suffix.lower() in ('.zip','.tar','.gz','.tgz','.rar','.7z'): extract_to(paths[0],folder)
         else: copy_selection(paths,folder)
-        extension='.tar.gz' if fmt=='gz' else '.'+fmt
+        extension='.tar.gz' if fmt in ('gz','gzip') else '.'+fmt
         with output_file(paths[0],'packed' if params.get('_pack') else 'converted',extension) as state: pack(folder,state['temp'],fmt)
     return state['output']
 
@@ -138,8 +138,16 @@ def extract(path,params):
 def pack_archive(paths,params):
     """Pack files and folders as ZIP or 7z with an optional password (AES-256) and an optional volume size."""
     fmt=params.get('format','zip'); secret=params.get('password',''); level=int(number(params,'level',5)); volume=number(params,'splitMB',0)
+    if fmt in ('tar.gz', 'gz', 'gzip', 'tar'):
+        return convert(paths, 'gz' if 'gz' in fmt else 'tar', {**params, '_pack': True})
     if fmt not in ('zip','7z') or not 1<=level<=9 or not 0<=volume<=100000: raise ValueError(T('The archive settings are not valid'))
-    if not SEVEN.exists(): raise ValueError(T('Making 7z or password-protected archives needs 7-Zip'))
+    if not SEVEN.exists():
+        if fmt == 'zip' and not secret and not volume:
+            with tempfile.TemporaryDirectory(prefix='dropdial-archive-') as temp:
+                folder=Path(temp)/'content'; folder.mkdir(); copy_selection(paths,folder)
+                with output_file(paths[0],'packArchive','.zip') as state: pack(folder,state['temp'],'zip')
+            return state['output']
+        raise ValueError(T('Making 7z or password-protected archives needs 7-Zip'))
     with tempfile.TemporaryDirectory(prefix='dropdial-archive-') as temp:
         folder=Path(temp)/'content'; folder.mkdir(); copy_selection(paths,folder)
         options=['-sccUTF-8','-bd',f'-mx={level}']

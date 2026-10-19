@@ -11,7 +11,10 @@ final class PermissionWelcomeWindowController: NSWindowController {
     private var pollTimer: Timer?
     private let statusBox = NSBox()
     private let statusIcon = NSImageView()
-    private let statusLabel = NSTextField(labelWithString: "")
+    private let statusTitleLabel = NSTextField(labelWithString: "")
+    private let statusSubtitleLabel = NSTextField(labelWithString: "")
+    private let pillBox = NSBox()
+    private let pillLabel = NSTextField(labelWithString: "")
     private let actionButton = NSButton()
     private let refreshButton = NSButton()
     private let skipButton = NSButton()
@@ -20,7 +23,7 @@ final class PermissionWelcomeWindowController: NSWindowController {
 
     init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 530),
+            contentRect: NSRect(x: 0, y: 0, width: 490, height: 540),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -52,7 +55,7 @@ final class PermissionWelcomeWindowController: NSWindowController {
 
         let visualEffect = NSVisualEffectView(frame: window.contentView!.bounds)
         visualEffect.autoresizingMask = [.width, .height]
-        visualEffect.material = .popover
+        visualEffect.material = .underWindowBackground
         visualEffect.state = .active
         visualEffect.blendingMode = .behindWindow
         window.contentView?.addSubview(visualEffect)
@@ -61,8 +64,8 @@ final class PermissionWelcomeWindowController: NSWindowController {
         container.autoresizingMask = [.width, .height]
         visualEffect.addSubview(container)
 
-        // 1. App Icon Hero (76x76)
-        let iconView = NSImageView(frame: NSRect(x: (480 - 76) / 2, y: 26, width: 76, height: 76))
+        // 1. App Icon Hero (72x72)
+        let iconView = NSImageView(frame: NSRect(x: (490 - 72) / 2, y: 22, width: 72, height: 72))
         let resPath = Bundle.main.bundlePath + "/Contents/Resources/"
         if let markImg = NSImage(contentsOfFile: resPath + "dropdial_mark_128.png") ??
                          NSImage(contentsOfFile: resPath + "dropdial.png") ??
@@ -73,133 +76,167 @@ final class PermissionWelcomeWindowController: NSWindowController {
 
         // 2. Title
         let titleLabel = NSTextField(labelWithString: "Welcome to DropDial")
-        titleLabel.frame = NSRect(x: 20, y: 110, width: 440, height: 28)
+        titleLabel.frame = NSRect(x: 20, y: 98, width: 450, height: 26)
         titleLabel.alignment = .center
         titleLabel.font = NSFont.systemFont(ofSize: 22, weight: .bold)
         titleLabel.textColor = .labelColor
         container.addSubview(titleLabel)
 
         // 3. Subtitle
-        let subLabel = NSTextField(labelWithString: "Drag. Drop. Convert. • Universal Desktop Actions")
-        subLabel.frame = NSRect(x: 20, y: 140, width: 440, height: 18)
+        let subLabel = NSTextField(labelWithString: "Instant File Conversions & Desktop Actions at Your Cursor")
+        subLabel.frame = NSRect(x: 20, y: 126, width: 450, height: 18)
         subLabel.alignment = .center
         subLabel.font = NSFont.systemFont(ofSize: 12.5, weight: .medium)
         subLabel.textColor = .secondaryLabelColor
         container.addSubview(subLabel)
 
-        // 4. Feature Card Box (424x192)
-        let card = NSBox(frame: NSRect(x: 28, y: 168, width: 424, height: 192))
+        // 4. Feature Card Box (440x198)
+        let card = NSBox(frame: NSRect(x: 25, y: 154, width: 440, height: 198))
         card.boxType = .custom
         card.cornerRadius = 14
         card.borderWidth = 1.0
-        card.borderColor = NSColor.separatorColor.withAlphaComponent(0.4)
+        card.borderColor = NSColor.separatorColor.withAlphaComponent(0.25)
         card.fillColor = NSColor.controlBackgroundColor.withAlphaComponent(0.55)
 
-        let cardContainer = FlippedView(frame: NSRect(x: 16, y: 12, width: 392, height: 168))
+        let cardContainer = FlippedView(frame: NSRect(x: 16, y: 8, width: 408, height: 182))
         cardContainer.autoresizingMask = [.width, .height]
 
-        func createRow(y: CGFloat, symbol: String, title: String, desc: String) -> NSView {
-            let row = FlippedView(frame: NSRect(x: 0, y: y, width: 392, height: 48))
+        func createRow(y: CGFloat, symbol: String, badgeColor: NSColor, title: String, desc: String, trailingView: NSView? = nil) -> NSView {
+            let row = FlippedView(frame: NSRect(x: 0, y: y, width: 408, height: 56))
 
-            // Icon Badge
-            let badge = NSBox(frame: NSRect(x: 0, y: 4, width: 36, height: 36))
+            // Icon Badge (38x38 circle)
+            let badge = NSBox(frame: NSRect(x: 0, y: 6, width: 38, height: 38))
             badge.boxType = .custom
-            badge.cornerRadius = 18
+            badge.cornerRadius = 19
             badge.borderWidth = 0
-            badge.fillColor = NSColor(srgbRed: 1.0, green: 0.38, blue: 0.03, alpha: 0.12)
+            badge.fillColor = badgeColor.withAlphaComponent(0.14)
 
-            let img = NSImageView(frame: NSRect(x: 8, y: 8, width: 20, height: 20))
+            let img = NSImageView(frame: NSRect(x: 9, y: 9, width: 20, height: 20))
             img.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
-            img.contentTintColor = NSColor(srgbRed: 1.0, green: 0.38, blue: 0.03, alpha: 1.0)
+            img.contentTintColor = badgeColor
             badge.addSubview(img)
             row.addSubview(badge)
 
-            // Text
+            // Text column
+            let textWidth: CGFloat = trailingView != nil ? 272 : 354
             let titleText = NSTextField(labelWithString: title)
-            titleText.frame = NSRect(x: 48, y: 4, width: 344, height: 18)
+            titleText.frame = NSRect(x: 50, y: 4, width: textWidth, height: 18)
             titleText.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
             titleText.textColor = .labelColor
             row.addSubview(titleText)
 
             let descText = NSTextField(labelWithString: desc)
-            descText.frame = NSRect(x: 48, y: 24, width: 344, height: 20)
+            descText.frame = NSRect(x: 50, y: 22, width: textWidth, height: 32)
             descText.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
             descText.textColor = .secondaryLabelColor
+            descText.lineBreakMode = .byWordWrapping
+            descText.maximumNumberOfLines = 2
             row.addSubview(descText)
+
+            if let trailingView = trailingView {
+                row.addSubview(trailingView)
+            }
 
             return row
         }
 
+        // Row 1: 3 Radial Wheels
         cardContainer.addSubview(createRow(
-            y: 4,
-            symbol: "circle.grid.cross",
+            y: 2,
+            symbol: "circle.grid.cross.fill",
+            badgeColor: NSColor.systemIndigo,
             title: "3 Radial Tool Wheels",
             desc: "Hold ⇧ Shift (Formats), ⌘ Cmd (Tools), or ⌃ Ctrl (Actions)."
         ))
 
+        // Row 2: Drag & Drop Anywhere
         cardContainer.addSubview(createRow(
-            y: 58,
+            y: 60,
             symbol: "hand.draw.fill",
+            badgeColor: NSColor.systemOrange,
             title: "Drag & Drop Anywhere",
             desc: "Drag any file to summon the interactive dial directly at your cursor."
         ))
 
+        // Row 3: Accessibility & Global Drag Detection with Live Pill
+        pillBox.frame = NSRect(x: 322, y: 16, width: 80, height: 22)
+        pillBox.boxType = .custom
+        pillBox.cornerRadius = 11
+        pillBox.borderWidth = 1.0
+
+        pillLabel.frame = NSRect(x: 0, y: 3, width: 80, height: 16)
+        pillLabel.alignment = .center
+        pillLabel.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+        pillBox.contentView = pillLabel
+
         cardContainer.addSubview(createRow(
-            y: 112,
+            y: 118,
             symbol: "lock.shield.fill",
-            title: "Accessibility & File Permissions",
-            desc: "Required by macOS to detect modifier keys while dragging files."
+            badgeColor: NSColor.systemTeal,
+            title: "Accessibility Permission",
+            desc: "Required by macOS to detect modifier keys while dragging files.",
+            trailingView: pillBox
         ))
 
         card.contentView = cardContainer
         container.addSubview(card)
 
-        // 5. Live Status Box (424x34)
-        statusBox.frame = NSRect(x: 28, y: 372, width: 424, height: 34)
+        // 5. Live Status Card (440x56)
+        statusBox.frame = NSRect(x: 25, y: 364, width: 440, height: 56)
         statusBox.boxType = .custom
-        statusBox.cornerRadius = 8
+        statusBox.cornerRadius = 12
         statusBox.borderWidth = 1.0
 
-        let statusInner = FlippedView(frame: NSRect(x: 10, y: 0, width: 404, height: 34))
-        statusIcon.frame = NSRect(x: 10, y: 8, width: 18, height: 18)
+        let statusInner = FlippedView(frame: NSRect(x: 14, y: 0, width: 412, height: 56))
+
+        statusIcon.frame = NSRect(x: 2, y: 17, width: 22, height: 22)
         statusInner.addSubview(statusIcon)
 
-        statusLabel.frame = NSRect(x: 34, y: 8, width: 360, height: 18)
-        statusLabel.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
-        statusInner.addSubview(statusLabel)
+        statusTitleLabel.frame = NSRect(x: 36, y: 9, width: 376, height: 18)
+        statusTitleLabel.font = NSFont.systemFont(ofSize: 12.5, weight: .semibold)
+        statusInner.addSubview(statusTitleLabel)
+
+        statusSubtitleLabel.frame = NSRect(x: 36, y: 29, width: 376, height: 18)
+        statusSubtitleLabel.font = NSFont.systemFont(ofSize: 11, weight: .regular)
+        statusInner.addSubview(statusSubtitleLabel)
 
         statusBox.contentView = statusInner
         container.addSubview(statusBox)
 
         // 6. Action Button (Primary)
-        actionButton.frame = NSRect(x: 90, y: 418, width: 300, height: 36)
+        actionButton.frame = NSRect(x: 45, y: 432, width: 400, height: 38)
         actionButton.bezelStyle = .rounded
         actionButton.controlSize = .large
         actionButton.target = self
         actionButton.action = #selector(actionButtonTapped)
         container.addSubview(actionButton)
 
-        // 7. Refresh / Re-check Link
-        refreshButton.frame = NSRect(x: 120, y: 462, width: 240, height: 20)
+        // 7. Helper Row (Check status & Skip for now)
+        let bottomRow = FlippedView(frame: NSRect(x: 45, y: 478, width: 400, height: 26))
+
+        refreshButton.frame = NSRect(x: 10, y: 2, width: 170, height: 22)
         refreshButton.bezelStyle = .inline
         refreshButton.isBordered = false
-        refreshButton.title = "↻ Check Permission Status"
-        refreshButton.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+        refreshButton.title = "↻ Check Permission"
+        refreshButton.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
         refreshButton.contentTintColor = NSColor.linkColor
+        refreshButton.alignment = .left
         refreshButton.target = self
         refreshButton.action = #selector(refreshButtonTapped)
-        container.addSubview(refreshButton)
+        bottomRow.addSubview(refreshButton)
 
-        // 8. Skip Button
-        skipButton.frame = NSRect(x: 60, y: 488, width: 360, height: 22)
+        skipButton.frame = NSRect(x: 190, y: 2, width: 200, height: 22)
         skipButton.bezelStyle = .inline
         skipButton.isBordered = false
-        skipButton.title = "Skip for Now (Use HotKeys & Menu Bar)"
+        skipButton.title = "Skip for Now (Use Hotkeys)"
         skipButton.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
         skipButton.contentTintColor = .secondaryLabelColor
+        skipButton.alignment = .right
         skipButton.target = self
         skipButton.action = #selector(skipButtonTapped)
-        container.addSubview(skipButton)
+        bottomRow.addSubview(skipButton)
+
+        container.addSubview(bottomRow)
 
         updateStatus()
     }
@@ -252,29 +289,43 @@ final class PermissionWelcomeWindowController: NSWindowController {
         }
     }
 
-    private func updateStatus() {
-        let trusted = isAccessibilityTrusted()
+    private func updateStatus(forceNeeded: Bool = false) {
+        let trusted = forceNeeded ? false : (CommandLine.arguments.contains("--show-permission-needed") ? false : isAccessibilityTrusted())
         self.isGranted = trusted
 
         if trusted {
-            statusBox.fillColor = NSColor.systemGreen.withAlphaComponent(0.12)
-            statusBox.borderColor = NSColor.systemGreen.withAlphaComponent(0.4)
+            statusBox.fillColor = NSColor.systemGreen.withAlphaComponent(0.09)
+            statusBox.borderColor = NSColor.systemGreen.withAlphaComponent(0.35)
             statusIcon.image = NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: nil)
             statusIcon.contentTintColor = NSColor(srgbRed: 0.15, green: 0.75, blue: 0.35, alpha: 1.0)
-            statusLabel.stringValue = "Accessibility Granted — All features active!"
-            statusLabel.textColor = NSColor(srgbRed: 0.15, green: 0.75, blue: 0.35, alpha: 1.0)
+            statusTitleLabel.stringValue = "Accessibility Granted — Everything is Active!"
+            statusTitleLabel.textColor = NSColor(srgbRed: 0.15, green: 0.75, blue: 0.35, alpha: 1.0)
+            statusSubtitleLabel.stringValue = "DropDial is fully authorized. Drag any file or use hotkeys."
+            statusSubtitleLabel.textColor = .secondaryLabelColor
+
+            pillBox.fillColor = NSColor.systemGreen.withAlphaComponent(0.15)
+            pillBox.borderColor = NSColor.systemGreen.withAlphaComponent(0.4)
+            pillLabel.stringValue = "✓ Active"
+            pillLabel.textColor = NSColor(srgbRed: 0.15, green: 0.75, blue: 0.35, alpha: 1.0)
 
             actionButton.title = "✓ Ready to Go! (Open DropDial)"
             actionButton.keyEquivalent = "\r"
             refreshButton.isHidden = true
             skipButton.isHidden = true
         } else {
-            statusBox.fillColor = NSColor.systemOrange.withAlphaComponent(0.12)
-            statusBox.borderColor = NSColor.systemOrange.withAlphaComponent(0.4)
+            statusBox.fillColor = NSColor.systemOrange.withAlphaComponent(0.08)
+            statusBox.borderColor = NSColor.systemOrange.withAlphaComponent(0.35)
             statusIcon.image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: nil)
             statusIcon.contentTintColor = NSColor.systemOrange
-            statusLabel.stringValue = "Accessibility Needed: Enable DropDial in Settings"
-            statusLabel.textColor = NSColor.systemOrange
+            statusTitleLabel.stringValue = "Accessibility Permission Required"
+            statusTitleLabel.textColor = NSColor.systemOrange
+            statusSubtitleLabel.stringValue = "Turn ON DropDial in System Settings → Accessibility"
+            statusSubtitleLabel.textColor = .secondaryLabelColor
+
+            pillBox.fillColor = NSColor.systemOrange.withAlphaComponent(0.12)
+            pillBox.borderColor = NSColor.systemOrange.withAlphaComponent(0.35)
+            pillLabel.stringValue = "Required"
+            pillLabel.textColor = NSColor.systemOrange
 
             actionButton.title = "Open System Settings & Grant"
             actionButton.keyEquivalent = "\r"
@@ -316,13 +367,15 @@ final class PermissionWelcomeWindowController: NSWindowController {
     @objc private func refreshButtonTapped() {
         checkStatusLive()
         if !isGranted {
-            // Flash status to show it checked
-            let previous = statusLabel.stringValue
-            statusLabel.stringValue = "Checking... Make sure DropDial is ON in Settings"
+            let prevTitle = statusTitleLabel.stringValue
+            let prevSubtitle = statusSubtitleLabel.stringValue
+            statusTitleLabel.stringValue = "Checking Settings…"
+            statusSubtitleLabel.stringValue = "Make sure the toggle next to DropDial is turned ON."
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
                 guard let self = self else { return }
                 if !self.isGranted {
-                    self.statusLabel.stringValue = previous
+                    self.statusTitleLabel.stringValue = prevTitle
+                    self.statusSubtitleLabel.stringValue = prevSubtitle
                 } else {
                     self.updateStatus()
                 }

@@ -7,12 +7,13 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using System.Windows.Input;
 using Forms = System.Windows.Forms;
 using ShapePath = System.Windows.Shapes.Path;
 
 namespace DropDial;
 
-// The wheel shown while dragging files. With fewer than ten choices it is one wheel. With more, the first wheel lists
+// The wheel shown while dragging files or triggered via shortcuts/tray. With fewer than ten choices it is one wheel. With more, the first wheel lists
 // categories (each shows a preview of the tools inside); hovering one opens a second wheel around the first with that
 // category's tools, and the drop happens on one of those.
 internal sealed class DropWheel : Window
@@ -48,13 +49,15 @@ internal sealed class DropWheel : Window
     private List<ToolGroup>? groups;
     private int openGroup = -1;
     private string[] paths = [];
-    private bool entered, eligible, tools, allowedCopy;
+    private bool entered, eligible, allowedCopy;
+    private WheelMode mode = WheelMode.Convert;
 
     // -- Smooth rotation state --
     /// Full list of operations for the current mode/file (may exceed 8).
     private List<Operation> allOperations = [];
-    /// How many positions we've logically rotated (index into allOperations).
-    private int rotationOffset = 0;
+    /// Current side/page index (0-based: 0 is Side 1, 1 is Side 2, etc.)
+    private int currentSideIndex = 0;
+    private int TotalSides => Math.Max(1, (allOperations.Count + 7) / 8);
     /// The current visual rotation angle applied to petal geometry (degrees), smoothly animated.
     private double wheelAngle = 0;
     /// Target angle the spring animation follows.
@@ -66,7 +69,8 @@ internal sealed class DropWheel : Window
     /// True when we have more items than can fit in the ring (more to scroll to).
     private bool HasMoreItems => allOperations.Count > 8;
     public long Instance { get; private set; }
-    public bool ToolsMode => tools;
+    public WheelMode CurrentMode => mode;
+    public bool ToolsMode => mode == WheelMode.Tools;
     public bool HasFileDrag => entered && paths.Length > 0;
     // The size of the window's picture: 380 for one wheel, larger when a second wheel can open around it.
     public double StageSize { get; private set; } = SingleSize;
@@ -87,6 +91,7 @@ internal sealed class DropWheel : Window
         ShowActivated = false;
         Topmost = true;
         AllowDrop = true;
+        Focusable = true;
         FontFamily = UiTheme.Font;
         disk = new Ellipse { Width = 360, Height = 360, Fill = Shade.Disk, IsHitTestVisible = false,
             Effect = new DropShadowEffect { BlurRadius = 14, ShadowDepth = 5, Opacity = .13, Color = Color.FromRgb(42, 50, 45) } };
@@ -98,14 +103,15 @@ internal sealed class DropWheel : Window
         Canvas.SetLeft(hubSide, Center - 56); Canvas.SetTop(hubSide, Center - 56 + 4);
         Canvas.SetZIndex(hubSide, 9); canvas.Children.Add(hubSide);
         center = new Border { Width = 112, Height = 112, CornerRadius = new CornerRadius(56), Background = Shade.Hub,
-            BorderBrush = Shade.HubEdge, BorderThickness = new Thickness(1) };
+            BorderBrush = Shade.HubEdge, BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
+        center.MouseLeftButtonUp += (_, e) => { e.Handled = true; OnHubClicked(); };
         var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         count.Text = L.T("Drop files");
         count.TextAlignment = TextAlignment.Center;
         count.FontSize = 15;
         count.FontWeight = FontWeights.Medium;
         count.Foreground = UiTheme.Ink;
-        hint.Text = L.T("Shift formats · Ctrl+Shift tools");
+        hint.Text = L.T("Shift formats · Ctrl+Shift tools · Alt actions");
         hint.TextAlignment = TextAlignment.Center;
         hint.TextWrapping = TextWrapping.Wrap;
         hint.FontSize = 10;
@@ -124,6 +130,10 @@ internal sealed class DropWheel : Window
         PreviewDragOver += Over;
         PreviewDragLeave += (_, e) => { var p = e.GetPosition(this); if (p.X < 0 || p.Y < 0 || p.X > ActualWidth || p.Y > ActualHeight) { Highlight(first, -1); Highlight(second, -1); } e.Handled = true; };
         PreviewDrop += OnDrop;
+        PreviewMouseLeftButtonUp += OnPreviewMouseLeftButtonUp;
+        PreviewMouseMove += OnMouseMove;
+        PreviewMouseRightButtonUp += (_, e) => { e.Handled = true; Dismiss("RightClick"); };
+        PreviewKeyDown += OnPreviewKeyDown;
         // Mouse-wheel rotates the tool ring smoothly.
         PreviewMouseWheel += OnMouseWheel;
         // 60-fps spring animation timer.
@@ -144,7 +154,7 @@ internal sealed class DropWheel : Window
         hint.Foreground = UiTheme.Muted;
     }
 
-    public void OpenAt(Native.POINT point, bool tools)
+    public void OpenAt(Native.POINT point, WheelMode mode)
     {
         Recolor();
         Instance++;
@@ -152,12 +162,10 @@ internal sealed class DropWheel : Window
         eligible = allowedCopy = false;
         paths = [];
         groups = null;
-        this.tools = tools;
-        count.Text = L.T("Drop files");
-        hint.Text = tools ? L.T("Tools depend on the file type") : L.T("Formats depend on the file type");
+        this.mode = mode;
         // Reset rotation when the wheel opens fresh.
         ResetRotation();
-        Render([]);
+        LoadDefaultItems();
         Resize(SingleSize);
         if (!IsVisible)
             Show();
@@ -170,7 +178,11 @@ internal sealed class DropWheel : Window
         int x = Math.Clamp(targetX, area.Left, Math.Max(area.Left, area.Right - size)), y = Math.Clamp(point.Y - size / 2, area.Top, Math.Max(area.Top, area.Bottom - size));
         Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, size, size, 0x0010 | 0x0040);
         UpdateLayout();
+        Focus();
     }
+
+    public void OpenAt(Native.POINT point, bool tools) =>
+        OpenAt(point, tools ? WheelMode.Tools : WheelMode.Convert);
 
     // Grows or shrinks the window around the wheel's centre so a second wheel has room.
     private void Resize(double size)
@@ -202,10 +214,10 @@ internal sealed class DropWheel : Window
     }
 
     // For screenshots: show the wheel as if these files were being dragged over it, with one option lit.
-    public void Preview(string[] files, bool toolsMode, string highlightId)
+    public void Preview(string[] files, WheelMode targetMode, string highlightId)
     {
         Recolor();
-        tools = toolsMode;
+        mode = targetMode;
         paths = files;
         entered = allowedCopy = true;
         Populate();
@@ -222,18 +234,91 @@ internal sealed class DropWheel : Window
             Highlight(first, operations.FindIndex(o => o.Id == highlightId));
     }
 
-    public void ChangeMode(bool nextTools)
+    public void Preview(string[] files, bool toolsMode, string highlightId) =>
+        Preview(files, toolsMode ? WheelMode.Tools : WheelMode.Convert, highlightId);
+
+    public void ChangeMode(WheelMode nextMode)
     {
-        tools = nextTools;
-        if (!entered)
-        { hint.Text = tools ? L.T("Tools depend on the file type") : L.T("Formats depend on the file type"); return; }
+        mode = nextMode;
+        if (!entered && paths.Length == 0)
+        {
+            LoadDefaultItems();
+            return;
+        }
         Populate();
     }
 
+    public void ChangeMode(bool nextTools) => ChangeMode(nextTools ? WheelMode.Tools : WheelMode.Convert);
+
+    public void LoadFiles(string[] filePaths, WheelMode? targetMode = null)
+    {
+        if (targetMode.HasValue)
+            mode = targetMode.Value;
+        paths = filePaths;
+        entered = allowedCopy = true;
+        Populate();
+        if (!IsVisible)
+        {
+            Native.GetCursorPos(out var pt);
+            OpenAt(pt, mode);
+        }
+    }
+
+    public void LoadDefaultItems()
+    {
+        ResetRotation();
+        openGroup = -1;
+        groups = null;
+        RenderSecond(null);
+        allOperations = GetDefaultOperations(mode);
+        operations = allOperations;
+        SyncWindow();
+        eligible = true;
+        count.Text = mode switch
+        {
+            WheelMode.Convert => L.T("Convert"),
+            WheelMode.Tools => L.T("Tools"),
+            _ => L.T("Actions")
+        };
+        hint.Text = L.T("Click Hub or Tab to switch");
+        Render(operations);
+        Resize(SingleSize);
+    }
+
+    private static List<Operation> GetDefaultOperations(WheelMode m) => m switch
+    {
+        WheelMode.Actions => Catalog.FileActions.ToList(),
+        WheelMode.Tools => [
+            Catalog.Definition("compress", "image"),
+            Catalog.Definition("resizeImage", "image"),
+            Catalog.Definition("cropImage", "image"),
+            Catalog.Definition("editImage", "image"),
+            Catalog.Definition("frameImage", "image"),
+            Catalog.Definition("watermark", "image"),
+            Catalog.Definition("redactImage", "image"),
+            Catalog.Definition("ocrImage", "image")
+        ],
+        _ => [
+            new("convert:png", "PNG"),
+            new("convert:webp", "WEBP"),
+            new("convert:jpg", "JPG"),
+            new("convert:pdf", "PDF"),
+            new("convert:docx", "DOCX"),
+            new("convert:txt", "TXT"),
+            new("convert:mp4", "MP4"),
+            new("convert:zip", "ZIP")
+        ]
+    };
+
     private void Populate()
     {
-        var all = paths.Length <= 200 ? Catalog.Options(paths, tools) : [];
-        groups = tools && paths.Length > 0 && Catalog.TwoWheels ? Catalog.Grouped(all, Catalog.Category(paths[0])) : null;
+        if (paths.Length == 0)
+        {
+            LoadDefaultItems();
+            return;
+        }
+        var all = paths.Length <= 200 ? Catalog.Options(paths, mode) : [];
+        groups = mode == WheelMode.Tools && paths.Length > 0 && Catalog.TwoWheels ? Catalog.Grouped(all, Catalog.Category(paths[0])) : null;
         openGroup = -1;
         RenderSecond(null);
         // Store the full list; operations is the visible window.
@@ -244,60 +329,61 @@ internal sealed class DropWheel : Window
         SyncWindow();
         eligible = allowedCopy && all.Count > 0;
         bool packing = Catalog.PackingOnly(paths);
-        count.Text = eligible ? (packing && !tools ? L.T("Packing only") : (paths.Length == 1 ? L.T("1 file") : L.F("{0} files", paths.Length))) : L.T("No actions");
-        hint.Text = packing && !tools ? L.T("No conversions for this type") : eligible ? Prompt() : L.T("Esc to cancel");
+        count.Text = eligible ? (packing && mode != WheelMode.Tools ? L.T("Packing only") : (paths.Length == 1 ? L.T("1 file") : L.F("{0} files", paths.Length))) : L.T("No actions");
+        hint.Text = packing && mode != WheelMode.Tools ? L.T("No conversions for this type") : eligible ? Prompt() : L.T("Esc to cancel");
         Render(operations);
         Resize(groups != null ? DoubleSize : SingleSize);
     }
 
-    // Keeps `operations` as an 8-item circular window into `allOperations`.
+    // Keeps `operations` as a page of up to 8 items from `allOperations`.
     private void SyncWindow()
     {
-        if (allOperations.Count <= 8) { operations = allOperations; return; }
-        int n = allOperations.Count;
-        rotationOffset = ((rotationOffset % n) + n) % n;
-        operations = Enumerable.Range(0, 8).Select(i => allOperations[(rotationOffset + i) % n]).ToList();
+        if (allOperations.Count <= 8) { currentSideIndex = 0; operations = allOperations; return; }
+        int total = TotalSides;
+        currentSideIndex = ((currentSideIndex % total) + total) % total;
+        int start = currentSideIndex * 8;
+        int count = Math.Min(8, allOperations.Count - start);
+        operations = allOperations.GetRange(start, count);
     }
 
     // Resets rotation state to zero.
     private void ResetRotation()
     {
         rotationTimer.Stop();
-        rotationOffset = 0;
+        currentSideIndex = 0;
         wheelAngle = 0;
         targetAngle = 0;
         scrollAccum = 0;
         // Note: callers always follow up with an explicit Render() or Populate() call.
     }
 
-    // Mouse-wheel handler: rotate the ring smoothly.
+    // Mouse-wheel handler: rotate to another side only if more than 8 items.
     private void OnMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        if (allOperations.Count <= 1 || groups != null) return; // Don't rotate category wheels.
+        if (allOperations.Count <= 8 || groups != null) return; // Only rotate when MORE than 8 items!
         e.Handled = true;
 
         scrollAccum += e.Delta; // Delta is in multiples of 120 typically.
         const double step = 120.0;
-        int steps = (int)(scrollAccum / step);
-        if (steps != 0)
+        if (Math.Abs(scrollAccum) >= step)
         {
-            scrollAccum -= steps * step;
-            int oldOffset = rotationOffset;
-            rotationOffset = ((rotationOffset - steps) % allOperations.Count + allOperations.Count) % allOperations.Count;
-            if (rotationOffset != oldOffset)
+            bool forward = scrollAccum < 0; // Downward scroll has negative delta in WPF
+            scrollAccum = 0;
+            int oldSide = currentSideIndex;
+            int total = TotalSides;
+            currentSideIndex = forward ? (currentSideIndex + 1) % total : (currentSideIndex - 1 + total) % total;
+            if (currentSideIndex != oldSide)
             {
                 SoundManager.PlayTick();
                 SyncWindow();
+                hint.Text = Prompt();
+                wheelAngle = forward ? 120.0 : -120.0;
+                targetAngle = 0;
                 Render(operations, wheelAngle);
+                if (!rotationTimer.IsEnabled)
+                    rotationTimer.Start();
             }
         }
-
-        // Continuous visual angle: each item spans 360/n degrees.
-        double anglePerItem = 360.0 / Math.Max(allOperations.Count, 1);
-        double subStep = (scrollAccum / step) * anglePerItem;
-        targetAngle = -rotationOffset * anglePerItem - subStep;
-        if (!rotationTimer.IsEnabled)
-            rotationTimer.Start();
     }
 
     // Spring-follow animation tick.
@@ -316,7 +402,18 @@ internal sealed class DropWheel : Window
         Render(operations, wheelAngle);
     }
 
-    private string Prompt() => groups != null ? L.T("Move onto a category, pick a tool, then release") : L.T("Release on an option");
+    private string Prompt()
+    {
+        if (groups != null) return L.T("Move onto a category, pick a tool, then release");
+        if (allOperations.Count > 8)
+            return L.F("Side {0} of {1} · scroll to rotate", currentSideIndex + 1, TotalSides);
+        return mode switch
+        {
+            WheelMode.Actions => L.T("Pick an action or release to run"),
+            WheelMode.Tools => L.T("Pick a tool or release to run"),
+            _ => L.T("Release on an option")
+        };
+    }
 
     private void Enter(object sender, DragEventArgs e)
     {
@@ -367,7 +464,7 @@ internal sealed class DropWheel : Window
             var point = e.GetPosition(canvas);
             if (openGroup >= 0 && Hit(second, point, OuterRingInner, OuterRingOuter + 10) is var tool and >= 0)
                 selected = groups![openGroup].Items[tool];
-            else if (groups == null && Hit(first, point, Inner, Outer) is var index and >= 0)
+            else if (groups == null && Hit(first, point, Inner, Outer) is var index and >= 0 && index < operations.Count)
                 selected = operations[index];
         }
         if (selected == null)
@@ -382,6 +479,206 @@ internal sealed class DropWheel : Window
         Journal.Write("DropAccepted", new { Action = selected.Id, count = files.Length, effect = "Copy" });
         SoundManager.PlayPop();
         Dispatcher.InvokeAsync(() => submit(files, selected));
+    }
+
+    private void OnHubClicked()
+    {
+        if (paths.Length == 0)
+        {
+            using var dialog = new Forms.OpenFileDialog
+            {
+                Multiselect = true,
+                Title = L.T("Select files to process")
+            };
+            if (dialog.ShowDialog() == Forms.DialogResult.OK && dialog.FileNames.Length > 0)
+            {
+                LoadFiles(dialog.FileNames, mode);
+            }
+        }
+        else
+        {
+            var next = mode switch
+            {
+                WheelMode.Convert => WheelMode.Tools,
+                WheelMode.Tools => WheelMode.Actions,
+                _ => WheelMode.Convert
+            };
+            SoundManager.PlayPop();
+            ChangeMode(next);
+        }
+    }
+
+    private void TriggerOperation(Operation selected)
+    {
+        if (paths.Length == 0)
+        {
+            using var dialog = new Forms.OpenFileDialog
+            {
+                Multiselect = true,
+                Title = L.F("Choose files for {0}", selected.Label)
+            };
+            if (dialog.ShowDialog() == Forms.DialogResult.OK && dialog.FileNames.Length > 0)
+            {
+                var files = dialog.FileNames;
+                Hide();
+                paths = [];
+                entered = false;
+                eligible = false;
+                SoundManager.PlayPop();
+                Dispatcher.InvokeAsync(() => submit(files, selected));
+            }
+            return;
+        }
+
+        var filesToRun = paths.ToArray();
+        Hide();
+        paths = [];
+        entered = false;
+        eligible = false;
+        SoundManager.PlayPop();
+        Dispatcher.InvokeAsync(() => submit(filesToRun, selected));
+    }
+
+    private void OnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        var point = e.GetPosition(canvas);
+        double dist = (point - new Point(Center, Center)).Length;
+        if (dist <= 56)
+        {
+            e.Handled = true;
+            OnHubClicked();
+            return;
+        }
+        int tool = openGroup >= 0 ? Hit(second, point, OuterRingInner, OuterRingOuter + 10) : -1;
+        int category = tool >= 0 ? -1 : Hit(first, point, Inner, Outer);
+        Operation? selected = null;
+        if (tool >= 0 && openGroup >= 0 && groups != null)
+            selected = groups[openGroup].Items[tool];
+        else if (category >= 0 && groups != null)
+        {
+            OpenGroup(category);
+            e.Handled = true;
+            return;
+        }
+        else if (category >= 0 && category < operations.Count)
+            selected = operations[category];
+
+        if (selected != null)
+        {
+            e.Handled = true;
+            TriggerOperation(selected);
+        }
+    }
+
+    private void OnMouseMove(object sender, MouseEventArgs e)
+    {
+        if (HasFileDrag) return;
+        var point = e.GetPosition(canvas);
+        int tool = openGroup >= 0 ? Hit(second, point, OuterRingInner, OuterRingOuter + 10) : -1;
+        int category = tool >= 0 ? -1 : Hit(first, point, Inner, Outer);
+        if (tool >= 0)
+            Highlight(second, tool);
+        else if (groups != null && category >= 0)
+        {
+            OpenGroup(category);
+            Highlight(second, -1);
+        }
+        else if (groups == null)
+            Highlight(first, category);
+        else
+            Highlight(second, -1);
+    }
+
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            e.Handled = true;
+            Dismiss("Escape");
+            return;
+        }
+        if (e.Key == Key.Tab)
+        {
+            e.Handled = true;
+            var next = mode switch
+            {
+                WheelMode.Convert => WheelMode.Tools,
+                WheelMode.Tools => WheelMode.Actions,
+                _ => WheelMode.Convert
+            };
+            SoundManager.PlayPop();
+            ChangeMode(next);
+            return;
+        }
+        if (e.Key == Key.F8)
+        {
+            e.Handled = true;
+            SoundManager.PlayPop();
+            ChangeMode(WheelMode.Convert);
+            return;
+        }
+        if (e.Key == Key.F9)
+        {
+            e.Handled = true;
+            SoundManager.PlayPop();
+            ChangeMode(WheelMode.Tools);
+            return;
+        }
+        if (e.Key == Key.F10)
+        {
+            e.Handled = true;
+            SoundManager.PlayPop();
+            ChangeMode(WheelMode.Actions);
+            return;
+        }
+        if (e.Key is Key.Left or Key.Up)
+        {
+            if (operations.Count > 0)
+            {
+                e.Handled = true;
+                int next = (first.Highlighted - 1 + operations.Count) % operations.Count;
+                Highlight(first, next);
+            }
+            return;
+        }
+        if (e.Key is Key.Right or Key.Down)
+        {
+            if (operations.Count > 0)
+            {
+                e.Handled = true;
+                int next = (first.Highlighted + 1) % operations.Count;
+                Highlight(first, next);
+            }
+            return;
+        }
+        if (e.Key is Key.Enter or Key.Space)
+        {
+            e.Handled = true;
+            if (first.Highlighted >= 0 && first.Highlighted < operations.Count)
+                TriggerOperation(operations[first.Highlighted]);
+            else
+                OnHubClicked();
+            return;
+        }
+        int num = e.Key switch
+        {
+            Key.D1 or Key.NumPad1 => 0,
+            Key.D2 or Key.NumPad2 => 1,
+            Key.D3 or Key.NumPad3 => 2,
+            Key.D4 or Key.NumPad4 => 3,
+            Key.D5 or Key.NumPad5 => 4,
+            Key.D6 or Key.NumPad6 => 5,
+            Key.D7 or Key.NumPad7 => 6,
+            Key.D8 or Key.NumPad8 => 7,
+            Key.D9 or Key.NumPad9 => 8,
+            _ => -1
+        };
+        if (num >= 0 && num < operations.Count)
+        {
+            e.Handled = true;
+            TriggerOperation(operations[num]);
+            return;
+        }
     }
 
     private static Point Polar(double radius, double angle) => new(Center + radius * Math.Cos(angle), Center + radius * Math.Sin(angle));

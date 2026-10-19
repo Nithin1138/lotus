@@ -76,8 +76,13 @@ final class RadialWheelView: NSView {
     var allItems: [SliceItem] = []
     /// The 8 items currently visible in the wheel (window into allItems).
     var items: [SliceItem] = []
-    /// How many positions we have logically rotated (maps allItems → displayed window).
-    private var rotationItemOffset: Int = 0
+    /// Current side/page index (0-based: 0 is Side 1, 1 is Side 2, etc.)
+    private var currentSideIndex: Int = 0
+
+    /// Total number of sides (each side has up to 8 tools).
+    var totalSides: Int {
+        max(1, (allItems.count + 7) / 8)
+    }
 
     // MARK: - Smooth Rotation Animation
     /// The visual rotation angle (degrees) applied to petal drawing, smoothly animated.
@@ -111,50 +116,55 @@ final class RadialWheelView: NSView {
 
     // MARK: - Rotation Helpers
 
-    /// Recomputes `items` from `allItems` using the current `rotationItemOffset`.
+    /// Recomputes `items` from `allItems` using the current `currentSideIndex`.
     private func syncDisplayedItems() {
         guard !allItems.isEmpty else { items = []; return }
-        let n = allItems.count
-        let slotCount = min(n, 8)
-        let offset = ((rotationItemOffset % n) + n) % n
-        items = (0..<slotCount).map { allItems[(offset + $0) % n] }
+        if allItems.count <= 8 {
+            currentSideIndex = 0
+            items = allItems
+            return
+        }
+        let total = totalSides
+        currentSideIndex = ((currentSideIndex % total) + total) % total
+        let start = currentSideIndex * 8
+        let end = min(start + 8, allItems.count)
+        items = Array(allItems[start..<end])
     }
 
-    /// True when we have more items than the 8 visible slots.
+    /// True when we have more items than the 8 visible slots (multiple sides to rotate between).
     var hasMoreItems: Bool { allItems.count > 8 }
 
     // MARK: - Scroll-to-rotate
     override func scrollWheel(with event: NSEvent) {
-        guard allItems.count > 1, mode == .tools || mode == .conversions else { return }
+        // Only allow rotation if there are more than 8 items!
+        guard allItems.count > 8, mode == .tools || mode == .conversions else { return }
 
         // Accumulate physical delta (trackpad gives fine-grained deltas).
         let delta = event.scrollingDeltaX != 0 ? event.scrollingDeltaX : -event.scrollingDeltaY
         scrollAccumulator += delta
 
-        // Each 28 pt of scroll = rotate by 1 item.
-        let step: CGFloat = 28.0
-        let stepsDelta = Int(scrollAccumulator / step)
-        if stepsDelta != 0 {
-            scrollAccumulator -= CGFloat(stepsDelta) * step
-            let oldOffset = rotationItemOffset
-            rotationItemOffset = ((rotationItemOffset - stepsDelta) % allItems.count + allItems.count) % allItems.count
-            if rotationItemOffset != oldOffset {
+        // Each 24 pt of scroll flips to the next/previous side
+        let step: CGFloat = 24.0
+        if abs(scrollAccumulator) >= step {
+            let forward = scrollAccumulator > 0
+            scrollAccumulator = 0
+
+            let oldSide = currentSideIndex
+            let total = totalSides
+            currentSideIndex = forward ? (currentSideIndex + 1) % total : (currentSideIndex - 1 + total) % total
+
+            if currentSideIndex != oldSide {
                 SoundManager.playTick()
                 syncDisplayedItems()
                 hoveredIndex = -1
+
+                // Spin animation: smooth rotation flip into the new side
+                wheelRotationAngle = forward ? 120.0 : -120.0
+                targetRotationAngle = 0
+                startRotationAnimation()
+                needsDisplay = true
             }
         }
-
-        // Compute the continuous visual rotation angle that matches the item offset.
-        let anglePerItem = 360.0 / CGFloat(max(allItems.count, 1))
-        // We drive the wheel visually with the sub-step scroll progress (smooth feel).
-        let subStepAngle = (scrollAccumulator / step) * anglePerItem
-        let baseAngle = -CGFloat(rotationItemOffset) * anglePerItem
-        targetRotationAngle = baseAngle - subStepAngle
-
-        // Kick off the animation timer if not already running.
-        startRotationAnimation()
-        needsDisplay = true
     }
 
     private func startRotationAnimation() {
@@ -182,7 +192,7 @@ final class RadialWheelView: NSView {
     func resetRotation() {
         rotationTimer?.invalidate()
         rotationTimer = nil
-        rotationItemOffset = 0
+        currentSideIndex = 0
         wheelRotationAngle = 0
         targetRotationAngle = 0
         scrollAccumulator = 0
@@ -473,6 +483,9 @@ final class RadialWheelView: NSView {
         deg = deg.truncatingRemainder(dividingBy: 360.0)
         if deg < 0 { deg += 360.0 }
 
+        if items.count == 1 {
+            return 0
+        }
         let angle = sliceAngle()
         let idx = Int(deg / angle)
         return (idx >= 0 && idx < items.count) ? idx : -1
@@ -804,8 +817,15 @@ final class RadialWheelView: NSView {
             let isHovered = (i == hoveredIndex)
 
             // Apply the smooth rotation offset so the whole ring spins together.
-            let s = 90.0 - CGFloat(i) * angleStep - gap / 2.0 + wheelRotationAngle
-            let e = s - (angleStep - gap)
+            let s: CGFloat
+            let e: CGFloat
+            if items.count == 1 {
+                s = 270.0 - gap / 2.0 + wheelRotationAngle
+                e = s - (360.0 - gap)
+            } else {
+                s = 90.0 - CGFloat(i) * angleStep - gap / 2.0 + wheelRotationAngle
+                e = s - (angleStep - gap)
+            }
             let petal = makeCushionPetal(center: wheelCenter, innerR: innerRadius, outerR: outerRadius, startDeg: s, endDeg: e, outerCornerRadius: outerCR, innerCornerRadius: innerCR)
 
             // Fill & Shadow
@@ -879,26 +899,24 @@ final class RadialWheelView: NSView {
             }
         }
 
-        // 2b. "More items" arc-dot indicator – shown at outer rim when allItems.count > 8
+        // 2b. Side indicator and scroll hint – only shown when allItems.count > 8
         if hasMoreItems {
-            let dotCount = 5
+            let dotCount = totalSides
             let indicatorRadius = outerRadius + 14.0
-            let arcSpan: CGFloat = 40.0 // degrees, centred at bottom of wheel
-            let anchorDeg: CGFloat = 270.0 + wheelRotationAngle // bottom, rotates with wheel
+            let arcSpan: CGFloat = CGFloat(max(1, dotCount - 1)) * 16.0 // compact dot indicator
+            let anchorDeg: CGFloat = 270.0 // bottom of wheel
             context.saveGState()
             for di in 0..<dotCount {
-                let fraction = CGFloat(di) / CGFloat(dotCount - 1) - 0.5
+                let fraction = dotCount > 1 ? (CGFloat(di) / CGFloat(dotCount - 1) - 0.5) : 0
                 let dotDeg = anchorDeg + fraction * arcSpan
                 let dotRad = dotDeg * .pi / 180.0
                 let cx = wheelCenter.x + indicatorRadius * cos(dotRad)
                 let cy = wheelCenter.y + indicatorRadius * sin(dotRad)
-                // Centre dot slightly bigger and brighter
-                let isCentre = (di == dotCount / 2)
-                let dotSize: CGFloat = isCentre ? 4.5 : 3.0
-                let alpha: CGFloat = isCentre ? 0.75 : 0.35
-                let dotColor = dark
-                    ? NSColor(white: 1.0, alpha: alpha)
-                    : NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: alpha)
+                let isCurrent = (di == currentSideIndex)
+                let dotSize: CGFloat = isCurrent ? 5.5 : 3.5
+                let dotColor = isCurrent
+                    ? NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
+                    : (dark ? NSColor(white: 1.0, alpha: 0.35) : NSColor(white: 0.0, alpha: 0.25))
                 dotColor.setFill()
                 let dotRect = CGRect(x: cx - dotSize / 2, y: cy - dotSize / 2, width: dotSize, height: dotSize)
                 let dotPath = CGPath(ellipseIn: dotRect, transform: nil)
@@ -907,12 +925,12 @@ final class RadialWheelView: NSView {
             }
             context.restoreGState()
 
-            // Tiny "scroll" hint label — only when not hovering a petal
+            // Side X of Y · scroll to rotate hint
             if hoveredIndex < 0 {
-                let hintFont = NSFont.systemFont(ofSize: 8.0, weight: .medium)
-                let hintColor = dark ? NSColor(white: 0.55, alpha: 0.90) : NSColor(white: 0.45, alpha: 0.80)
+                let hintFont = NSFont.systemFont(ofSize: 8.5, weight: .semibold)
+                let hintColor = dark ? NSColor(white: 0.65, alpha: 0.95) : NSColor(white: 0.40, alpha: 0.85)
                 let hintAttrs: [NSAttributedString.Key: Any] = [.font: hintFont, .foregroundColor: hintColor]
-                let hintStr = NSAttributedString(string: "scroll to rotate", attributes: hintAttrs)
+                let hintStr = NSAttributedString(string: "Side \(currentSideIndex + 1) of \(totalSides) · scroll to rotate", attributes: hintAttrs)
                 let hSz = hintStr.size()
                 hintStr.draw(at: NSPoint(x: wheelCenter.x - hSz.width / 2, y: wheelCenter.y - outerRadius - 28))
             }
@@ -1359,6 +1377,13 @@ final class DropWheelWindowController: NSWindowController {
 
         guard !activePaths.isEmpty else { return }
 
+        // Check license / trial status
+        guard LicenseManager.shared.canUseApp() else {
+            hideWheel()
+            LicenseWindowController.shared.show()
+            return
+        }
+
         // 1. Check if Action (AirDrop, Float Shelf, Copy, Move, Copy Path, Terminal)
         if item.isAction || item.id.hasPrefix("action:") {
             executeFileAction(item.id, paths: activePaths)
@@ -1373,7 +1398,8 @@ final class DropWheelWindowController: NSWindowController {
             if activePaths.count > 1 {
                 let multi = Catalog.multiFileTools(for: activePaths)
                 if let matched = multi.first(where: { $0.id == item.id }) {
-                    if matched.fields.isEmpty {
+                    let zeroParamTools = ["removeMetadata", "muteVideo", "joinVideos", "joinAudio", "createPDF"]
+                    if matched.fields.isEmpty && zeroParamTools.contains(matched.id) {
                         executeJob(action: item.id, paths: activePaths, params: nil)
                         return
                     } else {
@@ -1395,9 +1421,15 @@ final class DropWheelWindowController: NSWindowController {
 
             guard let first = activePaths.first else { return }
             let cat = Catalog.category(for: first)
-            let tool = Catalog.tools(for: cat).first(where: { $0.id == item.id })
+            let tool = Catalog.findTool(id: item.id) ?? Catalog.tools(for: cat).first(where: { $0.id == item.id })
 
-            if let tool = tool, !tool.fields.isEmpty {
+            if let tool = tool {
+                let zeroParamTools = ["removeMetadata", "muteVideo", "joinVideos", "joinAudio", "createPDF"]
+                if tool.fields.isEmpty && zeroParamTools.contains(tool.id) {
+                    executeJob(action: item.id, paths: activePaths, params: nil)
+                    return
+                }
+
                 let toolCtrl = ToolWindowController(paths: activePaths, tool: tool)
                 activeToolControllers.append(toolCtrl)
                 toolCtrl.onClose = { [weak self, weak toolCtrl] in
@@ -1477,6 +1509,12 @@ final class DropWheelWindowController: NSWindowController {
     }
 
     private func executeJob(action: String, paths: [String], params: [String: String]?) {
+        guard LicenseManager.shared.canUseApp() else {
+            hideWheel()
+            LicenseWindowController.shared.show()
+            return
+        }
+
         let job = ConversionJob(Paths: paths, Action: action, Parameters: params)
         TaskIndicatorManager.shared.enqueue(job: job) { card in
             BackendBridge.shared.execute(

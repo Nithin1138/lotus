@@ -1,6 +1,6 @@
 from pathlib import Path
 from contextlib import contextmanager
-import io, json, os, re, shutil, subprocess, tempfile, time, uuid
+import io, json, os, re, shutil, subprocess, sys, tempfile, time, uuid
 
 BASE=Path(__file__).resolve().parent.parent
 
@@ -41,9 +41,16 @@ def category(path):
 def number(params,name,default=0):
     value=params.get(name,default)
     if value in ('',None): return float(default)
-    if ':' in str(value):
-        parts=str(value).split(':'); return sum(float(x)*60**i for i,x in enumerate(reversed(parts)))
-    return float(value)
+    s=str(value).strip()
+    if ':' in s:
+        parts=s.split(':'); return sum(float(x)*60**i for i,x in enumerate(reversed(parts)))
+    try:
+        return float(s)
+    except ValueError:
+        import re
+        m=re.search(r'[-+]?\d*\.?\d+', s)
+        if m: return float(m.group(0))
+        return float(default)
 
 def truth(value): return str(value).lower() in ('true','1','yes','on')
 
@@ -98,10 +105,10 @@ def output_stem(path,suffix):
 SUFFIX={'rotateImage':'rotated','rotateVideo':'rotated','cropImage':'cropped','cropVideo':'cropped','compress':'compressed','editImage':'edited','editVideo':'edited',
     'frameImage':'framed','redactImage':'redacted','redactVideo':'redacted','redactAudio':'beeped','removeMetadata':'clean','redactPDF':'redacted','muteVideo':'muted',
     'trimVideo':'trimmed','trimAudio':'trimmed','changeVideoSpeed':'speed','normalizeAudio':'normalized','audioChannels':'channels','audioToVideo':'visualizer',
-    'resizeImage':'resized','watermark':'watermarked','makeIcon':'icons','ocrImage':'text','ocrPDF':'text','videoToGif':'gif','videoSettings':'resized',
+    'resizeImage':'resized','watermark':'watermarked','makeIcon':'icons','annotateImage':'annotated','ocrImage':'text','ocrPDF':'text','videoToGif':'gif','videoSettings':'resized',
     'videoEffects':'effects','subtitlesAudio':'mixed','audioEffects':'adjusted','ringtone':'ringtone','pdfPassword':'protected','pdfNumbers':'numbered',
     'extractPdfImages':'images','packArchive':'packed','createAnimation':'animation','joinAudio':'joined','joinVideos':'joined','splitVideo':'clips',
-    'videoSnapshots':'frames','extractArchive':'extracted','createCollage':'collage','createPDF':'combined'}
+    'videoSnapshots':'frames','extractArchive':'extracted','createCollage':'collage','createPDF':'combined','organizePDF':'organized'}
 
 def work_dir(path):
     """Where results are written: the folder chosen in the app, or next to the source file."""
@@ -150,8 +157,22 @@ def open_image(path,frame=None):
         pillow_heif.register_heif_opener()
     except Exception: pass
     if Path(path).suffix.lower()=='.svg':
-        import resvg_py
-        image=Image.open(io.BytesIO(resvg_py.svg_to_bytes(svg_path=str(path))))
+        try:
+            import resvg_py
+            image=Image.open(io.BytesIO(resvg_py.svg_to_bytes(svg_path=str(path))))
+        except Exception:
+            try:
+                import cairosvg
+                image=Image.open(io.BytesIO(cairosvg.svg2png(url=str(path))))
+            except Exception:
+                if sys.platform=='darwin':
+                    import subprocess, tempfile
+                    with tempfile.TemporaryDirectory() as qldir:
+                        res = subprocess.run(['qlmanage', '-t', '-s', '1000', '-o', qldir, str(path)], capture_output=True)
+                        gen = Path(qldir) / (Path(path).name + '.png')
+                        if gen.exists(): image = Image.open(gen).copy()
+                        else: raise ValueError(T('SVG rendering failed on this system'))
+                else: raise ValueError(T('SVG rendering requires resvg_py or cairosvg'))
     else: image=Image.open(path)
     frames=getattr(image,'n_frames',1)
     if frame is not None and int(frame)>=0:
@@ -176,15 +197,23 @@ def save_image(image,path,fmt,quality=90,metadata=None):
     from PIL import Image
     # Metadata is written only when given: some encoders (HEIF) would otherwise copy the source's EXIF and XMP.
     for key in ('exif','xmp','XML:com.adobe.xmp'): image.info.pop(key,None)
-    fmt=fmt.lower(); mode={'jpg':'JPEG','jpeg':'JPEG','png':'PNG','webp':'WEBP','heic':'HEIF','tiff':'TIFF','tif':'TIFF','avif':'AVIF','bmp':'BMP'}[fmt]
+    fmt=fmt.lower()
+    mode={'jpg':'JPEG','jpeg':'JPEG','png':'PNG','webp':'WEBP','heic':'HEIF','tiff':'TIFF','tif':'TIFF','avif':'AVIF','bmp':'BMP','ico':'ICO'}.get(fmt, fmt.upper())
     if mode in ('JPEG','BMP'):
         if 'A' in image.getbands():
             background=Image.new('RGB',image.size,'white'); background.paste(image,mask=image.getchannel('A')); image=background
         else: image=image.convert('RGB')
+    elif mode == 'ICO':
+        if image.width > 256 or image.height > 256:
+            factor = 256 / max(image.width, image.height)
+            image = image.resize((max(1, round(image.width * factor)), max(1, round(image.height * factor))), Image.Resampling.LANCZOS)
+        if image.mode not in ('RGBA', 'RGB'):
+            image = image.convert('RGBA')
     options={'quality':int(quality)} if mode in ('JPEG','WEBP','HEIF','AVIF') else {}
     if mode=='PNG': options={'optimize':True}
     if mode=='TIFF': options={'compression':'tiff_deflate'}
     if mode=='HEIF': options['exif']=None  # pillow_heif would otherwise copy the EXIF Pillow has cached for the image
+    if mode=='ICO': options['sizes']=[(s,s) for s in (16,24,32,48,64,128,256)]
     if metadata:
         if mode in ('JPEG','WEBP','PNG','HEIF','TIFF','AVIF'): options['exif']=metadata.tobytes()
     image.save(path,format=mode,**options)

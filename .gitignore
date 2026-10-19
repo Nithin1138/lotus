@@ -31,6 +31,20 @@ work/*.jpg
 Thumbs.db
 .DS_Store
 
+# Licensing private keys (NEVER commit private keys)
+licensing/keys/*.pem
+licensing/keys/private*
+licensing/*.pem
+
 # Compiled macOS helper binaries (sources are .swift)
 work/DropDial/backend/doc2pdf-mac
 work/DropDial/backend/ocr-mac
+
+# Swift / SPM build directory
+.build/
+**/.build/
+*.build/
+DerivedData/
+
+# Test output artifacts
+test_report.json

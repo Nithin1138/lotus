@@ -5,6 +5,8 @@ from common import *
 import imagetools
 
 def convert(path,fmt,params):
+    if fmt == 'ico':
+        return imagetools.make_icon(path, {'iconKind': 'ico'})
     if fmt in ('pdf','docx'):
         from documents import images_document
         return images_document([path],fmt,params)

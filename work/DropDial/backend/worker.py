@@ -25,6 +25,9 @@ def one(path,action,params):
         import archives
         return archives.convert([path],fmt,params)
     if action=='flow': return run_flow(path,params)
+    if action=='packArchive':
+        import archives
+        return archives.convert([path], params.get('format', 'zip'), {**params, '_pack': True})
     if action=='extractArchive':
         import archives
         return archives.extract(path,params)

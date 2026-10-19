@@ -57,6 +57,7 @@ EN = {
     'This audio cannot reach the target size in this format; raise the target or choose a lossy format': 'This audio cannot reach the target size in this format; raise the target or choose a lossy format',
     # office
     'Page {0}': 'Page {0}',
+    'Apple Pages export requires macOS with the Pages app installed': 'Apple Pages export requires macOS with the Pages app installed',
     'This text export needs Microsoft Office': 'This text export needs Microsoft Office',
     'Metadata editing is not supported for this older format': 'Metadata editing is not supported for this older format',
     'Metadata editing supports modern Office formats; convert to PPTX/DOCX/XLSX first': 'Metadata editing supports modern Office formats; convert to PPTX/DOCX/XLSX first',

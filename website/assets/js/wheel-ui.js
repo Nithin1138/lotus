@@ -32,9 +32,10 @@
     svg.replaceChildren();
     node("circle", { class: "disk", cx: CENTER, cy: CENTER, r: 180 }, svg);
     // Draw all sidewalls underneath every face so neighbouring keys never cover one another.
-    const sides = node("g", { class: "wheel-sides", "aria-hidden": "true" }, svg);
-    const faces = node("g", { class: "wheel-faces" }, svg);
-    return { sides, faces };
+    const rotator = node("g", { class: "wheel-rotator" }, svg);
+    const sides = node("g", { class: "wheel-sides", "aria-hidden": "true" }, rotator);
+    const faces = node("g", { class: "wheel-faces" }, rotator);
+    return { sides, faces, rotator };
   }
 
   function petal(layers, index, count, attrs = {}) {
@@ -56,6 +57,25 @@
     });
   }
 
+  function spin(rotator, fromAngle, toAngle, onComplete) {
+    let current = fromAngle;
+    let animId = null;
+    function step() {
+      const diff = toAngle - current;
+      if (Math.abs(diff) < 0.1) {
+        current = toAngle;
+        rotator.setAttribute("transform", `rotate(${current} ${CENTER} ${CENTER})`);
+        if (onComplete) onComplete();
+        return;
+      }
+      current += diff * 0.18;
+      rotator.setAttribute("transform", `rotate(${current} ${CENTER} ${CENTER})`);
+      animId = requestAnimationFrame(step);
+    }
+    step();
+    return () => { if (animId) cancelAnimationFrame(animId); };
+  }
+
   function hit(svg, x, y) {
     // x/y are viewBox coordinates based on the layout size, not the opening animation.
     // Use the actual path fill: rounded corners, gaps and the central dead zone are not selectable.
@@ -64,5 +84,5 @@
     return [...svg.querySelectorAll(".petal")].findIndex(path => path.isPointInFill(point));
   }
 
-  window.ZD_WHEEL = { CENTER, OUTER, INNER, polar, keycap, base, petal, hub, select, hit };
+  window.ZD_WHEEL = { CENTER, OUTER, INNER, polar, keycap, base, petal, hub, select, spin, hit };
 })();

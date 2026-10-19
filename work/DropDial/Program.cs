@@ -316,7 +316,7 @@ internal sealed class Resident : IDisposable
     private readonly Channel<QueuedJob> queue = Channel.CreateBounded<QueuedJob>(new BoundedChannelOptions(16) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
     private readonly CancellationTokenSource stopping = new();
     private readonly DragShortcutTracker dragShortcuts = new(Native.GetSystemMetrics(68), Native.GetSystemMetrics(69));
-    private bool f8, f9, escape, mouse, releasePending;
+    private bool f8, f9, f10, escape, mouse, releasePending;
     private DateTime activated = DateTime.MinValue;
     private string? lastOutput;
     private bool disposed;
@@ -352,6 +352,7 @@ internal sealed class Resident : IDisposable
         StartupManager.RefreshPortablePath();
         Journal.Prune();
         wheel = new DropWheel(BeginOperation);
+        FloatShelfWindow.Instance.OnExecuteOperation = (files, op) => BeginOperation(files, op);
         trayIcon = AppIcon.CreateTrayIcon();
         tray = new Forms.NotifyIcon { Icon = trayIcon, Visible = true };
         BuildTrayMenu();
@@ -367,6 +368,12 @@ internal sealed class Resident : IDisposable
         taskIndicator.ResumeRequested += card => { if (jobs.FirstOrDefault(j => j.Card == card) is { } job) ResumeJob(job); };
         taskIndicator.CancelRequested += card => { if (jobs.FirstOrDefault(j => j.Card == card) is { } job) CancelJob(job); };
         tray.DoubleClick += (_, _) => ShowWelcome();
+        UpdateManager.UpdateStatusChanged += () => app.Dispatcher.InvokeAsync(BuildTrayMenu);
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(3000);
+            await UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
+        });
         timer = new DispatcherTimer(DispatcherPriority.Input) { Interval = TimeSpan.FromMilliseconds(25) };
         timer.Tick += Poll;
         timer.Start();
@@ -482,12 +489,34 @@ internal sealed class Resident : IDisposable
             Process.Start(new ProcessStartInfo(Notices.Path) { UseShellExecute = true });
     }
 
+    private void PromptSelectFiles()
+    {
+        using var dialog = new Forms.OpenFileDialog
+        {
+            Multiselect = true,
+            Title = L.T("Select files to process")
+        };
+        if (dialog.ShowDialog() == Forms.DialogResult.OK && dialog.FileNames.Length > 0)
+        {
+            Native.GetCursorPos(out var pt);
+            wheel.OpenAt(pt, WheelMode.Convert);
+            wheel.LoadFiles(dialog.FileNames, WheelMode.Convert);
+        }
+    }
+
     private void BuildTrayMenu()
     {
-        tray.Text = L.T("DropDial · Drag + Shift to convert / Ctrl+Shift for tools");
+        tray.Text = L.T("DropDial · Drag + Shift to convert / Ctrl+Shift tools / Alt actions");
         var old = tray.ContextMenuStrip;
         var items = new Forms.ContextMenuStrip();
-        items.Items.Add(L.T("How to use: drag a file + Shift / Ctrl+Shift"), null, (_, _) => ShowWelcome());
+        items.Items.Add(L.T("Formats Wheel") + "\tF8", null, (_, _) => Activate(WheelMode.Convert, "TrayMenu"));
+        items.Items.Add(L.T("Tools Wheel") + "\tF9", null, (_, _) => Activate(WheelMode.Tools, "TrayMenu"));
+        items.Items.Add(L.T("Actions Wheel") + "\tF10", null, (_, _) => Activate(WheelMode.Actions, "TrayMenu"));
+        items.Items.Add(L.T("Floating Shelf"), null, (_, _) => FloatShelfWindow.Instance.ShowWindow());
+        items.Items.Add(new Forms.ToolStripSeparator());
+        items.Items.Add(L.T("Choose Files…") + "\tCtrl+O", null, (_, _) => PromptSelectFiles());
+        items.Items.Add(new Forms.ToolStripSeparator());
+        items.Items.Add(L.T("How to Use DropDial"), null, (_, _) => ShowWelcome());
         items.Items.Add(new Forms.ToolStripSeparator());
         var showProgress = items.Items.Add(L.T("Show progress"), null, (_, _) => taskIndicator.ShowAll());
         var pauseAll = items.Items.Add(L.T("Pause all jobs"), null, (_, _) =>
@@ -553,9 +582,19 @@ internal sealed class Resident : IDisposable
             if (result.Message != null) Notify(L.T("Start with Windows"), result.Message);
         };
         items.Items.Add(startupItem);
+        if (UpdateManager.AvailableUpdate is { } update)
+        {
+            items.Items.Add($"✨ Update to {update.TagName} Available...", null, (_, _) => _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: true));
+        }
+        else
+        {
+            items.Items.Add(L.T("Check for Updates..."), null, (_, _) => _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: true));
+        }
+        var licenseMenuItem = items.Items.Add(LicenseManager.CurrentStatus.DisplayText, null, (_, _) => LicenseWindow.ShowDialogOrActivate());
         items.Items.Add(L.T("Quit DropDial"), null, (_, _) => app.Shutdown());
         items.Opening += (_, _) =>
         {
+            licenseMenuItem.Text = LicenseManager.CurrentStatus.DisplayText;
             RefreshStartupMenu();
             recentMenu.DropDownItems.Clear();
             foreach (string output in recent.Take(10))
@@ -584,16 +623,16 @@ internal sealed class Resident : IDisposable
         item.ToolTipText = status.Message ?? L.T("Run quietly in the background after signing in to Windows.");
     }
 
-    private void Activate(bool tools, string reason, bool modifier = false)
+    private void Activate(WheelMode mode, string reason, bool modifier = false)
     {
         if (wheel.IsVisible)
         {
-            if (wheel.ToolsMode == tools)
+            if (wheel.CurrentMode == mode)
                 return;
             activated = DateTime.UtcNow;
             releasePending = false;
-            wheel.ChangeMode(tools);
-            Journal.Write("WheelModeChanged", new { reason, tools });
+            wheel.ChangeMode(mode);
+            Journal.Write("WheelModeChanged", new { reason, mode });
             return;
         }
         if (!modifier && (DateTime.UtcNow - activated).TotalMilliseconds < 200)
@@ -601,8 +640,8 @@ internal sealed class Resident : IDisposable
         activated = DateTime.UtcNow;
         releasePending = false;
         Native.GetCursorPos(out var point);
-        wheel.OpenAt(point, tools);
-        Journal.Write("WheelOpened", new { reason, tools, mouseDown = Native.Down(1), point.X, point.Y });
+        wheel.OpenAt(point, mode);
+        Journal.Write("WheelOpened", new { reason, mode, mouseDown = Native.Down(1), point.X, point.Y });
         if (modifier)
         {
             long instance = wheel.Instance;
@@ -614,19 +653,29 @@ internal sealed class Resident : IDisposable
 
     private void Poll(object? sender, EventArgs e)
     {
-        bool nextF8 = Native.Down(0x77), nextF9 = Native.Down(0x78), nextEscape = Native.Down(0x1B), nextMouse = Native.Down(1);
+        bool nextF8 = Native.Down(0x77), nextF9 = Native.Down(0x78), nextF10 = Native.Down(0x79), nextEscape = Native.Down(0x1B), nextMouse = Native.Down(1);
         Native.GetCursorPos(out var cursor);
         var request = dragShortcuts.Update(nextMouse, Native.Down(0x10), Native.Down(0x11), Native.Down(0x12), cursor.X, cursor.Y, nextMouse && !mouse && Native.ShellFileWindow());
         if (nextEscape && !escape)
             dragShortcuts.Cancel();
         else if (request != DragMenuRequest.None)
-            Activate(request == DragMenuRequest.Tools, "DragModifier", true);
-        // F8/F9 are only observed while the mouse is held, never registered as global hotkeys,
-        // so other applications (Excel recalculation, debugger breakpoints) still receive them.
+        {
+            WheelMode m = request switch
+            {
+                DragMenuRequest.Actions => WheelMode.Actions,
+                DragMenuRequest.Tools => WheelMode.Tools,
+                _ => WheelMode.Convert
+            };
+            Activate(m, "DragModifier", true);
+        }
+        // F8/F9/F10 are only observed while the mouse is held, never registered as global hotkeys,
+        // so other applications still receive them.
         if (nextF8 && !f8 && nextMouse)
-            Activate(false, "DragFunctionKey", true);
+            Activate(WheelMode.Convert, "DragFunctionKey", true);
         if (nextF9 && !f9 && nextMouse)
-            Activate(true, "DragFunctionKey", true);
+            Activate(WheelMode.Tools, "DragFunctionKey", true);
+        if (nextF10 && !f10 && nextMouse)
+            Activate(WheelMode.Actions, "DragFunctionKey", true);
         if (nextEscape && !escape && wheel.IsVisible)
             wheel.Dismiss("Escape");
         if (wheel.IsVisible && mouse && !nextMouse && !releasePending)
@@ -642,12 +691,19 @@ internal sealed class Resident : IDisposable
             wheel.Dismiss("IdleTimeout");
         f8 = nextF8;
         f9 = nextF9;
+        f10 = nextF10;
         escape = nextEscape;
         mouse = nextMouse;
     }
 
     private void Enqueue(ConversionJob job)
     {
+        if (!LicenseManager.CanUseApp())
+        {
+            LicenseWindow.ShowDialogOrActivate();
+            return;
+        }
+
         if (!queue.Writer.TryWrite(new QueuedJob(job)))
         { Notify(L.T("The job queue is full"), L.T("Please try again when the current files have finished.")); return; }
         Journal.Write("Queued", new { count = job.Paths.Length, job.Action });
@@ -665,7 +721,18 @@ internal sealed class Resident : IDisposable
 
     private void BeginOperation(string[] paths, Operation operation)
     {
+        if (!LicenseManager.CanUseApp())
+        {
+            LicenseWindow.ShowDialogOrActivate();
+            return;
+        }
+
         Catalog.RememberLast(paths, operation);
+        if (operation.Id.StartsWith("action:"))
+        {
+            ExecuteFileAction(operation.Id, paths);
+            return;
+        }
         if (operation.Parts != null)
         {
             var combined = new ComboWindow(paths, operation, EnqueueTool);
@@ -686,14 +753,108 @@ internal sealed class Resident : IDisposable
             return;
         }
         // Tools with settings, an order to choose, or a player open a window.
-        if (operation.Tool && ((operation.Fields?.Length ?? 0) > 0 || operation.Ordered || Catalog.Category(paths[0]) is "audio" or "video"))
+        if (operation.Tool)
         {
-            var tool = new ToolWindow(paths, operation, EnqueueTool);
-            tool.Show();
-            tool.Activate();
+            try
+            {
+                var def = Catalog.Definition(operation.Id, Catalog.Category(paths[0]));
+                if (operation.Fields == null || operation.Fields.Length == 0)
+                    operation = def;
+            }
+            catch { }
+
+            string[] zeroParamTools = ["muteVideo", "joinVideos", "joinAudio", "createPDF"];
+            if (zeroParamTools.Contains(operation.Id) && (operation.Fields == null || operation.Fields.Length == 0))
+            {
+                Enqueue(new ConversionJob(paths, operation.Id));
+            }
+            else
+            {
+                var tool = new ToolWindow(paths, operation, EnqueueTool);
+                tool.Show();
+                tool.Activate();
+            }
         }
         else
             Enqueue(new ConversionJob(paths, operation.Id));
+    }
+
+    private void ExecuteFileAction(string actionId, string[] paths)
+    {
+        if (paths.Length == 0) return;
+        switch (actionId)
+        {
+            case "action:float":
+                FloatShelfWindow.Instance.AddFiles(paths);
+                FloatShelfWindow.Instance.ShowWindow();
+                SoundManager.PlayPop();
+                break;
+
+            case "action:copy":
+                try
+                {
+                    var list = new System.Collections.Specialized.StringCollection();
+                    list.AddRange(paths);
+                    System.Windows.Clipboard.SetFileDropList(list);
+                    Notify("DropDial", paths.Length == 1 ? L.T("1 file copied to clipboard") : L.F("{0} files copied to clipboard", paths.Length));
+                }
+                catch (Exception ex) { Notify(L.T("Copy"), ex.Message); }
+                break;
+
+            case "action:move":
+                try
+                {
+                    using var dialog = new Forms.FolderBrowserDialog { Description = L.T("Choose Destination Folder") };
+                    if (dialog.ShowDialog() == Forms.DialogResult.OK && Directory.Exists(dialog.SelectedPath))
+                    {
+                        int moved = 0;
+                        foreach (var p in paths)
+                        {
+                            if (File.Exists(p))
+                            {
+                                string dest = Path.Combine(dialog.SelectedPath, Path.GetFileName(p));
+                                if (File.Exists(dest))
+                                    dest = Path.Combine(dialog.SelectedPath, Path.GetFileNameWithoutExtension(p) + "_" + Guid.NewGuid().ToString("N")[..4] + Path.GetExtension(p));
+                                File.Move(p, dest);
+                                moved++;
+                            }
+                        }
+                        Notify("DropDial", L.F("Moved {0} files to {1}", moved, Path.GetFileName(dialog.SelectedPath)));
+                    }
+                }
+                catch (Exception ex) { Notify(L.T("Move"), ex.Message); }
+                break;
+
+            case "action:copyPath":
+                try
+                {
+                    System.Windows.Clipboard.SetText(string.Join(Environment.NewLine, paths));
+                    Notify("DropDial", L.T("File paths copied to clipboard"));
+                }
+                catch (Exception ex) { Notify(L.T("Copy Path"), ex.Message); }
+                break;
+
+            case "action:terminal":
+                try
+                {
+                    string folder = Directory.Exists(paths[0]) ? paths[0] : (Path.GetDirectoryName(paths[0]) ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+                    Process.Start(new ProcessStartInfo("cmd.exe") { WorkingDirectory = folder, UseShellExecute = true });
+                }
+                catch (Exception ex) { Notify(L.T("Terminal"), ex.Message); }
+                break;
+
+            case "action:share":
+                try
+                {
+                    ExplorerIntegration.Reveal(paths[0]);
+                }
+                catch { }
+                break;
+
+            case "action:metadata":
+                Enqueue(new ConversionJob(paths, "removeMetadata"));
+                break;
+        }
     }
 
     private async Task WorkQueue()
@@ -886,6 +1047,7 @@ internal sealed class Resident : IDisposable
         tray.Dispose();
         trayIcon.Dispose();
         welcome?.Close();
+        FloatShelfWindow.Instance.Close();
         wheel.Close();
         taskIndicator.Close();
         Journal.Write("Stopped");

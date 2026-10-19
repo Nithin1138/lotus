@@ -71,11 +71,28 @@ def native(path,fmt,target):
                         return
                 except Exception: pass
 
-        # Native textutil for RTF / RTFD -> DOCX / TXT / HTML
-        if path.suffix.lower() in ('.rtf', '.rtfd') and fmt in ('docx', 'doc', 'txt', 'html'):
-            t_fmt = 'docx' if fmt in ('docx', 'doc') else fmt
+        # Native textutil for RTF / RTFD / DOCX / DOC -> HTML / TXT
+        if path.suffix.lower() in ('.rtf', '.rtfd', '.docx', '.doc') and fmt in ('txt', 'html'):
             try:
-                res = subprocess.run(['textutil', '-convert', t_fmt, '-output', str(target), str(path)], capture_output=True, timeout=30)
+                res = subprocess.run(['textutil', '-convert', fmt, '-output', str(target), str(path)], capture_output=True, timeout=30)
+                if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
+                    return
+            except Exception: pass
+
+        if path.suffix.lower() in ('.rtf', '.rtfd') and fmt in ('docx', 'doc'):
+            try:
+                res = subprocess.run(['textutil', '-convert', 'docx', '-output', str(target), str(path)], capture_output=True, timeout=30)
+                if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
+                    return
+            except Exception: pass
+
+        # Apple Pages for DOCX / DOC -> PAGES / EPUB
+        if path.suffix.lower() in ('.docx', '.doc') and fmt in ('pages', 'epub'):
+            subprocess.run(['open', '-g', '-j', '-a', 'Pages'], capture_output=True)
+            as_action = f'save front document in (POSIX file "{target}")' if fmt == 'pages' else f'export front document to (POSIX file "{target}") as EPUB'
+            as_code = f'tell application "Pages"\nopen (POSIX file "{path}")\ndelay 0.5\n{as_action}\nclose front document saving no\nend tell'
+            try:
+                res = subprocess.run(['osascript', '-e', as_code], capture_output=True, timeout=45)
                 if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
                     return
             except Exception: pass
@@ -171,7 +188,7 @@ def data_rows(path,folder):
         try:
             import winreg
             with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,'Excel.Application\\CLSID'):pass
-        except FileNotFoundError:
+        except Exception:
             from openpyxl import load_workbook
             workbook=load_workbook(path,data_only=True,read_only=True);result=[{'Name':sheet.title,'Rows':[list(row) for row in sheet.iter_rows(values_only=True)]} for sheet in workbook.worksheets];workbook.close();return result
     output=folder/'sheets.json';native(path,'sheet-data',output);return json.loads(output.read_text(encoding='utf8'))
@@ -243,6 +260,10 @@ def convert(path,fmt,params):
             with output_folder(path,'html') as state:native(path,'html',state['temp']/'index.html')
             return state['output']
         if path.suffix.lower() in ('.csv','.tsv') and fmt in ('xlsx','xls','ods','pdf'):
+            if fmt == 'pdf':
+                with output_file(path, 'converted', '.pdf') as state:
+                    native(path, 'pdf', state['temp'])
+                return state['output']
             intermediate=csv_workbook(path,folder)
             with output_file(path,'converted','.'+fmt) as state:
                 if fmt=='xlsx':shutil.copyfile(intermediate,state['temp'])

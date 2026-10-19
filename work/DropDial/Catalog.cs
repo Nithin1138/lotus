@@ -106,23 +106,38 @@ internal static class Catalog
     private static string[] Targets(string ext)
     {
         if (OfficeSlides.Contains(ext))
-            return OfficeBridge.Available("PowerPoint") ? ["pdf", "png", "jpg", "txt", "pptx", "ppt", "odp"] : new[] { "pptx", "pptm", "ppsx" }.Contains(ext) ? ["txt"] : [];
+            return OfficeBridge.Available("PowerPoint") ? ["pdf", "jpg", "png", "pptx", "txt", "ppt", "odp"] : ["pdf", "jpg", "png", "txt"];
         if (OfficeWords.Contains(ext))
-            return OfficeBridge.Available("Word") ? ["pdf", "png", "jpg", "txt", "docx", "doc", "rtf", "odt", "html"] : ext is "rtf" or "rtfd" ? ["pdf", "docx", "txt", "html"] : new[] { "docx", "docm" }.Contains(ext) ? ["txt"] : [];
+            return OfficeBridge.Available("Word") ? ["pages", "pdf", "txt", "md", "html", "epub", "png", "jpg", "docx", "doc", "rtf", "odt"] : ext is "rtf" or "rtfd" ? ["pages", "pdf", "docx", "txt", "html", "epub", "md"] : ["pages", "pdf", "txt", "md", "html", "epub", "png", "jpg"];
         if (OfficeSheets.Contains(ext))
-            return OfficeBridge.Available("Excel") ? ["pdf", "png", "jpg", "xlsx", "xls", "ods", "csv", "tsv", "json", "txt"] : ext is "xlsx" or "xlsm" ? ["csv", "tsv", "json", "txt"] : ext is "csv" or "tsv" ? ["xlsx", "csv", "tsv", "json", "txt"] : [];
+            return OfficeBridge.Available("Excel") ? ["ods", "csv", "tsv", "pdf", "xlsx", "xls", "json", "txt"] : ext is "xlsx" or "xlsm" ? ["ods", "csv", "tsv", "pdf", "json", "txt"] : ext is "csv" or "tsv" ? ["xlsx", "ods", "csv", "tsv", "json", "txt"] : ["ods", "csv", "tsv", "pdf", "txt"];
         if (ext == "epub")
-            return ["pdf", "docx", "txt", "md", "html"];
+            return ["pdf", "docx", "pages", "txt", "md", "html"];
         if (ext is "md" or "markdown")
-            return ["pdf", "docx", "html", "txt"];
-        return ext is "jpg" or "png" ? [.. ImageTargets, "docx"] : Images.Contains(ext) ? ImageTargets : Audio.Contains(ext) ? Audio : Video.Contains(ext) ? [.. Video, "gif", "mp3"] : ext == "gif" ? Video : ext == "pdf" ? ["docx", "jpg", "png", "txt"] : ext == "txt" ? ["pdf", "docx", "md", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? ["srt", "vtt", "txt"] : Archives;
+            return ["pdf", "docx", "pages", "epub", "html", "txt"];
+        return ext is "jpg" or "png" ? [.. ImageTargets, "docx", "ico"] : Images.Contains(ext) ? [.. ImageTargets, "ico"] : Audio.Contains(ext) ? [.. Audio, "aac"] : Video.Contains(ext) ? [.. Video, "gif", "mp3", "m4a", "wav"] : ext == "gif" ? Video : ext == "pdf" ? ["docx", "pages", "pptx", "xlsx", "jpg", "png", "epub", "txt", "md"] : ext == "txt" ? ["pdf", "docx", "pages", "md", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? (ext == "srt" ? ["vtt", "txt"] : ["srt", "txt"]) : Archives;
     }
-    public static List<Operation> Options(string[] paths, bool tools)
+    public static readonly Operation[] FileActions = [
+        new("action:float", "Float", true),
+        new("action:copy", "Copy", true),
+        new("action:move", "Move", true),
+        new("action:copyPath", "Copy Path", true),
+        new("action:terminal", "Terminal", true),
+        new("action:share", "Share", true),
+        new("action:metadata", "Strip EXIF", true)
+    ];
+
+    public static List<Operation> Options(string[] paths, WheelMode mode)
     {
         if (paths.Length == 0 || paths.Any(p => !File.Exists(p) && !Directory.Exists(p)))
             return [];
-        return Arrange(Build(paths, tools), Category(paths[0]), tools, true);
+        if (mode == WheelMode.Actions)
+            return FileActions.ToList();
+        return Arrange(Build(paths, mode == WheelMode.Tools), Category(paths[0]), mode == WheelMode.Tools, true);
     }
+
+    public static List<Operation> Options(string[] paths, bool tools) =>
+        Options(paths, tools ? WheelMode.Tools : WheelMode.Convert);
 
     // --- the order of the wheel: the user's own order, and the option used last at the top --------------------
     public const string LastFirstKey = "wheelLastFirst";

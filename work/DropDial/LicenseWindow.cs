@@ -1,0 +1,335 @@
+using System;
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+
+namespace DropDial;
+
+internal sealed class LicenseWindow : Window
+{
+    private static LicenseWindow? openInstance;
+
+    private readonly TextBlock statusSubtitle;
+    private readonly TextBox keyInput;
+    private readonly Button pasteBtn;
+    private readonly Button primaryBtn;
+    private readonly Button secondaryBtn;
+    private readonly TextBlock messageText;
+
+    public static void ShowDialogOrActivate()
+    {
+        if (openInstance != null)
+        {
+            openInstance.Activate();
+            return;
+        }
+
+        var win = new LicenseWindow();
+        openInstance = win;
+        win.Closed += (_, _) => openInstance = null;
+        win.Show();
+        win.Activate();
+    }
+
+    public LicenseWindow()
+    {
+        UiTheme.Apply(this);
+        Width = 440;
+        SizeToContent = SizeToContent.Height;
+        ResizeMode = ResizeMode.NoResize;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        Title = "DropDial Pro";
+
+        var panel = new StackPanel { Margin = new Thickness(36, 24, 36, 24) };
+
+        // 1. App Icon (Centered)
+        var iconImg = new Image
+        {
+            Source = AppIcon.Window,
+            Width = 48,
+            Height = 48,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 10)
+        };
+        panel.Children.Add(iconImg);
+
+        // 2. Title
+        var titleText = new TextBlock
+        {
+            Text = "DropDial Pro",
+            FontSize = 18,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = UiTheme.Ink,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        panel.Children.Add(titleText);
+
+        // 3. Status Subtitle (Clean & subtle, no tacky banners or emojis)
+        statusSubtitle = new TextBlock
+        {
+            FontSize = 12,
+            Foreground = UiTheme.Muted,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 4, 0, 18),
+            TextAlignment = TextAlignment.Center
+        };
+        panel.Children.Add(statusSubtitle);
+
+        // 4. License Key Input Box (Monospaced) & Paste Button
+        var keyRow = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+        keyRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        keyRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
+        keyRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(72) });
+
+        keyInput = new TextBox
+        {
+            Height = 32,
+            FontSize = 12,
+            FontFamily = new FontFamily("Consolas, Courier New, monospace"),
+            VerticalContentAlignment = VerticalAlignment.Center,
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            Padding = new Thickness(8, 0, 8, 0),
+            Background = UiTheme.Surface,
+            Foreground = UiTheme.Ink,
+            BorderBrush = UiTheme.Line
+        };
+        keyInput.KeyDown += (_, e) =>
+        {
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                e.Handled = true;
+                OnPrimaryClick();
+            }
+        };
+        Grid.SetColumn(keyInput, 0);
+        keyRow.Children.Add(keyInput);
+
+        pasteBtn = new Button
+        {
+            Content = "Paste",
+            Height = 32,
+            Background = UiTheme.Surface,
+            Foreground = UiTheme.Ink,
+            BorderBrush = UiTheme.Line,
+            ToolTip = "Paste license key from clipboard"
+        };
+        pasteBtn.Click += (_, _) =>
+        {
+            try
+            {
+                var clip = Clipboard.GetText()?.Trim();
+                if (!string.IsNullOrEmpty(clip))
+                {
+                    keyInput.Text = clip;
+                    keyInput.SelectAll();
+                    if (clip.StartsWith("DD-"))
+                    {
+                        messageText.Text = "Key pasted • Click Activate to confirm";
+                        messageText.Foreground = UiTheme.Muted;
+                    }
+                }
+                else
+                {
+                    messageText.Text = "Clipboard is empty";
+                    messageText.Foreground = UiTheme.Warning;
+                }
+            }
+            catch { }
+        };
+        Grid.SetColumn(pasteBtn, 2);
+        keyRow.Children.Add(pasteBtn);
+
+        panel.Children.Add(keyRow);
+
+        // 5. Message / Feedback Text
+        messageText = new TextBlock
+        {
+            FontSize = 11,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 14),
+            MinHeight = 16
+        };
+        panel.Children.Add(messageText);
+
+        // 6. Action Buttons Row (Balanced, clean)
+        var btnRow = new Grid();
+        btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
+        btnRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        secondaryBtn = new Button
+        {
+            Height = 32,
+            Background = UiTheme.Surface,
+            Foreground = UiTheme.Ink,
+            BorderBrush = UiTheme.Line
+        };
+        Grid.SetColumn(secondaryBtn, 0);
+        btnRow.Children.Add(secondaryBtn);
+
+        primaryBtn = new Button
+        {
+            Height = 32,
+            IsDefault = true,
+            Background = UiTheme.Surface,
+            Foreground = UiTheme.Ink,
+            BorderBrush = UiTheme.Line
+        };
+        primaryBtn.Click += (_, _) => OnPrimaryClick();
+        Grid.SetColumn(primaryBtn, 2);
+        btnRow.Children.Add(primaryBtn);
+
+        panel.Children.Add(btnRow);
+
+        Content = UiTheme.Frame(this, panel, "DropDial Pro");
+
+        // Pre-fill from clipboard if it holds a DD- key
+        try
+        {
+            if (Clipboard.ContainsText())
+            {
+                string clip = Clipboard.GetText().Trim();
+                if (clip.StartsWith("DD-", StringComparison.OrdinalIgnoreCase))
+                    keyInput.Text = clip;
+            }
+        }
+        catch { }
+
+        UpdateUI();
+        LicenseManager.StatusChanged += UpdateUI;
+        Closed += (_, _) => LicenseManager.StatusChanged -= UpdateUI;
+    }
+
+    private void UpdateUI()
+    {
+        var status = LicenseManager.CurrentStatus;
+
+        if (status.IsPro && status.Info != null)
+        {
+            string name = string.IsNullOrEmpty(status.Info.Name) ? status.Info.Email : status.Info.Name;
+            statusSubtitle.Foreground = UiTheme.Muted;
+            statusSubtitle.Text = $"Licensed to {name}";
+
+            keyInput.Text = LicenseManager.GetStoredKey() ?? "";
+            keyInput.IsEnabled = false;
+            pasteBtn.IsEnabled = false;
+
+            secondaryBtn.Content = "Deactivate…";
+            secondaryBtn.Click -= OnBuyClick;
+            secondaryBtn.Click -= OnDeactivateClick;
+            secondaryBtn.Click += OnDeactivateClick;
+
+            primaryBtn.Content = "Done";
+            messageText.Text = "";
+        }
+        else if (status.Kind == LicenseStatusKind.Trial)
+        {
+            statusSubtitle.Foreground = UiTheme.Muted;
+            statusSubtitle.Text = $"{status.DaysRemaining} day{(status.DaysRemaining == 1 ? "" : "s")} remaining in free trial";
+
+            keyInput.Text = keyInput.Text.StartsWith("DD-") ? keyInput.Text : "";
+            keyInput.IsEnabled = true;
+            pasteBtn.IsEnabled = true;
+
+            secondaryBtn.Content = "Buy License…";
+            secondaryBtn.Click -= OnBuyClick;
+            secondaryBtn.Click -= OnDeactivateClick;
+            secondaryBtn.Click += OnBuyClick;
+
+            primaryBtn.Content = "Activate";
+        }
+        else
+        {
+            statusSubtitle.Foreground = new SolidColorBrush(Color.FromRgb(220, 100, 30));
+            statusSubtitle.Text = "Free trial expired — enter a key to activate";
+
+            keyInput.Text = keyInput.Text.StartsWith("DD-") ? keyInput.Text : "";
+            keyInput.IsEnabled = true;
+            pasteBtn.IsEnabled = true;
+
+            secondaryBtn.Content = "Buy License…";
+            secondaryBtn.Click -= OnBuyClick;
+            secondaryBtn.Click -= OnDeactivateClick;
+            secondaryBtn.Click += OnBuyClick;
+
+            primaryBtn.Content = "Activate";
+        }
+    }
+
+    private void OnBuyClick(object? sender, RoutedEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo(LicenseManager.DefaultBuyUrl) { UseShellExecute = true }); } catch { }
+    }
+
+    private void OnPrimaryClick()
+    {
+        if (LicenseManager.CurrentStatus.IsPro)
+        {
+            Close();
+            return;
+        }
+
+        string key = keyInput.Text.Trim();
+        if (string.IsNullOrEmpty(key))
+        {
+            messageText.Text = "Please enter your license key.";
+            messageText.Foreground = new SolidColorBrush(Color.FromRgb(220, 53, 69));
+            return;
+        }
+
+        var (success, msg) = LicenseManager.Activate(key);
+        if (success)
+        {
+            messageText.Text = "";
+            UpdateUI();
+        }
+        else
+        {
+            messageText.Text = msg;
+            messageText.Foreground = new SolidColorBrush(Color.FromRgb(220, 53, 69));
+        }
+    }
+
+    private void OnActivateClick()
+    {
+        string key = keyInput.Text.Trim();
+        if (string.IsNullOrEmpty(key))
+        {
+            messageText.Text = "Please paste or enter your license key.";
+            messageText.Foreground = new SolidColorBrush(Color.FromRgb(220, 53, 69));
+            return;
+        }
+
+        var (success, msg) = LicenseManager.Activate(key);
+        if (success)
+        {
+            messageText.Text = msg;
+            messageText.Foreground = new SolidColorBrush(Color.FromRgb(40, 167, 69));
+            UpdateUI();
+        }
+        else
+        {
+            messageText.Text = msg;
+            messageText.Foreground = new SolidColorBrush(Color.FromRgb(220, 53, 69));
+        }
+    }
+
+    private void OnDeactivateClick()
+    {
+        var result = MessageBox.Show(
+            "Are you sure you want to deactivate DropDial Pro on this PC? You can re-activate anytime using your license key.",
+            "Deactivate License",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question
+        );
+
+        if (result == System.Windows.Forms.DialogResult.Yes)
+        {
+            LicenseManager.Deactivate();
+            messageText.Text = "License deactivated.";
+            messageText.Foreground = UiTheme.Muted;
+            UpdateUI();
+        }
+    }
+}

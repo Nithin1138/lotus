@@ -34,6 +34,8 @@ swiftc -O \
     "$ROOT_DIR/work/DropDial-macOS/ToolWindow.swift" \
     "$ROOT_DIR/work/DropDial-macOS/DropWheelWindow.swift" \
     "$ROOT_DIR/work/DropDial-macOS/PermissionWelcomeWindow.swift" \
+    "$ROOT_DIR/work/DropDial-macOS/UpdateService.swift" \
+    "$ROOT_DIR/work/DropDial-macOS/LicenseManager.swift" \
     "$ROOT_DIR/work/DropDial-macOS/main.swift" \
     -o "$MACOS_DIR/DropDial"
 
