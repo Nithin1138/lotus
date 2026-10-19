@@ -36,8 +36,8 @@ module.exports = async function handler(req, res) {
     const currency = isIndia ? 'INR' : 'USD';
     const amountInSubunits = isIndia ? 99900 : 1900;
 
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId = (process.env.RAZORPAY_KEY_ID || '').trim();
+    const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
 
     if (!keyId || !keySecret) {
       console.warn('[Razorpay] RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is not configured. Running in sandbox test mode.');

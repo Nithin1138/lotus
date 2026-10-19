@@ -33,7 +33,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Customer email is required.' });
     }
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
 
     // Signature Verification
     if (keySecret && !razorpay_order_id?.startsWith('order_mock_')) {
