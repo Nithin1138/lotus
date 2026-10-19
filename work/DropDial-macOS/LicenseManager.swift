@@ -56,7 +56,7 @@ final class LicenseManager {
     static let publicKeyBase64 = "BGM3oGnG82GbsMcWAlnuMk2nF+c8lDJs37dTnffkzNFvjwVzgC0PwyyHUIe7LgZOPPOmWEyJeRTEGiCOCGcGdyQ="
 
     // Configurable purchase URL
-    static let defaultBuyUrl = "https://dropdial.com/buy"
+    static let defaultBuyUrl = "https://dropdial.app/#pricing"
 
     // UserDefaults Keys
     private let licenseKeyStoreKey = "DROPDIAL_LICENSE_KEY"

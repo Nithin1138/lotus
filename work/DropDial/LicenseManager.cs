@@ -55,7 +55,7 @@ internal static class LicenseManager
     // Embedded ECDSA P-256 public key (X9.62 uncompressed 65-byte point in Base64)
     public const string PublicKeyBase64 = "BGM3oGnG82GbsMcWAlnuMk2nF+c8lDJs37dTnffkzNFvjwVzgC0PwyyHUIe7LgZOPPOmWEyJeRTEGiCOCGcGdyQ=";
 
-    public const string DefaultBuyUrl = "https://dropdial.com/buy";
+    public const string DefaultBuyUrl = "https://dropdial.app/#pricing";
     public const int TrialDurationDays = 7;
 
     public static LicenseStatus CurrentStatus { get; private set; } = LicenseStatus.Trial(TrialDurationDays);

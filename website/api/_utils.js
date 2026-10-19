@@ -153,7 +153,7 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
     <div class="footer">
       DropDial • Fast, Private Desktop File Tools<br>
       Lifetime License for up to 3 personal devices.<br>
-      Need assistance? Reply directly to this email or visit <a href="https://dropdial.com">dropdial.com</a>.
+      Need assistance? Reply directly to this email or visit <a href="https://dropdial.app">dropdial.app</a>.
     </div>
   </div>
 </body>

@@ -257,10 +257,10 @@
   function bindEvents() {
     // Open modal on click of any element with [data-open-checkout] or link matching pricing buy buttons
     document.addEventListener('click', function (e) {
-      const target = e.target.closest('[data-open-checkout], a[href*="dropdial.com/buy"], .pricing-card.featured a.btn, a[href="#pricing"].btn');
+      const target = e.target.closest('[data-open-checkout], a[href*="dropdial.app/buy"], a[href*="dropdial.com/buy"], .pricing-card.featured a.btn, a[href="#pricing"].btn');
       if (target) {
         // If clicking buy button, open checkout modal directly
-        if (target.getAttribute('href') === 'https://dropdial.com/buy' || target.hasAttribute('data-open-checkout') || target.textContent.includes('Buy')) {
+        if (target.getAttribute('href') === 'https://dropdial.app/buy' || target.getAttribute('href') === 'https://dropdial.com/buy' || target.hasAttribute('data-open-checkout') || target.textContent.includes('Buy')) {
           e.preventDefault();
           openModal();
         }
@@ -435,7 +435,7 @@
             // 4. Show success screen
             showSuccess(verifyData.licenseKey, email);
           } catch (verifyErr) {
-            showError(verifyErr.message || 'Payment received, but error generating license key. Please contact support@dropdial.com with your payment ID.');
+            showError(verifyErr.message || 'Payment received, but error generating license key. Please contact support@dropdial.app with your payment ID.');
             payBtn.disabled = false;
             payBtn.innerHTML = originalBtnText;
           }
