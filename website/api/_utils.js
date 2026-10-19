@@ -12,6 +12,34 @@ function b64urlEncode(buf) {
     .replace(/=+$/, '');
 }
 
+function sanitizePem(str) {
+  if (!str) return '';
+  let clean = str.trim();
+  // Strip surrounding quotes
+  if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+    clean = clean.slice(1, -1);
+  }
+  // Replace literal \n or \\n
+  clean = clean.replace(/\\n/g, '\n');
+
+  // If no newlines remain (e.g. single-line string with spaces from dashboard copy-paste):
+  if (!clean.includes('\n')) {
+    const headerMatch = clean.match(/-----BEGIN [A-Z0-9 ]+-----/);
+    const footerMatch = clean.match(/-----END [A-Z0-9 ]+-----/);
+    if (headerMatch && footerMatch) {
+      const header = headerMatch[0];
+      const footer = footerMatch[0];
+      const middle = clean
+        .replace(header, '')
+        .replace(footer, '')
+        .replace(/\s+/g, '');
+      const chunks = middle.match(/.{1,64}/g) || [];
+      clean = [header, ...chunks, footer, ''].join('\n');
+    }
+  }
+  return clean.trim();
+}
+
 /**
  * Loads the ECDSA P-256 private key from environment variable or filesystem.
  */
@@ -19,11 +47,7 @@ function getPrivateKey() {
   // 1. Check environment variable (Vercel standard)
   let keyEnv = process.env.LICENSE_PRIVATE_KEY;
   if (keyEnv) {
-    // If the PEM has escaped newlines like \n, replace them with actual newlines
-    if (keyEnv.includes('\\n')) {
-      keyEnv = keyEnv.replace(/\\n/g, '\n');
-    }
-    return keyEnv.trim();
+    return sanitizePem(keyEnv);
   }
 
   // 2. Check local filesystem paths (local dev / self-hosted)
@@ -35,7 +59,7 @@ function getPrivateKey() {
 
   for (const p of candidatePaths) {
     if (fs.existsSync(p)) {
-      return fs.readFileSync(p, 'utf8').trim();
+      return sanitizePem(fs.readFileSync(p, 'utf8'));
     }
   }
 
