@@ -1,0 +1,20 @@
+{
+  "name": "dropdial-licensing",
+  "version": "1.0.0",
+  "description": "DropDial website and Razorpay, Resend, and Vercel licensing integration",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node -e \"console.log('Ready for Vercel deployment')\""
+  },
+  "keywords": [
+    "dropdial",
+    "razorpay",
+    "resend",
+    "vercel",
+    "licensing"
+  ],
+  "author": "DropDial",
+  "license": "MIT"
+}

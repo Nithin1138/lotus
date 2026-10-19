@@ -38,7 +38,8 @@ PORT = int(os.environ.get("PORT", 8080))
 WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "change_me_to_your_webhook_secret")
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "admin_secret_key_123")
 
-# Email / SMTP Configuration
+# Email Configuration (Resend API or SMTP)
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
 SMTP_USER = os.environ.get("SMTP_USER", "")
@@ -60,14 +61,13 @@ def record_license(email: str, name: str, key: str, payment_id: str, amount: str
 
 
 def send_license_email(to_email: str, name: str, license_key: str):
-    """Send branded, professional activation email to customer."""
-    if not SMTP_USER or not SMTP_PASS:
-        print(f"⚠️  SMTP credentials not set. License key generated for {to_email}: {license_key}")
-        return False
-
+    """Send branded, professional activation email to customer via Resend API or SMTP."""
     display_name = name if name else "DropDial Customer"
-
     subject = f"Your DropDial Pro License Key 🚀"
+
+    if not RESEND_API_KEY and (not SMTP_USER or not SMTP_PASS):
+        print(f"⚠️  Neither RESEND_API_KEY nor SMTP credentials set. License key generated for {to_email}: {license_key}")
+        return False
 
     html_content = f"""
     <!DOCTYPE html>
@@ -134,16 +134,45 @@ def send_license_email(to_email: str, name: str, license_key: str):
     msg.attach(MIMEText(text_content, "plain"))
     msg.attach(MIMEText(html_content, "html"))
 
+    if RESEND_API_KEY:
+        import urllib.request
+        resend_payload = {
+            "from": f"{FROM_NAME} <{FROM_EMAIL}>",
+            "to": [to_email],
+            "subject": subject,
+            "html": html_content,
+            "text": text_content,
+        }
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=json.dumps(resend_payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+                "User-Agent": "DropDial-Licensing/1.0"
+            },
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                print(f"📧 [Resend] License email successfully sent to: {to_email} (ID: {data.get('id')})")
+                return True
+        except Exception as e:
+            print(f"❌ [Resend Error] Failed to send via Resend: {e}")
+            if not SMTP_USER or not SMTP_PASS:
+                return False
+
     try:
         server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15)
         server.starttls()
         server.login(SMTP_USER, SMTP_PASS)
         server.sendmail(FROM_EMAIL, [to_email], msg.as_string())
         server.quit()
-        print(f"📧 License email successfully sent to: {to_email}")
+        print(f"📧 [SMTP] License email successfully sent to: {to_email}")
         return True
     except Exception as e:
-        print(f"❌ Failed to send email to {to_email}: {e}")
+        print(f"❌ [SMTP] Failed to send email to {to_email}: {e}")
         return False
 
 
