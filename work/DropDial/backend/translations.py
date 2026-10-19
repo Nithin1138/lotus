@@ -34,6 +34,8 @@ EN = {
     'PDF has no pages': 'PDF has no pages',
     'No even pages found': 'No even pages found',
     'Cannot delete the only page': 'Cannot delete the only page',
+    'SVG rendering failed on this system': 'SVG rendering failed on this system',
+    'SVG rendering requires resvg_py or cairosvg': 'SVG rendering requires resvg_py or cairosvg',
     # images
     'Pixel block size must be 2–100 px': 'Pixel block size must be 2–100 px',
     'The canvas size is invalid or too large': 'The canvas size is invalid or too large',
