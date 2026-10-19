@@ -763,8 +763,8 @@ internal sealed class Resident : IDisposable
             }
             catch { }
 
-            string[] zeroParamTools = ["muteVideo", "joinVideos", "joinAudio", "createPDF"];
-            if (zeroParamTools.Contains(operation.Id) && (operation.Fields == null || operation.Fields.Length == 0))
+            string[] zeroParamTools = ["removeMetadata", "muteVideo", "joinVideos", "joinAudio", "createPDF"];
+            if (zeroParamTools.Contains(operation.Id) && (operation.Fields == null || operation.Fields.Length == 0 || operation.Id == "removeMetadata"))
             {
                 Enqueue(new ConversionJob(paths, operation.Id));
             }

@@ -324,12 +324,47 @@ internal sealed class JobCard : Border
             revealButton.Visibility = Visibility.Visible;
             hideButton.Visibility = Visibility.Visible;
             controls.Visibility = Visibility.Visible;
+            Cursor = System.Windows.Input.Cursors.Hand;
         }
         else
         {
             openButton.Visibility = Visibility.Collapsed;
             revealButton.Visibility = Visibility.Collapsed;
             controls.Visibility = Visibility.Collapsed;
+            Cursor = System.Windows.Input.Cursors.Arrow;
+        }
+    }
+
+    private Point dragStartPoint;
+    private bool isDragging;
+
+    protected override void OnPreviewMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs e)
+    {
+        base.OnPreviewMouseLeftButtonDown(e);
+        if (!string.IsNullOrEmpty(outputPath) && File.Exists(outputPath))
+        {
+            dragStartPoint = e.GetPosition(this);
+            isDragging = false;
+        }
+    }
+
+    protected override void OnPreviewMouseMove(System.Windows.Input.MouseEventArgs e)
+    {
+        base.OnPreviewMouseMove(e);
+        if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed && !string.IsNullOrEmpty(outputPath) && File.Exists(outputPath))
+        {
+            var cur = e.GetPosition(this);
+            if (!isDragging && (Math.Abs(cur.X - dragStartPoint.X) > 6 || Math.Abs(cur.Y - dragStartPoint.Y) > 6))
+            {
+                isDragging = true;
+                try
+                {
+                    var data = new DataObject(DataFormats.FileDrop, new string[] { outputPath });
+                    DragDrop.DoDragDrop(this, data, DragDropEffects.Copy);
+                }
+                catch { }
+                isDragging = false;
+            }
         }
     }
 }

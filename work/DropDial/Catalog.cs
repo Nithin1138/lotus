@@ -19,7 +19,7 @@ internal static class Catalog
     {
         ["image"] = [("Size & direction", ["cropImage", "rotateImage", "resizeImage"]), ("Look & marks", ["editImage", "frameImage", "watermark", "annotateImage", "redactImage"]),
             ("Output & extras", ["compress", "removeMetadata", "location", "ocrImage", "makeIcon", "createPDF", "createCollage", "createAnimation", "packArchive"])],
-        ["video"] = [("Editing", ["trimVideo", "splitVideo", "joinVideos", "changeVideoSpeed", "videoSnapshots", "videoEffects"]), ("Picture", ["cropVideo", "rotateVideo", "videoSettings", "watermark", "redactVideo"]),
+        ["video"] = [("Editing", ["editVideo", "trimVideo", "splitVideo", "joinVideos", "changeVideoSpeed", "videoSnapshots", "videoEffects"]), ("Picture", ["cropVideo", "rotateVideo", "videoSettings", "watermark", "redactVideo"]),
             ("Sound & subtitles", ["muteVideo", "subtitlesAudio"]), ("Output & extras", ["compress", "removeMetadata", "location", "videoToGif", "packArchive"])],
         ["audio"] = [("Editing", ["trimAudio", "redactAudio", "joinAudio"]), ("Sound", ["normalizeAudio", "audioChannels", "audioEffects"]),
             ("Output & extras", ["compress", "removeMetadata", "audioToVideo", "ringtone", "packArchive"])],
@@ -89,14 +89,14 @@ internal static class Catalog
         string ext = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
         return ext switch { "jpeg" => "jpg", "tif" => "tiff", "heif" => "heic", "aif" => "aiff", "tgz" => "gz", _ => ext };
     }
-    public static readonly string[] Images = ["jpg", "png", "webp", "heic", "tiff", "svg", "avif", "bmp"];
-    public static readonly string[] Audio = ["mp3", "m4a", "wav", "flac", "ogg", "opus", "aiff", "wma"];
+    public static readonly string[] Images = ["jpg", "png", "webp", "heic", "tiff", "svg", "avif", "bmp", "ico"];
+    public static readonly string[] Audio = ["mp3", "m4a", "wav", "flac", "ogg", "opus", "aiff", "wma", "aac"];
     public static readonly string[] Video = ["mp4", "mov", "mkv", "webm", "avi", "wmv"];
     public static readonly string[] Archives = ["zip", "tar", "gz", "rar", "7z"];
     public static readonly string[] OfficeSlides = ["ppt", "pptx", "pptm", "pps", "ppsx", "odp"];
     public static readonly string[] OfficeWords = ["doc", "docx", "docm", "rtf", "odt"];
     public static readonly string[] OfficeSheets = ["xls", "xlsx", "xlsm", "xlsb", "ods", "csv", "tsv"];
-    private static readonly string[] ImageTargets = ["jpg", "png", "webp", "heic", "tiff", "avif", "bmp", "pdf"];
+    private static readonly string[] ImageTargets = ["jpg", "png", "webp", "heic", "tiff", "avif", "bmp", "pdf", "ico"];
     public static string Category(string path)
     {
         string ext = Extension(path);
@@ -115,7 +115,7 @@ internal static class Catalog
             return ["pdf", "docx", "pages", "txt", "md", "html"];
         if (ext is "md" or "markdown")
             return ["pdf", "docx", "pages", "epub", "html", "txt"];
-        return ext is "jpg" or "png" ? [.. ImageTargets, "docx"] : Images.Contains(ext) ? ImageTargets : Audio.Contains(ext) ? Audio : Video.Contains(ext) ? [.. Video, "gif", "mp3"] : ext == "gif" ? Video : ext == "pdf" ? ["docx", "jpg", "png", "txt"] : ext == "txt" ? ["pdf", "docx", "md", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? ["srt", "vtt", "txt"] : Archives;
+        return ext is "jpg" or "png" ? [.. ImageTargets, "docx"] : Images.Contains(ext) ? ImageTargets : Audio.Contains(ext) ? Audio : Video.Contains(ext) ? [.. Video, "gif", "mp3", "m4a", "wav"] : ext == "gif" ? [.. Video, "mp4", "webm"] : ext == "pdf" ? ["docx", "pptx", "xlsx", "epub", "md", "jpg", "png", "txt"] : ext == "txt" ? ["pdf", "docx", "md", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? ["srt", "vtt", "txt"] : Archives;
     }
     public static readonly Operation[] FileActions = [
         new("action:float", "Float", true),
@@ -236,7 +236,7 @@ internal static class Catalog
         if (kind == "audio")
             return count > 1 ? ["compress", "normalizeAudio", "audioEffects", "joinAudio", "packArchive"] : ["compress", "removeMetadata", "normalizeAudio", "audioToVideo", "trimAudio", "audioChannels", "audioEffects", "ringtone", "redactAudio"];
         if (kind == "video")
-            return ext == "gif" ? ["removeMetadata"] : count > 1 ? ["compress", "location", "muteVideo", "rotateVideo", "videoSettings", "watermark", "joinVideos", "packArchive"] : ["compress", "removeMetadata", "location", "muteVideo", "trimVideo", "cropVideo", "rotateVideo", "changeVideoSpeed", "videoSnapshots", "splitVideo", "videoSettings", "videoEffects", "videoToGif", "watermark", "subtitlesAudio", "redactVideo"];
+            return ext == "gif" ? ["removeMetadata"] : count > 1 ? ["compress", "location", "muteVideo", "rotateVideo", "videoSettings", "watermark", "joinVideos", "packArchive"] : ["compress", "editVideo", "removeMetadata", "location", "muteVideo", "trimVideo", "cropVideo", "rotateVideo", "changeVideoSpeed", "videoSnapshots", "splitVideo", "videoSettings", "videoEffects", "videoToGif", "watermark", "subtitlesAudio", "redactVideo"];
         if (kind == "office")
         {
             string family = OfficeSlides.Contains(ext) ? "PowerPoint" : OfficeWords.Contains(ext) ? "Word" : "Excel";
@@ -258,19 +258,20 @@ internal static class Catalog
     private static Field[] Rotation(bool video) => [N("angle", L.T("Rotation angle (0–360°, clockwise)"), "0"), C("flip", L.T("Flip"), "none", "none", "horizontal", "vertical"), C("expand", L.T("Canvas on free rotation"), video ? "expand" : "crop", video ? ["expand", "keep"] : ["crop", "expand", "keep"]), T("background", video ? L.T("Fill colour for the empty corners") : L.T("Padding colour (blank for transparent)"), video ? "#000000" : "")];
     private static Field[] Positions => [C("position", L.T("Position"), "bottomRight", "bottomRight", "bottomCenter", "bottomLeft", "middleRight", "center", "middleLeft", "topRight", "topCenter", "topLeft")];
     private static Field[] Times => [N("start", L.T("Start (seconds or h:m:s)"), "0"), N("end", L.T("End (0 = end of file)"), "0")];
-    private static Field[] Ratio => [C("ratio", L.T("Aspect ratio"), "free", "free", "1:1", "4:3", "16:9", "9:16", "custom"), N("ratioWidth", L.T("Ratio width"), "3"), N("ratioHeight", L.T("Ratio height"), "2")];
+    private static Field[] Ratio => [C("ratio", L.T("Aspect ratio"), "Free Style", "Free Style", "1:1 (Square)", "16:9 (Widescreen)", "4:3 (Standard)", "9:16 (Story / Reel)", "3:2 (Classic Photo)", "Original Ratio", "custom"), N("ratioWidth", L.T("Ratio width"), "3"), N("ratioHeight", L.T("Ratio height"), "2")];
     public static Operation Definition(string id, string kind) => MergedDefinition(id) ?? id switch
     {
         "officePdf" => new(id, L.T("Export pages"), true, [T("pageOrder", L.T("Pages to export (comma-separated, blank for all)"))]),
         "officeMergePDF" => new(id, L.T("Merge into PDF"), true, [], true),
-        "compress" => new(id, L.T("Compress"), true, kind == "audio" ? [N("bitrate", L.T("Bitrate (kbps)"), "96"), N("targetKB", L.T("Target size (KB, 0 = no limit)"), "0")] : [N("quality", kind == "video" ? L.T("CRF (higher = smaller file)") : L.T("Quality (1–100)"), kind == "video" ? "28" : "75"), N("maxEdge", L.T("Longest side (px)"), kind == "video" ? "1280" : "2000"), N("targetKB", L.T("Target size (KB, 0 = no limit)"), "0")]),
+        "editVideo" => new(id, L.T("Video Studio"), true, [C("mode", L.T("Tool"), "trim", "trim", "crop", "split")]),
+        "compress" => new(id, L.T("Compress"), true, kind == "audio" ? [C("targetSize", L.T("Max target size"), "Auto", "Auto", "1 MB", "2 MB", "5 MB", "10 MB", "25 MB"), N("bitrate", L.T("Bitrate (kbps)"), "96"), N("targetKB", L.T("Target size (KB, 0 = no limit)"), "0")] : [N("quality", kind == "video" ? L.T("CRF (higher = smaller file)") : L.T("Quality (1–100)"), kind == "video" ? "28" : "75"), C("maxEdge", L.T("Longest side"), "Original", kind == "video" ? ["Original", "1920 (1080p)", "1280 (720p)", "854 (480p)"] : ["Original", "2560 (2K)", "1920 (Full HD)", "1280 (Web)", "800 (Compact)"]), C("targetSize", L.T("Max target size"), "Auto", "Auto", "200 KB", "500 KB", "1 MB", "2 MB", "5 MB", "10 MB", "25 MB", "50 MB", "100 MB"), N("targetKB", L.T("Target size (KB, 0 = no limit)"), "0")]),
         "removeMetadata" => new(id, L.T("Metadata"), true, [T("remove", L.T("Remove all metadata"), "true", "bool"), T("search", L.T("Search metadata fields")), T("metadata", L.T("Metadata fields (editable when “Remove all” is off)"), "{}", "metadata")]),
         "editImage" => new(id, L.T("Edit image"), true, [N("exposure", L.T("Exposure (EV)"), "0"), N("contrast", L.T("Contrast (1 = original)"), "1"), N("saturation", L.T("Saturation (1 = original)"), "1"), N("temperature", L.T("Temperature (-100 to 100)"), "0"), N("shadows", L.T("Shadows (-100 to 100)"), "0"), N("highlights", L.T("Highlights (-100 to 100)"), "0"), N("clarity", L.T("Clarity (0–100)"), "0"), N("dehaze", L.T("Dehaze (0–100)"), "0"), N("denoise", L.T("Noise reduction (0–30)"), "0"), N("grain", L.T("Grain (0–100)"), "0"), T("annotations", L.T("Annotations (JSON, optional)"), "", "json")]),
         "frameImage" => new(id, L.T("Add background"), true, [N("canvasWidth", L.T("Canvas width"), "1400"), N("canvasHeight", L.T("Canvas height"), "1000"), N("padding", L.T("Padding"), "80"), N("radius", L.T("Corner radius"), "24"), N("shadow", L.T("Shadow"), "20"), T("background", L.T("Background colour"), "#f0ebff"), T("gradient", L.T("Gradient end colour")), T("backgroundImage", L.T("Background image"), "", "file"), N("backgroundBlur", L.T("Background blur"), "0")]),
         "annotateImage" => new(id, L.T("Annotate image"), true, [T("text", L.T("Annotation text"), "APPROVED"), T("color", L.T("Text colour"), "#ff6500"), C("position", L.T("Position"), "bottom_right", "bottom_right", "bottom_left", "top_right", "top_left", "center")]),
         "cropImage" => new(id, L.T("Crop"), true, [.. Crop, .. Ratio]),
         "resizeImage" => new(id, L.T("Resize"), true, [C("mode", L.T("Mode"), "percent", "percent", "edge", "size"), N("percent", L.T("Scale (%)"), "50"), N("edge", L.T("Longest side (px)"), "1920"), N("width", L.T("Width (pixels, 0 = any)"), "0"), N("height", L.T("Height (pixels, 0 = any)"), "0"), T("keepRatio", L.T("Keep the ratio when both width and height are given"), "true", "bool")]),
-        "watermark" => new(id, L.T("Watermark"), true, [T("text", L.T("Watermark text")), T("logo", L.T("Watermark picture (optional)"), "", "file:image"), .. Positions, C("layout", L.T("Layout"), "single", "single", "tiled"), N("opacity", L.T("Opacity (0–100)"), "60"), N("textSize", L.T("Text size (% of the short side)"), "5"), N("scale", L.T("Logo width (% of the picture)"), "20"), N("rotation", L.T("Angle"), "0"), N("margin", L.T("Margin (% of the short side)"), "3"), T("color", L.T("Text colour"), "#ffffff")]),
+        "watermark" => new(id, L.T("Watermark"), true, [T("text", L.T("Watermark text"), "CONFIDENTIAL"), T("logo", L.T("Watermark picture (optional)"), "", "file:image"), C("repeats", L.T("Repeats / Pattern"), "Single (Center)", "Single (Center)", "Single (Bottom Right)", "4 (2×2 Grid)", "9 (3×3 Grid)", "16 (4×4 Dense Grid)", "Tiled Pattern (Full Page)"), C("angle", L.T("Angle / Rotation"), "45° (Diagonal)", "45° (Diagonal)", "0° (Horizontal)", "30° (Subtle Angle)", "-45° (Inverse Diagonal)", "90° (Vertical)"), C("size", L.T("Text Size"), "48 pt (Large)", "18 pt (Small)", "32 pt (Medium)", "48 pt (Large)", "72 pt (Extra Large)", "96 pt (Huge)"), C("opacity", L.T("Opacity"), "35%", "20%", "35%", "50%", "70%", "90%"), C("color", L.T("Text colour"), "#ffffff", "#ffffff", "#000000", "#ff6500", "#ef4444", "#3b82f6", "#10b981", "#f59e0b"), .. Positions, C("layout", L.T("Layout"), "single", "single", "tiled"), N("textSize", L.T("Text size (% of the short side)"), "5"), N("scale", L.T("Logo width (% of the picture)"), "20"), N("rotation", L.T("Angle"), "0"), N("margin", L.T("Margin (% of the short side)"), "3")]),
         "makeIcon" => new(id, L.T("Make icons"), true, [C("iconKind", L.T("Output"), "ico", "ico", "favicon")]),
         "ocrImage" => new(id, L.T("Text recognition (OCR)"), true, [T("language", L.T("Language (auto = system languages, e.g. zh-Hans-CN, en-US)"), "auto"), C("output", L.T("Output"), "txt", "txt", "pdf")]),
         "ocrPDF" => new(id, L.T("Text recognition (OCR)"), true, [T("language", L.T("Language (auto = system languages, e.g. zh-Hans-CN, en-US)"), "auto"), C("output", L.T("Output"), "txt", "txt", "pdf"), T("password", L.T("PDF password (if needed)"), "", "password")]),
@@ -295,12 +296,12 @@ internal static class Catalog
         "redactPDF" => new(id, L.T("Redact PDF"), true, [N("pageNumber", L.T("Page"), "1"), T("findText", L.T("Also black out this text wherever it appears (optional)")), T("password", L.T("PDF password (if needed)"), "", "password"), T("regions", L.T("Multiple regions"), "", "json")]),
         "trimVideo" => new(id, L.T("Trim"), true, Times),
         "cropVideo" => new(id, L.T("Crop frame"), true, [.. Crop, .. Ratio]),
-        "changeVideoSpeed" => new(id, L.T("Speed"), true, [N("speed", L.T("Speed (0.125–8)"), "2")]),
+        "changeVideoSpeed" => new(id, L.T("Speed"), true, [C("speed", L.T("Speed multiplier"), "1.5", "0.5", "0.75", "1.25", "1.5", "2.0")]),
         "joinVideos" => new(id, L.T("Join videos"), true, [], true),
         "videoSnapshots" => new(id, L.T("Save frames"), true, [N("time", L.T("Time (seconds)"), "0"), N("frame", L.T("Frame offset"), "0"), T("times", L.T("Several times (seconds, comma-separated)")), T("sheet", L.T("Combine into one contact sheet"), "false", "bool"), N("sheetCount", L.T("Thumbnails in the sheet"), "12"), N("sheetColumns", L.T("Columns in the sheet"), "4")]),
-        "splitVideo" => new(id, L.T("Split"), true, [N("parts", L.T("Number of equal parts"), "2"), T("splitPoints", L.T("Custom split points (seconds, comma-separated)"))]),
+        "splitVideo" => new(id, L.T("Split"), true, [C("parts", L.T("Number of equal parts"), "2", "2", "3", "4", "5", "6"), T("splitPoints", L.T("Custom split points (seconds, comma-separated)"))]),
         "redactVideo" => new(id, L.T("Redact"), true, [.. Crop, .. Times, C("style", L.T("Redaction style"), "pixelate", "pixelate", "blur", "solid"), N("blockSize", L.T("Pixel block size (px)"), "12"), T("regions", L.T("Regions and their time ranges"), "", "json")]),
-        "normalizeAudio" => new(id, L.T("Normalize loudness"), true, [N("loudness", L.T("Target loudness (LUFS)"), "-16"), N("range", L.T("Loudness range (LRA)"), "11"), N("peak", L.T("True peak (dBTP)"), "-1.5")]),
+        "normalizeAudio" => new(id, L.T("Normalize loudness"), true, [C("loudness", L.T("Target LUFS"), "-16 (Podcast/Web)", "-16 (Podcast/Web)", "-14 (Streaming/Music)", "-23 (Broadcast/EBU)"), N("range", L.T("Loudness range (LRA)"), "11"), N("peak", L.T("True peak (dBTP)"), "-1.5")]),
         "audioToVideo" => new(id, L.T("Waveform video"), true, [C("aspect", L.T("Aspect ratio"), "landscape", "landscape", "portrait", "square"), T("backgroundImage", L.T("Still background image (blank = waveform)"), "", "file")]),
         "trimAudio" => new(id, L.T("Trim audio"), true, [.. Times, T("removeSilence", L.T("Remove silence at the start and end"), "false", "bool")]),
         "audioChannels" => new(id, L.T("Channels"), true, [C("channels", L.T("Output channels"), "mono", "mono", "stereo"), N("leftGain", L.T("Left volume (1 = original)"), "1"), N("rightGain", L.T("Right volume (1 = original)"), "1")]),
