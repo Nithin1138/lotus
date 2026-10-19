@@ -1,21 +1,69 @@
-MIT License
+DropDial Commercial End User License Agreement (EULA)
+======================================================
+Copyright (c) 2026 DropDial (https://dropdial.com). All rights reserved.
 
-Copyright (c) 2026 Max Chen
+IMPORTANT: PLEASE READ THIS SOFTWARE LICENSE AGREEMENT CAREFULLY BEFORE DOWNLOADING,
+INSTALLING, COPYING, OR USING THIS SOFTWARE. BY INSTALLING, COPYING, OR USING
+DROPDIAL, YOU AGREE TO BE BOUND BY THE TERMS OF THIS AGREEMENT.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. GRANT OF LICENSE
+-------------------
+DropDial ("Licensor") grants you ("Licensee") a non-exclusive, non-transferable,
+revocable license to install and use DropDial ("Software") solely in accordance with
+the terms of this Agreement:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+a. Free Tier: You may use the standard complimentary features of the Software for
+   personal or internal business purposes at no cost.
+b. Pro Tier (Paid License): Upon payment of the applicable one-time license fee,
+   Licensor grants you a perpetual, non-exclusive license to unlock and use DropDial Pro
+   features on up to three (3) personal or work devices owned and operated by you.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. OWNERSHIP & PROPRIETARY RIGHTS
+---------------------------------
+The Software, including its source code, architecture, design, graphics, user interface,
+and documentation, is proprietary intellectual property owned by DropDial. This Software
+is licensed, not sold. All rights, title, and interest not expressly granted herein are
+strictly reserved by Licensor.
+
+3. RESTRICTIONS
+----------------
+You agree that you will not:
+a. Reverse engineer, decompile, disassemble, or attempt to derive the source code
+   of the Software, except to the extent permitted by applicable law.
+b. Modify, adapt, translate, rent, lease, loan, resell, sublicense, or distribute
+   the Software or any copy thereof to third parties.
+c. Bypass, circumvent, or disable any cryptographic license verification, activation,
+   or copy-protection mechanisms in the Software.
+d. Remove, obscure, or alter any copyright notices, trademarks, or proprietary
+   legends contained in or on the Software.
+
+4. THIRD-PARTY OPEN-SOURCE COMPONENTS
+--------------------------------------
+The Software incorporates and utilizes certain third-party open-source components,
+including components originally developed by third parties under permissive licenses
+(such as the MIT, Apache 2.0, BSD, and LGPL licenses).
+Each third-party component remains subject to its respective license agreement.
+A complete list of third-party software, copyright notices, and license terms is provided
+in the THIRD-PARTY-NOTICES.txt file distributed with the Software. Nothing in this
+Agreement limits your rights under the terms of those individual open-source licenses.
+
+5. OFFLINE OPERATION & PRIVACY
+-------------------------------
+The Software operates 100% locally and offline on your computer. Your files, documents,
+images, media, and processed data are never uploaded to any remote server or third party.
+The Software does not collect, track, or transmit telemetry or personal files.
+
+6. DISCLAIMER OF WARRANTIES
+---------------------------
+THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTY OF ANY KIND,
+EITHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
+LICENSOR DOES NOT WARRANT THAT THE SOFTWARE WILL BE UNINTERRUPTED OR ERROR-FREE.
+
+7. LIMITATION OF LIABILITY
+--------------------------
+IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ARISING IN ANY WAY OUT OF THE USE OF OR INABILITY TO USE THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

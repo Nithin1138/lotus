@@ -49,7 +49,7 @@ PRIVATE BY DESIGN
 • Text recognition uses the recogniser built into Windows.
 • No account, ads, analytics or telemetry.
 
-Free and open source under the MIT License.""",
+100% offline, privacy-first desktop utility.""",
     features=[
         'Hold Shift while dragging a file to pick a new format from a wheel under your cursor',
         'Ctrl+Shift opens tools: compress, resize, rotate, crop, watermark, redact and more',
@@ -64,12 +64,12 @@ Free and open source under the MIT License.""",
         'Built-in player with draggable trim handles for audio and video',
         'Optional start with Windows',
         'Clean English interface',
-        'Free and open source',
+        '100% private, local and offline',
     ],
     keywords=['file converter', 'video converter', 'image converter', 'audio converter', 'PDF converter', 'compress video', 'drag and drop'],
-    copyright='© 2026 DropDial',
-    license=("DropDial is licensed under the MIT License. It includes third-party components under their own licenses, including "
-             "FFmpeg (GPLv3), 7-Zip (LGPL) and PyMuPDF (AGPLv3). See \"Third-party notices\" in the tray menu."),
+    copyright='© 2026 DropDial. All rights reserved.',
+    license=("DropDial is proprietary software. It incorporates third-party open-source components under their own licenses, including "
+             "base core components under the MIT License by Max Chen, FFmpeg (GPLv3), and 7-Zip (LGPL). See \"Third-party notices\" in the tray menu."),
     developer='DropDial',
     captions=[
         'Hold Shift while dragging a file and a format wheel opens under your cursor. Release on JPG, PDF, MP3 or any other format.',

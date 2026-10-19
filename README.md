@@ -102,6 +102,9 @@ See the [User Guide](docs/usage.md) for full features and details.
 
 ---
 
-## License
+## License & Copyright
 
-Project source code is released under the [MIT License](LICENSE).
+DropDial is commercial proprietary software. Copyright (c) 2026 DropDial. All rights reserved.
+See the [End User License Agreement](LICENSE) for terms of use.
+
+DropDial incorporates third-party open-source components under their respective permissive licenses (including base core components under the MIT License by Max Chen, .NET Runtime, FFmpeg, 7-Zip, and Python libraries). For the complete list of licenses and attributions, see [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).

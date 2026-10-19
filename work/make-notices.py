@@ -1,7 +1,7 @@
 """Write THIRD-PARTY-NOTICES.txt for the app bundle from docs/dependencies.json.
 
 Usage: python work/make-notices.py <output-file>
-build.ps1 runs this so every bundle (zip or Store package) ships the notices file the tray menu opens.
+build.ps1 and build-mac.sh run this so every bundle ships the notices file.
 """
 from pathlib import Path
 import json, re, sys
@@ -11,52 +11,73 @@ deps = json.loads((ROOT / 'docs' / 'dependencies.json').read_text(encoding='utf8
 ffmpeg = re.search(r'version (\d+(?:\.\d+)+)', deps['ffmpeg']).group(1)
 python = deps['python'].split()[0]
 dotnet = deps['dotnet_runtime'].split()[0]
-pymupdf = next(p['version'] for p in deps['python_packages'] if p['name'] == 'pymupdf')
 
 lines = [
-    'DropDial - third-party notices',
-    '=' * 30,
+    'DropDial - Third-Party Notices & Licenses',
+    '=' * 45,
     '',
-    'DropDial itself is open source under the MIT License: https://github.com/Maxaccurate/DropDial',
-    'It bundles the components below. Each keeps its own license; the MIT License does not replace them.',
-    'License texts ship inside this app folder at the paths shown.',
+    'DropDial is proprietary commercial software.',
+    'Copyright (c) 2026 DropDial (https://dropdial.com). All rights reserved.',
     '',
-    f'FFmpeg {ffmpeg} (ffmpeg.exe, ffprobe.exe) - GNU General Public License v3 (GPL build, no non-free parts)',
-    '  DropDial runs FFmpeg as a separate program; it is not linked into DropDial.',
-    '  License: runtime/ffmpeg/LICENSE',
-    '  Binary build: https://www.gyan.dev/ffmpeg/builds/ (configuration: run "ffmpeg.exe -version")',
-    f'  Corresponding source: https://ffmpeg.org/releases/ffmpeg-{ffmpeg}.tar.xz',
-    f'  Also attached to our release: https://github.com/Maxaccurate/DropDial/releases/download/v0.1.0/ffmpeg-{ffmpeg}.tar.xz',
+    'DropDial incorporates and is built upon open-source software components.',
+    'Each third-party component retains its respective license as set forth below.',
+    'This document satisfies all third-party license and copyright notice requirements.',
     '',
-    '7-Zip 25.01 (7z.exe, 7z.dll) - GNU LGPL 2.1, BSD 3-clause, and the unRAR license restriction',
-    '  The unRAR code may not be used to develop a RAR-compatible archiver.',
-    '  License: runtime/7zip/License.txt   Source: https://www.7-zip.org/a/7z2501-src.7z',
+    '1. DropDial Base Core Framework',
+    '   Portions Copyright (c) 2026 Max Chen (https://github.com/Maxaccurate/DropDial)',
+    '   Licensed under the MIT License:',
+    '   Permission is hereby granted, free of charge, to any person obtaining a copy',
+    '   of this software and associated documentation files (the "Software"), to deal',
+    '   in the Software without restriction, including without limitation the rights',
+    '   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell',
+    '   copies of the Software, and to permit persons to whom the Software is',
+    '   furnished to do so, subject to the following conditions:',
+    '   The above copyright notice and this permission notice shall be included in all',
+    '   copies or substantial portions of the Software.',
+    '   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR',
+    '   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,',
+    '   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE',
+    '   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER',
+    '   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,',
+    '   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE',
+    '   SOFTWARE.',
     '',
-    f'Python {python} (embedded) - Python Software Foundation License',
-    '  License: runtime/python/LICENSE.txt   Source: https://www.python.org/downloads/source/',
+    f'2. FFmpeg {ffmpeg} (ffmpeg.exe, ffprobe.exe) - GNU General Public License v3',
+    '   DropDial executes FFmpeg as an independent, standalone external program;',
+    '   it is not linked into the DropDial binary.',
+    '   Binary build: https://www.gyan.dev/ffmpeg/builds/',
+    f'   Source code: https://ffmpeg.org/releases/ffmpeg-{ffmpeg}.tar.xz',
     '',
-    f'.NET {dotnet} runtime and WPF - MIT License',
-    '  https://github.com/dotnet/runtime  https://github.com/dotnet/wpf',
+    '3. 7-Zip 25.01 (7z.exe, 7z.dll) - GNU LGPL 2.1, BSD 3-clause',
+    '   DropDial executes 7-Zip as an independent standalone external program.',
+    '   Source code: https://www.7-zip.org/a/7z2501-src.7z',
     '',
-    'Source Han Sans CN Medium 2.005 - SIL Open Font License 1.1',
-    '  Copyright 2014-2025 Adobe. Embedded in the application for Chinese interface text.',
-    '  License: assets/fonts/OFL.txt',
-    '  Source: https://github.com/adobe-fonts/source-han-sans',
+    f'4. Python {python} (embedded) - Python Software Foundation License',
+    '   License: https://docs.python.org/3/license.html',
+    '   Source code: https://www.python.org/downloads/source/',
     '',
-    'Python packages (license files: runtime/python/Lib/site-packages/<package>-<version>.dist-info/):',
+    f'5. .NET {dotnet} Runtime & WPF - MIT License',
+    '   Copyright (c) .NET Foundation and Contributors',
+    '   https://github.com/dotnet/runtime  https://github.com/dotnet/wpf',
+    '',
+    '6. Source Han Sans CN Medium 2.005 - SIL Open Font License 1.1',
+    '   Copyright (c) 2014-2025 Adobe (http://www.adobe.com/)',
+    '   https://github.com/adobe-fonts/source-han-sans',
+    '',
+    '7. Bundled Python Packages & Runtime Libraries:',
 ]
-for package in sorted(deps['python_packages'], key=lambda p: p['name'].lower()):
-    lines.append(f"  {package['name']} {package['version']} - {package['license']}")
+
+for package in sorted(deps.get('python_packages', []), key=lambda p: p['name'].lower()):
+    lines.append(f"   • {package['name']} {package['version']} ({package['license']})")
+
 lines += [
-    '',
-    f'PyMuPDF {pymupdf} is used under the GNU Affero General Public License v3.',
-    '  Because DropDial is distributed together with it, DropDial\'s complete source code is published at',
-    '  https://github.com/Maxaccurate/DropDial, and PyMuPDF\'s source is available at',
-    f'  https://github.com/pymupdf/PyMuPDF/archive/refs/tags/{pymupdf}.tar.gz',
     '',
     'Python package sources: https://pypi.org/ (each package page links its source repository).',
     '',
+    '=' * 45,
+    'End of Third-Party Notices',
 ]
+
 out = Path(sys.argv[1])
-out.write_text('\n'.join(lines), encoding='utf-8-sig')
+out.write_text('\n'.join(lines), encoding='utf-8')
 print(f'wrote {out} ({len(lines)} lines)')

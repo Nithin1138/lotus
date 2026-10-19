@@ -10,7 +10,7 @@ Images are in `packaging/store-art/` (logos, hero) and `packaging/screenshots/` 
 | Product name | DropDial (pick it in the drop-down) |
 | What's new in this version | the text under "What's new" below |
 | Short title, Voice title | **leave empty** (Xbox only) |
-| Copyright and trademark info | © 2026 DropDial |
+| Copyright and trademark info | © 2026 DropDial. All rights reserved. |
 | Developed by | DropDial |
 | Screenshots > Desktop | `screenshots/en-1.png` … `en-4.png`, in that order, with the captions below |
 | Store logos > Poster art (720 x 1080) | `store-art/poster-720x1080-en.png` |
@@ -19,7 +19,7 @@ Images are in `packaging/store-art/` (logos, hero) and `packaging/screenshots/` 
 | Windows and Xbox image > Super hero art (1920 x 1080) | `store-art/hero-1920x1080.png` |
 | Xbox images, Trailers | **leave empty** (Windows only) |
 
-### What's new in this version (1068 of 1,500 characters)
+### What's new in this version (1071 of 1,500 characters)
 
 ```text
 The first full release: DropDial grows from a converter into a small toolbox.
@@ -34,7 +34,7 @@ The first full release: DropDial grows from a converter into a small toolbox.
 Fixes: photos keep their EXIF in the Metadata tool, removing metadata from HEIC photos now removes EXIF and XMP, and a failed job shows the engine's real reason.
 ```
 
-### Description (2715 of 10,000 characters)
+### Description (2719 of 10,000 characters)
 
 ```text
 DropDial turns the drag you already make into a file converter and a small toolbox.
@@ -62,7 +62,7 @@ PRIVATE BY DESIGN
 • Text recognition uses the recogniser built into Windows.
 • No account, ads, analytics or telemetry.
 
-Free and open source under the MIT License.
+100% offline, privacy-first desktop utility.
 ```
 
 ### Short description (223 of 270 recommended)
@@ -86,7 +86,7 @@ Convert files without opening an app. Hold Shift while you drag any file, and a 
 11. `Built-in player with draggable trim handles for audio and video`
 12. `Optional start with Windows`
 13. `Clean English interface`
-14. `Free and open source`
+14. `100% private, local and offline`
 
 ### Keywords (press Enter after each; 7 of 7, 15 of 21 words)
 
@@ -101,7 +101,7 @@ Convert files without opening an app. Hold Shift while you drag any file, and a 
 ### Additional license terms
 
 ```text
-DropDial is licensed under the MIT License. It includes third-party components under their own licenses, including FFmpeg (GPLv3), 7-Zip (LGPL) and PyMuPDF (AGPLv3). See "Third-party notices" in the tray menu.
+DropDial is proprietary software. It incorporates third-party open-source components under their own licenses, including base core components under the MIT License by Max Chen, FFmpeg (GPLv3), and 7-Zip (LGPL). See "Third-party notices" in the tray menu.
 ```
 
 ### Screenshot captions (200 characters or fewer)

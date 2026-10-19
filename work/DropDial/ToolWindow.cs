@@ -64,7 +64,9 @@ internal sealed class ToolWindow : Window
     private readonly ComboBox framePicker = new() { Visibility = Visibility.Collapsed, Margin = new Thickness(0, 0, 0, 10) };
     private bool syncingRegion;
     private int imageFrame = -1;
-    private bool Cropping => operation.Id is "cropImage" or "cropVideo";
+    private bool IsVideoStudio => operation.Id == "editVideo";
+    private string currentVideoStudioMode = "trim";
+    private bool Cropping => operation.Id is "cropImage" or "cropVideo" || (IsVideoStudio && currentVideoStudioMode == "crop");
     // Rotating is previewed by transforming the picture (or the playing video) itself, so every change shows at once.
     private bool Rotating => operation.Id is "rotateImage" or "rotateVideo";
     internal bool DebugReady => loaded;
@@ -74,12 +76,12 @@ internal sealed class ToolWindow : Window
     private bool LivePreview => RefreshFrame && !HasMedia && operation.Id != "cropImage" && !IsRealtimePreviewTool;
     private bool VisualPreview => operation.Id == "watermark" && Catalog.Category(paths[0]) == "image" || operation.Id is "compress" or "editImage" or "frameImage" or "cropImage" or "cropVideo" or "redactImage" or "annotateImage" or "redactVideo" or "redactPDF" or "organizePDF" or "createCollage";
     private bool IsRealtimePreviewTool => !HasMedia && operation.Id is "editImage" or "frameImage" or "watermark" or "annotateImage" or "redactImage" or "createCollage";
-    private bool ProcessedPlayback => operation.Id is "normalizeAudio" or "audioChannels" or "audioToVideo" or "redactAudio" or "trimAudio" or "trimVideo" or "cropVideo" or "changeVideoSpeed" or "redactVideo" or "muteVideo";
+    private bool ProcessedPlayback => operation.Id is "normalizeAudio" or "audioChannels" or "audioToVideo" or "redactAudio" or "trimAudio" or "trimVideo" or "cropVideo" or "changeVideoSpeed" or "redactVideo" or "muteVideo" or "editVideo";
     private bool HasMedia => Catalog.Category(paths[0]) is "audio" or "video";
     private MediaTransport? transport;
     private bool syncingPlayback;
     private bool syncingTrim;
-    private bool HasTimeline => operation.Id is "videoToGif" or "cropVideo" or "redactVideo" or "videoSnapshots" or "trimVideo" or "trimAudio" or "redactAudio";
+    private bool HasTimeline => operation.Id is "videoToGif" or "cropVideo" or "redactVideo" or "videoSnapshots" or "trimVideo" or "trimAudio" or "redactAudio" or "editVideo";
     private bool RefreshFrame => VisualPreview || HasTimeline && Catalog.Category(paths[0]) == "video";
     private Button? compareButton;
 
@@ -126,7 +128,7 @@ internal sealed class ToolWindow : Window
             Body = Build();
             return;
         }
-        Title = operation.Label + " · " + Path.GetFileName(paths[0]);
+        Title = (IsVideoStudio ? "DropDial · Video Studio" : operation.Label) + " · " + Path.GetFileName(paths[0]);
         Width = 1040;
         Height = 800;
         MinWidth = 850;
@@ -242,7 +244,7 @@ internal sealed class ToolWindow : Window
             mediaSurface.SizeChanged += (_, _) => mediaSurface.Clip = new RectangleGeometry(new Rect(0, 0, mediaSurface.ActualWidth, mediaSurface.ActualHeight), 10, 10);
             left.Children.Add(mediaSurface);
             left.Children.Add(transport);
-            if (operation.Id is "trimVideo" or "trimAudio")
+            if (operation.Id is "trimVideo" or "trimAudio" or "editVideo")
                 transport.RangeChanged += (first, last) => { syncingTrim = true; Set("start", first.ToString("0.000", CultureInfo.InvariantCulture)); Set("end", last.ToString("0.000", CultureInfo.InvariantCulture)); syncingTrim = false; transport.InvalidateEffect(); };
         }
         if (HasTimeline || HasMedia)
@@ -550,6 +552,60 @@ internal sealed class ToolWindow : Window
             ((ComboBox)controls[name]).SelectionChanged += (_, _) => update();
             update();
         }
+        if (IsVideoStudio)
+        {
+            var studioHeader = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
+            var tabGrid = new Grid();
+            tabGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            tabGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            tabGrid.ColumnDefinitions.Add(new ColumnDefinition());
+
+            var trimTab = new Button { Content = "✂️ " + L.T("Trim Clip"), Margin = new Thickness(0, 0, 3, 0), Height = 32, Cursor = Cursors.Hand, FontWeight = FontWeights.SemiBold };
+            var cropTab = new Button { Content = "⛶ " + L.T("Crop Frame"), Margin = new Thickness(3, 0, 3, 0), Height = 32, Cursor = Cursors.Hand, FontWeight = FontWeights.SemiBold };
+            var splitTab = new Button { Content = "➗ " + L.T("Split Video"), Margin = new Thickness(3, 0, 0, 0), Height = 32, Cursor = Cursors.Hand, FontWeight = FontWeights.SemiBold };
+
+            Grid.SetColumn(trimTab, 0);
+            Grid.SetColumn(cropTab, 1);
+            Grid.SetColumn(splitTab, 2);
+
+            tabGrid.Children.Add(trimTab);
+            tabGrid.Children.Add(cropTab);
+            tabGrid.Children.Add(splitTab);
+            studioHeader.Children.Add(tabGrid);
+
+            void UpdateStudioMode(string selectedMode)
+            {
+                currentVideoStudioMode = selectedMode;
+                Set("mode", selectedMode);
+                trimTab.Background = selectedMode == "trim" ? UiTheme.Accent : UiTheme.CardBrush;
+                trimTab.Foreground = selectedMode == "trim" ? Brushes.White : UiTheme.Ink;
+                cropTab.Background = selectedMode == "crop" ? UiTheme.Accent : UiTheme.CardBrush;
+                cropTab.Foreground = selectedMode == "crop" ? Brushes.White : UiTheme.Ink;
+                splitTab.Background = selectedMode == "split" ? UiTheme.Accent : UiTheme.CardBrush;
+                splitTab.Foreground = selectedMode == "split" ? Brushes.White : UiTheme.Ink;
+
+                ShowField("mode", false);
+                ShowField("ratio", selectedMode == "crop");
+                ShowField("parts", selectedMode == "split");
+                ShowField("start", selectedMode == "trim");
+                ShowField("end", selectedMode == "trim");
+                ShowField("x", false);
+                ShowField("y", false);
+                ShowField("width", false);
+                ShowField("height", false);
+
+                UpdateCropVisibility();
+                if (selectedMode == "crop")
+                    UpdateCropRatio(Get("ratio", "Free Style (Custom Drag)"));
+            }
+
+            trimTab.Click += (_, _) => UpdateStudioMode("trim");
+            cropTab.Click += (_, _) => UpdateStudioMode("crop");
+            splitTab.Click += (_, _) => UpdateStudioMode("split");
+
+            parameters.Children.Insert(1, studioHeader);
+            UpdateStudioMode(currentVideoStudioMode);
+        }
         if (operation.Id == "resizeImage")
             WhenChanged("mode", () => { string mode = Get("mode", "percent"); ShowField("percent", mode == "percent"); ShowField("edge", mode == "edge"); foreach (string name in new[] { "width", "height", "keepRatio" }) ShowField(name, mode == "size"); });
         if (operation.Id == "watermark")
@@ -790,7 +846,7 @@ internal sealed class ToolWindow : Window
         cancelButton = Button(L.T("Cancel"), () => { saving?.Cancel(); cancelButton.IsEnabled = false; status.Text = L.T("Stopping…"); return Task.CompletedTask; });
         cancelButton.Visibility = Visibility.Collapsed;
         actions.Children.Add(cancelButton);
-        saveButton = Button(L.T("Save new file"), Save);
+        saveButton = Button(IsVideoStudio ? L.T("Save Video") : L.T("Save new file"), Save);
         saveButton.IsEnabled = false;
         saveButton.Foreground = Brushes.White;
         saveButton.Background = UiTheme.Accent;
@@ -932,6 +988,15 @@ internal sealed class ToolWindow : Window
         var values = new Dictionary<string, string>();
         foreach (var field in operation.Fields ?? [])
             values[field.Name] = Get(field.Name, field.Default);
+        if (IsVideoStudio)
+        {
+            values["mode"] = currentVideoStudioMode;
+            if (currentVideoStudioMode == "crop" && cropFrame.HasSource)
+            {
+                cropFrame.Ratio = CurrentRatio();
+                WriteCropFields();
+            }
+        }
         if (Rotating && double.TryParse(values["angle"], NumberStyles.Float, CultureInfo.InvariantCulture, out double rotation))
         {
             if (!double.IsFinite(rotation) || rotation is < -180 or > 180)

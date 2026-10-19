@@ -634,6 +634,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aboutItem.isEnabled = true
         menu.addItem(aboutItem)
 
+        let noticesItem = NSMenuItem(title: "Third-Party Notices & Licenses", action: #selector(openNoticesTapped(_:)), keyEquivalent: "")
+        noticesItem.target = self
+        noticesItem.isEnabled = true
+        menu.addItem(noticesItem)
+
         let quitItem = NSMenuItem(title: "Quit DropDial", action: #selector(quitTapped(_:)), keyEquivalent: "q")
         quitItem.keyEquivalentModifierMask = [.command]
         quitItem.target = self
@@ -746,8 +751,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func aboutTapped(_ sender: Any? = nil) {
         let alert = NSAlert()
         alert.messageText = "DropDial 1.0.0 (macOS Native)"
-        alert.informativeText = "Drag. Drop. Convert.\nUniversal desktop file conversion, media tools, and file actions.\nRunning natively on macOS with Python and Apple Vision OCR.\n\n3 Wheels:\n• ⇧ Shift / F8: Formats Wheel\n• ⌘ Command / F9: Tools Wheel\n• ⌃ Control / F10: Universal File Actions (AirDrop, Float Shelf, Copy, Move, Copy Path, Terminal)\n\nControls:\n• Tab: Cycle Wheels\n• Esc: Close Wheel\n• Numbers 1-8: Quick select slice\n• Audio Tick feedback on hover"
+        alert.informativeText = "Drag. Drop. Convert.\nUniversal offline desktop file conversion, media tools, and file actions.\n\nCopyright © 2026 DropDial. All rights reserved.\nProprietary commercial software.\nIncorporates open-source components under MIT, Apache, and BSD licenses.\n\n3 Wheels:\n• ⇧ Shift / F8: Formats Wheel\n• ⌘ Command / F9: Tools Wheel\n• ⌃ Control / F10: Universal File Actions (AirDrop, Float Shelf, Copy, Move, Copy Path, Terminal)\n\nControls:\n• Tab: Cycle Wheels • Esc: Close Wheel • Numbers 1-8: Quick select slice\n• Audio Tick feedback on hover"
         alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "View Third-Party Notices")
+        let response = alert.runModal()
+        if response == .alertSecondButtonReturn {
+            openNoticesTapped()
+        }
+    }
+
+    @objc func openNoticesTapped(_ sender: Any? = nil) {
+        if let noticesURL = Bundle.main.url(forResource: "THIRD-PARTY-NOTICES", withExtension: "txt") {
+            NSWorkspace.shared.open(noticesURL)
+            return
+        }
+        // Fallback: check workspace / project root if running unpackaged
+        let fallbackPath = "/Users/nithin/Desktop/lotus/THIRD-PARTY-NOTICES.txt"
+        if FileManager.default.fileExists(atPath: fallbackPath) {
+            NSWorkspace.shared.open(URL(fileURLWithPath: fallbackPath))
+            return
+        }
+        let alert = NSAlert()
+        alert.messageText = "Third-Party Notices"
+        alert.informativeText = "DropDial is proprietary commercial software.\nIncorporates third-party components under MIT, Apache 2.0, and BSD licenses.\nSee THIRD-PARTY-NOTICES.txt in the installation directory."
         alert.runModal()
     }
 

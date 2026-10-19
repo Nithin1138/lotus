@@ -25,10 +25,4 @@ if (Test-Path -LiteralPath $taskPython) {
     if ($LASTEXITCODE -ne 0) { throw 'Generating third-party notices failed.' }
 } elseif (-not $SkipRuntimeCheck) { throw 'Missing runtime/python; cannot generate third-party notices.' }
 Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/validation') -Destination $taskOutput -Recurse -Force
-$taskSource = Join-Path $taskOutput 'source'
-New-Item -ItemType Directory -Force -Path $taskSource | Out-Null
-Get-ChildItem -LiteralPath (Join-Path $taskRoot 'work/DropDial') -File | Where-Object {$_.Extension -in @('.cs', '.csproj', '.manifest')} | Copy-Item -Destination $taskSource -Force
-Copy-Item -LiteralPath (Join-Path $taskRoot 'work/DropDial/backend') -Destination $taskSource -Recurse -Force
-Copy-Item -LiteralPath (Join-Path $taskRoot 'work/DropDial/assets') -Destination $taskSource -Recurse -Force
-Get-ChildItem -LiteralPath $taskSource -Recurse -Include '*.otf', '__pycache__' | Remove-Item -Recurse -Force
 Write-Output "Built: $taskOutput/DropDial.exe"

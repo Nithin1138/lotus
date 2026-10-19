@@ -76,6 +76,15 @@ for icon in "$ROOT_DIR/work/DropDial/assets/StatusBarIcon"*.png "$ROOT_DIR/work/
     fi
 done
 
+# Copy License and Third-Party Notices into bundle resources
+python3 "$ROOT_DIR/work/make-notices.py" "$ROOT_DIR/THIRD-PARTY-NOTICES.txt" 2>/dev/null || true
+if [ -f "$ROOT_DIR/THIRD-PARTY-NOTICES.txt" ]; then
+    cp "$ROOT_DIR/THIRD-PARTY-NOTICES.txt" "$RESOURCES_DIR/THIRD-PARTY-NOTICES.txt"
+fi
+if [ -f "$ROOT_DIR/LICENSE" ]; then
+    cp "$ROOT_DIR/LICENSE" "$RESOURCES_DIR/LICENSE"
+fi
+
 # 5. Copy Backend scripts
 cp -R "$ROOT_DIR/work/DropDial/backend/"* "$BACKEND_DIR/"
 find "$BACKEND_DIR" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true

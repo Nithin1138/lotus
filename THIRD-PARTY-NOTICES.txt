@@ -1,0 +1,76 @@
+DropDial - Third-Party Notices & Licenses
+=============================================
+
+DropDial is proprietary commercial software.
+Copyright (c) 2026 DropDial (https://dropdial.com). All rights reserved.
+
+DropDial incorporates and is built upon open-source software components.
+Each third-party component retains its respective license as set forth below.
+This document satisfies all third-party license and copyright notice requirements.
+
+1. DropDial Base Core Framework
+   Portions Copyright (c) 2026 Max Chen (https://github.com/Maxaccurate/DropDial)
+   Licensed under the MIT License:
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+2. FFmpeg 9.0.2 (ffmpeg.exe, ffprobe.exe) - GNU General Public License v3
+   DropDial executes FFmpeg as an independent, standalone external program;
+   it is not linked into the DropDial binary.
+   Binary build: https://www.gyan.dev/ffmpeg/builds/
+   Source code: https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz
+
+3. 7-Zip 25.01 (7z.exe, 7z.dll) - GNU LGPL 2.1, BSD 3-clause
+   DropDial executes 7-Zip as an independent standalone external program.
+   Source code: https://www.7-zip.org/a/7z2501-src.7z
+
+4. Python 3.13.16 (embedded) - Python Software Foundation License
+   License: https://docs.python.org/3/license.html
+   Source code: https://www.python.org/downloads/source/
+
+5. .NET 8.0.31 Runtime & WPF - MIT License
+   Copyright (c) .NET Foundation and Contributors
+   https://github.com/dotnet/runtime  https://github.com/dotnet/wpf
+
+6. Source Han Sans CN Medium 2.005 - SIL Open Font License 1.1
+   Copyright (c) 2014-2025 Adobe (http://www.adobe.com/)
+   https://github.com/adobe-fonts/source-han-sans
+
+7. Bundled Python Packages & Runtime Libraries:
+   • et_xmlfile 2.0.0 (MIT)
+   • fire 0.7.1 (Apache-2.0)
+   • fonttools 4.66.1 (MIT)
+   • lxml 6.1.3 (BSD-3-Clause)
+   • numpy 2.5.3 (BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0)
+   • opencv-python-headless 5.0.0.93 (Apache 2.0)
+   • openpyxl 3.1.5 (MIT)
+   • pdf2docx 0.5.13 (MIT)
+   • pillow 12.3.0 (MIT-CMU)
+   • pillow_heif 1.8.0 (BSD-3-Clause)
+   • pymupdf 1.28.2 (Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License)
+   • pypdf 6.19.0 (BSD-3-Clause)
+   • pypdfium2 5.13.0 (BSD-3-Clause, Apache-2.0, dependency licenses)
+   • python-docx 1.2.0 (MIT)
+   • python-pptx 1.0.2 (MIT)
+   • resvg_py 0.5.0 (see bundled license)
+   • termcolor 3.3.0 (MIT)
+   • typing_extensions 4.16.0 (PSF-2.0)
+   • xlsxwriter 3.2.9 (BSD-2-Clause)
+
+Python package sources: https://pypi.org/ (each package page links its source repository).
+
+=============================================
+End of Third-Party Notices
