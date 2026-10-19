@@ -46,7 +46,7 @@ internal sealed class WelcomeWindow : Window
 
         var steps = new StackPanel { Margin = new Thickness(0, 24, 0, 0) };
         steps.Children.Add(Step(1, L.T("Drag files"), L.T("Select one or more files on the desktop or in File Explorer and start dragging them, as if you were moving them.")));
-        steps.Children.Add(Step(2, L.T("Press Shift or Alt"), L.T("While dragging, press Shift for formats, Ctrl+Shift for tools, or Alt for actions (Floating Shelf, Copy, Move, Terminal). F8, F9, and F10 also work.")));
+        steps.Children.Add(Step(2, L.T("Press Shift"), L.T("While dragging, press Shift for formats, Ctrl+Shift for tools, or Alt for actions (Floating Shelf, Copy, Move, Terminal). F8, F9, and F10 also work.")));
         steps.Children.Add(Step(3, L.T("Release on an option"), L.T("The new file is saved next to the original, which is never changed.")));
         panel.Children.Add(steps);
 

@@ -115,7 +115,7 @@ internal static class Catalog
             return ["pdf", "docx", "pages", "txt", "md", "html"];
         if (ext is "md" or "markdown")
             return ["pdf", "docx", "pages", "epub", "html", "txt"];
-        return ext is "jpg" or "png" ? [.. ImageTargets, "docx", "ico"] : Images.Contains(ext) ? [.. ImageTargets, "ico"] : Audio.Contains(ext) ? [.. Audio, "aac"] : Video.Contains(ext) ? [.. Video, "gif", "mp3", "m4a", "wav"] : ext == "gif" ? Video : ext == "pdf" ? ["docx", "pages", "pptx", "xlsx", "jpg", "png", "epub", "txt", "md"] : ext == "txt" ? ["pdf", "docx", "pages", "md", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? (ext == "srt" ? ["vtt", "txt"] : ["srt", "txt"]) : Archives;
+        return ext is "jpg" or "png" ? [.. ImageTargets, "docx"] : Images.Contains(ext) ? ImageTargets : Audio.Contains(ext) ? Audio : Video.Contains(ext) ? [.. Video, "gif", "mp3"] : ext == "gif" ? Video : ext == "pdf" ? ["docx", "jpg", "png", "txt"] : ext == "txt" ? ["pdf", "docx", "md", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? ["srt", "vtt", "txt"] : Archives;
     }
     public static readonly Operation[] FileActions = [
         new("action:float", "Float", true),

@@ -123,13 +123,13 @@ internal sealed class LicenseWindow : Window
                 {
                     keyInput.Text = clip;
                     keyInput.SelectAll();
-                    if (clip.StartsWith("DD-"))
+                    if (clip.StartsWith("DD-") && messageText != null)
                     {
                         messageText.Text = "Key pasted • Click Activate to confirm";
                         messageText.Foreground = UiTheme.Muted;
                     }
                 }
-                else
+                else if (messageText != null)
                 {
                     messageText.Text = "Clipboard is empty";
                     messageText.Foreground = UiTheme.Accent;

@@ -715,7 +715,55 @@ internal sealed class ToolWindow : Window
         if (advanced.Children.Count > 0)
             parameters.Children.Add(new Expander { Header = L.T("Advanced settings (optional)"), Content = advanced, Margin = new Thickness(0, 16, 0, 0) });
         if ((operation.Fields?.Length ?? 0) == 0)
-            parameters.Children.Add(new TextBlock { Text = operation.Ordered ? L.T("Arrange the files on the left, then save.") : L.T("No settings needed. Check the preview, then save a new file."), Foreground = UiTheme.Muted, TextWrapping = TextWrapping.Wrap });
+        {
+            var card = new Border
+            {
+                Background = UiTheme.Hover,
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(14, 12, 14, 12),
+                Margin = new Thickness(0, 4, 0, 14)
+            };
+            var cardPanel = new StackPanel();
+            cardPanel.Children.Add(new TextBlock
+            {
+                Text = L.T("Tool Settings & Options"),
+                FontWeight = FontWeights.SemiBold,
+                FontSize = 13,
+                Foreground = UiTheme.Ink,
+                Margin = new Thickness(0, 0, 0, 8)
+            });
+            cardPanel.Children.Add(new TextBlock
+            {
+                Text = operation.Ordered ? L.T("Arrange the files on the left, then save.") : L.T("Ready to run on selected files. Check the live preview, customize your output settings below, and click Save."),
+                Foreground = UiTheme.Muted,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 12)
+            });
+
+            cardPanel.Children.Add(new TextBlock { Text = L.T("Quality Profile"), FontWeight = FontWeights.Medium, FontSize = 11, Foreground = UiTheme.Ink, Margin = new Thickness(0, 4, 0, 4) });
+            var profileBox = new ComboBox { Margin = new Thickness(0, 0, 0, 10) };
+            profileBox.Items.Add(new ComboBoxItem { Content = L.T("High Quality (Preserve Details)"), Tag = "high" });
+            profileBox.Items.Add(new ComboBoxItem { Content = L.T("Balanced (Recommended)"), Tag = "balanced" });
+            profileBox.Items.Add(new ComboBoxItem { Content = L.T("Maximum Compression (Small Size)"), Tag = "compact" });
+            profileBox.SelectedIndex = 1;
+            cardPanel.Children.Add(profileBox);
+
+            cardPanel.Children.Add(new TextBlock { Text = L.T("Save Location"), FontWeight = FontWeights.Medium, FontSize = 11, Foreground = UiTheme.Ink, Margin = new Thickness(0, 4, 0, 4) });
+            var destBox = new ComboBox { Margin = new Thickness(0, 0, 0, 10) };
+            destBox.Items.Add(new ComboBoxItem { Content = L.T("Same Folder as Original"), Tag = "same" });
+            destBox.Items.Add(new ComboBoxItem { Content = L.T("Desktop"), Tag = "desktop" });
+            destBox.Items.Add(new ComboBoxItem { Content = L.T("Downloads"), Tag = "downloads" });
+            destBox.SelectedIndex = 0;
+            cardPanel.Children.Add(destBox);
+
+            var metaCheck = new CheckBox { Content = L.T("Preserve original file metadata & creation date"), IsChecked = true, Margin = new Thickness(0, 4, 0, 4) };
+            var openFolder = new CheckBox { Content = L.T("Open containing folder after saving"), IsChecked = false, Margin = new Thickness(0, 2, 0, 4) };
+            cardPanel.Children.Add(metaCheck);
+            cardPanel.Children.Add(openFolder);
+
+            card.Child = cardPanel;
+            parameters.Children.Add(card);
+        }
         var scroll = UiTheme.Card(new ScrollViewer { Content = parameters, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }, new Thickness(18));
         Grid.SetColumn(scroll, 1);
         body.Children.Add(scroll);
