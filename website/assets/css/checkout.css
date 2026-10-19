@@ -219,123 +219,208 @@
   gap: 4px;
 }
 
-/* Success State View */
+/* Success State View (Compact & Modern) */
 .checkout-success-view {
   display: none;
   text-align: center;
+  padding: 4px 0;
+}
+
+.success-header-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
 }
 
 .success-icon-wrap {
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   background: rgba(16, 185, 129, 0.15);
-  border: 1px solid #10b981;
+  border: 1.5px solid #10b981;
   color: #10b981;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+}
+
+.success-header-meta {
+  text-align: center;
 }
 
 .success-title {
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: #ffffff;
-  margin: 0 0 6px;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
 }
 
 .success-sub {
-  font-size: 0.9rem;
-  color: #9ea7b7;
-  margin: 0 0 20px;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0;
 }
 
-.license-display-card {
-  background: #0c0e12;
-  border: 1px solid #2d3442;
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 20px;
+.license-compact-card {
+  background: #0d0f14;
+  border: 1px solid rgba(255, 101, 0, 0.35);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   text-align: left;
 }
 
-.license-display-label {
-  font-size: 0.75rem;
+.license-card-header {
+  font-size: 0.72rem;
   font-weight: 700;
   color: #ff6500;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 8px;
   display: flex;
+  align-items: center;
   justify-content: space-between;
 }
 
-.license-code-block {
-  font-family: 'SF Mono', Consolas, Monaco, monospace;
-  font-size: 0.85rem;
-  color: #ffffff;
-  background: #14171e;
-  border: 1px solid #222731;
-  padding: 12px;
-  border-radius: 6px;
-  word-break: break-all;
-  user-select: all;
-  margin-bottom: 12px;
+.license-status-tag {
+  color: #10b981;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
-.copy-key-btn {
-  width: 100%;
-  background: #252b36;
-  border: 1px solid #363d4c;
+.license-key-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.license-key-field {
+  flex: 1;
+  min-width: 0;
+  background: #14171f;
+  border: 1px solid #262c38;
   color: #ffffff;
-  padding: 10px;
+  font-family: 'SF Mono', Consolas, Monaco, monospace;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 9px 12px;
   border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  outline: none;
   cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.license-key-field:focus {
+  border-color: #ff6500;
+  box-shadow: 0 0 0 2px rgba(255, 101, 0, 0.2);
+}
+
+.copy-key-btn-compact {
+  background: #ff6500;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(255, 101, 0, 0.35);
+  flex-shrink: 0;
+}
+
+.copy-key-btn-compact:hover {
+  background: #e55a00;
+  box-shadow: 0 4px 12px rgba(255, 101, 0, 0.45);
+}
+
+.copy-key-btn-compact:active {
+  transform: scale(0.97);
+}
+
+.copy-key-btn-compact.copied {
+  background: #059669;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.activation-hint-pill {
+  background: rgba(255, 101, 0, 0.08);
+  border: 1px solid rgba(255, 101, 0, 0.22);
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.15s;
+  line-height: 1.4;
 }
 
-.copy-key-btn:hover {
-  background: #2f3745;
-  border-color: #ff6500;
+.activation-hint-pill .hint-icon {
+  font-size: 0.9rem;
 }
 
-.copy-key-btn.copied {
-  background: #065f46;
-  border-color: #10b981;
-  color: #a7f3d0;
+.activation-hint-pill strong {
+  color: #ffffff;
 }
 
 .success-email-notice {
-  font-size: 0.82rem;
-  color: #8c95a5;
-  margin-bottom: 20px;
-  line-height: 1.5;
+  font-size: 0.78rem;
+  color: #838e9e;
+  margin: 0 0 16px;
+  line-height: 1.4;
 }
 
 .success-email-notice strong {
-  color: #e5e7eb;
+  color: #e2e8f0;
 }
 
-.activation-quick-steps {
-  background: #191c24;
-  border: 1px solid #262b36;
+.success-actions-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.success-actions-row .btn {
+  flex: 1;
+  justify-content: center;
+  padding: 10px 14px;
+  font-size: 0.85rem;
   border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 0.8rem;
-  color: #a1a9b8;
-  text-align: left;
-  line-height: 1.6;
-  margin-bottom: 20px;
 }
 
-.activation-quick-steps ol {
-  margin: 6px 0 0;
-  padding-left: 18px;
+.success-actions-row #download-now-btn {
+  background: #252b36;
+  border: 1px solid #363d4c;
+  color: #ffffff;
+}
+
+.success-actions-row #download-now-btn:hover {
+  background: #2f3745;
+  border-color: #4b5563;
+}
+
+.success-actions-row #success-done-btn {
+  background: #ff6500;
+  border: 1px solid #ff6500;
+  color: #ffffff;
+}
+
+.success-actions-row #success-done-btn:hover {
+  background: #e55a00;
 }

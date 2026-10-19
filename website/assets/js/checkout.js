@@ -196,44 +196,44 @@
             </div>
           </div>
 
-          <!-- Success View -->
+          <!-- Success View (Compact & Modern) -->
           <div class="checkout-success-view" id="checkout-success-view">
-            <div class="success-icon-wrap">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <div class="success-header-row">
+              <div class="success-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div class="success-header-meta">
+                <h3 class="success-title">Payment Successful!</h3>
+                <p class="success-sub">DropDial Pro Lifetime is now active for your account.</p>
+              </div>
             </div>
 
-            <h3 class="success-title">Payment Successful!</h3>
-            <p class="success-sub">Welcome to DropDial Pro. Your lifetime license key is active.</p>
-
-            <div class="license-display-card">
-              <div class="license-display-label">
-                <span>Personal Lifetime License Key</span>
-                <span style="color: #10b981;">✓ Valid</span>
+            <div class="license-compact-card">
+              <div class="license-card-header">
+                <span class="license-card-label">Personal License Key</span>
+                <span class="license-status-tag">● Lifetime Active</span>
               </div>
-              <div class="license-code-block" id="license-key-display">DD-...</div>
-              <button type="button" class="copy-key-btn" id="copy-license-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                <span>Copy License Key</span>
-              </button>
+              <div class="license-key-row">
+                <input type="text" readonly class="license-key-field" id="license-key-display" value="DD-..." spellcheck="false" autocomplete="off" />
+                <button type="button" class="copy-key-btn-compact" id="copy-license-btn" title="Copy to clipboard">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span>Copy Key</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="activation-hint-pill">
+              <span class="hint-icon">⚡</span>
+              <span class="hint-text"><strong>To Activate:</strong> Right-click DropDial icon ➔ <strong>Activate Pro…</strong> ➔ Paste Key</span>
             </div>
 
             <p class="success-email-notice" id="success-email-notice">
-              A copy of this license has also been sent to your email address via <strong>Resend</strong>.
+              A backup copy has also been sent to your email.
             </p>
 
-            <div class="activation-quick-steps">
-              <strong>Quick 20-Second Activation:</strong>
-              <ol>
-                <li>Open <strong>DropDial</strong> on your desktop.</li>
-                <li>Right-click the DropDial menu bar or tray icon.</li>
-                <li>Choose <strong>Activate DropDial Pro…</strong></li>
-                <li>Click <strong>Paste Key</strong> and confirm activation.</li>
-              </ol>
-            </div>
-
-            <div style="display: flex; gap: 10px; justify-content: center;">
-              <a href="#download" class="btn btn-ghost" id="download-now-btn" style="flex: 1; justify-content: center; padding: 10px 14px; font-size: 0.85rem;">Download App</a>
-              <button type="button" class="btn btn-primary" id="success-done-btn" style="flex: 1; justify-content: center; padding: 10px 14px; font-size: 0.85rem; background: #ff6500; border-color: #ff6500; color: #fff;">Done</button>
+            <div class="success-actions-row">
+              <a href="#download" class="btn btn-ghost" id="download-now-btn">Download App</a>
+              <button type="button" class="btn btn-primary" id="success-done-btn">Done</button>
             </div>
           </div>
         </div>
@@ -290,34 +290,50 @@
     // Pay Button Click
     payBtn.addEventListener('click', handlePaymentInitiation);
 
+    // Auto-select key on input focus/click
+    licenseKeyDisplay.addEventListener('click', function () {
+      if (typeof this.select === 'function') {
+        this.select();
+      }
+    });
+
     // Copy License Key Button
     copyBtn.addEventListener('click', function () {
-      const key = licenseKeyDisplay.textContent.trim();
+      const key = (licenseKeyDisplay.value || licenseKeyDisplay.textContent || '').trim();
       if (!key) return;
 
-      navigator.clipboard.writeText(key).then(function () {
+      const setCopiedUI = () => {
         copyBtn.classList.add('copied');
-        copyBtn.querySelector('span').textContent = 'Key Copied to Clipboard! ✓';
+        const textSpan = copyBtn.querySelector('span');
+        if (textSpan) textSpan.textContent = 'Copied! ✓';
         setTimeout(function () {
           copyBtn.classList.remove('copied');
-          copyBtn.querySelector('span').textContent = 'Copy License Key';
+          if (textSpan) textSpan.textContent = 'Copy Key';
         }, 3000);
-      }).catch(function () {
-        // Fallback for older browsers
-        const textarea = document.createElement('textarea');
-        textarea.value = key;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        copyBtn.classList.add('copied');
-        copyBtn.querySelector('span').textContent = 'Key Copied to Clipboard! ✓';
-        setTimeout(function () {
-          copyBtn.classList.remove('copied');
-          copyBtn.querySelector('span').textContent = 'Copy License Key';
-        }, 3000);
-      });
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(key).then(setCopiedUI).catch(() => {
+          fallbackCopy(key, setCopiedUI);
+        });
+      } else {
+        fallbackCopy(key, setCopiedUI);
+      }
     });
+
+    function fallbackCopy(text, cb) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        cb();
+      } catch (e) {}
+      document.body.removeChild(textarea);
+    }
   }
 
   function openModal() {
@@ -460,8 +476,12 @@
   function showSuccess(licenseKey, email) {
     formView.style.display = 'none';
     successView.style.display = 'block';
-    licenseKeyDisplay.textContent = licenseKey;
-    successEmailText.innerHTML = `A copy of this license and receipt has been sent to <strong>${email}</strong> via <strong>Resend</strong>.`;
+    if (licenseKeyDisplay.tagName === 'INPUT') {
+      licenseKeyDisplay.value = licenseKey;
+    } else {
+      licenseKeyDisplay.textContent = licenseKey;
+    }
+    successEmailText.innerHTML = `A backup copy of this license has also been emailed to <strong>${email}</strong>.`;
   }
 
   // Self-initialize on DOM ready
