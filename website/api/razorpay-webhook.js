@@ -7,7 +7,7 @@
  * Events: payment.captured, order.paid
  */
 
-const { generateLicense, sendResendEmail, verifyRazorpayWebhookSignature } = require('./_utils');
+const { generateLicense, sendResendEmail, sendPaymentFailedEmail, verifyRazorpayWebhookSignature } = require('./_utils');
 
 // Helper to buffer request body for HMAC verification
 function getRawBody(req) {
@@ -93,6 +93,38 @@ module.exports = async function handler(req, res) {
         licenseIssued: true,
         emailDelivered: emailResult.success
       });
+    }
+
+    // Process payment.failed event
+    if (event === 'payment.failed') {
+      const payment = eventData.payload?.payment?.entity || {};
+      const notes = payment.notes || {};
+
+      const email = (payment.email || notes.email || '').trim().toLowerCase();
+      const name = (notes.name || payment.contact || 'DropDial Customer').trim();
+      const reason = payment.error_description || payment.error_reason || 'Transaction was declined by bank or gateway';
+      const amount = payment.amount ? (payment.amount / 100).toFixed(2) : '';
+      const currency = payment.currency || 'USD';
+
+      if (email && email.includes('@')) {
+        console.log(`[Razorpay Webhook] Payment failed for: ${email} -> Sending failure notification email`);
+        const failEmailResult = await sendPaymentFailedEmail({
+          to: email,
+          name,
+          reason,
+          amount,
+          currency
+        });
+
+        return res.status(200).json({
+          status: 'ok',
+          event,
+          email,
+          paymentFailedNoticeSent: failEmailResult.success
+        });
+      }
+
+      return res.status(200).json({ status: 'ignored_no_email', event });
     }
 
     // Acknowledge other events

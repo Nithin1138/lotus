@@ -464,9 +464,31 @@
 
       const rzp = new Razorpay(rzpOptions);
       rzp.on('payment.failed', function (failResp) {
-        showError(`Payment failed: ${failResp.error.description || 'Transaction was declined.'}`);
+        const errorDesc = failResp.error && (failResp.error.description || failResp.error.reason)
+          ? (failResp.error.description || failResp.error.reason)
+          : 'Transaction was declined by bank or card issuer.';
+
+        showError(`Payment failed: ${errorDesc}`);
         payBtn.disabled = false;
         payBtn.innerHTML = originalBtnText;
+
+        // Send payment failure recovery email to customer
+        if (email) {
+          fetch('/api/payment-failed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: email,
+              name: name,
+              reason: errorDesc,
+              amount: PRICING[selectedCurrency] ? PRICING[selectedCurrency].displayPrice : '',
+              currency: selectedCurrency,
+              orderId: orderData.orderId
+            })
+          }).catch(function (reportErr) {
+            console.warn('[Checkout] Failed to trigger payment failure email:', reportErr);
+          });
+        }
       });
 
       rzp.open();
