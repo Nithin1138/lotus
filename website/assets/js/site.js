@@ -57,10 +57,10 @@
   if (isMac && cardMac) cardMac.classList.add("is-detected");
   if (!isMac && cardWin) cardWin.classList.add("is-detected");
 
-  // Terminal Install Command (PowerShell on Windows, bash on macOS)
+  // Terminal Install Command (PowerShell / cmd on Windows, bash on macOS)
   const defaultInstallCmd = isMac
     ? "curl -fsSL https://raw.githubusercontent.com/Nithin1138/lotus/main/install.sh | bash"
-    : "irm https://raw.githubusercontent.com/Nithin1138/lotus/main/install.ps1 | iex";
+    : 'powershell -c "irm https://raw.githubusercontent.com/Nithin1138/lotus/main/install.ps1 | iex"';
 
   const cmdCode = $("#install-cmd-text");
   if (cmdCode) cmdCode.textContent = defaultInstallCmd;

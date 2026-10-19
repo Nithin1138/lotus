@@ -600,7 +600,7 @@
       <div class="dl-cli-box" style="margin-top: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 12px; font-family: var(--mono); font-size: 0.88rem; color: var(--text); overflow-x: auto;">
           <span style="color: var(--accent); font-weight: 700; user-select: none;">$</span>
-          <code id="install-cmd-text" style="background: transparent; border: none; padding: 0; color: inherit; font-size: 0.88rem;">irm https://raw.githubusercontent.com/Nithin1138/lotus/main/install.ps1 | iex</code>
+          <code id="install-cmd-text" style="background: transparent; border: none; padding: 0; color: inherit; font-size: 0.88rem;">powershell -c &quot;irm https://raw.githubusercontent.com/Nithin1138/lotus/main/install.ps1 | iex&quot;</code>
         </div>
         <button class="btn btn-small btn-ghost" id="copy-install-cmd" type="button" style="gap: 6px; font-size: 0.82rem; white-space: nowrap;">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
