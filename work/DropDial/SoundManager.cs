@@ -13,9 +13,14 @@ internal static class SoundManager
         set => Settings.Set(SoundKey, value);
     }
 
+    private static long lastTickMs;
+
     public static void PlayTick()
     {
         if (!Enabled) return;
+        long now = Environment.TickCount64;
+        if (now - lastTickMs < 35) return;
+        lastTickMs = now;
         try
         {
             SystemSounds.Asterisk.Play();

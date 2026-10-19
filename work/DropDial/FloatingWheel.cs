@@ -605,7 +605,9 @@ internal sealed class DropWheel : Window
             Catalog.Definition("frameImage", "image"),
             Catalog.Definition("watermark", "image"),
             Catalog.Definition("redactImage", "image"),
-            Catalog.Definition("ocrImage", "image")
+            Catalog.Definition("ocrImage", "image"),
+            Catalog.Definition("annotateImage", "image"),
+            Catalog.Definition("makeIcon", "image")
         ],
         _ => [
             new("convert:png", "PNG"),
@@ -1110,93 +1112,103 @@ internal sealed class DropWheel : Window
         ring.Highlighted = -1;
     }
 
-    private static string? GetOperationIcon(string id) => id switch
+    private static string? GetOperationIcon(string id)
     {
-        // Image Tools
-        "compress" => "🗜️",
-        "resizeImage" => "⤢",
-        "cropImage" => "✂",
-        "editImage" => "🎛",
-        "frameImage" => "🔲",
-        "watermark" => "💬",
-        "redactImage" => "👁‍🗨",
-        "ocrImage" => "📄",
-        "annotateImage" => "✏",
-        "makeIcon" => "🖼",
-        "removeMetadata" => "🛡",
-        "rotateImage" => "↻",
-        "location" => "📍",
-        "createCollage" => "▦",
-        "createAnimation" => "🎞",
+        string key = id.StartsWith("action:") ? id["action:".Length..] : id;
+        return key switch
+        {
+            // Actions
+            "float" => "📌",
+            "copy" => "📋",
+            "move" => "📁",
+            "copyPath" => "📋",
+            "terminal" or "openTerminal" => "💻",
+            "share" => "🔗",
+            "metadata" or "stripExif" => "🛡",
+            "airDrop" => "📤",
+            "reveal" => "📁",
+            "copyImage" => "🖼",
+            "vscode" => "📝",
+            "properties" => "ℹ",
+            "trash" => "🗑",
+            "openWith" => "↗",
+            "uploadDrop" => "☁",
+            "hash" => "#",
+            "archive" => "📦",
+            "unarchive" => "📤",
+            "email" => "✉",
 
-        // Audio Tools
-        "trimAudio" => "✂",
-        "compressAudio" => "🗜️",
-        "normalizeAudio" => "🔊",
-        "splitAudio" => "⫽",
-        "audioChannels" => "🎚",
-        "changeAudioSpeed" => "⏩",
-        "reverseAudio" => "⏪",
-        "audioEffects" => "🎛",
-        "joinAudio" => "🔗",
-        "ringtone" => "🔔",
-        "subtitlesAudio" => "💬",
+            // Image Tools
+            "compress" => "🗜️",
+            "resizeImage" => "⤢",
+            "cropImage" => "✂",
+            "editImage" => "🎛",
+            "frameImage" => "🔲",
+            "watermark" => "💬",
+            "redactImage" => "👁‍🗨",
+            "ocrImage" => "📄",
+            "annotateImage" => "✏",
+            "makeIcon" => "🖼",
+            "removeMetadata" => "🛡",
+            "rotateImage" => "↻",
+            "location" => "📍",
+            "createCollage" => "▦",
+            "createAnimation" => "🎞",
 
-        // Video Tools
-        "trimVideo" => "✂",
-        "compressVideo" => "🗜️",
-        "cropVideo" => "✂",
-        "muteVideo" => "🔇",
-        "videoToGif" => "🎞",
-        "extractFrames" => "📷",
-        "extractAudio" => "🎵",
-        "changeVideoSpeed" => "⏩",
-        "splitVideo" => "⫽",
-        "videoSettings" => "⚙",
-        "videoEffects" => "✨",
-        "joinVideos" => "🔗",
-        "rotateVideo" => "↻",
-        "redactVideo" => "👁‍🗨",
-        "editVideo" => "🎬",
+            // Audio Tools
+            "trimAudio" => "✂",
+            "compressAudio" => "🗜️",
+            "normalizeAudio" => "🔊",
+            "splitAudio" => "⫽",
+            "audioChannels" => "🎚",
+            "changeAudioSpeed" => "⏩",
+            "reverseAudio" => "⏪",
+            "audioEffects" => "🎛",
+            "joinAudio" => "🔗",
+            "ringtone" => "🔔",
+            "subtitlesAudio" => "💬",
 
-        // PDF Tools
-        "createPDF" => "📄",
-        "mergePdf" or "officeMergePDF" => "📑",
-        "splitPdf" => "⫽",
-        "compressPdf" => "🗜️",
-        "protectPdf" or "pdfPassword" => "🔒",
-        "unlockPdf" => "🔓",
-        "pdfToImages" or "extractPdfImages" => "🖼",
-        "imagesToPdf" => "📄",
-        "watermarkPdf" => "💬",
-        "pageNumbersPdf" or "pdfNumbers" => "🔢",
-        "rotatePdf" => "↻",
-        "ocrPdf" => "📄",
-        "redactPDF" => "👁‍🗨",
-        "officePdf" => "📤",
+            // Video Tools
+            "trimVideo" => "✂",
+            "compressVideo" => "🗜️",
+            "cropVideo" => "✂",
+            "muteVideo" => "🔇",
+            "videoToGif" => "🎞",
+            "extractFrames" => "📷",
+            "extractAudio" => "🎵",
+            "changeVideoSpeed" => "⏩",
+            "splitVideo" => "⫽",
+            "videoSettings" => "⚙",
+            "videoEffects" => "✨",
+            "joinVideos" => "🔗",
+            "rotateVideo" => "↻",
+            "redactVideo" => "👁‍🗨",
+            "editVideo" => "🎬",
 
-        // Archives
-        "packArchive" => "📦",
-        "extractArchive" => "📤",
+            // PDF Tools
+            "createPDF" => "📄",
+            "mergePdf" or "officeMergePDF" or "mergePDF" => "📑",
+            "splitPdf" or "splitPDF" => "⫽",
+            "compressPdf" => "🗜️",
+            "protectPdf" or "pdfPassword" => "🔒",
+            "unlockPdf" => "🔓",
+            "pdfToImages" or "extractPdfImages" => "🖼",
+            "imagesToPdf" => "📄",
+            "watermarkPdf" => "💬",
+            "pageNumbersPdf" or "pdfNumbers" => "🔢",
+            "rotatePdf" => "↻",
+            "ocrPdf" or "ocrPDF" => "📄",
+            "redactPDF" => "👁‍🗨",
+            "organizePDF" => "📑",
+            "officePdf" => "📤",
 
-        // File Actions
-        "reveal" => "📁",
-        "copyPath" => "📋",
-        "copyImage" => "🖼",
-        "terminal" => "💻",
-        "vscode" => "📝",
-        "properties" => "ℹ",
-        "trash" => "🗑",
-        "openWith" => "↗",
-        "uploadDrop" => "☁",
-        "hash" => "#",
-        "archive" => "📦",
-        "unarchive" => "📤",
-        "email" => "✉",
-        "share" => "🔗",
+            // Archives
+            "packArchive" => "📦",
+            "extractArchive" => "📤",
 
-        _ => null
-    };
+            _ => null
+        };
+    }
 
     // One petal with its label. labelCounterRotDeg counter-rotates the label so text stays upright during wheel rotation.
     private void AddPetal(Ring ring, double start, double end, double inner, double outer, double labelRadius, double labelWidth, string title, string? preview, double titleSize, Brush face, int layer, double labelCounterRotDeg = 0, string? id = null)
