@@ -3,6 +3,7 @@ name: DropDial CI/CD
 on:
   push:
     branches: [ main, advance-features ]
+    tags: [ 'v*', '[0-9]+.*' ]
   pull_request:
     branches: [ main, advance-features ]
   workflow_dispatch:
@@ -12,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   macos:
@@ -130,10 +131,45 @@ jobs:
         shell: pwsh
         run: |
           Compress-Archive -Path outputs/DropDial -DestinationPath outputs/DropDial-Windows-x64.zip -Force
+          Copy-Item -LiteralPath outputs/DropDial/DropDial.exe -Destination outputs/DropDial.exe -Force
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: DropDial-Windows-x64
-          path: outputs/DropDial-Windows-x64.zip
+          path: |
+            outputs/DropDial-Windows-x64.zip
+            outputs/DropDial.exe
           if-no-files-found: error
+
+  release:
+    name: GitHub Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [ macos, windows ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: DropDial-macOS
+          path: release_assets/mac
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: DropDial-Windows-x64
+          path: release_assets/win
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          find release_assets/ -type f
+          gh release create "${{ github.ref_name }}" \
+            release_assets/win/DropDial-Windows-x64.zip \
+            release_assets/win/DropDial.exe \
+            release_assets/mac/DropDial-macOS.zip \
+            --title "DropDial ${{ github.ref_name }}" \
+            --generate-notes

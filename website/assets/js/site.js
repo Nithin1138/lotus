@@ -57,28 +57,43 @@
   if (isMac && cardMac) cardMac.classList.add("is-detected");
   if (!isMac && cardWin) cardWin.classList.add("is-detected");
 
-  // Copy install command button
+  // Terminal Install Command (PowerShell on Windows, bash on macOS)
+  const defaultInstallCmd = isMac
+    ? "curl -fsSL https://raw.githubusercontent.com/Nithin1138/lotus/main/install.sh | bash"
+    : "irm https://raw.githubusercontent.com/Nithin1138/lotus/main/install.ps1 | iex";
+
+  const cmdCode = $("#install-cmd-text");
+  if (cmdCode) cmdCode.textContent = defaultInstallCmd;
+
   const copyBtn = $("#copy-install-cmd");
   if (copyBtn) {
     copyBtn.addEventListener("click", async () => {
-      const cmd = "curl -fsSL https://dropdial.com/install.sh | bash";
+      const activeCmd = cmdCode ? cmdCode.textContent : defaultInstallCmd;
       try {
-        await navigator.clipboard.writeText(cmd);
+        await navigator.clipboard.writeText(activeCmd);
         const originalText = copyBtn.innerHTML;
         copyBtn.innerHTML = "<span>✓ Copied!</span>";
         setTimeout(() => { copyBtn.innerHTML = originalText; }, 2000);
       } catch (err) {
-        window.prompt("Copy install command:", cmd);
+        window.prompt("Copy install command:", activeCmd);
       }
     });
   }
 
   // Native Releases for macOS and Windows
-  const releaseWin = { tag: "v1.2.0", size: "260 MB", url: "#download-win" };
-  const releaseMac = { tag: "v1.2.0", size: "1.8 MB", url: "#download-mac" };
+  const releaseWin = {
+    tag: "0.0.0.0",
+    size: "50 MB",
+    url: "https://github.com/Nithin1138/lotus/releases/download/0.0.0.0/DropDial-Setup.exe"
+  };
+  const releaseMac = {
+    tag: "0.0.0.0",
+    size: "4.3 MB",
+    url: "https://github.com/Nithin1138/lotus/releases/download/0.0.0.0/DropDial.dmg"
+  };
 
   $$("[data-download-win]").forEach(a => { a.href = releaseWin.url; });
-  $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · ${releaseWin.size} · All Offline Engines Bundled`; });
+  $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · ${releaseWin.size} · Standalone Windows (.exe)`; });
 
   $$("[data-download-mac]").forEach(a => { a.href = releaseMac.url; });
   $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${releaseMac.tag} · ${releaseMac.size} · Universal Mach-O DMG`; });
@@ -86,15 +101,45 @@
   // Update hero download button based on user OS
   $$("[data-download]").forEach(a => {
     if (isMac) {
-      a.href = "#download-mac";
+      a.href = releaseMac.url;
       const span = a.querySelector("span");
       if (span) span.textContent = "Download for macOS";
     } else {
-      a.href = "#download-win";
+      a.href = releaseWin.url;
       const span = a.querySelector("span");
-      if (span) span.textContent = "Download for Windows";
+      if (span) span.textContent = "Download for Windows (.exe)";
     }
   });
+
+  // Dynamically update download links from GitHub releases if available
+  fetch("https://api.github.com/repos/Nithin1138/lotus/releases/latest")
+    .then(res => res.ok ? res.json() : null)
+    .then(data => {
+      if (!data || !data.assets) return;
+      const winExe = data.assets.find(a => a.name.toLowerCase().endsWith(".exe"));
+      const winZip = data.assets.find(a => a.name.toLowerCase().endsWith(".zip") && (a.name.toLowerCase().includes("win") || a.name.toLowerCase().includes("windows")));
+      const winAsset = winExe || winZip;
+
+      const macDmg = data.assets.find(a => a.name.toLowerCase().endsWith(".dmg"));
+      const macZip = data.assets.find(a => a.name.toLowerCase().endsWith(".zip") && a.name.toLowerCase().includes("mac"));
+      const macAsset = macDmg || macZip;
+
+      if (winAsset) {
+        releaseWin.url = winAsset.browser_download_url;
+        releaseWin.tag = data.tag_name;
+        const sizeMb = Math.round(winAsset.size / 1024 / 1024);
+        $$("[data-download-win]").forEach(a => { a.href = releaseWin.url; });
+        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${data.tag_name} · ${sizeMb} MB · Standalone Windows (.exe)`; });
+      }
+      if (macAsset) {
+        releaseMac.url = macAsset.browser_download_url;
+        releaseMac.tag = data.tag_name;
+        const sizeMb = (macAsset.size / 1024 / 1024).toFixed(1);
+        $$("[data-download-mac]").forEach(a => { a.href = releaseMac.url; });
+        $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${data.tag_name} · ${sizeMb} MB · Universal Mach-O DMG`; });
+      }
+    })
+    .catch(() => {});
 
   /* ---------- Interactive demo ---------- */
   // Menus follow the app's Catalog.cs: what each extension converts to, and which tools it offers for a single file.

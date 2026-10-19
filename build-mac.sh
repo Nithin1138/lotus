@@ -17,27 +17,49 @@ rm -rf "$APP_BUNDLE"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$BACKEND_DIR"
 
 # 2. Build native macOS OCR and document converter binaries
-echo "Compiling native macOS Vision OCR..."
-swiftc -O "$ROOT_DIR/work/DropDial/backend/ocr-mac.swift" -o "$ROOT_DIR/work/DropDial/backend/ocr-mac"
+echo "Compiling native macOS Vision OCR (Universal: arm64 + x86_64)..."
+swiftc -target arm64-apple-macos12.0 -O "$ROOT_DIR/work/DropDial/backend/ocr-mac.swift" -o "$ROOT_DIR/work/DropDial/backend/ocr-mac-arm64" 2>/dev/null || true
+swiftc -target x86_64-apple-macos12.0 -O "$ROOT_DIR/work/DropDial/backend/ocr-mac.swift" -o "$ROOT_DIR/work/DropDial/backend/ocr-mac-x86_64" 2>/dev/null || true
+if [ -f "$ROOT_DIR/work/DropDial/backend/ocr-mac-arm64" ] && [ -f "$ROOT_DIR/work/DropDial/backend/ocr-mac-x86_64" ]; then
+    lipo -create "$ROOT_DIR/work/DropDial/backend/ocr-mac-arm64" "$ROOT_DIR/work/DropDial/backend/ocr-mac-x86_64" -output "$ROOT_DIR/work/DropDial/backend/ocr-mac"
+    rm -f "$ROOT_DIR/work/DropDial/backend/ocr-mac-arm64" "$ROOT_DIR/work/DropDial/backend/ocr-mac-x86_64"
+else
+    swiftc -O "$ROOT_DIR/work/DropDial/backend/ocr-mac.swift" -o "$ROOT_DIR/work/DropDial/backend/ocr-mac"
+fi
 
-echo "Compiling native macOS doc2pdf converter..."
-swiftc -O "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac.swift" -o "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac"
+echo "Compiling native macOS doc2pdf converter (Universal: arm64 + x86_64)..."
+swiftc -target arm64-apple-macos12.0 -O "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac.swift" -o "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac-arm64" 2>/dev/null || true
+swiftc -target x86_64-apple-macos12.0 -O "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac.swift" -o "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac-x86_64" 2>/dev/null || true
+if [ -f "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac-arm64" ] && [ -f "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac-x86_64" ]; then
+    lipo -create "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac-arm64" "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac-x86_64" -output "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac"
+    rm -f "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac-arm64" "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac-x86_64"
+else
+    swiftc -O "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac.swift" -o "$ROOT_DIR/work/DropDial/backend/doc2pdf-mac"
+fi
 
 # 3. Build Swift Application
-echo "Compiling DropDial Swift binary..."
-swiftc -O \
-    "$ROOT_DIR/work/DropDial-macOS/Models.swift" \
-    "$ROOT_DIR/work/DropDial-macOS/PreviewService.swift" \
-    "$ROOT_DIR/work/DropDial-macOS/BackendBridge.swift" \
-    "$ROOT_DIR/work/DropDial-macOS/TaskIndicatorWindow.swift" \
-    "$ROOT_DIR/work/DropDial-macOS/FloatShelfWindow.swift" \
-    "$ROOT_DIR/work/DropDial-macOS/ToolWindow.swift" \
-    "$ROOT_DIR/work/DropDial-macOS/DropWheelWindow.swift" \
-    "$ROOT_DIR/work/DropDial-macOS/PermissionWelcomeWindow.swift" \
-    "$ROOT_DIR/work/DropDial-macOS/UpdateService.swift" \
-    "$ROOT_DIR/work/DropDial-macOS/LicenseManager.swift" \
-    "$ROOT_DIR/work/DropDial-macOS/main.swift" \
-    -o "$MACOS_DIR/DropDial"
+echo "Compiling DropDial Swift binary (Universal: arm64 + x86_64)..."
+SWIFT_SOURCES=(
+    "$ROOT_DIR/work/DropDial-macOS/Models.swift"
+    "$ROOT_DIR/work/DropDial-macOS/PreviewService.swift"
+    "$ROOT_DIR/work/DropDial-macOS/BackendBridge.swift"
+    "$ROOT_DIR/work/DropDial-macOS/TaskIndicatorWindow.swift"
+    "$ROOT_DIR/work/DropDial-macOS/FloatShelfWindow.swift"
+    "$ROOT_DIR/work/DropDial-macOS/ToolWindow.swift"
+    "$ROOT_DIR/work/DropDial-macOS/DropWheelWindow.swift"
+    "$ROOT_DIR/work/DropDial-macOS/PermissionWelcomeWindow.swift"
+    "$ROOT_DIR/work/DropDial-macOS/UpdateService.swift"
+    "$ROOT_DIR/work/DropDial-macOS/LicenseManager.swift"
+    "$ROOT_DIR/work/DropDial-macOS/main.swift"
+)
+swiftc -target arm64-apple-macos12.0 -O "${SWIFT_SOURCES[@]}" -o "$MACOS_DIR/DropDial-arm64" 2>/dev/null || true
+swiftc -target x86_64-apple-macos12.0 -O "${SWIFT_SOURCES[@]}" -o "$MACOS_DIR/DropDial-x86_64" 2>/dev/null || true
+if [ -f "$MACOS_DIR/DropDial-arm64" ] && [ -f "$MACOS_DIR/DropDial-x86_64" ]; then
+    lipo -create "$MACOS_DIR/DropDial-arm64" "$MACOS_DIR/DropDial-x86_64" -output "$MACOS_DIR/DropDial"
+    rm -f "$MACOS_DIR/DropDial-arm64" "$MACOS_DIR/DropDial-x86_64"
+else
+    swiftc -O "${SWIFT_SOURCES[@]}" -o "$MACOS_DIR/DropDial"
+fi
 
 # 4. Copy Bundle Info & Icons
 echo "Packaging application bundle..."
@@ -58,8 +80,8 @@ done
 cp -R "$ROOT_DIR/work/DropDial/backend/"* "$BACKEND_DIR/"
 find "$BACKEND_DIR" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 
-# 5b. Bundle self-contained Python runtime environment
-if [ -d "$ROOT_DIR/.venv" ]; then
+# 5b. Bundle self-contained Python runtime environment (opt-in for self-contained packages)
+if [ "${BUNDLE_VENV:-0}" = "1" ] && [ -d "$ROOT_DIR/.venv" ]; then
     echo "Bundling self-contained Python runtime environment..."
     mkdir -p "$CONTENTS_DIR/runtime"
     cp -R "$ROOT_DIR/.venv" "$CONTENTS_DIR/runtime/python"
