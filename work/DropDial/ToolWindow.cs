@@ -718,7 +718,9 @@ internal sealed class ToolWindow : Window
         {
             var card = new Border
             {
-                Background = UiTheme.Hover,
+                Background = UiTheme.Surface,
+                BorderBrush = UiTheme.Line,
+                BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(14, 12, 14, 12),
                 Margin = new Thickness(0, 4, 0, 14)
