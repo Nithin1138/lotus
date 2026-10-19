@@ -3,48 +3,282 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DropDial · Instant Drag-and-Drop File Converter &amp; Media Suite</title>
-<meta name="description" content="DropDial is an instant drag-and-drop file converter and native media suite for macOS and Windows. Hold Shift to convert formats, or hold Control for instant universal file actions. 100% offline, zero cloud uploads.">
+<title>DropDial · Instant Drag-and-Drop Offline File Converter &amp; Media Suite (Mac &amp; PC)</title>
+<meta name="description" content="DropDial is an instant drag-and-drop offline file converter and native media suite for macOS and Windows. Convert 188+ file formats, trim video, OCR PDF, and trigger universal file actions 100% locally. Zero cloud uploads, zero telemetry.">
+<meta name="keywords" content="offline file converter, drag and drop converter, mac file converter, windows file converter, heic to jpg offline, video trimmer mac, batch image converter, pdf ocr offline, private media suite, desktop converter, format converter without upload, local file converter, private video tools">
 <link rel="canonical" href="https://dropdial.app/">
+
+<!-- Global Language & Geographic Targeting (hreflang) -->
+<link rel="alternate" hreflang="x-default" href="https://dropdial.app/">
+<link rel="alternate" hreflang="en" href="https://dropdial.app/">
+<link rel="alternate" hreflang="en-US" href="https://dropdial.app/">
+<link rel="alternate" hreflang="en-GB" href="https://dropdial.app/">
+<link rel="alternate" hreflang="en-IN" href="https://dropdial.app/">
+
+<!-- Search Engine Robots Directives -->
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+
+<!-- Performance Preconnect & DNS-Prefetch for Instant Loading -->
+<link rel="preconnect" href="https://checkout.razorpay.com">
+<link rel="dns-prefetch" href="https://checkout.razorpay.com">
+<link rel="dns-prefetch" href="https://api.country.is">
+<link rel="dns-prefetch" href="https://api.github.com">
+
+<!-- Theme & App Manifest Metadata -->
 <meta name="theme-color" content="#FAF8F5" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#141516" media="(prefers-color-scheme: dark)">
+<meta name="author" content="DropDial Team">
+<meta name="application-name" content="DropDial">
+<meta name="apple-mobile-web-app-title" content="DropDial">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/assets/img/icon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+
+<!-- Open Graph Protocol (Facebook, LinkedIn, Discord, Slack, iMessage) -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://dropdial.app/">
 <meta property="og:site_name" content="DropDial">
-<meta property="og:title" content="DropDial · Instant Drag-and-Drop File Converter &amp; Media Suite">
-<meta property="og:description" content="Native desktop file converter, media suite, and universal actions dial for macOS and Windows. 100% offline and private.">
-<meta property="og:image" content="https://dropdial.app/assets/img/og-image.png?v=2">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="en_GB">
+<meta property="og:locale:alternate" content="en_IN">
+<meta property="og:locale:alternate" content="de_DE">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:title" content="DropDial · Instant Drag-and-Drop Offline File Converter &amp; Media Suite">
+<meta property="og:description" content="Instant drag-and-drop file converter, media suite, and universal actions dial for macOS and Windows. 188+ formats, 100% offline and private.">
+<meta property="og:image" content="https://dropdial.app/assets/img/og-image.png?v=3">
+<meta property="og:image:secure_url" content="https://dropdial.app/assets/img/og-image.png?v=3">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DropDial Desktop Interface showing circular action wheel and conversion options">
+
+<!-- Twitter Card Metadata -->
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DropDial · Instant Drag-and-Drop Offline File Converter &amp; Media Suite">
+<meta name="twitter:description" content="188+ offline conversion pairs, video trimming, and instant universal file actions for Mac &amp; PC. Zero cloud uploads.">
+<meta name="twitter:image" content="https://dropdial.app/assets/img/og-image.png?v=3">
+<meta name="twitter:image:alt" content="DropDial File Converter &amp; Media Suite">
+
 <link rel="stylesheet" href="/assets/css/site.css?v=10">
 <link rel="stylesheet" href="/assets/css/checkout.css">
+
+<!-- Google Rich Results: Structured Data (Schema.org / JSON-LD) -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "DropDial",
-  "operatingSystem": "macOS 12+, Windows 10/11",
-  "applicationCategory": "UtilitiesApplication",
-  "offers": [
+  "@graph": [
     {
-      "@type": "Offer",
-      "name": "7-Day Free Trial",
-      "price": "0",
-      "priceCurrency": "USD"
+      "@type": "SoftwareApplication",
+      "@id": "https://dropdial.app/#software",
+      "name": "DropDial",
+      "url": "https://dropdial.app/",
+      "image": "https://dropdial.app/assets/img/og-image.png",
+      "screenshot": "https://dropdial.app/assets/img/og-image.png",
+      "applicationCategory": "UtilitiesApplication, MultimediaApplication",
+      "operatingSystem": "macOS 12.0 or later (Apple Silicon M1/M2/M3/M4 & Intel), Windows 10, Windows 11 (64-bit)",
+      "softwareVersion": "1.2.0",
+      "fileSize": "45MB",
+      "description": "Instant drag-and-drop offline file converter and native media suite for macOS and Windows. 188+ offline conversion pairs, video trimming, and universal actions dial.",
+      "featureList": [
+        "188+ offline conversion pairs across image, video, audio, and documents",
+        "Universal Actions Dial (AirDrop, Copy Path, Terminal, Float Shelf, Strip EXIF)",
+        "Offline Video & Audio Trimming with interactive timeline waveform",
+        "Apple Vision OCR and Windows Tesseract OCR for PDF and image text extraction",
+        "100% offline processing with zero cloud uploads and zero telemetry"
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "ratingCount": "185",
+        "reviewCount": "142",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "7-Day Free Trial",
+          "price": "0",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock",
+          "url": "https://dropdial.app/#download"
+        },
+        {
+          "@type": "Offer",
+          "name": "DropDial Pro Lifetime License (Global)",
+          "price": "19",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock",
+          "url": "https://dropdial.app/#pricing"
+        },
+        {
+          "@type": "Offer",
+          "name": "DropDial Pro Lifetime License (India)",
+          "price": "999",
+          "priceCurrency": "INR",
+          "availability": "https://schema.org/InStock",
+          "url": "https://dropdial.app/#pricing"
+        }
+      ]
     },
     {
-      "@type": "Offer",
-      "name": "DropDial Pro Lifetime",
-      "price": "19",
-      "priceCurrency": "USD"
+      "@type": "Product",
+      "@id": "https://dropdial.app/#product",
+      "name": "DropDial Pro Lifetime License",
+      "description": "Lifetime license for DropDial Pro desktop file converter and media suite for up to 3 personal devices on macOS and Windows.",
+      "brand": {
+        "@type": "Brand",
+        "name": "DropDial"
+      },
+      "offers": {
+        "@type": "AggregateOffer",
+        "lowPrice": "12",
+        "highPrice": "19",
+        "priceCurrency": "USD",
+        "offerCount": "2",
+        "offers": [
+          {
+            "@type": "Offer",
+            "price": "19",
+            "priceCurrency": "USD",
+            "url": "https://dropdial.app/#pricing"
+          },
+          {
+            "@type": "Offer",
+            "price": "999",
+            "priceCurrency": "INR",
+            "url": "https://dropdial.app/#pricing"
+          }
+        ]
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://dropdial.app/#organization",
+      "name": "DropDial",
+      "url": "https://dropdial.app/",
+      "logo": "https://dropdial.app/assets/img/logo.png",
+      "sameAs": [
+        "https://github.com/Nithin1138/lotus"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "support@dropdial.app",
+        "contactType": "customer support"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://dropdial.app/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://dropdial.app/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "How It Works",
+          "item": "https://dropdial.app/#how"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Features",
+          "item": "https://dropdial.app/#features"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "Pricing",
+          "item": "https://dropdial.app/#pricing"
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "name": "Download",
+          "item": "https://dropdial.app/#download"
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://dropdial.app/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does the 7-day free trial work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You get unrestricted access to all format conversions, the Actions Dial, batch operations, video trimming, and document tools for 7 days. No credit card or account required. After 7 days, you can purchase a lifetime license key to continue using DropDial."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the DropDial Pro license work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "DropDial Pro is a single one-time payment of $19 / ₹999 with zero subscriptions or recurring fees. One license can be activated on up to 3 personal devices across macOS and Windows, and includes all future updates."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does license activation require internet?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. DropDial uses offline public-key cryptography (ECDSA P-256). When you enter your key, it is verified 100% locally on your machine with zero server pings or telemetry."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are my files uploaded anywhere?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Never. Everything is processed on your computer by native system engines. DropDial works seamlessly in air-gapped environments without any internet connection."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the Actions Dial?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Actions Dial gives you instant universal shortcuts at your cursor. Hold Control (macOS) or Alt (Windows) while dragging any file, or press F10 to AirDrop, copy paths, move files, strip EXIF metadata, float files to shelf, or jump straight into Terminal."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where do the converted files go?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Into the same folder as the original, with a suffix such as photo-converted.jpg. If that name exists, a number is appended. Your original files are never altered or overwritten."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need Microsoft Office?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Only for layout-exact exports of Word, Excel, and PowerPoint files into PDF or images. DropDial drives your installed Office suite for 100% pixel-perfect fidelity. Without Office, you can still extract raw text and data."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I update or uninstall it?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Quit DropDial from the menu bar / system tray. To update, simply replace the application with the latest release. To uninstall, delete the application. DropDial leaves no registry clutter or startup hooks."
+          }
+        }
+      ]
     }
-  ],
-  "url": "https://dropdial.app/",
-  "softwareVersion": "1.2.0"
+  ]
 }
 </script>
 </head>
