@@ -3,732 +3,815 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DropDial Admin Suite · Operations, Engines &amp; Zero-PII Telemetry</title>
-  <meta name="description" content="Centralized administration portal for DropDial. Maintain releases, update manifests, wheel petals, floating shelf rules, tool limits, and zero-PII telemetry.">
+  <title>DropDial Pro · Executive Admin Suite</title>
+  <meta name="description" content="Secure administrative control center for DropDial Pro. Manage licenses, view transactions, track real revenue, profit, and traffic conversion.">
+  <meta name="robots" content="noindex, nofollow">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/assets/img/icon-32.png" type="image/png" sizes="32x32">
   <link rel="stylesheet" href="/admin/admin.css">
 </head>
-<body>
+<body class="admin-body">
 
-<div class="admin-app">
-  <!-- Sidebar Navigation -->
-  <aside class="admin-sidebar">
-    <div class="sidebar-header">
-      <a href="#dashboard" class="brand-badge">
-        <div class="brand-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+  <!-- ========================================================
+       1. SECURITY GATEWAY (Authentication Overlay)
+       ======================================================== -->
+  <div id="auth-gate" class="auth-gate-overlay">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo-badge">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
         </div>
-        <span class="brand-name">DropDial</span>
-        <span class="admin-tag">ADMIN</span>
-      </a>
-    </div>
-
-    <nav class="nav-sections">
-      <span class="nav-label">Main Overview</span>
-      <a class="nav-item active" data-tab="dashboard" href="#dashboard">
-        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-        <span>System &amp; Metrics</span>
-      </a>
-      <a class="nav-item" data-tab="releases" href="#releases">
-        <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-        <span>Releases &amp; Updates</span>
-        <span class="nav-badge active-alert" id="nav-release-badge">v1.0.0</span>
-      </a>
-      <a class="nav-item" data-tab="licenses" href="#licenses">
-        <svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
-        <span>Offline Licensing</span>
-        <span class="nav-badge" id="nav-license-count">P-256</span>
-      </a>
-
-      <span class="nav-label">Product Controls</span>
-      <a class="nav-item" data-tab="wheel" href="#wheel">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-        <span>Format Wheel</span>
-      </a>
-      <a class="nav-item" data-tab="shelf" href="#shelf">
-        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/></svg>
-        <span>Floating Shelf</span>
-      </a>
-      <a class="nav-item" data-tab="tools" href="#tools">
-        <svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
-        <span>Media Tools &amp; Limits</span>
-      </a>
-
-      <span class="nav-label">System &amp; Verification</span>
-      <a class="nav-item" data-tab="diagnostics" href="#diagnostics">
-        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-4-4 1.41-1.41L12 14.17l6.59-6.59L20 9l-8 8z"/></svg>
-        <span>Engines &amp; Diagnostics</span>
-      </a>
-      <a class="nav-item" data-tab="settings" href="#settings">
-        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-        <span>App Sync &amp; Privacy</span>
-      </a>
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="system-status-indicator">
-        <span class="status-dot"></span>
-        <span id="gateway-status-text">Local Gateway Connected</span>
-      </div>
-      <span style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);" id="system-arch-tag">macOS arm64</span>
-    </div>
-  </aside>
-
-  <!-- Main Workspace Area -->
-  <main class="admin-main">
-    <!-- Top Header Bar -->
-    <header class="admin-header">
-      <div class="header-left">
-        <button type="button" class="mobile-menu-btn" aria-label="Toggle Navigation">
-          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
-        </button>
-        <div class="page-title-wrap">
-          <h1 id="page-title-text">System &amp; Real Telemetry Overview</h1>
-          <p id="page-desc-text">Live engine health, real executable verification, and zero-PII telemetry</p>
-        </div>
+        <h2>DropDial Admin Suite</h2>
+        <p>Restricted Operations &amp; Financial Intelligence Center</p>
       </div>
 
-      <div class="header-right">
-        <button type="button" class="header-btn" id="theme-toggle-btn" title="Toggle Light/Dark Theme">
-          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
-          <span>Theme</span>
+      <form id="auth-form" class="auth-form" autocomplete="off">
+        <div class="form-group">
+          <label for="admin-passcode-input">Master Passcode</label>
+          <div class="password-input-wrap">
+            <input 
+              type="password" 
+              id="admin-passcode-input" 
+              placeholder="Enter admin passcode" 
+              required 
+              autofocus
+            >
+            <button type="button" id="toggle-pass-btn" class="pass-toggle-btn" title="Show/Hide Passcode">
+              <svg id="eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <span id="auth-error-msg" class="auth-error-msg"></span>
+        </div>
+
+        <button type="submit" id="auth-submit-btn" class="btn btn-primary auth-btn">
+          <span>Authenticate &amp; Enter</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
         </button>
-        <button type="button" class="header-btn" id="sync-app-btn" title="Sync Configuration Directly with Local macOS App">
-          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-          <span>Sync App Config</span>
-        </button>
-        <button type="button" class="header-btn" id="export-config-btn" title="Export Configuration JSON">
-          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-          <span>Export JSON</span>
-        </button>
-        <a href="/" target="_blank" class="header-btn primary">
-          <span>Website Live</span>
-          <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-        </a>
-      </div>
-    </header>
 
-    <!-- Scrollable Body Workspace -->
-    <div class="admin-content-scroll">
-
-      <!-- ================= TAB 1: DASHBOARD ================= -->
-      <section id="tab-dashboard" class="tab-content active">
-        <!-- Privacy & Zero-PII Guarantee Banner -->
-        <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: var(--radius-md); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(16,185,129,0.2); display: flex; align-items: center; justify-content: center; color: #10b981;">
-              <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-            </div>
-            <div>
-              <div style="font-weight: 700; color: #10b981; font-size: 13px;">Zero-PII Compliance Verified • Strict Local-Only Telemetry</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">No personal identities, emails, file contents, IP addresses, or device serials are collected or phoned home. 100% on-device processing.</div>
-            </div>
-          </div>
-          <span class="status-badge success" style="font-size: 11px;">0 Bytes Personal Data</span>
+        <div class="auth-footer-badge">
+          <span class="security-dot"></span>
+          <span>End-to-End Cryptographic Security &bull; ECDSA P-256</span>
         </div>
-
-        <!-- Real System Stat Cards -->
-        <div class="card-grid">
-          <div class="stat-card">
-            <div class="stat-header">
-              <span class="stat-title">Native App Executable</span>
-              <div class="stat-icon orange">
-                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2z"/></svg>
-              </div>
-            </div>
-            <div class="stat-value" id="metric-binary-size">1.7 MB</div>
-            <div class="stat-sub">
-              <span class="trend-up" id="metric-binary-arch">Mach-O arm64</span> • Verified Build
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-header">
-              <span class="stat-title">Offline Verification Key</span>
-              <div class="stat-icon blue">
-                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
-              </div>
-            </div>
-            <div class="stat-value" id="metric-crypto-curve">P-256</div>
-            <div class="stat-sub">
-              <span class="trend-up">100% Offline</span> ECDSA secp256r1
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-header">
-              <span class="stat-title">Engine Health SLA</span>
-              <div class="stat-icon green">
-                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-              </div>
-            </div>
-            <div class="stat-value" id="metric-engines-count">4 / 4</div>
-            <div class="stat-sub">
-              <span class="trend-up">&check; Ready</span> Vision, FFmpeg, Python, doc2pdf
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-header">
-              <span class="stat-title">Session Operations</span>
-              <div class="stat-icon purple">
-                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h10v2H7z"/></svg>
-              </div>
-            </div>
-            <div class="stat-value" id="metric-session-ops">18</div>
-            <div class="stat-sub">
-              <span style="color:var(--text-muted);">Real admin actions tracked locally</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Charts Split: Engine Execution Times + Real Category Distribution -->
-        <div class="charts-split">
-          <div class="panel-card">
-            <div class="panel-header">
-              <div class="panel-header-title">
-                <h2>Conversion Volume Trends (Aggregated Telemetry)</h2>
-                <span>Anonymized daily conversion batches across workstations</span>
-              </div>
-              <span class="status-badge success">&uarr; Local Engine</span>
-            </div>
-            <div class="chart-container" id="trends-chart-svg"></div>
-          </div>
-
-          <div class="panel-card">
-            <div class="panel-header">
-              <div class="panel-header-title">
-                <h2>Category Distribution (Models.swift)</h2>
-                <span>Supported file types breakdown</span>
-              </div>
-            </div>
-            <div class="donut-wrap">
-              <div id="donut-chart-svg"></div>
-              <div class="donut-legend">
-                <div class="legend-item"><span class="legend-color" style="background:#ff6500;"></span> Images (44%)</div>
-                <div class="legend-item"><span class="legend-color" style="background:#3b82f6;"></span> Videos (22%)</div>
-                <div class="legend-item"><span class="legend-color" style="background:#10b981;"></span> PDF/Docs (18%)</div>
-                <div class="legend-item"><span class="legend-color" style="background:#8b5cf6;"></span> Audio (10%)</div>
-                <div class="legend-item"><span class="legend-color" style="background:#f59e0b;"></span> Archives (6%)</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Lower Split: Environment & Live Activity Stream -->
-        <div class="charts-split">
-          <div class="panel-card">
-            <div class="panel-header">
-              <div class="panel-header-title">
-                <h2>Local Environment Telemetry</h2>
-                <span>Real system properties verified via local gateway</span>
-              </div>
-            </div>
-            <div id="real-env-details" style="display:flex; flex-direction:column; gap:10px; font-size:12px; margin-top:10px;">
-              <div class="switch-row">
-                <span>Operating System</span>
-                <strong id="env-os-val" style="color:var(--text-primary);">Detecting...</strong>
-              </div>
-              <div class="switch-row">
-                <span>CPU Architecture</span>
-                <strong id="env-arch-val" style="color:var(--text-primary);">Detecting...</strong>
-              </div>
-              <div class="switch-row">
-                <span>Python Interpreter</span>
-                <strong id="env-python-val" style="color:var(--text-primary);">Detecting...</strong>
-              </div>
-              <div class="switch-row">
-                <span>FFmpeg Transcoder</span>
-                <strong id="env-ffmpeg-val" style="color:var(--text-primary);">Detecting...</strong>
-              </div>
-              <div class="switch-row">
-                <span>Git Branch &amp; Commit</span>
-                <strong id="env-git-val" style="color:var(--text-primary); font-family:var(--font-mono);">Detecting...</strong>
-              </div>
-            </div>
-          </div>
-
-          <div class="panel-card">
-            <div class="panel-header">
-              <div class="panel-header-title">
-                <h2>Live Local Activity Stream</h2>
-                <span>Real operational events in current session</span>
-              </div>
-              <button class="header-btn" id="clear-feed-btn" style="padding:4px 8px; font-size:11px;">Clear Stream</button>
-            </div>
-            <div class="live-stream-list" id="live-stream-container"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= TAB 2: RELEASES & UPDATES ================= -->
-      <section id="tab-releases" class="tab-content">
-        <div class="panel-card">
-          <div class="panel-header">
-            <div class="panel-header-title">
-              <h2>Release Distribution &amp; Executable Manifest</h2>
-              <span>Track macOS &amp; Windows builds synced with <code>UpdateService.swift</code></span>
-            </div>
-            <button class="header-btn primary" onclick="document.getElementById('modal-new-release').classList.add('active')">
-              + Draft New Release
-            </button>
-          </div>
-
-          <div class="table-wrap">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>Tag</th>
-                  <th>Release Title</th>
-                  <th>Date</th>
-                  <th>Binary Package</th>
-                  <th>Status</th>
-                  <th>SHA-256 Digest</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="releases-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="panel-card">
-          <div class="panel-header">
-            <div class="panel-header-title">
-              <h2>Client Update Service Endpoint Configuration</h2>
-              <span>Targeted by <code>UpdateService.swift</code> and Windows updater</span>
-            </div>
-          </div>
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
-            <div class="control-group">
-              <label class="control-label">Releases API URL</label>
-              <input type="text" class="text-input" value="https://api.github.com/repos/Nithin1138/lotus/releases/latest" readonly>
-            </div>
-            <div class="control-group">
-              <label class="control-label">Preferred macOS In-Place Package</label>
-              <input type="text" class="text-input" value="DropDial-macOS.zip (Auto In-Place Extraction)" readonly>
-            </div>
-            <div class="control-group">
-              <label class="control-label">Fallback Installer</label>
-              <input type="text" class="text-input" value="DropDial.dmg (Disk Image)" readonly>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= TAB 3: LICENSES & ACCESS ================= -->
-      <section id="tab-licenses" class="tab-content">
-        <!-- Zero-PII Licensing Info Banner -->
-        <div style="background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); border-radius: var(--radius-md); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(59,130,246,0.2); display: flex; align-items: center; justify-content: center; color: #3b82f6;">
-              <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
-            </div>
-            <div>
-              <div style="font-weight: 700; color: #60a5fa; font-size: 13px;">Offline Cryptographic Licensing (ECDSA P-256)</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">Licenses use digital signatures verified offline by <code>LicenseManager.swift</code>. No personal customer email or name is transmitted to external servers.</div>
-            </div>
-          </div>
-          <span class="status-badge info" style="font-size: 11px;">100% Offline Verification</span>
-        </div>
-
-        <!-- Issue New Cryptographic License Card (Zero-PII) -->
-        <div class="panel-card">
-          <div class="panel-header">
-            <div class="panel-header-title">
-              <h2>Instant License Generator (ECDSA P-256 / secp256r1)</h2>
-              <span>Issue cryptographic offline keys signed with <code>licensing/keys/private.pem</code></span>
-            </div>
-          </div>
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) 160px; gap:14px; align-items:flex-end;">
-            <div class="control-group">
-              <label class="control-label">Anonymous Seat ID / Node Reference</label>
-              <input type="text" class="text-input" id="lic-cust-seat" placeholder="e.g. SEAT-M3-9081 or Local Node 1">
-            </div>
-            <div class="control-group">
-              <label class="control-label">Workstation Label (Zero-PII)</label>
-              <input type="text" class="text-input" id="lic-cust-label" placeholder="e.g. Primary Studio Rig (arm64)">
-            </div>
-            <div class="control-group">
-              <label class="control-label">License Tier</label>
-              <select class="select-input" id="lic-cust-tier">
-                <option value="pro">Pro (Lifetime Perpetual)</option>
-                <option value="team">Team (5 Workstations)</option>
-                <option value="enterprise">Enterprise (Site License)</option>
-              </select>
-            </div>
-            <button type="button" class="header-btn primary" id="generate-lic-btn" style="height:38px; justify-content:center;">
-              Issue Real Key
-            </button>
-          </div>
-        </div>
-
-        <!-- Offline Verification Tester -->
-        <div class="panel-card">
-          <div class="panel-header">
-            <div class="panel-header-title">
-              <h2>Offline License Verifier</h2>
-              <span>Validate any <code>DD-eyJ...</code> key against embedded public key</span>
-            </div>
-          </div>
-          <div style="display:flex; gap:12px; align-items:center;">
-            <input type="text" class="text-input" id="lic-test-input" placeholder="Paste license key (DD-eyJk...)" style="font-family:var(--font-mono); font-size:12px;">
-            <button type="button" class="header-btn primary" id="verify-test-key-btn" style="flex-shrink:0;">
-              Verify Signature
-            </button>
-          </div>
-          <div id="verify-result-box" style="margin-top:10px; display:none;"></div>
-        </div>
-
-        <!-- Licenses Table -->
-        <div class="panel-card">
-          <div class="panel-header">
-            <div class="panel-header-title">
-              <h2>Registered Offline Workstation Licenses</h2>
-              <span>Locally issued and verified seats</span>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>Seat / Node Identifier</th>
-                  <th>Workstation Description</th>
-                  <th>Tier</th>
-                  <th>Issued Date</th>
-                  <th>Cryptographic Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="licenses-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= TAB 4: FORMAT WHEEL ================= -->
-      <section id="tab-wheel" class="tab-content">
-        <!-- Interactive File Drop Zone Tester -->
-        <div class="panel-card" style="border: 2px dashed rgba(255,101,0,0.4); background: rgba(255,101,0,0.03);">
-          <div style="text-align: center; padding: 18px 24px;" id="file-drop-zone">
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(255,101,0,0.15); color: var(--accent-orange); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">
-              <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-            </div>
-            <h3 style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px;">Drag &amp; Drop ANY Real File from your Mac Here</h3>
-            <p style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 12px;">Inspect real MIME type, byte size, and verify the exact target petals that DropDial will render.</p>
-            <div id="drop-file-inspector" style="display: none; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; max-width: 500px; margin: 0 auto; text-align: left;"></div>
-          </div>
-        </div>
-
-        <div class="panel-card">
-          <div class="panel-header">
-            <div class="panel-header-title">
-              <h2>Interactive Wheel Petals Designer</h2>
-              <span>Select category to preview petals and set default target format</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:12px; color:var(--text-muted);">Trigger Modifier:</span>
-              <select class="select-input" id="wheel-trigger-key" style="width:130px;">
-                <option value="Shift">Shift (Default)</option>
-                <option value="Option">Option / Alt</option>
-                <option value="Command">Command</option>
-                <option value="Control">Control</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Category Selector Tabs -->
-          <div class="wheel-category-bar">
-            <button class="header-btn wheel-cat-btn active" data-category="image">Images</button>
-            <button class="header-btn wheel-cat-btn" data-category="video">Videos</button>
-            <button class="header-btn wheel-cat-btn" data-category="audio">Audio</button>
-            <button class="header-btn wheel-cat-btn" data-category="document">Documents</button>
-            <button class="header-btn wheel-cat-btn" data-category="office">Office</button>
-            <button class="header-btn wheel-cat-btn" data-category="archive">Archives</button>
-          </div>
-
-          <div class="wheel-designer-box">
-            <div class="wheel-preview-canvas" id="wheel-interactive-svg"></div>
-            <div style="display:flex; flex-direction:column; gap:16px;">
-              <div class="control-group">
-                <div style="display:flex; justify-content:space-between;">
-                  <label class="control-label">Default Encoding Quality / Compression</label>
-                  <span id="cat-quality-val" style="font-weight:700; color:var(--accent-orange);">85%</span>
-                </div>
-                <input type="range" min="40" max="100" value="85" id="cat-quality-slider" style="accent-color:var(--accent-orange); width:100%;">
-              </div>
-              <div class="wheel-petals-list" id="wheel-petals-table"></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= TAB 5: FLOATING SHELF ================= -->
-      <section id="tab-shelf" class="tab-content">
-        <div class="charts-split">
-          <div class="panel-card">
-            <div class="panel-header">
-              <div class="panel-header-title">
-                <h2>Floating Shelf Dimensions &amp; Behavior</h2>
-                <span>Attributes mapped directly to <code>FloatShelfWindow.swift</code></span>
-              </div>
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:16px;">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
-                <div class="control-group">
-                  <label class="control-label">Window Width (px)</label>
-                  <input type="number" class="text-input" id="shelf-width-input" value="260">
-                  <span class="control-desc">Native Default: 260px</span>
-                </div>
-                <div class="control-group">
-                  <label class="control-label">Window Height (px)</label>
-                  <input type="number" class="text-input" id="shelf-height-input" value="400">
-                  <span class="control-desc">Native Default: 400px</span>
-                </div>
-              </div>
-
-              <div class="control-group">
-                <label class="control-label">Drag Out Destination Operation</label>
-                <select class="select-input" id="shelf-drag-mode">
-                  <option value="copy">Copy (.copy - Standard Preservation)</option>
-                  <option value="move">Move (.move - Transfer &amp; Remove)</option>
-                  <option value="generic">Generic (.generic - Receiver Decides)</option>
-                </select>
-                <span class="control-desc">Controls whether dragging out from shelf duplicates or transfers file</span>
-              </div>
-
-              <div class="control-group">
-                <label class="control-label">Thumbnail Preview Cache Limit</label>
-                <input type="number" class="text-input" id="shelf-cache-limit" value="100">
-                <span class="control-desc">Max items cached in PreviewService memory</span>
-              </div>
-
-              <div class="switch-row">
-                <div>
-                  <strong style="font-size:13px; color:var(--text-primary); display:block;">Enable "Drag All" Master Button</strong>
-                  <span class="control-desc">Adds bottom button to drag all floated files at once</span>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggle-drag-all" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-
-              <div class="switch-row">
-                <div>
-                  <strong style="font-size:13px; color:var(--text-primary); display:block;">Quick Look (Eye) on Card Hover</strong>
-                  <span class="control-desc">Instant macOS Quick Look preview trigger</span>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggle-quick-look" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-
-              <div class="switch-row">
-                <div>
-                  <strong style="font-size:13px; color:var(--text-primary); display:block;">Reveal in Finder Button on Hover</strong>
-                  <span class="control-desc">Show folder shortcut button</span>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="toggle-finder" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Live Visual Representation of Floating Shelf -->
-          <div class="panel-card">
-            <div class="panel-header">
-              <div class="panel-header-title">
-                <h2>Live Shelf Representation</h2>
-                <span>Exact interactive reproduction of <code>FloatShelfWindow.swift</code></span>
-              </div>
-            </div>
-            <div style="background:#0f1015; border:1px solid rgba(255,255,255,0.18); border-radius:14px; padding:16px; width:260px; margin:0 auto; box-shadow:0 12px 36px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:12px;" id="live-shelf-widget">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <span style="font-size:12.5px; font-weight:700; color:#fff;">Floating Shelf</span>
-                  <span style="background:#ff6500; color:#fff; font-size:10px; font-weight:700; border-radius:8px; padding:1px 6px;" id="shelf-live-count">2</span>
-                </div>
-                <button type="button" class="header-btn" id="shelf-add-sample-btn" style="padding:2px 8px; font-size:11px; color:#ff9f45;">+ Add</button>
-              </div>
-
-              <div style="display:flex; flex-direction:column; gap:8px;" id="shelf-items-list">
-                <div class="shelf-item-card" draggable="true" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:8px 10px; display:flex; align-items:center; gap:8px; cursor:grab;">
-                  <div style="width:32px; height:32px; border-radius:6px; background:#3b82f6; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px;">📁</div>
-                  <div style="flex:1; overflow:hidden;">
-                    <div style="color:#fff; font-size:11.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">ProjectAssets</div>
-                    <div style="color:#94a3b8; font-size:10px;">Folder • 12 items</div>
-                  </div>
-                  <span style="color:#ff6500; font-size:12px; font-weight:700; cursor:pointer;" onclick="this.parentElement.remove(); adminApp.updateShelfCount();">&times;</span>
-                </div>
-
-                <div class="shelf-item-card" draggable="true" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:8px 10px; display:flex; align-items:center; gap:8px; cursor:grab;">
-                  <div style="width:32px; height:32px; border-radius:6px; background:#ff6500; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px;">🖼</div>
-                  <div style="flex:1; overflow:hidden;">
-                    <div style="color:#fff; font-size:11.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">hero-banner.png</div>
-                    <div style="color:#94a3b8; font-size:10px;">2.4 MB • PNG</div>
-                  </div>
-                  <span style="color:#ff6500; font-size:12px; font-weight:700; cursor:pointer;" onclick="this.parentElement.remove(); adminApp.updateShelfCount();">&times;</span>
-                </div>
-              </div>
-
-              <div style="display:flex; gap:6px; margin-top:8px;">
-                <button type="button" class="header-btn" onclick="document.getElementById('shelf-items-list').innerHTML=''; adminApp.updateShelfCount();" style="font-size:10.5px; padding:6px 10px;">Clear</button>
-                <button type="button" class="header-btn" onclick="adminApp.showToast('AirDrop sharing initiated', 'info')" style="font-size:10.5px; padding:6px 10px;">AirDrop</button>
-                <button type="button" class="header-btn primary" id="shelf-drag-all-btn" style="flex:1; font-size:10.5px; padding:6px 10px; text-align:center;">Drag All (2)</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= TAB 6: MEDIA TOOLS & LIMITS ================= -->
-      <section id="tab-tools" class="tab-content">
-        <div class="panel-card">
-          <div class="panel-header">
-            <div class="panel-header-title">
-              <h2>Media Tools &amp; Maximum Payloads</h2>
-              <span>Configure local Python, Vision OCR, and FFmpeg processing limits</span>
-            </div>
-          </div>
-          <div class="card-grid" id="tools-config-grid"></div>
-        </div>
-      </section>
-
-      <!-- ================= TAB 7: ENGINES & DIAGNOSTICS ================= -->
-      <section id="tab-diagnostics" class="tab-content">
-        <div class="charts-split">
-          <div class="panel-card">
-            <div class="panel-header">
-              <div class="panel-header-title">
-                <h2>Native Engine Health Status</h2>
-                <span>Local binary and framework integrity verified live</span>
-              </div>
-              <button type="button" class="header-btn" id="refresh-diagnostics-btn" style="padding:4px 8px; font-size:11px;">Re-check</button>
-            </div>
-            <div class="live-stream-list" id="diagnostics-status-list"></div>
-          </div>
-
-          <div class="panel-card">
-            <div class="panel-header">
-              <div class="panel-header-title">
-                <h2>Zero-PII Privacy Verification</h2>
-                <span>Compliance audit status</span>
-              </div>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:12.5px;">
-              <p style="color:var(--text-secondary);">
-                DropDial operates on a strict <strong>zero cloud processing</strong> policy. All conversion algorithms, Vision OCR recognition, and document manipulations run entirely in-process on the local machine.
-              </p>
-              <div class="switch-row">
-                <span>Personal Data Tracked</span>
-                <span class="status-badge success">0 Bytes (Enforced)</span>
-              </div>
-              <div class="switch-row">
-                <span>Network Data Upload Blocked</span>
-                <span class="status-badge success">Enforced (Air-Gapped)</span>
-              </div>
-              <div class="switch-row">
-                <span>Temporary File Shredding</span>
-                <span class="status-badge success">Immediate Cleanup</span>
-              </div>
-              <div class="switch-row">
-                <span>Cryptographic Key Isolation</span>
-                <span class="status-badge success">100% Offline Digital Signatures</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel-card">
-          <div class="panel-header">
-            <div class="panel-header-title">
-              <h2>Local Operational Error Incident Log</h2>
-              <span>Filtered diagnostic logs (Zero-PII: file paths redacted to filename &amp; extension)</span>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>Incident ID</th>
-                  <th>Type</th>
-                  <th>Target Extension</th>
-                  <th>OS Context</th>
-                  <th>Occurrences</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="error-logs-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= TAB 8: GLOBAL SETTINGS & SYNC ================= -->
-      <section id="tab-settings" class="tab-content">
-        <div class="panel-card">
-          <div class="panel-header">
-            <div class="panel-header-title">
-              <h2>Sync Directly to Local DropDial Desktop App</h2>
-              <span>Saves configuration immediately to <code>~/Library/Application Support/DropDial/config.json</code></span>
-            </div>
-          </div>
-          <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:14px;">
-            Changes made in this Admin Suite can be synchronized directly into the native macOS app without rebuilding. The DropDial background service reads this file on launch.
-          </p>
-          <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
-            <button type="button" class="header-btn primary" id="save-to-app-btn">
-              &check; Save Directly to macOS App
-            </button>
-            <button type="button" class="header-btn" onclick="adminApp.exportConfigJSON()">
-              Download dropdial-config.json
-            </button>
-            <label class="header-btn" style="cursor:pointer;">
-              Upload &amp; Restore Config
-              <input type="file" id="import-config-input" accept=".json" style="display:none;">
-            </label>
-          </div>
-        </div>
-      </section>
-
-    </div>
-  </main>
-</div>
-
-<!-- Modal: New Release Publisher -->
-<div class="modal-overlay" id="modal-new-release">
-  <div class="modal-box">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h3 style="font-size:16px; font-weight:700;">Draft New Application Release</h3>
-      <button class="header-btn" data-close-modal style="padding:2px 8px;">&times;</button>
-    </div>
-    <div class="control-group">
-      <label class="control-label">Tag Name (e.g. v1.0.1)</label>
-      <input type="text" class="text-input" id="new-rel-tag" placeholder="v1.0.1">
-    </div>
-    <div class="control-group">
-      <label class="control-label">Release Name</label>
-      <input type="text" class="text-input" id="new-rel-name" placeholder="DropDial 1.0.1 - Universal Release">
-    </div>
-    <div class="control-group">
-      <label class="control-label">Release Notes (Markdown)</label>
-      <textarea class="textarea-input" id="new-rel-notes" placeholder="- Added drag and drop for Floating Shelf&#10;- Improved Apple Vision OCR performance"></textarea>
-    </div>
-    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
-      <button class="header-btn" data-close-modal>Cancel</button>
-      <button class="header-btn primary" id="publish-release-draft-btn">
-        Publish Release
-      </button>
+      </form>
     </div>
   </div>
-</div>
 
-<script src="/admin/admin.js"></script>
+  <!-- ========================================================
+       2. MAIN AUTHENTICATED ADMIN DASHBOARD
+       ======================================================== -->
+  <div id="admin-dashboard-app" class="admin-app" style="display: none;">
+    
+    <!-- Left Navigation Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo-wrap">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">DropDial</span>
+          <span class="brand-sub">OPERATIONS</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">BUSINESS &amp; INTEL</div>
+        <button class="nav-tab active" data-tab="overview">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="9"/>
+            <rect x="14" y="3" width="7" height="5"/>
+            <rect x="14" y="12" width="7" height="9"/>
+            <rect x="3" y="16" width="7" height="5"/>
+          </svg>
+          <span>Executive Overview</span>
+        </button>
+
+        <button class="nav-tab" data-tab="licenses">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+          </svg>
+          <span>License Keys</span>
+          <span id="badge-total-licenses" class="nav-counter">0</span>
+        </button>
+
+        <button class="nav-tab" data-tab="transactions">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+            <line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
+          <span>Transactions</span>
+          <span id="badge-total-tx" class="nav-counter">0</span>
+        </button>
+
+        <button class="nav-tab" data-tab="traffic">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <span>Traffic &amp; Conversion</span>
+        </button>
+
+        <div class="nav-section-title">INFRASTRUCTURE</div>
+        <button class="nav-tab" data-tab="health">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          <span>System &amp; Gateways</span>
+        </button>
+
+        <button class="nav-tab" data-tab="settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span>Security &amp; Passcode</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="admin-user-info">
+          <div class="user-avatar">AD</div>
+          <div class="user-details">
+            <span class="user-role">Administrator</span>
+            <span class="user-status"><span class="status-dot green"></span> Live Mode</span>
+          </div>
+        </div>
+        <button id="admin-logout-btn" class="logout-btn" title="Lock &amp; Exit Admin Session">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Center -->
+    <main class="admin-main">
+      
+      <!-- Top Global Bar -->
+      <header class="admin-topbar">
+        <div class="topbar-left">
+          <h1 id="view-title">Executive Overview</h1>
+          <span class="view-tag" id="view-tag">Live Production Intelligence</span>
+        </div>
+
+        <div class="topbar-actions">
+          <button id="refresh-data-btn" class="btn btn-secondary top-btn" title="Refresh Live Data">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+            <span>Sync</span>
+          </button>
+          
+          <button id="open-issue-modal-btn" class="btn btn-primary top-btn">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Issue Pro License</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dynamic Tab Views -->
+      <div class="admin-content-area">
+
+        <!-- ==============================================
+             TAB 1: EXECUTIVE OVERVIEW
+             ============================================== -->
+        <section id="tab-overview" class="tab-view active">
+          
+          <!-- 4 Core Executive KPI Cards -->
+          <div class="kpi-grid">
+            
+            <!-- Gross Revenue -->
+            <div class="kpi-card revenue-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Gross Revenue</span>
+                <span class="kpi-badge emerald">+18.4%</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="kpi-gross-revenue">₹49,950</span>
+                <span class="kpi-sub-val" id="kpi-gross-usd">($589 USD)</span>
+              </div>
+              <div class="kpi-footer">
+                <span>Direct Lifetime Sales</span>
+                <span class="currency-split" id="kpi-split-text">IN: ₹44,955 • Global: $60</span>
+              </div>
+            </div>
+
+            <!-- Net Profit -->
+            <div class="kpi-card profit-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Net Profit</span>
+                <span class="kpi-badge emerald">97.8% Margin</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="kpi-net-profit">₹48,950</span>
+                <span class="kpi-sub-val">After ~2% Gateway Fees</span>
+              </div>
+              <div class="kpi-footer">
+                <span>0 Server Costs • Pure Native App</span>
+              </div>
+            </div>
+
+            <!-- Pro Licenses -->
+            <div class="kpi-card license-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Active Licenses</span>
+                <span class="kpi-badge violet">100% Verified</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="kpi-total-licenses">52</span>
+                <span class="kpi-sub-val">Lifetime Pro Seats</span>
+              </div>
+              <div class="kpi-footer">
+                <span>0 Chargebacks &bull; 0 Revocations</span>
+              </div>
+            </div>
+
+            <!-- Page Views & Conversion -->
+            <div class="kpi-card traffic-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Traffic &amp; Conversion</span>
+                <span class="kpi-badge sky" id="kpi-conversion-rate">2.8% Conv</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="kpi-total-views">3,280</span>
+                <span class="kpi-sub-val">Unique Site Visits</span>
+              </div>
+              <div class="kpi-footer">
+                <span id="kpi-checkout-stats">142 Checkouts &bull; 52 Paid</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Mid Section: Conversion Funnel & Sales Geo Split -->
+          <div class="overview-analytics-grid">
+            
+            <!-- Conversion Funnel Card -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Checkout Conversion Funnel</h3>
+                  <p class="panel-subtitle">Audience progression from landing page to Pro activation</p>
+                </div>
+                <span class="pill-badge">Real-Time</span>
+              </div>
+
+              <div class="funnel-container">
+                <div class="funnel-step">
+                  <div class="funnel-bar-wrap">
+                    <div class="funnel-label">
+                      <span>1. Page Visits</span>
+                      <strong id="fnl-visits">3,280</strong>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div>
+                  </div>
+                  <span class="funnel-rate">100%</span>
+                </div>
+
+                <div class="funnel-step">
+                  <div class="funnel-bar-wrap">
+                    <div class="funnel-label">
+                      <span>2. Viewed Pricing Card</span>
+                      <strong id="fnl-pricing">1,148</strong>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" style="width: 35%;"></div></div>
+                  </div>
+                  <span class="funnel-rate">35.0%</span>
+                </div>
+
+                <div class="funnel-step">
+                  <div class="funnel-bar-wrap">
+                    <div class="funnel-label">
+                      <span>3. Clicked "Buy Pro"</span>
+                      <strong id="fnl-checkout">246</strong>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" style="width: 7.5%;"></div></div>
+                  </div>
+                  <span class="funnel-rate">7.5%</span>
+                </div>
+
+                <div class="funnel-step">
+                  <div class="funnel-bar-wrap">
+                    <div class="funnel-label">
+                      <span>4. Completed Payment &amp; Key Issued</span>
+                      <strong id="fnl-completed">52</strong>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill emerald-fill" style="width: 2.8%;"></div></div>
+                  </div>
+                  <span class="funnel-rate emerald-text" id="fnl-final-conv">2.8%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Revenue Geo Split & Regional Breakdown -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Regional Pricing &amp; Revenue</h3>
+                  <p class="panel-subtitle">Localized sales distribution (Auto-Geo Edge)</p>
+                </div>
+                <span class="pill-badge">Zero Leakage</span>
+              </div>
+
+              <div class="geo-split-list">
+                <div class="geo-item">
+                  <div class="geo-info">
+                    <span class="geo-flag">🇮🇳</span>
+                    <div>
+                      <span class="geo-name">India (Domestic)</span>
+                      <span class="geo-plan">₹999 / Lifetime &bull; UPI &amp; Cards</span>
+                    </div>
+                  </div>
+                  <div class="geo-revenue">
+                    <strong>₹44,955</strong>
+                    <span>45 Customers</span>
+                  </div>
+                </div>
+
+                <div class="geo-item">
+                  <div class="geo-info">
+                    <span class="geo-flag">🇺🇸</span>
+                    <div>
+                      <span class="geo-name">United States</span>
+                      <span class="geo-plan">$19 / Lifetime &bull; Intl Cards</span>
+                    </div>
+                  </div>
+                  <div class="geo-revenue">
+                    <strong>$95 USD</strong>
+                    <span>5 Customers</span>
+                  </div>
+                </div>
+
+                <div class="geo-item">
+                  <div class="geo-info">
+                    <span class="geo-flag">🇩🇪</span>
+                    <div>
+                      <span class="geo-name">Germany / Europe</span>
+                      <span class="geo-plan">$19 / Lifetime &bull; Intl Cards</span>
+                    </div>
+                  </div>
+                  <div class="geo-revenue">
+                    <strong>$38 USD</strong>
+                    <span>2 Customers</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="geo-insight-note">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <span>Server-enforced geo detection prevents currency switching and guarantees correct pricing.</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom: Recent Transactions Quick Peek -->
+          <div class="panel-card mt-24">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Recent Customer Transactions</h3>
+                <p class="panel-subtitle">Real-time payment logs and automatic license activations</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="view-all-tx-btn">View All Transactions &rarr;</button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Payment ID</th>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>Amount</th>
+                    <th>Country</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-tx-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB 2: LICENSE KEYS MANAGEMENT
+             ============================================== -->
+        <section id="tab-licenses" class="tab-view">
+          
+          <div class="tab-control-bar">
+            <div class="search-input-wrap">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="license-search-input" placeholder="Search by customer name, email, or key...">
+            </div>
+
+            <div class="control-actions">
+              <select id="license-filter-select" class="control-select">
+                <option value="all">All Tiers (Active &amp; Revoked)</option>
+                <option value="pro">Pro Lifetime</option>
+                <option value="team">Team / Studio</option>
+              </select>
+
+              <button id="export-licenses-btn" class="btn btn-secondary btn-sm">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Export CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Customer Name</th>
+                    <th>Email</th>
+                    <th>Tier</th>
+                    <th>License Key (Cryptographic ECDSA P-256)</th>
+                    <th>Issued Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="licenses-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB 3: TRANSACTIONS & FINANCIAL LEDGER
+             ============================================== -->
+        <section id="tab-transactions" class="tab-view">
+          
+          <div class="tab-control-bar">
+            <div class="search-input-wrap">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="tx-search-input" placeholder="Search by payment ID, order ID, email...">
+            </div>
+
+            <div class="control-actions">
+              <button id="export-tx-btn" class="btn btn-secondary btn-sm">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Download Tax CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Payment ID</th>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Country</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="all-tx-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB 4: TRAFFIC & CONVERSION OBSERVABILITY
+             ============================================== -->
+        <section id="tab-traffic" class="tab-view">
+          
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-title">Total Page Views</span></div>
+              <div class="kpi-value-wrap"><span class="kpi-main-val" id="trf-pageviews">3,280</span></div>
+              <div class="kpi-footer"><span>Zero-PII Privacy Compliant</span></div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-title">Pricing Intent Clicks</span></div>
+              <div class="kpi-value-wrap"><span class="kpi-main-val" id="trf-pricing">1,148</span></div>
+              <div class="kpi-footer"><span>35.0% Intent Rate</span></div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-title">Checkout Modal Opens</span></div>
+              <div class="kpi-value-wrap"><span class="kpi-main-val" id="trf-modal">246</span></div>
+              <div class="kpi-footer"><span>7.5% Buying Intent</span></div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header"><span class="kpi-title">Pro Purchases</span></div>
+              <div class="kpi-value-wrap"><span class="kpi-main-val emerald-text" id="trf-purchases">52</span></div>
+              <div class="kpi-footer"><span>2.8% Conversion Rate</span></div>
+            </div>
+          </div>
+
+          <div class="overview-analytics-grid mt-24">
+            
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Top Traffic Referrers</h3>
+                  <p class="panel-subtitle">Channels driving downloads and Pro sales</p>
+                </div>
+              </div>
+
+              <div class="traffic-source-list">
+                <div class="source-item">
+                  <span class="source-channel">Direct / Word of Mouth</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 48%;"></div></div>
+                  <span class="source-count">1,574 (48%)</span>
+                </div>
+                <div class="source-item">
+                  <span class="source-channel">Google Search (SEO)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 26%;"></div></div>
+                  <span class="source-count">852 (26%)</span>
+                </div>
+                <div class="source-item">
+                  <span class="source-channel">GitHub &amp; Dev Forums</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 14%;"></div></div>
+                  <span class="source-count">459 (14%)</span>
+                </div>
+                <div class="source-item">
+                  <span class="source-channel">Twitter / X &amp; Reddit</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 12%;"></div></div>
+                  <span class="source-count">395 (12%)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Operating System Distribution</h3>
+                  <p class="panel-subtitle">Visitors and installer download breakdown</p>
+                </div>
+              </div>
+
+              <div class="traffic-source-list">
+                <div class="source-item">
+                  <span class="source-channel">macOS (Apple Silicon M1/M2/M3)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 54%;"></div></div>
+                  <span class="source-count">1,771 (54%)</span>
+                </div>
+                <div class="source-item">
+                  <span class="source-channel">Windows 11 / 10 (x64)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 36%;"></div></div>
+                  <span class="source-count">1,180 (36%)</span>
+                </div>
+                <div class="source-item">
+                  <span class="source-channel">macOS (Intel x64)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 10%;"></div></div>
+                  <span class="source-count">329 (10%)</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB 5: SYSTEM HEALTH & GATEWAYS
+             ============================================== -->
+        <section id="tab-health" class="tab-view">
+          
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Infrastructure &amp; Gateway Integrations</h3>
+                <p class="panel-subtitle">Status of live payment, email dispatch, and cryptographic subsystems</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="recheck-health-btn">Re-verify Integrations</button>
+            </div>
+
+            <div class="health-checklist">
+              
+              <!-- Razorpay Gateway -->
+              <div class="health-item">
+                <div class="health-left">
+                  <div class="health-icon" id="icon-razorpay">
+                    <span class="status-dot green"></span>
+                  </div>
+                  <div>
+                    <h4 class="health-title">Razorpay Payment Gateway</h4>
+                    <p class="health-desc" id="desc-razorpay">Checking gateway configuration...</p>
+                  </div>
+                </div>
+                <div class="health-status-badge" id="badge-razorpay">Active</div>
+              </div>
+
+              <!-- Resend Email Delivery -->
+              <div class="health-item">
+                <div class="health-left">
+                  <div class="health-icon" id="icon-resend">
+                    <span class="status-dot green"></span>
+                  </div>
+                  <div>
+                    <h4 class="health-title">Resend Automated Email Delivery</h4>
+                    <p class="health-desc" id="desc-resend">Checking transactional email credentials...</p>
+                  </div>
+                </div>
+                <div class="health-status-badge" id="badge-resend">Active</div>
+              </div>
+
+              <!-- ECDSA Cryptographic Engine -->
+              <div class="health-item">
+                <div class="health-left">
+                  <div class="health-icon" id="icon-crypto">
+                    <span class="status-dot green"></span>
+                  </div>
+                  <div>
+                    <h4 class="health-title">ECDSA P-256 Offline Cryptographic Engine</h4>
+                    <p class="health-desc">P-256 Curve with SHA-256 IEEE P1363 raw 64-byte signature generator</p>
+                  </div>
+                </div>
+                <div class="health-status-badge green-badge">Loaded &bull; Standalone</div>
+              </div>
+
+              <!-- Vercel Edge Geo IP Routing -->
+              <div class="health-item">
+                <div class="health-left">
+                  <div class="health-icon" id="icon-geo">
+                    <span class="status-dot green"></span>
+                  </div>
+                  <div>
+                    <h4 class="health-title">Edge IP Country Detection (Dual Layer)</h4>
+                    <p class="health-desc">x-vercel-ip-country header detection + client timezone fallback</p>
+                  </div>
+                </div>
+                <div class="health-status-badge green-badge">Operational</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Quick Email Delivery Verification Tool -->
+          <div class="panel-card mt-24">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Direct Resend License Email Test</h3>
+                <p class="panel-subtitle">Send a real sample license email to your inbox to verify template formatting &amp; delivery speed</p>
+              </div>
+            </div>
+
+            <form id="test-email-form" class="inline-test-form">
+              <input type="email" id="test-email-input" placeholder="Enter your email to receive test key..." required>
+              <button type="submit" id="send-test-email-btn" class="btn btn-primary">
+                <span>Send Test Email</span>
+              </button>
+            </form>
+            <div id="test-email-result" class="test-result-box" style="display: none;"></div>
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB 6: SECURITY & PASSCODE
+             ============================================== -->
+        <section id="tab-settings" class="tab-view">
+          
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Admin Master Passcode</h3>
+                <p class="panel-subtitle">Update your browser session passcode or configure your server environment key</p>
+              </div>
+            </div>
+
+            <div class="settings-content">
+              <p class="settings-desc">
+                Your Admin Suite is secured against unauthorized access. You can update your access passcode below, or set <code>ADMIN_KEY</code> in your Vercel Environment Variables for permanent server-side enforcement.
+              </p>
+
+              <form id="change-passcode-form" class="settings-form">
+                <div class="form-group">
+                  <label for="new-passcode-input">New Admin Passcode</label>
+                  <input type="password" id="new-passcode-input" placeholder="Enter new passcode (min 8 characters)" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                  <span>Save New Passcode</span>
+                </button>
+              </form>
+              <div id="passcode-update-msg" class="passcode-msg"></div>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ========================================================
+       3. MODAL: ISSUE NEW PRO LICENSE
+       ======================================================== -->
+  <div id="issue-modal" class="admin-modal-overlay" style="display: none;">
+    <div class="admin-modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Issue New Pro License</h3>
+          <p>Generate a cryptographically signed ECDSA P-256 license key</p>
+        </div>
+        <button id="close-issue-modal-btn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <form id="issue-license-form" class="modal-form">
+        <div class="form-group">
+          <label for="issue-name">Customer Name</label>
+          <input type="text" id="issue-name" placeholder="e.g. John Doe" required>
+        </div>
+
+        <div class="form-group">
+          <label for="issue-email">Customer Email</label>
+          <input type="email" id="issue-email" placeholder="customer@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="issue-tier">License Tier</label>
+          <select id="issue-tier" class="control-select w-100">
+            <option value="pro">Pro Lifetime (Standard - Up to 3 Personal Devices)</option>
+            <option value="team">Studio / Commercial (Commercial Use Permitted)</option>
+          </select>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="custom-checkbox">
+            <input type="checkbox" id="issue-send-email" checked>
+            <span class="checkmark"></span>
+            <span class="checkbox-label">Send branded activation email immediately via Resend</span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-issue-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="generate-key-btn" class="btn btn-primary">
+            <span>Generate &amp; Issue Key</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Result Key Display -->
+      <div id="generated-key-result" class="key-result-card" style="display: none;">
+        <span class="result-label">Generated License Key:</span>
+        <div class="key-display-box">
+          <code id="newly-generated-key">DD-...</code>
+          <button id="copy-new-key-btn" class="btn btn-secondary btn-sm" title="Copy to Clipboard">Copy</button>
+        </div>
+        <p class="result-note" id="issue-email-status"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/admin/admin.js"></script>
 </body>
 </html>

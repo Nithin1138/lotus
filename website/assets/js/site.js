@@ -82,15 +82,20 @@
 
   // Native Releases for macOS and Windows
   const releaseWin = {
-    tag: "0.0.0.0",
+    tag: "v1.0.0",
     size: "50 MB",
     url: "https://github.com/Nithin1138/lotus/releases/download/0.0.0.0/DropDial-Setup.exe"
   };
   const releaseMac = {
-    tag: "0.0.0.0",
+    tag: "v1.0.0",
     size: "4.3 MB",
-    url: "https://github.com/Nithin1138/lotus/releases/download/0.0.0.0/DropDial.dmg"
+    url: "/downloads/DropDial.dmg"
   };
+
+  // Zero-PII Anonymous Telemetry Ping for Admin Dashboard
+  try {
+    fetch('/api/admin?action=track&event=pageview', { method: 'POST', keepalive: true }).catch(() => {});
+  } catch (_) {}
 
   $$("[data-download-win]").forEach(a => { a.href = releaseWin.url; });
   $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · ${releaseWin.size} · Standalone Windows (.exe)`; });

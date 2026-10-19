@@ -346,6 +346,9 @@
     successView.style.display = 'none';
     overlay.classList.add('active');
     setTimeout(() => nameInput.focus(), 150);
+    try {
+      fetch('/api/admin?action=track&event=checkout', { method: 'POST', keepalive: true }).catch(() => {});
+    } catch (_) {}
   }
 
   function closeModal() {
@@ -452,7 +455,38 @@
               throw new Error(verifyData.error || 'Payment verification failed.');
             }
 
-            // 4. Show success screen
+            // 4. Record transaction in local admin ledger & track purchase
+            try {
+              fetch('/api/admin?action=track&event=purchase', { method: 'POST', keepalive: true }).catch(() => {});
+              const txList = JSON.parse(localStorage.getItem('dd_admin_tx') || '[]');
+              txList.unshift({
+                paymentId: response.razorpay_payment_id,
+                orderId: response.razorpay_order_id,
+                customer: name,
+                email: email,
+                amount: PRICING[selectedCurrency].display,
+                amountRaw: PRICING[selectedCurrency].amount,
+                currency: selectedCurrency,
+                method: 'Razorpay Gateway',
+                country: isIndia ? 'IN 🇮🇳' : `${currentCountry} 🌐`,
+                status: 'Captured',
+                timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19)
+              });
+              localStorage.setItem('dd_admin_tx', JSON.stringify(txList));
+
+              const licList = JSON.parse(localStorage.getItem('dd_admin_licenses') || '[]');
+              licList.unshift({
+                id: verifyData.licenseKey,
+                name: name,
+                email: email,
+                tier: 'Pro Lifetime',
+                date: new Date().toISOString().slice(0, 10),
+                status: 'Active'
+              });
+              localStorage.setItem('dd_admin_licenses', JSON.stringify(licList));
+            } catch (_) {}
+
+            // 5. Show success screen
             showSuccess(verifyData.licenseKey, email);
           } catch (verifyErr) {
             showError(verifyErr.message || 'Payment received, but error generating license key. Please contact support@dropdial.app with your payment ID.');
