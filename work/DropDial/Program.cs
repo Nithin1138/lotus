@@ -913,6 +913,7 @@ internal sealed class Resident : IDisposable
                 break;
 
             case "action:terminal":
+            case "action:openTerminal":
                 try
                 {
                     string folder = Directory.Exists(paths[0]) ? paths[0] : (Path.GetDirectoryName(paths[0]) ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
@@ -941,6 +942,7 @@ internal sealed class Resident : IDisposable
                 break;
 
             case "action:share":
+            case "action:airDrop":
                 try
                 {
                     var list = new System.Collections.Specialized.StringCollection();

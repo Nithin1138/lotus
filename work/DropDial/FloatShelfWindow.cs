@@ -123,9 +123,14 @@ internal sealed class FloatShelfItemCard : Border
             actionsPanel.Children.Add(toolsBtn);
         }
 
+        var previewBtn = CreateHoverButton("👁", "Preview File (Space)", () =>
+        {
+            try { Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true }); } catch { }
+        });
         var revealBtn = CreateHoverButton("📁", "Reveal in File Explorer", () => ExplorerIntegration.Reveal(filePath));
         var removeBtn = CreateHoverButton("×", "Remove from Shelf", () => onRemove(filePath));
 
+        actionsPanel.Children.Add(previewBtn);
         actionsPanel.Children.Add(revealBtn);
         actionsPanel.Children.Add(removeBtn);
 
