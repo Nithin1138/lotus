@@ -374,7 +374,7 @@ del /f /q ""%~f0""
                 Text = $"Downloading DropDial {version}...",
                 Location = new System.Drawing.Point(20, 20),
                 Size = new System.Drawing.Size(340, 22),
-                Font = new System.Drawing.Font(FontFamily.GenericSansSerif, 9.5f, System.Drawing.FontStyle.Regular)
+                Font = new System.Drawing.Font(System.Drawing.FontFamily.GenericSansSerif, 9.5f, System.Drawing.FontStyle.Regular)
             };
 
             progressBar = new System.Windows.Forms.ProgressBar

@@ -321,6 +321,13 @@ internal sealed class FloatShelfWindow : Window
     private static FloatShelfWindow? instance;
     public static FloatShelfWindow Instance => instance ??= new FloatShelfWindow();
 
+    public void ShowWindow()
+    {
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+        Show();
+        Activate();
+    }
+
     private readonly List<string> floatedPaths = [];
     private readonly StackPanel itemsStack;
     private readonly ScrollViewer scroller;
@@ -748,7 +755,7 @@ internal sealed class FloatShelfWindow : Window
         if (files.Length == 0) return;
         Native.GetCursorPos(out var pt);
         // Find main window or trigger wheel
-        App.Current.Dispatcher.Invoke(() =>
+        Dispatcher.Invoke(() =>
         {
             if (OnExecuteOperation != null && files.Length > 0)
             {

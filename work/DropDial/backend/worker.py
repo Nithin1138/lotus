@@ -145,7 +145,74 @@ def inspect(path,folder,frame=None):
         import pypdfium2 as pdfium, documents
         doc=pdfium.PdfDocument(path); result['Pages']=len(doc); result['Metadata']=documents.metadata(path)
         preview=folder/'preview.png'; doc[0].render(scale=1.3).to_pil().save(preview); result['Preview']=str(preview); doc.close()
+    if result.get('Preview') is None or not Path(str(result.get('Preview'))).exists():
+        result['Preview'] = make_card_preview(path, folder, kind)
     return result
+
+def make_card_preview(path, folder, kind):
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        p = Path(path)
+        w, h = 880, 520
+        im = Image.new('RGB', (w, h), (24, 28, 34))
+        draw = ImageDraw.Draw(im)
+        font = ImageFont.load_default()
+        draw.rectangle([(0, 0), (w, 54)], fill=(34, 40, 48))
+        ext = p.suffix.upper().lstrip('.') or 'FILE'
+        draw.text((24, 18), f"{ext}  •  {p.name}", fill=(255, 255, 255), font=font)
+        size_str = "0 B"
+        try:
+            sz = p.stat().st_size
+            if sz < 1024: size_str = f"{sz} B"
+            elif sz < 1024*1024: size_str = f"{sz/1024:.1f} KB"
+            else: size_str = f"{sz/(1024*1024):.1f} MB"
+        except Exception: pass
+        draw.text((w - 180, 18), f"Size: {size_str}", fill=(180, 190, 205), font=font)
+        lines = []
+        is_archive = kind == 'archives' or p.suffix.lower() in ('.zip', '.tar', '.gz', '.7z', '.rar', '.bz2', '.xz')
+        if is_archive:
+            try:
+                import zipfile
+                if zipfile.is_zipfile(path):
+                    with zipfile.ZipFile(path, 'r') as zf:
+                        items = zf.infolist()
+                        lines.append(f"Archive contents ({len(items)} items):")
+                        lines.append("-" * 45)
+                        for item in items[:18]:
+                            lines.append(f"  • {item.filename}  ({item.file_size:,} bytes)")
+                        if len(items) > 18:
+                            lines.append(f"  ... and {len(items) - 18} more items")
+            except Exception:
+                lines.append(f"Archive: {p.name}")
+        else:
+            try:
+                with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                    for _ in range(24):
+                        line = f.readline()
+                        if not line: break
+                        lines.append(line.rstrip('\r\n'))
+            except Exception:
+                pass
+        if not lines:
+            lines = [
+                f"File: {p.name}",
+                f"Format: {ext}",
+                f"Size: {size_str}",
+                "",
+                "Ready for processing and conversion in DropDial."
+            ]
+        y = 75
+        for idx, line in enumerate(lines[:24]):
+            prefix = f"{idx+1:2d} | " if not is_archive and not lines[0].startswith("File:") else ""
+            txt = prefix + line[:100]
+            draw.text((30, y), txt, fill=(210, 220, 235), font=font)
+            y += 18
+        preview_path = Path(folder) / 'preview.png'
+        im.save(preview_path)
+        return str(preview_path)
+    except Exception:
+        return None
+
 
 def preview(path,action,params,folder,paths=None):
     folder=Path(folder); folder.mkdir(parents=True,exist_ok=True)

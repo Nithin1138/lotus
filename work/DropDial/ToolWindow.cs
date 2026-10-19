@@ -352,6 +352,48 @@ internal sealed class ToolWindow : Window
         body.Children.Add(previewCard);
         var parameters = new StackPanel();
         parameters.Children.Add(new TextBlock { Text = L.T("Parameters"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 10) });
+        if ((operation.Fields ?? []).Length == 0)
+        {
+            var infoBorder = new Border
+            {
+                Background = UiTheme.Tint,
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(12, 10, 12, 10),
+                Margin = new Thickness(0, 0, 0, 14)
+            };
+            infoBorder.Child = new TextBlock
+            {
+                Text = L.F("Ready to run {0} on {1} selected file(s).", operation.Label, paths.Length),
+                Foreground = UiTheme.Accent,
+                FontWeight = FontWeights.Medium,
+                TextWrapping = TextWrapping.Wrap
+            };
+            parameters.Children.Add(infoBorder);
+
+            parameters.Children.Add(new TextBlock { Text = L.T("Quality Profile"), Margin = new Thickness(0, 6, 0, 4) });
+            var qualityCombo = new ComboBox { Margin = new Thickness(0, 0, 0, 10) };
+            qualityCombo.Items.Add(L.T("High Quality (Preserve Details)"));
+            qualityCombo.Items.Add(L.T("Balanced (Recommended)"));
+            qualityCombo.Items.Add(L.T("Maximum Compression (Small Size)"));
+            qualityCombo.SelectedIndex = 1;
+            parameters.Children.Add(qualityCombo);
+
+            parameters.Children.Add(new TextBlock { Text = L.T("Output Destination"), Margin = new Thickness(0, 6, 0, 4) });
+            var destCombo = new ComboBox { Margin = new Thickness(0, 0, 0, 10) };
+            destCombo.Items.Add(L.T("Same folder as original"));
+            destCombo.Items.Add(L.T("Desktop"));
+            destCombo.Items.Add(L.T("Downloads"));
+            destCombo.SelectedIndex = 0;
+            parameters.Children.Add(destCombo);
+
+            var metaCheck = new CheckBox
+            {
+                Content = L.T("Preserve original metadata and timestamps"),
+                IsChecked = true,
+                Margin = new Thickness(0, 8, 0, 8)
+            };
+            parameters.Children.Add(metaCheck);
+        }
         var advanced = new StackPanel();
         foreach (var field in operation.Fields ?? [])
         {

@@ -132,7 +132,7 @@ internal sealed class LicenseWindow : Window
                 else
                 {
                     messageText.Text = "Clipboard is empty";
-                    messageText.Foreground = UiTheme.Warning;
+                    messageText.Foreground = UiTheme.Accent;
                 }
             }
             catch { }
@@ -315,16 +315,16 @@ internal sealed class LicenseWindow : Window
         }
     }
 
-    private void OnDeactivateClick()
+    private void OnDeactivateClick(object? sender, RoutedEventArgs e)
     {
         var result = MessageBox.Show(
             "Are you sure you want to deactivate DropDial Pro on this PC? You can re-activate anytime using your license key.",
             "Deactivate License",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Question
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question
         );
 
-        if (result == System.Windows.Forms.DialogResult.Yes)
+        if (result == MessageBoxResult.Yes)
         {
             LicenseManager.Deactivate();
             messageText.Text = "License deactivated.";

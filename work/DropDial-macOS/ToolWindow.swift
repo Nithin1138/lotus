@@ -2861,6 +2861,68 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
     // MARK: - Generic Form
     private func setupGenericForm(in container: NSView) {
+        if tool.fields.isEmpty {
+            var yOffset: CGFloat = max(20, container.bounds.height - 35)
+
+            // 1. Feature Action Badge
+            let descBox = NSBox(frame: NSRect(x: 10, y: yOffset - 45, width: container.bounds.width - 20, height: 44))
+            descBox.boxType = .custom
+            descBox.cornerRadius = 8
+            descBox.fillColor = NSColor(white: 0.16, alpha: 0.8)
+            descBox.borderWidth = 1
+            descBox.borderColor = NSColor(white: 0.25, alpha: 0.8)
+
+            let desc = NSTextField(labelWithString: "Ready to run \(tool.label) on \(paths.count) selected file\(paths.count == 1 ? "" : "s").")
+            desc.frame = NSRect(x: 12, y: 11, width: descBox.bounds.width - 24, height: 22)
+            desc.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+            desc.textColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
+            descBox.addSubview(desc)
+            container.addSubview(descBox)
+            yOffset -= 65
+
+            // 2. Quality Profile
+            let qLabel = NSTextField(labelWithString: "Quality Profile:")
+            qLabel.frame = NSRect(x: 10, y: yOffset, width: 140, height: 22)
+            qLabel.alignment = .right
+            qLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+            qLabel.textColor = .white
+            container.addSubview(qLabel)
+
+            let qPopup = NSPopUpButton(frame: NSRect(x: 160, y: yOffset - 2, width: 250, height: 24))
+            qPopup.addItem(withTitle: "High Quality (Preserve Details)")
+            qPopup.addItem(withTitle: "Balanced (Recommended)")
+            qPopup.addItem(withTitle: "Maximum Compression (Small Size)")
+            qPopup.selectItem(at: 1)
+            container.addSubview(qPopup)
+            fieldInputs["qualityProfile"] = qPopup
+            yOffset -= 38
+
+            // 3. Save Location
+            let destLabel = NSTextField(labelWithString: "Save Location:")
+            destLabel.frame = NSRect(x: 10, y: yOffset, width: 140, height: 22)
+            destLabel.alignment = .right
+            destLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+            destLabel.textColor = .white
+            container.addSubview(destLabel)
+
+            let destPopup = NSPopUpButton(frame: NSRect(x: 160, y: yOffset - 2, width: 250, height: 24))
+            destPopup.addItem(withTitle: "Same Folder as Original")
+            destPopup.addItem(withTitle: "Desktop")
+            destPopup.addItem(withTitle: "Downloads")
+            container.addSubview(destPopup)
+            fieldInputs["saveLocation"] = destPopup
+            yOffset -= 38
+
+            // 4. Preserve Metadata Checkbox
+            let metaCheck = NSButton(checkboxWithTitle: "Preserve original file metadata & creation date", target: nil, action: nil)
+            metaCheck.state = .on
+            metaCheck.frame = NSRect(x: 160, y: yOffset, width: 300, height: 22)
+            metaCheck.font = NSFont.systemFont(ofSize: 11)
+            container.addSubview(metaCheck)
+            fieldInputs["preserveMetadata"] = metaCheck
+            return
+        }
+
         var yOffset: CGFloat = max(20, container.bounds.height - 30)
         for field in tool.fields {
             let label = NSTextField(labelWithString: field.label + ":")

@@ -200,7 +200,7 @@ internal static class LicenseManager
                 payloadBytes,
                 rawSig,
                 HashAlgorithmName.SHA256,
-                DSASignatureFormat.IeeeP1363
+                DSASignatureFormat.IeeeP1363FixedFieldConcatenation
             );
 
             if (!isValid)
