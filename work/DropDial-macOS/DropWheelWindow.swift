@@ -19,14 +19,79 @@ enum SoundManager {
         }
     }
 
+    // High-resolution clean Apple UI audio assets
+    private static let tickSound: NSSound? = {
+        let mediaKeysPath = "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/system/Media Keys.aif"
+        if FileManager.default.fileExists(atPath: mediaKeysPath),
+           let sound = NSSound(contentsOfFile: mediaKeysPath, byReference: true) {
+            sound.volume = 0.28
+            return sound
+        }
+        return nil
+    }()
+
+    private static let popSound: NSSound? = {
+        let grabPath = "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/system/Grab.aif"
+        if FileManager.default.fileExists(atPath: grabPath),
+           let sound = NSSound(contentsOfFile: grabPath, byReference: true) {
+            sound.volume = 0.32
+            return sound
+        }
+        return nil
+    }()
+
+    private static let poofSound: NSSound? = {
+        let poofPath = "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/dock/poof item off dock.aif"
+        if FileManager.default.fileExists(atPath: poofPath),
+           let sound = NSSound(contentsOfFile: poofPath, byReference: true) {
+            sound.volume = 0.25
+            return sound
+        }
+        return nil
+    }()
+
+    // Throttle fast hover triggers to prevent audio stutter
+    private static var lastTickTime: TimeInterval = 0
+
+    /// Crisp, tactile dial tick (Apple volume mechanical click + silent haptic tap on trackpad)
     static func playTick() {
         guard isSoundEnabled else { return }
-        NSSound(named: "Tink")?.play()
+
+        // Subtle Apple trackpad haptic impulse
+        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+
+        let now = ProcessInfo.processInfo.systemUptime
+        if now - lastTickTime < 0.035 { return }
+        lastTickTime = now
+
+        if let tick = tickSound {
+            tick.stop()
+            tick.play()
+        }
     }
 
+    /// Soft, tactile snap for wheel open, slice click, or mode shift
     static func playPop() {
         guard isSoundEnabled else { return }
-        NSSound(named: "Pop")?.play()
+
+        NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+
+        if let pop = popSound {
+            pop.stop()
+            pop.play()
+        } else if let poof = poofSound {
+            poof.stop()
+            poof.play()
+        }
+    }
+
+    /// Soft dismissal / dismiss sound
+    static func playDismiss() {
+        guard isSoundEnabled else { return }
+        if let poof = poofSound {
+            poof.stop()
+            poof.play()
+        }
     }
 }
 
@@ -1282,6 +1347,12 @@ final class DropWheelWindowController: NSWindowController {
     func hideWheel() {
         removeOutsideClickMonitors()
         window?.orderOut(nil)
+    }
+
+    func setMode(_ mode: WheelMode) {
+        guard mode != self.currentMode else { return }
+        self.currentMode = mode
+        wheelView.setMode(mode)
     }
 
     func toggleWheel(mode: WheelMode? = nil) {
