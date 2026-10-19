@@ -1,6 +1,7 @@
 /**
  * DropDial Checkout & Licensing Client Integration
- * Handles Razorpay Checkout Modal, Order Creation, Payment Verification,
+ * Handles Automatic Country-Based Pricing (₹999 in India, $19 Worldwide),
+ * Razorpay Checkout Modal, Order Creation, Payment Verification,
  * and Instant Delivery via Resend.
  */
 
@@ -13,15 +14,121 @@
     USD: { code: 'USD', symbol: '$', amount: 19, display: '$19' }
   };
 
-  let selectedCurrency = 'INR';
+  // State
+  let currentCountry = 'US';
+  let isIndia = false;
+  let selectedCurrency = 'USD';
 
   // Modal DOM Elements
   let overlay, formView, successView, errorBox, payBtn;
   let nameInput, emailInput, priceDisplay, copyBtn, licenseKeyDisplay, successEmailText;
 
+  /**
+   * Fast, zero-latency client-side heuristic detection
+   * Detects Indian timezone / locale immediately before network calls
+   */
+  function detectFastLocation() {
+    try {
+      const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || '').toLowerCase();
+      const offset = new Date().getTimezoneOffset(); // -330 is IST (UTC+5:30)
+      const langs = (navigator.languages || [navigator.language || '']).map(l => (l || '').toLowerCase());
+
+      const tzMatchesIndia = tz.includes('kolkata') || tz.includes('calcutta') || offset === -330;
+      const langMatchesIndia = langs.some(l => l.endsWith('-in') || l.includes('hi-in') || l === 'en-in');
+
+      if (tzMatchesIndia || langMatchesIndia) {
+        return { isIndia: true, country: 'IN', currency: 'INR' };
+      }
+    } catch (e) {
+      // Fallback safe
+    }
+    return { isIndia: false, country: 'US', currency: 'USD' };
+  }
+
+  /**
+   * Applies localized pricing to the checkout modal and the landing page
+   */
+  function applyPricing(indiaFlag, countryCode) {
+    isIndia = !!indiaFlag;
+    selectedCurrency = isIndia ? 'INR' : 'USD';
+    currentCountry = countryCode || (isIndia ? 'IN' : 'US');
+    const config = PRICING[selectedCurrency];
+
+    // 1. Modal Elements
+    if (priceDisplay) {
+      priceDisplay.textContent = config.display;
+    }
+    const payLabel = document.getElementById('checkout-pay-label');
+    if (payLabel) {
+      payLabel.textContent = `Proceed to Payment (${config.display})`;
+    }
+
+    // 2. Landing Page Buttons & Pricing Card
+    const headerBuy = document.getElementById('nav-header-buy-btn');
+    if (headerBuy) {
+      headerBuy.textContent = `Buy Pro (${config.display})`;
+    }
+
+    const navBuy = document.getElementById('nav-buy-btn');
+    if (navBuy) {
+      navBuy.textContent = `Buy Pro (${config.display})`;
+    }
+
+    const pricingCardPrice = document.getElementById('pro-pricing-price');
+    if (pricingCardPrice) {
+      pricingCardPrice.innerHTML = `${config.display} <span>one-time</span>`;
+    }
+
+    const cardBuy = document.getElementById('card-buy-btn');
+    if (cardBuy) {
+      cardBuy.textContent = `Buy DropDial Pro (${config.display})`;
+    }
+  }
+
+  /**
+   * Async server-edge geolocation detection
+   */
+  async function fetchCountryPricing() {
+    try {
+      // 1. Check primary Vercel edge endpoint
+      const res = await fetch('/api/geo', { method: 'GET', cache: 'default' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data.isIndia === 'boolean') {
+          applyPricing(data.isIndia, data.country);
+          return;
+        }
+      }
+    } catch (err) {
+      // Fallback for local testing or static preview environments
+      try {
+        const fallbackRes = await fetch('https://api.country.is/', { cache: 'default' });
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          const country = (fallbackData.country || '').toUpperCase();
+          applyPricing(country === 'IN', country);
+          return;
+        }
+      } catch (e2) {
+        // Retain fast heuristic result
+      }
+    }
+  }
+
   function initCheckout() {
+    // 1. Zero-latency instant detection
+    const fastGeo = detectFastLocation();
+    applyPricing(fastGeo.isIndia, fastGeo.country);
+
+    // 2. Build DOM & bind events
     createModalDOM();
     bindEvents();
+
+    // 3. Sync pricing with modal DOM
+    applyPricing(isIndia, currentCountry);
+
+    // 4. Edge geo refinement in background
+    fetchCountryPricing();
   }
 
   function createModalDOM() {
@@ -44,12 +151,6 @@
         <div class="checkout-modal-body">
           <!-- Form View -->
           <div id="checkout-form-view">
-            <!-- Currency Switcher -->
-            <div class="checkout-currency-selector">
-              <button type="button" class="currency-tab active" data-currency="INR">Pay in INR (₹999)</button>
-              <button type="button" class="currency-tab" data-currency="USD">Pay in USD ($19)</button>
-            </div>
-
             <!-- Plan Summary -->
             <div class="checkout-plan-summary">
               <div class="checkout-plan-row">
@@ -153,7 +254,7 @@
     document.addEventListener('click', function (e) {
       const target = e.target.closest('[data-open-checkout], a[href*="dropdial.com/buy"], .pricing-card.featured a.btn, a[href="#pricing"].btn');
       if (target) {
-        // If clicking hero buy button, open checkout modal directly
+        // If clicking buy button, open checkout modal directly
         if (target.getAttribute('href') === 'https://dropdial.com/buy' || target.hasAttribute('data-open-checkout') || target.textContent.includes('Buy')) {
           e.preventDefault();
           openModal();
@@ -179,16 +280,6 @@
       if (e.key === 'Escape' && overlay.classList.contains('active')) {
         closeModal();
       }
-    });
-
-    // Currency Switcher
-    overlay.querySelectorAll('.currency-tab').forEach(function (tab) {
-      tab.addEventListener('click', function () {
-        overlay.querySelectorAll('.currency-tab').forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-        selectedCurrency = this.getAttribute('data-currency');
-        updateCurrencyUI();
-      });
     });
 
     // Pay Button Click
@@ -236,12 +327,6 @@
     overlay.classList.remove('active');
   }
 
-  function updateCurrencyUI() {
-    const config = PRICING[selectedCurrency];
-    priceDisplay.textContent = config.display;
-    document.getElementById('checkout-pay-label').textContent = `Proceed to Payment (${config.display})`;
-  }
-
   function showError(msg) {
     errorBox.textContent = msg;
     errorBox.style.display = 'block';
@@ -275,13 +360,14 @@
     payBtn.innerHTML = `<span>Connecting to Razorpay…</span>`;
 
     try {
-      // 1. Create order on server
+      // 1. Create order on server with locked country & currency
       const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name,
           email: email,
+          country: currentCountry,
           currency: selectedCurrency,
           amount: PRICING[selectedCurrency].amount
         })
@@ -383,6 +469,7 @@
   // Export to window for manual triggering
   window.DropDialCheckout = {
     open: openModal,
-    close: closeModal
+    close: closeModal,
+    setPricing: applyPricing
   };
 })();

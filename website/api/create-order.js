@@ -21,19 +21,20 @@ module.exports = async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     const email = (body.email || '').trim().toLowerCase();
     const name = (body.name || 'DropDial Customer').trim();
-    const currency = (body.currency || 'INR').toUpperCase(); // 'INR' or 'USD'
+    // Determine country & strictly lock price according to location:
+    // India: ₹999 (99900 paise INR)
+    // Any other country: $19 (1900 cents USD)
+    const vercelCountry = (req.headers['x-vercel-ip-country'] || req.headers['cf-ipcountry'] || req.headers['x-country-code'] || '').toUpperCase();
+    const clientCountry = (body.country || '').toUpperCase();
+    const country = vercelCountry || clientCountry;
 
     if (!email || !email.includes('@')) {
       return res.status(400).json({ error: 'A valid email address is required to receive your license key.' });
     }
 
-    // Amount calculation:
-    // INR: ₹999 -> 99900 paise
-    // USD: $19 -> 1900 cents
-    let amountInSubunits = currency === 'USD' ? 1900 : 99900;
-    if (body.amount) {
-      amountInSubunits = currency === 'USD' ? Math.round(Number(body.amount) * 100) : Math.round(Number(body.amount) * 100);
-    }
+    const isIndia = country === 'IN' || (!country && (body.currency || '').toUpperCase() === 'INR');
+    const currency = isIndia ? 'INR' : 'USD';
+    const amountInSubunits = isIndia ? 99900 : 1900;
 
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;

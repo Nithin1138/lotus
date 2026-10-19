@@ -87,40 +87,7 @@
   padding: 24px;
 }
 
-/* Currency & Price Selector */
-.checkout-currency-selector {
-  display: flex;
-  background: #0e1014;
-  border: 1px solid #262b36;
-  border-radius: 10px;
-  padding: 4px;
-  margin-bottom: 20px;
-  gap: 4px;
-}
-
-.currency-tab {
-  flex: 1;
-  text-align: center;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  color: #8c95a5;
-  transition: all 0.18s ease;
-}
-
-.currency-tab:hover {
-  color: #ffffff;
-}
-
-.currency-tab.active {
-  background: #ff6500;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(255, 101, 0, 0.35);
-}
+/* Plan Summary Box */
 
 .checkout-plan-summary {
   background: #1e222b;
