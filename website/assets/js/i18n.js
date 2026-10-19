@@ -44,6 +44,8 @@ window.ZD_ZH = {
   "stat.conv.d": "Input-to-output format pairs across images, video, audio, documents, Office files and archives. 145 of them use your installed Microsoft Office.",
   "stat.tools.t": "Advanced file tools",
   "stat.tools.d": "Compress, trim, crop, redact, join, split and more, many with a live preview.",
+  "stat.actions.t": "Universal file actions",
+  "stat.actions.d": "AirDrop, Float to shelf, copy path, move, Terminal in folder, and strip privacy metadata at your cursor.",
   "shots.title": "Real tools when you need them",
   "shots.lead": "Tools that need settings open in their own window with a live preview. Every audio and video tool has a player with a seek bar, and trimming gives you draggable start and end handles.",
   "shots.trim": "The trim tool: preview, timeline handles, exact times, then save a new file.",

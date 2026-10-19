@@ -79,6 +79,11 @@
       pricingCardPrice.innerHTML = `${config.display} <span>one-time</span>`;
     }
 
+    const trialPricingPrice = document.getElementById('trial-pricing-price');
+    if (trialPricingPrice) {
+      trialPricingPrice.innerHTML = `${config.symbol}0 <span>/ 7 days</span>`;
+    }
+
     const cardBuy = document.getElementById('card-buy-btn');
     if (cardBuy) {
       cardBuy.textContent = `Buy DropDial Pro (${config.display})`;
