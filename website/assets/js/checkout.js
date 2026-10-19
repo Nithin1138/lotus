@@ -196,44 +196,62 @@
             </div>
           </div>
 
-          <!-- Success View (Compact & Modern) -->
+          <!-- Success View (Ultra-Compact Modern SaaS Design) -->
           <div class="checkout-success-view" id="checkout-success-view">
-            <div class="success-header-row">
-              <div class="success-icon-wrap">
+            <div class="success-celebration">
+              <div class="success-icon-badge">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
-              <div class="success-header-meta">
-                <h3 class="success-title">Payment Successful!</h3>
-                <p class="success-sub">DropDial Pro Lifetime is now active for your account.</p>
-              </div>
+              <h3 class="success-title">Payment Successful!</h3>
+              <p class="success-sub">DropDial Pro lifetime license activated</p>
             </div>
 
-            <div class="license-compact-card">
-              <div class="license-card-header">
-                <span class="license-card-label">Personal License Key</span>
-                <span class="license-status-tag">● Lifetime Active</span>
+            <!-- Single-Row Compact License Key Pill -->
+            <div class="success-key-box">
+              <div class="key-box-top">
+                <span class="key-box-label">LIFETIME LICENSE KEY</span>
+                <span class="key-box-status"><span class="status-pulse"></span>ACTIVE</span>
               </div>
-              <div class="license-key-row">
-                <input type="text" readonly class="license-key-field" id="license-key-display" value="DD-..." spellcheck="false" autocomplete="off" />
-                <button type="button" class="copy-key-btn-compact" id="copy-license-btn" title="Copy to clipboard">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                  <span>Copy Key</span>
+              <div class="key-input-wrapper">
+                <input type="text" id="license-key-display" class="key-display-input" readonly value="DD-..." spellcheck="false" title="Click to select full key">
+                <button type="button" class="key-inline-copy-btn" id="copy-license-btn" aria-label="Copy License Key">
+                  <svg class="copy-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span class="copy-lbl">Copy</span>
                 </button>
               </div>
             </div>
 
-            <div class="activation-hint-pill">
-              <span class="hint-icon">⚡</span>
-              <span class="hint-text"><strong>To Activate:</strong> Right-click DropDial icon ➔ <strong>Activate Pro…</strong> ➔ Paste Key</span>
+            <!-- Clean 1-Line Delivery Status -->
+            <div class="email-delivery-pill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <span>Key &amp; receipt sent to <strong id="success-email-notice">you@example.com</strong></span>
             </div>
 
-            <p class="success-email-notice" id="success-email-notice">
-              A backup copy has also been sent to your email.
-            </p>
+            <!-- Sleek Horizontal 3-Step Activation Timeline -->
+            <div class="activation-timeline">
+              <div class="timeline-step">
+                <span class="step-badge">1</span>
+                <span class="step-text">Open DropDial</span>
+              </div>
+              <span class="timeline-sep">›</span>
+              <div class="timeline-step">
+                <span class="step-badge">2</span>
+                <span class="step-text">Right-click tray</span>
+              </div>
+              <span class="timeline-sep">›</span>
+              <div class="timeline-step">
+                <span class="step-badge">3</span>
+                <span class="step-text">Paste Key</span>
+              </div>
+            </div>
 
+            <!-- Modal Action Buttons -->
             <div class="success-actions-row">
-              <a href="#download" class="btn btn-ghost" id="download-now-btn">Download App</a>
-              <button type="button" class="btn btn-primary" id="success-done-btn">Done</button>
+              <a href="#download" class="success-btn-download" id="download-now-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Download App</span>
+              </a>
+              <button type="button" class="success-btn-done" id="success-done-btn">Done</button>
             </div>
           </div>
         </div>
@@ -290,50 +308,36 @@
     // Pay Button Click
     payBtn.addEventListener('click', handlePaymentInitiation);
 
-    // Auto-select key on input focus/click
-    licenseKeyDisplay.addEventListener('click', function () {
-      if (typeof this.select === 'function') {
-        this.select();
-      }
-    });
-
     // Copy License Key Button
     copyBtn.addEventListener('click', function () {
-      const key = (licenseKeyDisplay.value || licenseKeyDisplay.textContent || '').trim();
+      const key = (licenseKeyDisplay.value || licenseKeyDisplay.getAttribute('data-full-key') || licenseKeyDisplay.textContent || '').trim();
       if (!key) return;
 
-      const setCopiedUI = () => {
+      const lbl = copyBtn.querySelector('.copy-lbl');
+      navigator.clipboard.writeText(key).then(function () {
         copyBtn.classList.add('copied');
-        const textSpan = copyBtn.querySelector('span');
-        if (textSpan) textSpan.textContent = 'Copied! ✓';
+        if (lbl) lbl.textContent = 'Copied! ✓';
         setTimeout(function () {
           copyBtn.classList.remove('copied');
-          if (textSpan) textSpan.textContent = 'Copy Key';
-        }, 3000);
-      };
-
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(key).then(setCopiedUI).catch(() => {
-          fallbackCopy(key, setCopiedUI);
-        });
-      } else {
-        fallbackCopy(key, setCopiedUI);
-      }
+          if (lbl) lbl.textContent = 'Copy';
+        }, 2500);
+      }).catch(function () {
+        // Fallback for older browsers
+        licenseKeyDisplay.select();
+        document.execCommand('copy');
+        copyBtn.classList.add('copied');
+        if (lbl) lbl.textContent = 'Copied! ✓';
+        setTimeout(function () {
+          copyBtn.classList.remove('copied');
+          if (lbl) lbl.textContent = 'Copy';
+        }, 2500);
+      });
     });
 
-    function fallbackCopy(text, cb) {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand('copy');
-        cb();
-      } catch (e) {}
-      document.body.removeChild(textarea);
-    }
+    // Auto-select entire key on click
+    licenseKeyDisplay.addEventListener('click', function () {
+      this.select();
+    });
   }
 
   function openModal() {
@@ -476,12 +480,11 @@
   function showSuccess(licenseKey, email) {
     formView.style.display = 'none';
     successView.style.display = 'block';
-    if (licenseKeyDisplay.tagName === 'INPUT') {
-      licenseKeyDisplay.value = licenseKey;
-    } else {
-      licenseKeyDisplay.textContent = licenseKey;
+    licenseKeyDisplay.value = licenseKey;
+    licenseKeyDisplay.setAttribute('data-full-key', licenseKey);
+    if (successEmailText) {
+      successEmailText.textContent = email;
     }
-    successEmailText.innerHTML = `A backup copy of this license has also been emailed to <strong>${email}</strong>.`;
   }
 
   // Self-initialize on DOM ready

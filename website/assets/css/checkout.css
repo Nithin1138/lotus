@@ -219,36 +219,34 @@
   gap: 4px;
 }
 
-/* Success State View (Compact & Modern) */
+/* ==========================================================================
+   Success State View — Ultra-Compact Modern SaaS Design
+   ========================================================================== */
+
 .checkout-success-view {
   display: none;
   text-align: center;
-  padding: 4px 0;
 }
 
-.success-header-row {
+.success-celebration {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
   margin-bottom: 18px;
 }
 
-.success-icon-wrap {
+.success-icon-badge {
   width: 44px;
   height: 44px;
-  background: rgba(16, 185, 129, 0.15);
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0.08) 100%);
   border: 1.5px solid #10b981;
   color: #10b981;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
-}
-
-.success-header-meta {
-  text-align: center;
+  margin-bottom: 10px;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.28);
 }
 
 .success-title {
@@ -256,171 +254,258 @@
   font-weight: 800;
   color: #ffffff;
   margin: 0 0 4px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .success-sub {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #94a3b8;
   margin: 0;
 }
 
-.license-compact-card {
-  background: #0d0f14;
-  border: 1px solid rgba(255, 101, 0, 0.35);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+/* Single-Row Compact License Key Pill */
+.success-key-box {
+  background: #0b0d11;
+  border: 1px solid #28303e;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
   text-align: left;
+  transition: border-color 0.15s;
 }
 
-.license-card-header {
-  font-size: 0.72rem;
+.success-key-box:focus-within {
+  border-color: #ff6500;
+}
+
+.key-box-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.key-box-label {
+  font-size: 0.68rem;
   font-weight: 700;
   color: #ff6500;
-  text-transform: uppercase;
   letter-spacing: 0.8px;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  text-transform: uppercase;
 }
 
-.license-status-tag {
+.key-box-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
   color: #10b981;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: normal;
+  letter-spacing: 0.6px;
 }
 
-.license-key-row {
+.status-pulse {
+  width: 6px;
+  height: 6px;
+  background-color: #10b981;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.key-input-wrapper {
   display: flex;
-  gap: 8px;
   align-items: center;
+  background: #141720;
+  border: 1px solid #1f2533;
+  border-radius: 7px;
+  padding: 3px 4px 3px 10px;
+  gap: 6px;
 }
 
-.license-key-field {
+.key-display-input {
   flex: 1;
   min-width: 0;
-  background: #14171f;
-  border: 1px solid #262c38;
-  color: #ffffff;
-  font-family: 'SF Mono', Consolas, Monaco, monospace;
-  font-size: 0.82rem;
-  font-weight: 500;
-  padding: 9px 12px;
-  border-radius: 8px;
+  background: transparent;
+  border: none;
   outline: none;
+  color: #f1f5f9;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.82rem;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  letter-spacing: 0.3px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.license-key-field:focus {
-  border-color: #ff6500;
-  box-shadow: 0 0 0 2px rgba(255, 101, 0, 0.2);
+.key-display-input:focus {
+  color: #ffffff;
 }
 
-.copy-key-btn-compact {
+.key-inline-copy-btn {
   background: #ff6500;
   color: #ffffff;
   border: none;
-  border-radius: 8px;
-  padding: 9px 14px;
-  font-size: 0.82rem;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-  box-shadow: 0 2px 8px rgba(255, 101, 0, 0.35);
+  gap: 5px;
   flex-shrink: 0;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(255, 101, 0, 0.3);
 }
 
-.copy-key-btn-compact:hover {
+.key-inline-copy-btn:hover {
   background: #e55a00;
-  box-shadow: 0 4px 12px rgba(255, 101, 0, 0.45);
 }
 
-.copy-key-btn-compact:active {
-  transform: scale(0.97);
+.key-inline-copy-btn.copied {
+  background: #10b981;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
 }
 
-.copy-key-btn-compact.copied {
-  background: #059669;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-}
-
-.activation-hint-pill {
-  background: rgba(255, 101, 0, 0.08);
-  border: 1px solid rgba(255, 101, 0, 0.22);
-  border-radius: 20px;
-  padding: 8px 14px;
-  font-size: 0.78rem;
-  color: #cbd5e1;
-  margin-bottom: 12px;
-  display: flex;
+/* Delivery Status Pill */
+.email-delivery-pill {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  line-height: 1.4;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  margin-bottom: 14px;
 }
 
-.activation-hint-pill .hint-icon {
-  font-size: 0.9rem;
+.email-delivery-pill svg {
+  color: #ff6500;
+  flex-shrink: 0;
 }
 
-.activation-hint-pill strong {
-  color: #ffffff;
+.email-delivery-pill strong {
+  color: #f1f5f9;
+  font-weight: 600;
 }
 
-.success-email-notice {
-  font-size: 0.78rem;
-  color: #838e9e;
-  margin: 0 0 16px;
-  line-height: 1.4;
+/* Horizontal 3-Step Activation Timeline */
+.activation-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #12151c;
+  border: 1px solid #202735;
+  border-radius: 9px;
+  padding: 9px 12px;
+  margin-bottom: 16px;
 }
 
-.success-email-notice strong {
-  color: #e2e8f0;
+.timeline-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: #cbd5e1;
 }
 
+.step-badge {
+  width: 17px;
+  height: 17px;
+  background: #252e3d;
+  color: #94a3b8;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.step-text {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.timeline-sep {
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 700;
+  user-select: none;
+}
+
+/* Modal Actions */
 .success-actions-row {
   display: flex;
   gap: 10px;
-  justify-content: center;
 }
 
-.success-actions-row .btn {
+.success-btn-download {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
+  background: #1c212b;
+  border: 1px solid #2e3747;
+  color: #e2e8f0;
+  text-decoration: none;
   padding: 10px 14px;
-  font-size: 0.85rem;
   border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
 }
 
-.success-actions-row #download-now-btn {
-  background: #252b36;
-  border: 1px solid #363d4c;
+.success-btn-download:hover {
+  background: #272f3d;
+  border-color: #475569;
   color: #ffffff;
 }
 
-.success-actions-row #download-now-btn:hover {
-  background: #2f3745;
-  border-color: #4b5563;
-}
-
-.success-actions-row #success-done-btn {
+.success-btn-done {
+  flex: 1;
   background: #ff6500;
   border: 1px solid #ff6500;
   color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(255, 101, 0, 0.25);
 }
 
-.success-actions-row #success-done-btn:hover {
+.success-btn-done:hover {
   background: #e55a00;
+  border-color: #e55a00;
 }
+
+@media (max-width: 480px) {
+  .checkout-modal {
+    max-width: 100%;
+    border-radius: 14px;
+  }
+  .checkout-modal-body {
+    padding: 18px 16px;
+  }
+  .activation-timeline {
+    padding: 8px 10px;
+  }
+  .timeline-step {
+    font-size: 0.7rem;
+    gap: 4px;
+  }
+  .timeline-sep {
+    font-size: 0.75rem;
+  }
+  .key-inline-copy-btn {
+    padding: 6px 9px;
+    font-size: 0.74rem;
+  }
+}
+
