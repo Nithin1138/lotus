@@ -128,167 +128,68 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your DropDial Pro License Key & Receipt</title>
-  <!--[if mso]>
-  <noscript>
-    <xml>
-      <o:OfficeDocumentSettings>
-        <o:PixelsPerInch>96</o:PixelsPerInch>
-      </o:OfficeDocumentSettings>
-    </xml>
-  </noscript>
-  <![endif]-->
+  <title>Your DropDial Pro License Key</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0d0f12; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e6e8eb; }
+    .wrapper { max-width: 580px; margin: 30px auto; background-color: #16181d; border: 1px solid #282c35; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
+    .header { background: linear-gradient(135deg, #1c1f26 0%, #16181d 100%); padding: 36px 32px 24px 32px; text-align: center; border-bottom: 1px solid #282c35; }
+    .logo-badge { display: inline-block; background-color: #ff6500; color: #ffffff; font-weight: 800; font-size: 13px; letter-spacing: 1.5px; padding: 6px 14px; border-radius: 20px; text-transform: uppercase; margin-bottom: 14px; }
+    .title { font-size: 24px; font-weight: 800; color: #ffffff; margin: 0 0 8px 0; }
+    .subtitle { font-size: 14px; color: #9aa1ad; margin: 0; }
+    .content { padding: 32px; }
+    .greeting { font-size: 15px; color: #d0d5dd; line-height: 1.6; margin: 0 0 20px 0; }
+    .key-box { background: #0b0c0f; border: 1px solid #ff6500; border-radius: 10px; padding: 20px; text-align: center; margin: 24px 0; }
+    .key-label { font-size: 11px; font-weight: 700; color: #ff6500; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px; }
+    .license-code { font-family: 'SF Mono', Consolas, Monaco, monospace; font-size: 13px; color: #ffffff; background: #13161c; padding: 14px 12px; border-radius: 8px; border: 1px solid #232731; word-break: break-all; display: block; user-select: all; -webkit-user-select: all; }
+    .instruction-card { background: #1a1d24; border-radius: 10px; padding: 20px; margin: 24px 0; border: 1px solid #2a2f3a; }
+    .instruction-title { font-size: 14px; font-weight: 700; color: #ffffff; margin: 0 0 12px 0; }
+    .instruction-list { margin: 0; padding-left: 20px; color: #b6bcc8; font-size: 13px; line-height: 1.7; }
+    .instruction-list li { margin-bottom: 6px; }
+    .feature-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 12px 0; }
+    .tag { background: #232731; color: #9aa1ad; font-size: 11px; padding: 5px 10px; border-radius: 6px; }
+    .footer { background: #101216; padding: 24px 32px; text-align: center; font-size: 12px; color: #6e7685; border-top: 1px solid #20242d; line-height: 1.6; }
+    .footer a { color: #ff6500; text-decoration: none; }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; width: 100% !important; background-color: #08090d; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0; -webkit-font-smoothing: antialiased;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #08090d; padding: 24px 12px;">
-    <tr>
-      <td align="center">
-        <!-- Main Email Container -->
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 580px; background-color: #11141c; border-radius: 14px; overflow: hidden; border: 1px solid #232938; box-shadow: 0 16px 40px rgba(0,0,0,0.65);">
-          <!-- Top Orange Accent Stripe -->
-          <tr>
-            <td style="height: 4px; background: linear-gradient(90deg, #ff6500 0%, #ff8833 100%);"></td>
-          </tr>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="logo-badge">DropDial Pro</div>
+      <h1 class="title">Welcome to DropDial Pro!</h1>
+      <p class="subtitle">Thank you for your purchase, ${customerName}.</p>
+    </div>
 
-          <!-- Header / Brand Section -->
-          <tr>
-            <td style="padding: 32px 32px 20px 32px; text-align: center;">
-              <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto 14px auto;">
-                <tr>
-                  <td style="background-color: rgba(255, 101, 0, 0.12); border: 1px solid rgba(255, 101, 0, 0.35); padding: 5px 14px; border-radius: 20px;">
-                    <span style="color: #ff6500; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">DROPDIAL PRO</span>
-                  </td>
-                </tr>
-              </table>
-              <h1 style="font-size: 24px; font-weight: 800; color: #ffffff; margin: 0 0 6px 0; letter-spacing: -0.02em;">Welcome to DropDial Pro!</h1>
-              <p style="font-size: 14px; color: #94a3b8; margin: 0; line-height: 1.5;">Thank you for your purchase, <strong>${customerName}</strong>. Your lifetime license is active.</p>
-            </td>
-          </tr>
+    <div class="content">
+      <p class="greeting">
+        Your lifetime license key has been generated and activated. You now have unrestricted access to all 188+ offline conversion and media tools across macOS and Windows.
+      </p>
 
-          <!-- Content Section -->
-          <tr>
-            <td style="padding: 0 32px 28px 32px;">
+      <div class="key-box">
+        <div class="key-label">Your Personal Lifetime License Key</div>
+        <div class="license-code">${licenseKey}</div>
+      </div>
 
-              <!-- Key Callout Box -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #090a0f; border: 1.5px solid #ff6500; border-radius: 10px; margin: 16px 0 22px 0; box-shadow: 0 4px 18px rgba(255, 101, 0, 0.12);">
-                <tr>
-                  <td style="padding: 18px 20px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 10px;">
-                      <tr>
-                        <td align="left">
-                          <span style="font-size: 10px; font-weight: 800; color: #ff6500; text-transform: uppercase; letter-spacing: 1.2px;">YOUR PERSONAL LIFETIME LICENSE KEY</span>
-                        </td>
-                        <td align="right">
-                          <span style="font-size: 11px; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.25);">● ACTIVE</span>
-                        </td>
-                      </tr>
-                    </table>
+      <div class="instruction-card">
+        <div class="instruction-title">How to Activate in 30 Seconds:</div>
+        <ol class="instruction-list">
+          <li>Launch <strong>DropDial</strong> on your Mac or Windows PC.</li>
+          <li>Right-click the DropDial menu bar icon (macOS) or notification tray icon (Windows).</li>
+          <li>Select <strong>Activate DropDial Pro…</strong> from the menu.</li>
+          <li>Click the <strong>Paste Key</strong> button and click <strong>Activate DropDial Pro</strong>.</li>
+        </ol>
+      </div>
 
-                    <div style="font-family: 'SF Mono', Consolas, Monaco, monospace; font-size: 12px; color: #ffffff; background: #151821; padding: 12px 14px; border-radius: 6px; border: 1px solid #272f3e; word-break: break-all; line-height: 1.6; user-select: all; -webkit-user-select: all;">
-                      ${licenseKey}
-                    </div>
+      <p style="font-size: 13px; color: #8e95a2; line-height: 1.6; margin-top: 18px;">
+        🔒 <strong>100% Offline & Private:</strong> DropDial uses local ECDSA P-256 cryptographic verification. Your device never connects to the internet to validate your license.
+      </p>
+    </div>
 
-                    <div style="font-size: 11px; color: #7f8a9c; margin-top: 10px; line-height: 1.4;">
-                      💡 <em>Click to select all, then copy. Valid for up to 3 personal devices across macOS and Windows.</em>
-                    </div>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Order Summary Table -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #151922; border: 1px solid #252b38; border-radius: 10px; margin-bottom: 22px; overflow: hidden;">
-                <tr>
-                  <td style="padding: 12px 16px; font-size: 12px; color: #8893a4; border-bottom: 1px solid #212633; width: 40%;">Product</td>
-                  <td style="padding: 12px 16px; font-size: 12px; color: #ffffff; font-weight: 600; border-bottom: 1px solid #212633; text-align: right;">DropDial Pro (All 188+ Tools)</td>
-                </tr>
-                <tr>
-                  <td style="padding: 12px 16px; font-size: 12px; color: #8893a4; border-bottom: 1px solid #212633;">Licensed To</td>
-                  <td style="padding: 12px 16px; font-size: 12px; color: #ffffff; font-weight: 600; border-bottom: 1px solid #212633; text-align: right;">${customerName} (${to})</td>
-                </tr>
-                <tr>
-                  <td style="padding: 12px 16px; font-size: 12px; color: #8893a4; border-bottom: 1px solid #212633;">Platforms</td>
-                  <td style="padding: 12px 16px; font-size: 12px; color: #ffffff; font-weight: 600; border-bottom: 1px solid #212633; text-align: right;">macOS (Universal) & Windows</td>
-                </tr>
-                <tr>
-                  <td style="padding: 12px 16px; font-size: 12px; color: #8893a4;">Receipt / Order ID</td>
-                  <td style="padding: 12px 16px; font-size: 11px; font-family: monospace; color: #94a3b8; font-weight: 600; text-align: right;">${paymentId || 'PAY-LIFETIME'}</td>
-                </tr>
-              </table>
-
-              <!-- How to Activate (3 Compact Steps) -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #151922; border: 1px solid #252b38; border-radius: 10px; margin-bottom: 22px;">
-                <tr>
-                  <td style="padding: 18px 20px;">
-                    <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 12px;">
-                      ⚡ Quick 20-Second Activation:
-                    </div>
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td width="24" valign="top" style="padding-bottom: 10px;">
-                          <div style="width: 20px; height: 20px; background: #ff6500; border-radius: 50%; color: #ffffff; font-size: 11px; font-weight: 800; text-align: center; line-height: 20px;">1</div>
-                        </td>
-                        <td style="padding-left: 10px; padding-bottom: 10px; font-size: 13px; color: #cbd5e1; line-height: 1.4;">
-                          Launch <strong>DropDial</strong> on your Mac or Windows desktop.
-                        </td>
-                      </tr>
-                      <tr>
-                        <td width="24" valign="top" style="padding-bottom: 10px;">
-                          <div style="width: 20px; height: 20px; background: #ff6500; border-radius: 50%; color: #ffffff; font-size: 11px; font-weight: 800; text-align: center; line-height: 20px;">2</div>
-                        </td>
-                        <td style="padding-left: 10px; padding-bottom: 10px; font-size: 13px; color: #cbd5e1; line-height: 1.4;">
-                          Right-click the DropDial menu bar (macOS) or tray icon (Windows) and select <strong>Activate DropDial Pro…</strong>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td width="24" valign="top">
-                          <div style="width: 20px; height: 20px; background: #ff6500; border-radius: 50%; color: #ffffff; font-size: 11px; font-weight: 800; text-align: center; line-height: 20px;">3</div>
-                        </td>
-                        <td style="padding-left: 10px; font-size: 13px; color: #cbd5e1; line-height: 1.4;">
-                          Click <strong>Paste Key</strong> and confirm. You are unlocked for life!
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Download Links CTA -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 22px;">
-                <tr>
-                  <td align="center">
-                    <a href="https://dropdial.app/#download" style="display: inline-block; background-color: #ff6500; color: #ffffff; font-weight: 700; font-size: 13px; padding: 12px 22px; border-radius: 8px; text-decoration: none; margin: 4px; box-shadow: 0 4px 14px rgba(255, 101, 0, 0.35);">
-                       Download for macOS
-                    </a>
-                    <a href="https://dropdial.app/#download" style="display: inline-block; background-color: #242935; border: 1px solid #363e4f; color: #ffffff; font-weight: 600; font-size: 13px; padding: 12px 22px; border-radius: 8px; text-decoration: none; margin: 4px;">
-                      ⊞ Download for Windows
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Privacy & Offline Reassurance -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px;">
-                <tr>
-                  <td style="padding: 12px 16px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
-                    <strong style="color: #34d399;">🔒 100% Offline & Private:</strong> DropDial uses local ECDSA P-256 cryptographic verification. Your files and license never touch any remote servers.
-                  </td>
-                </tr>
-              </table>
-
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #0b0d12; padding: 22px 32px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #1e2430; line-height: 1.6;">
-              DropDial • Offline Media & File Tools for macOS and Windows<br>
-              Need assistance or lost your key? Reply to this email or visit <a href="https://dropdial.app" style="color: #ff6500; text-decoration: none;">dropdial.app</a>.
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+    <div class="footer">
+      DropDial • Fast, Private Desktop File Tools<br>
+      Lifetime License for up to 3 personal devices.<br>
+      Need assistance? Reply directly to this email or visit <a href="https://dropdial.app">dropdial.app</a>.
+    </div>
+  </div>
 </body>
 </html>
   `;
@@ -303,9 +204,9 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
       body: JSON.stringify({
         from: fromEmail,
         to: [to],
-        subject: 'Your DropDial Pro License Key & Receipt 🚀',
+        subject: 'Your DropDial Pro License Key 🚀',
         html: htmlContent,
-        text: `Welcome to DropDial Pro!\n\nHi ${customerName},\n\nThank you for purchasing DropDial Pro. Here is your personal lifetime license key:\n\n${licenseKey}\n\nTo activate:\n1. Open DropDial on your Mac or Windows desktop.\n2. Right-click the menu bar / system tray icon and select "Activate DropDial Pro…"\n3. Click "Paste Key" and confirm activation.\n\nDownload installers anytime at https://dropdial.app/#download\n\nEnjoy lifetime private conversion!\nDropDial Team`
+        text: `Welcome to DropDial Pro!\n\nHi ${customerName},\n\nThank you for purchasing DropDial Pro. Here is your lifetime license key:\n\n${licenseKey}\n\nTo activate:\n1. Open DropDial on your Mac or Windows PC.\n2. Click the DropDial icon in the menu bar / system tray.\n3. Click 'Activate DropDial Pro...'.\n4. Paste your key and click Activate.\n\nEnjoy lifetime offline conversion!\nDropDial Team`
       })
     });
 
