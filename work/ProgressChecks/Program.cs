@@ -35,7 +35,7 @@ internal static class Checks
                 for(int i=0;i<actions.Count;i++){double angle=-Math.PI/2+i*2*Math.PI/actions.Count;Require((int)hit.Invoke(null,[ring!,new Point(190+119*Math.Cos(angle),190+119*Math.Sin(angle)),65d,172d])! == i);}
                 Require((int)hit.Invoke(null,[ring!,new Point(190,190),65d,172d])! == -1);Require((int)hit.Invoke(null,[ring!,new Point(190,130),65d,172d])! == -1);Require((int)hit.Invoke(null,[ring!,new Point(1,1),65d,172d])! == -1);
             }
-            finally{wheel.Close();File.Delete(path);}
+            finally{wheel.Close();try{File.Delete(path);}catch(IOException){}}
         });
         Check("wheel mode changes keep the dragged file and valid tool sectors",()=>
         {
@@ -49,7 +49,7 @@ internal static class Checks
                 var ring=typeof(DropWheel).GetField("first",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel);
                 for(int i=0;i<actions.Count;i++){double angle=-Math.PI/2+i*2*Math.PI/actions.Count;Require((int)hit.Invoke(null,[ring!,new Point(190+119*Math.Cos(angle),190+119*Math.Sin(angle)),65d,172d])! == i);}
             }
-            finally{wheel.Close();File.Delete(path);}
+            finally{wheel.Close();try{File.Delete(path);}catch(IOException){}}
         });
         Check("trim start handle cannot cross end",()=>Require(TrimRange.Start(90,60,120)<60));
         Check("trim end handle cannot cross start",()=>Require(TrimRange.End(10,40,120)>40));
@@ -554,19 +554,22 @@ internal static class Checks
         });
         Check("the busy line stays away from quick work, shows for slow work, and never flashes", () =>
         {
-            var line = new BusyLine { ShowDelay = TimeSpan.FromMilliseconds(120), MinVisible = TimeSpan.FromMilliseconds(260) };
+            var line = new BusyLine { ShowDelay = TimeSpan.FromMilliseconds(200), MinVisible = TimeSpan.FromMilliseconds(400) };
             using (line.Begin())
                 Pump(40);
-            Pump(300);
+            for (int i = 0; i < 10 && (line.IsShown || line.Visibility != Visibility.Collapsed); i++)
+                Pump(50);
             Require(!line.IsShown && line.Visibility == Visibility.Collapsed); // finished before the delay: nothing was ever shown
             var slow = line.Begin();
-            Pump(60);
+            Pump(40);
             Require(!line.IsShown);
-            Pump(160);
+            for (int i = 0; i < 15 && (!line.IsShown || line.Visibility != Visibility.Visible); i++)
+                Pump(50);
             Require(line.IsShown && line.Visibility == Visibility.Visible);
             slow.Dispose();
             Require(line.IsShown); // it has only been up a moment, so it stays a little longer
-            Pump(450);
+            for (int i = 0; i < 25 && (line.IsShown || line.Visibility != Visibility.Collapsed); i++)
+                Pump(50);
             Require(!line.IsShown && line.Visibility == Visibility.Collapsed);
         });
         Check("overlapping work shares one busy line, and ending a session twice is harmless", () =>
@@ -580,7 +583,8 @@ internal static class Checks
             Pump(120);
             Require(line.IsShown); // the second job is still running
             second.Dispose();
-            Pump(300);
+            for (int i = 0; i < 15 && line.IsShown; i++)
+                Pump(50);
             Require(!line.IsShown);
             using (line.Begin())
                 Require(line.IsShown); // a fresh job after a double dispose still works

@@ -538,9 +538,17 @@ internal sealed class DropWheel : Window
             return;
         Hide();
         paths = [];
+        hubThumbnail.Source = null;
         eligible = false;
         entered = false;
         Journal.Write("WheelDismissed", new { reason });
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+        paths = [];
+        hubThumbnail.Source = null;
     }
 
     // For screenshots: show the wheel as if these files were being dragged over it, with one option lit.
@@ -1432,9 +1440,11 @@ internal sealed class DropWheel : Window
             string ext = System.IO.Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
             if (Catalog.Images.Contains(ext))
             {
+                byte[] bytes = File.ReadAllBytes(path);
+                using var ms = new MemoryStream(bytes);
                 var bmp = new BitmapImage();
                 bmp.BeginInit();
-                bmp.UriSource = new Uri(path);
+                bmp.StreamSource = ms;
                 bmp.DecodePixelWidth = 56;
                 bmp.CacheOption = BitmapCacheOption.OnLoad;
                 bmp.EndInit();
