@@ -622,6 +622,14 @@
     document.getElementById('change-passcode-form')?.addEventListener('submit', handleChangePasscode);
     document.getElementById('update-pricing-form')?.addEventListener('submit', handleUpdatePricing);
 
+    // Live preview listeners for pricing controls
+    ['price-inr-input', 'price-usd-input', 'price-strike-inr-input', 'price-strike-usd-input', 'pricing-countdown-val'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', updatePricingPreviews);
+    });
+    ['pricing-strike-enabled', 'pricing-countdown-enabled', 'pricing-countdown-unit'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', updatePricingPreviews);
+    });
+
     // 8. Releases Manager
     document.getElementById('refresh-releases-btn')?.addEventListener('click', () => {
       loadReleases(true);
@@ -953,6 +961,55 @@
   /**
    * Live Dynamic Pricing Update Flow
    */
+  /**
+   * Live Dynamic Pricing Update Flow
+   */
+  function updatePricingPreviews() {
+    const inr = Number(document.getElementById('price-inr-input')?.value || 999);
+    const usd = Number(document.getElementById('price-usd-input')?.value || 19);
+    const strikeEnabled = document.getElementById('pricing-strike-enabled')?.checked;
+    const strikeInr = Number(document.getElementById('price-strike-inr-input')?.value || 1499);
+    const strikeUsd = Number(document.getElementById('price-strike-usd-input')?.value || 29);
+
+    const strikeFields = document.getElementById('pricing-strike-fields');
+    if (strikeFields) {
+      strikeFields.style.display = strikeEnabled ? 'block' : 'none';
+    }
+
+    const previewEl = document.getElementById('pricing-strike-preview');
+    if (previewEl) {
+      if (!strikeEnabled) {
+        previewEl.innerHTML = `<span style="color: var(--text-muted);">Strikethrough pricing is disabled (Standard prices only).</span>`;
+      } else {
+        const inrPct = strikeInr > inr ? Math.round(((strikeInr - inr) / strikeInr) * 100) : 0;
+        const usdPct = strikeUsd > usd ? Math.round(((strikeUsd - usd) / strikeUsd) * 100) : 0;
+        previewEl.innerHTML = `
+          <span>India: <del>₹${strikeInr.toLocaleString('en-IN')}</del> ₹${inr.toLocaleString('en-IN')} (${inrPct}% OFF • Save ₹${(strikeInr - inr).toLocaleString('en-IN')})</span>
+          <span>Global: <del>$${strikeUsd}</del> $${usd} (${usdPct}% OFF • Save $${strikeUsd - usd})</span>
+        `;
+      }
+    }
+
+    const countdownEnabled = document.getElementById('pricing-countdown-enabled')?.checked;
+    const countdownFields = document.getElementById('pricing-countdown-fields');
+    if (countdownFields) {
+      countdownFields.style.display = countdownEnabled ? 'block' : 'none';
+    }
+
+    const cdVal = Number(document.getElementById('pricing-countdown-val')?.value || 24);
+    const cdUnit = document.getElementById('pricing-countdown-unit')?.value || 'hours';
+    const cdPreview = document.getElementById('pricing-countdown-preview');
+    if (cdPreview) {
+      if (!countdownEnabled) {
+        cdPreview.style.color = 'var(--text-muted)';
+        cdPreview.textContent = 'Countdown urgency timer is disabled (Hidden on website).';
+      } else {
+        cdPreview.style.color = '#10b981';
+        cdPreview.textContent = `Website Countdown Active: ${cdVal} ${cdUnit.toUpperCase()} limit banner with ticking seconds.`;
+      }
+    }
+  }
+
   async function fetchLivePricing() {
     try {
       const res = await fetch('/api/pricing');
@@ -963,6 +1020,40 @@
           const usdInput = document.getElementById('price-usd-input');
           if (inrInput && data.pricing.INR) inrInput.value = data.pricing.INR.amount;
           if (usdInput && data.pricing.USD) usdInput.value = data.pricing.USD.amount;
+
+          const strikeCheck = document.getElementById('pricing-strike-enabled');
+          const strikeInrInput = document.getElementById('price-strike-inr-input');
+          const strikeUsdInput = document.getElementById('price-strike-usd-input');
+
+          if (strikeCheck) {
+            strikeCheck.checked = data.pricing.strikethrough ? data.pricing.strikethrough.enabled !== false : true;
+          }
+          if (strikeInrInput) {
+            strikeInrInput.value = data.pricing.strikethrough?.inrAmount || data.pricing.INR?.strikeAmount || 1499;
+          }
+          if (strikeUsdInput) {
+            strikeUsdInput.value = data.pricing.strikethrough?.usdAmount || data.pricing.USD?.strikeAmount || 29;
+          }
+
+          const countdownCheck = document.getElementById('pricing-countdown-enabled');
+          const countdownValInput = document.getElementById('pricing-countdown-val');
+          const countdownUnitSelect = document.getElementById('pricing-countdown-unit');
+          const countdownLabelInput = document.getElementById('pricing-countdown-label');
+
+          if (countdownCheck) {
+            countdownCheck.checked = data.pricing.countdown ? data.pricing.countdown.enabled !== false : true;
+          }
+          if (countdownValInput) {
+            countdownValInput.value = data.pricing.countdown?.value || 24;
+          }
+          if (countdownUnitSelect && data.pricing.countdown?.unit) {
+            countdownUnitSelect.value = data.pricing.countdown.unit;
+          }
+          if (countdownLabelInput && data.pricing.countdown?.label) {
+            countdownLabelInput.value = data.pricing.countdown.label;
+          }
+
+          updatePricingPreviews();
         }
       }
     } catch (e) {}
@@ -972,6 +1063,16 @@
     e.preventDefault();
     const inrAmount = Number(document.getElementById('price-inr-input').value);
     const usdAmount = Number(document.getElementById('price-usd-input').value);
+    const strikeEnabled = document.getElementById('pricing-strike-enabled').checked;
+    const strikeInr = Number(document.getElementById('price-strike-inr-input').value) || 1499;
+    const strikeUsd = Number(document.getElementById('price-strike-usd-input').value) || 29;
+
+    const countdownEnabled = document.getElementById('pricing-countdown-enabled').checked;
+    const countdownValue = Number(document.getElementById('pricing-countdown-val').value) || 24;
+    const countdownUnit = document.getElementById('pricing-countdown-unit').value || 'hours';
+    const countdownLabel = document.getElementById('pricing-countdown-label').value.trim() || 'Special Launch Discount Ends In:';
+    const countdownReset = document.getElementById('pricing-countdown-reset').checked;
+
     const passcode = document.getElementById('pricing-admin-passcode').value.trim();
     const msg = document.getElementById('pricing-update-msg');
     const submitBtn = document.getElementById('save-pricing-btn');
@@ -1005,7 +1106,15 @@
         },
         body: JSON.stringify({
           inrAmount,
-          usdAmount
+          usdAmount,
+          strikeEnabled,
+          strikeInr,
+          strikeUsd,
+          countdownEnabled,
+          countdownValue,
+          countdownUnit,
+          countdownLabel,
+          countdownReset
         })
       });
 
@@ -1015,9 +1124,20 @@
       }
 
       msg.style.color = '#10b981';
-      msg.textContent = `Live pricing successfully changed to ₹${inrAmount} / $${usdAmount}! Updated across checkout and landing page.`;
-      showToast(`Live prices updated: ₹${inrAmount} & $${usdAmount}`, 'success');
+      let statusText = `Live pricing saved: ₹${inrAmount} & $${usdAmount}!`;
+      if (strikeEnabled) {
+        statusText += ` Strikethrough active (~~₹${strikeInr}~~ / ~~$${strikeUsd}~~).`;
+      }
+      if (countdownEnabled) {
+        statusText += ` Countdown active (${countdownValue} ${countdownUnit}).`;
+      }
+      msg.textContent = statusText;
+      showToast(`Pricing updated everywhere: ₹${inrAmount} / $${usdAmount}`, 'success');
       document.getElementById('pricing-admin-passcode').value = '';
+      if (document.getElementById('pricing-countdown-reset')) {
+        document.getElementById('pricing-countdown-reset').checked = false;
+      }
+      updatePricingPreviews();
     } catch (err) {
       msg.style.color = '#ef4444';
       msg.textContent = `Update failed: ${err.message}`;

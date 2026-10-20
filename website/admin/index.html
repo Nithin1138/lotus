@@ -899,25 +899,104 @@
               <form id="update-pricing-form" class="settings-form" style="max-width: 600px;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                   <div class="form-group">
-                    <label for="price-inr-input">India Price (INR ₹)</label>
+                    <label for="price-inr-input">India Selling Price (INR ₹)</label>
                     <div style="position: relative; display: flex; align-items: center;">
                       <span style="position: absolute; left: 14px; font-weight: 700; color: var(--text-muted);">₹</span>
                       <input type="number" id="price-inr-input" min="99" step="1" value="999" style="padding-left: 32px;" required>
                     </div>
-                    <span class="field-hint">Default: ₹999 (Paise: 99900)</span>
+                    <span class="field-hint">Actual selling price: ₹999</span>
                   </div>
 
                   <div class="form-group">
-                    <label for="price-usd-input">Global Price (USD $)</label>
+                    <label for="price-usd-input">Global Selling Price (USD $)</label>
                     <div style="position: relative; display: flex; align-items: center;">
                       <span style="position: absolute; left: 14px; font-weight: 700; color: var(--text-muted);">$</span>
                       <input type="number" id="price-usd-input" min="1" step="1" value="19" style="padding-left: 32px;" required>
                     </div>
-                    <span class="field-hint">Default: $19 (Cents: 1900)</span>
+                    <span class="field-hint">Actual selling price: $19</span>
                   </div>
                 </div>
 
-                <div class="form-group">
+                <!-- Strikethrough Pricing Control -->
+                <div class="form-group" style="margin-bottom: 14px; padding-top: 8px; border-top: 1px solid var(--border-color);">
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; margin-bottom: 4px;">
+                    <input type="checkbox" id="pricing-strike-enabled" checked style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;">
+                    <span>Enable Strikethrough Discount Price (Show crossed-out original price)</span>
+                  </label>
+                  <span class="field-hint" style="margin-left: 28px; display: block;">Displays a crossed-out higher price to show a discount (e.g. enter 1499 for ₹999 selling price, or 29 for $19 selling price).</span>
+                </div>
+
+                <div id="pricing-strike-fields" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 18px;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                      <label for="price-strike-inr-input">India Strikethrough Price (₹)</label>
+                      <div style="position: relative; display: flex; align-items: center;">
+                        <span style="position: absolute; left: 14px; font-weight: 700; color: var(--text-muted);">₹</span>
+                        <input type="number" id="price-strike-inr-input" min="100" step="1" value="1499" style="padding-left: 32px;">
+                      </div>
+                      <span class="field-hint">e.g. 1499 (Will show as <del>₹1,499</del>)</span>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="price-strike-usd-input">Global Strikethrough Price ($)</label>
+                      <div style="position: relative; display: flex; align-items: center;">
+                        <span style="position: absolute; left: 14px; font-weight: 700; color: var(--text-muted);">$</span>
+                        <input type="number" id="price-strike-usd-input" min="2" step="1" value="29" style="padding-left: 32px;">
+                      </div>
+                      <span class="field-hint">e.g. 29 (Will show as <del>$29</del>)</span>
+                    </div>
+                  </div>
+                  <div id="pricing-strike-preview" style="margin-top: 10px; font-size: 0.85rem; color: #a855f7; font-weight: 600; display: flex; gap: 16px; flex-wrap: wrap;">
+                    <span>India: <del>₹1,499</del> ₹999 (33% OFF)</span>
+                    <span>Global: <del>$29</del> $19 (34% OFF)</span>
+                  </div>
+                </div>
+
+                <!-- Limited-Time Offer Expiry Countdown Timer Control -->
+                <div class="form-group" style="margin-bottom: 14px; padding-top: 8px; border-top: 1px solid var(--border-color);">
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; margin-bottom: 4px;">
+                    <input type="checkbox" id="pricing-countdown-enabled" checked style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;">
+                    <span>Enable Offer Expiry Countdown Timer (Urgency banner on website)</span>
+                  </label>
+                  <span class="field-hint" style="margin-left: 28px; display: block;">Displays a live countdown timer banner above the pricing section counting down in Days, Hours, Minutes, and Seconds.</span>
+                </div>
+
+                <div id="pricing-countdown-fields" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 18px;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                    <div class="form-group">
+                      <label for="pricing-countdown-val">Offer Duration</label>
+                      <input type="number" id="pricing-countdown-val" min="1" step="1" value="24" placeholder="e.g. 24">
+                      <span class="field-hint">Number of hours or days</span>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="pricing-countdown-unit">Duration Unit</label>
+                      <select id="pricing-countdown-unit" style="width: 100%; height: 42px; background: var(--bg-surface, #1e1e24); color: var(--text-color, #fff); border: 1px solid var(--border-color, #333); border-radius: 6px; padding: 0 12px; font-weight: 500;">
+                        <option value="hours" selected>Hours (e.g. 24 hours)</option>
+                        <option value="days">Days (e.g. 3 days)</option>
+                      </select>
+                      <span class="field-hint">Choose Hours or Days</span>
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="pricing-countdown-label">Banner Offer Headline</label>
+                    <input type="text" id="pricing-countdown-label" value="Special Launch Discount Ends In:" placeholder="e.g. Special Launch Discount Ends In:">
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.88rem; color: var(--text-secondary);">
+                      <input type="checkbox" id="pricing-countdown-reset" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;">
+                      <span>Restart timer from now upon saving (sets new expiration timestamp)</span>
+                    </label>
+                  </div>
+
+                  <div id="pricing-countdown-preview" style="font-size: 0.85rem; color: #10b981; font-weight: 500;">
+                    Live Timer Active: 24 Hours offer
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 16px;">
                   <label for="pricing-admin-passcode">Confirm with Master Passcode</label>
                   <input type="password" id="pricing-admin-passcode" placeholder="Enter admin master passcode to authorize price change" required>
                 </div>

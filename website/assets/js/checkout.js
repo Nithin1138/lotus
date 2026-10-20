@@ -12,8 +12,10 @@
 
   // Currency configuration
   const PRICING = {
-    INR: { code: 'INR', symbol: '₹', amount: 999, display: '₹999' },
-    USD: { code: 'USD', symbol: '$', amount: 19, display: '$19' }
+    INR: { code: 'INR', symbol: '₹', amount: 999, display: '₹999', strikeAmount: 1499, strikeDisplay: '₹1,499' },
+    USD: { code: 'USD', symbol: '$', amount: 19, display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
+    strikethrough: { enabled: true, inrAmount: 1499, usdAmount: 29 },
+    countdown: { enabled: true, value: 24, unit: 'hours', label: 'Special Launch Discount Ends In:', expiresAt: null }
   };
 
   // State
@@ -21,17 +23,41 @@
   let isIndia = false;
   let selectedCurrency = 'USD';
   let appliedCoupon = null;
+  let countdownTimerInterval = null;
 
   // Modal DOM Elements
   let overlay, formView, successView, errorBox, payBtn;
   let nameInput, emailInput, priceDisplay, copyBtn, licenseKeyDisplay, successEmailText;
   let couponToggleBtn, couponInputWrap, couponCodeInput, couponApplyBtn, couponFeedback;
 
+  function getSavedCurrencyPreference() {
+    try {
+      const saved = localStorage.getItem('dropdial_user_currency');
+      if (saved === 'INR' || saved === 'USD') return saved;
+    } catch (e) {}
+    return null;
+  }
+
+  function setSavedCurrencyPreference(curr) {
+    try {
+      localStorage.setItem('dropdial_user_currency', curr);
+    } catch (e) {}
+  }
+
   /**
    * Fast, zero-latency client-side heuristic detection
    * Detects Indian timezone / locale immediately before network calls
    */
   function detectFastLocation() {
+    // 1. Honor manual user selection if already saved
+    const saved = getSavedCurrencyPreference();
+    if (saved === 'INR') {
+      return { isIndia: true, country: 'IN', currency: 'INR' };
+    }
+    if (saved === 'USD') {
+      return { isIndia: false, country: 'US', currency: 'USD' };
+    }
+
     try {
       const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || '').toLowerCase();
       const offset = new Date().getTimezoneOffset(); // -330 is IST (UTC+5:30)
@@ -85,15 +111,110 @@
   }
 
   /**
+   * Initializes and maintains the ticking limited-time offer countdown timer
+   */
+  function initCountdownTimer(countdownConfig) {
+    if (countdownTimerInterval) {
+      clearInterval(countdownTimerInterval);
+      countdownTimerInterval = null;
+    }
+
+    const banner = document.getElementById('offer-countdown-banner');
+    if (!banner) return;
+
+    if (!countdownConfig || countdownConfig.enabled === false || !countdownConfig.expiresAt) {
+      banner.style.display = 'none';
+      return;
+    }
+
+    const labelEl = document.getElementById('ocb-label');
+    if (labelEl && countdownConfig.label) {
+      labelEl.textContent = countdownConfig.label;
+    }
+
+    const targetTime = new Date(countdownConfig.expiresAt).getTime();
+
+    function updateTick() {
+      const now = Date.now();
+      const remaining = targetTime - now;
+
+      if (remaining <= 0) {
+        banner.style.display = 'none';
+        if (countdownTimerInterval) {
+          clearInterval(countdownTimerInterval);
+          countdownTimerInterval = null;
+        }
+        return;
+      }
+
+      banner.style.display = '';
+
+      const totalSeconds = Math.floor(remaining / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      const pad = n => String(n).padStart(2, '0');
+
+      const daysEl = document.getElementById('ocb-days');
+      const hoursEl = document.getElementById('ocb-hours');
+      const minsEl = document.getElementById('ocb-mins');
+      const secsEl = document.getElementById('ocb-secs');
+
+      if (daysEl) daysEl.textContent = pad(days);
+      if (hoursEl) hoursEl.textContent = pad(hours);
+      if (minsEl) minsEl.textContent = pad(minutes);
+      if (secsEl) secsEl.textContent = pad(seconds);
+    }
+
+    updateTick();
+    countdownTimerInterval = setInterval(updateTick, 1000);
+  }
+
+  /**
    * Applies localized pricing to the checkout modal and the landing page
    */
   function applyPricing(indiaFlag, countryCode) {
     isIndia = !!indiaFlag;
     selectedCurrency = isIndia ? 'INR' : 'USD';
     currentCountry = countryCode || (isIndia ? 'IN' : 'US');
+    const baseConfig = PRICING[selectedCurrency];
     const priceConfig = getActivePriceConfig();
 
-    // 1. Modal Elements
+    // 1. Strikethrough pricing logic
+    const strikeWrap = document.getElementById('pro-pricing-strike-wrap');
+    const strikeAmountEl = document.getElementById('pro-pricing-strike-amount');
+    const discountBadgeEl = document.getElementById('pro-pricing-discount-badge');
+
+    const strikeEnabled = PRICING.strikethrough && PRICING.strikethrough.enabled !== false;
+    const strikeAmount = isIndia
+      ? (PRICING.strikethrough?.inrAmount || PRICING.INR?.strikeAmount || 1499)
+      : (PRICING.strikethrough?.usdAmount || PRICING.USD?.strikeAmount || 29);
+    const strikeDisplay = isIndia
+      ? (PRICING.INR?.strikeDisplay || `₹${strikeAmount.toLocaleString('en-IN')}`)
+      : (PRICING.USD?.strikeDisplay || `$${strikeAmount}`);
+
+    const hasSavings = strikeAmount > baseConfig.amount;
+    const savingsPercent = hasSavings ? Math.round(((strikeAmount - baseConfig.amount) / strikeAmount) * 100) : 0;
+
+    if (strikeWrap && strikeAmountEl && discountBadgeEl) {
+      if (strikeEnabled && hasSavings) {
+        strikeWrap.style.display = 'inline-flex';
+        strikeAmountEl.textContent = strikeDisplay;
+        discountBadgeEl.textContent = `${savingsPercent}% OFF`;
+      } else {
+        strikeWrap.style.display = 'none';
+      }
+    }
+
+    // 2. Region / Currency Switcher Buttons
+    const inrBtn = document.getElementById('currency-btn-inr');
+    const usdBtn = document.getElementById('currency-btn-usd');
+    if (inrBtn) inrBtn.classList.toggle('active', isIndia);
+    if (usdBtn) usdBtn.classList.toggle('active', !isIndia);
+
+    // 3. Modal Elements
     if (priceDisplay) {
       if (priceConfig.oldPrice) {
         priceDisplay.innerHTML = `
@@ -101,6 +222,14 @@
             <span class="cko-price-old">${priceConfig.oldPrice}</span>
             <span class="cko-price-new">${priceConfig.display}</span>
             <span class="cko-price-badge">${priceConfig.discountTag} OFF</span>
+          </div>
+        `;
+      } else if (strikeEnabled && hasSavings) {
+        priceDisplay.innerHTML = `
+          <div class="cko-price-group">
+            <span class="cko-price-old">${strikeDisplay}</span>
+            <span class="cko-price-new">${priceConfig.display}</span>
+            <span class="cko-price-badge">${savingsPercent}% OFF</span>
           </div>
         `;
       } else {
@@ -113,8 +242,7 @@
       payLabel.textContent = `Proceed to Payment (${priceConfig.display})`;
     }
 
-    // 2. Landing Page Buttons & Pricing Card (base pricing)
-    const baseConfig = PRICING[selectedCurrency];
+    // 4. Landing Page Buttons & Pricing Card (base pricing)
     const headerBuy = document.getElementById('nav-header-buy-btn');
     if (headerBuy) {
       headerBuy.textContent = `Buy Pro (${baseConfig.display})`;
@@ -156,7 +284,9 @@
               code: 'INR',
               symbol: pData.pricing.INR.symbol || '₹',
               amount: pData.pricing.INR.amount,
-              display: pData.pricing.INR.display || `₹${pData.pricing.INR.amount}`
+              display: pData.pricing.INR.display || `₹${pData.pricing.INR.amount.toLocaleString('en-IN')}`,
+              strikeAmount: pData.pricing.INR.strikeAmount || 1499,
+              strikeDisplay: pData.pricing.INR.strikeDisplay || '₹1,499'
             };
           }
           if (pData.pricing.USD && pData.pricing.USD.amount) {
@@ -164,20 +294,40 @@
               code: 'USD',
               symbol: pData.pricing.USD.symbol || '$',
               amount: pData.pricing.USD.amount,
-              display: pData.pricing.USD.display || `$${pData.pricing.USD.amount}`
+              display: pData.pricing.USD.display || `$${pData.pricing.USD.amount}`,
+              strikeAmount: pData.pricing.USD.strikeAmount || 29,
+              strikeDisplay: pData.pricing.USD.strikeDisplay || '$29'
             };
+          }
+          if (pData.pricing.strikethrough) {
+            PRICING.strikethrough = pData.pricing.strikethrough;
+          }
+          if (pData.pricing.countdown) {
+            PRICING.countdown = pData.pricing.countdown;
+            initCountdownTimer(pData.pricing.countdown);
           }
         }
       }
     } catch (e) {}
 
-    // 2. Fetch Geo detection
+    // 2. Check if user has an explicit currency override saved
+    const savedPref = getSavedCurrencyPreference();
+    if (savedPref) {
+      applyPricing(savedPref === 'INR', savedPref === 'INR' ? 'IN' : 'US');
+      return;
+    }
+
+    // 3. Fetch Geo detection with timezone hints
     try {
-      const res = await fetch('/api/geo', { method: 'GET', cache: 'default' });
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const offset = new Date().getTimezoneOffset();
+      const res = await fetch(`/api/geo?tz=${encodeURIComponent(tz)}&offset=${offset}`, { method: 'GET', cache: 'default' });
       if (res.ok) {
         const data = await res.json();
         if (data && typeof data.isIndia === 'boolean') {
-          applyPricing(data.isIndia, data.country);
+          // If server detects India OR client heuristic detected India, preserve India
+          const userIsIndia = data.isIndia || (offset === -330) || (tz.toLowerCase().includes('kolkata')) || (tz.toLowerCase().includes('calcutta'));
+          applyPricing(userIsIndia, userIsIndia ? 'IN' : (data.country || 'US'));
           return;
         }
       }
@@ -187,7 +337,8 @@
         if (fallbackRes.ok) {
           const fallbackData = await fallbackRes.json();
           const country = (fallbackData.country || '').toUpperCase();
-          applyPricing(country === 'IN', country);
+          const userIsIndia = country === 'IN' || isIndia;
+          applyPricing(userIsIndia, userIsIndia ? 'IN' : country);
           return;
         }
       } catch (e2) {
@@ -438,6 +589,16 @@
         e.preventDefault();
         handleCouponApply();
       }
+    });
+
+    // Currency Switcher Buttons
+    document.getElementById('currency-btn-inr')?.addEventListener('click', function () {
+      setSavedCurrencyPreference('INR');
+      applyPricing(true, 'IN');
+    });
+    document.getElementById('currency-btn-usd')?.addEventListener('click', function () {
+      setSavedCurrencyPreference('USD');
+      applyPricing(false, 'US');
     });
 
     // Triggers across the page

@@ -787,9 +787,42 @@
   <!-- Pricing Section -->
   <section class="section" id="pricing">
     <div class="wrap" style="text-align: center;">
+      
+      <!-- Promotional Urgency Banner with Live Countdown Timer -->
+      <div class="offer-countdown-banner" id="offer-countdown-banner" style="display: none;">
+        <div class="ocb-inner">
+          <div class="ocb-badge">
+            <span class="ocb-icon">⚡️</span>
+            <span id="ocb-label">Special Launch Discount Ends In:</span>
+          </div>
+          <div class="ocb-timer" id="ocb-timer">
+            <div class="ocb-unit"><span class="ocb-num" id="ocb-days">00</span><span class="ocb-tag">Days</span></div>
+            <span class="ocb-colon">:</span>
+            <div class="ocb-unit"><span class="ocb-num" id="ocb-hours">00</span><span class="ocb-tag">Hours</span></div>
+            <span class="ocb-colon">:</span>
+            <div class="ocb-unit"><span class="ocb-num" id="ocb-mins">00</span><span class="ocb-tag">Mins</span></div>
+            <span class="ocb-colon">:</span>
+            <div class="ocb-unit"><span class="ocb-num" id="ocb-secs">00</span><span class="ocb-tag">Secs</span></div>
+          </div>
+        </div>
+      </div>
+
       <p class="eyebrow" style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">Simple, Transparent Pricing</p>
       <h2>Pay Once. Own It Forever.</h2>
       <p class="section-lead" style="max-width: 580px; margin: 0 auto;">No subscriptions, no cloud accounts, and no monthly fees. Try everything free for 7 days, then unlock lifetime access.</p>
+
+      <!-- Currency Switcher Toggle -->
+      <div class="pricing-currency-picker" id="pricing-currency-picker">
+        <span class="pcp-label">Region:</span>
+        <div class="pcp-toggle" role="group" aria-label="Select currency">
+          <button type="button" class="pcp-btn active" id="currency-btn-inr" data-currency="INR">
+            <span>🇮🇳</span> ₹ INR (India)
+          </button>
+          <button type="button" class="pcp-btn" id="currency-btn-usd" data-currency="USD">
+            <span>🌍</span> $ USD (Global)
+          </button>
+        </div>
+      </div>
 
       <div class="pricing-grid">
         <!-- Card 1: Free Trial -->
@@ -823,7 +856,15 @@
           <div class="pricing-badge">LIFETIME ACCESS</div>
           <h3 class="pricing-title">DropDial Pro</h3>
           <p class="pricing-desc">One-time payment for lifetime access, all future tool updates, and offline peace of mind.</p>
-          <div class="pricing-price" id="pro-pricing-price">$19 <span>one-time</span></div>
+          
+          <div class="pricing-price-container" id="pro-pricing-container">
+            <div class="pricing-strike-wrap" id="pro-pricing-strike-wrap" style="display: none;">
+              <span class="pricing-strike-amount" id="pro-pricing-strike-amount">₹1,499</span>
+              <span class="pricing-discount-badge" id="pro-pricing-discount-badge">33% OFF</span>
+            </div>
+            <div class="pricing-price" id="pro-pricing-price">$19 <span>one-time</span></div>
+          </div>
+
           <ul class="pricing-features">
             <li>
               <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
