@@ -226,9 +226,7 @@
         <!-- ── Header ── -->
         <div class="cko-header">
           <div class="cko-header-brand">
-            <div class="cko-logo-wrap">
-              <img src="/assets/img/logo.png" alt="DropDial" width="32" height="32">
-            </div>
+            <img class="cko-logo" src="/assets/img/logo.png" alt="DropDial" width="38" height="38">
             <div class="cko-header-text">
               <span class="cko-title" id="checkout-modal-heading">DropDial Pro</span>
               <span class="cko-subtitle">Lifetime License</span>

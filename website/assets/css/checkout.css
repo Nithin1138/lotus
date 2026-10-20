@@ -35,13 +35,19 @@
   background: linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 100%);
 }
 .cko-header-brand { display: flex; align-items: center; gap: 12px; }
-.cko-logo-wrap {
-  width: 38px; height: 38px; border-radius: 10px;
-  background: rgba(255,101,0,0.12); border: 1px solid rgba(255,101,0,0.22);
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden; flex-shrink: 0;
+.cko-logo,
+.cko-logo-wrap img {
+  width: 38px; height: 38px;
+  display: block; flex-shrink: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.26));
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1);
 }
-.cko-logo-wrap img { width: 28px; height: 28px; border-radius: 4px; }
+.cko-logo:hover,
+.cko-logo-wrap img:hover {
+  transform: scale(1.04);
+}
+.cko-logo-wrap { display: contents; }
 .cko-header-text { display: flex; flex-direction: column; gap: 1px; }
 .cko-title { font-size: 1.05rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; line-height: 1.2; }
 .cko-subtitle { font-size: 0.76rem; color: #64748b; font-weight: 500; }
@@ -296,7 +302,8 @@
   box-shadow: 0 24px 64px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.04);
 }
 [data-theme="light"] .cko-header { border-bottom-color: #f1f5f9; background: #fff; }
-[data-theme="light"] .cko-logo-wrap { background: rgba(255,101,0,0.08); border-color: rgba(255,101,0,0.18); }
+[data-theme="light"] .cko-logo,
+[data-theme="light"] .cko-logo-wrap img { filter: drop-shadow(0 2px 7px rgba(0,0,0,0.14)); }
 [data-theme="light"] .cko-title { color: #0f172a; }
 [data-theme="light"] .cko-subtitle { color: #94a3b8; }
 [data-theme="light"] .cko-close-btn { color: #94a3b8; }
