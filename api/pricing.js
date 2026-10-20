@@ -40,6 +40,7 @@ let currentPricing = {
     label: 'Special Launch Discount Ends In:',
     expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString()
   },
+  devicesPerLicense: 3,
   lastUpdated: new Date().toISOString()
 };
 
@@ -56,7 +57,8 @@ try {
         INR: { ...currentPricing.INR, ...(parsed.INR || {}) },
         USD: { ...currentPricing.USD, ...(parsed.USD || {}) },
         strikethrough: { ...currentPricing.strikethrough, ...(parsed.strikethrough || {}) },
-        countdown: { ...currentPricing.countdown, ...(parsed.countdown || {}) }
+        countdown: { ...currentPricing.countdown, ...(parsed.countdown || {}) },
+        devicesPerLicense: Number(parsed.devicesPerLicense || parsed.devices || currentPricing.devicesPerLicense || 3)
       };
     }
   }
@@ -137,7 +139,8 @@ module.exports = async function handler(req, res) {
               ...currentPricing.countdown,
               ...(val.countdown || {}),
               enabled: val.countdown ? (val.countdown.enabled === true) : currentPricing.countdown.enabled
-            }
+            },
+            devicesPerLicense: Math.max(1, Math.min(100, Number(val.devicesPerLicense || val.devices || currentPricing.devicesPerLicense || 3)))
           };
         }
       }
@@ -176,6 +179,8 @@ module.exports = async function handler(req, res) {
       const countdownUnit = (body.countdownUnit === 'days') ? 'days' : 'hours';
       const countdownLabel = (body.countdownLabel || currentPricing.countdown?.label || 'Special Launch Discount Ends In:').trim();
       const countdownReset = !!body.countdownReset;
+
+      const devicesPerLicense = Math.max(1, Math.min(100, Number(body.devicesPerLicense || body.devices || currentPricing.devicesPerLicense || 3)));
 
       if (!inrAmount || inrAmount <= 0) {
         return res.status(400).json({ error: 'Valid positive INR price is required (e.g. 999).' });
@@ -225,6 +230,7 @@ module.exports = async function handler(req, res) {
           label: countdownLabel,
           expiresAt: expiresAt
         },
+        devicesPerLicense: devicesPerLicense,
         lastUpdated: new Date().toISOString()
       };
 
@@ -248,7 +254,7 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        message: 'Live prices, strikethrough, and countdown timer updated across checkout and landing page!',
+        message: `Live prices, device limit (${devicesPerLicense} devices), strikethrough, and countdown timer updated across checkout and landing page!`,
         pricing: currentPricing
       });
     } catch (err) {

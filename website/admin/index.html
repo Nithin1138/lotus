@@ -964,6 +964,33 @@
                   </div>
                 </div>
 
+                <!-- SECTION: Devices Limit per License Key -->
+                <div class="feature-toggle-card" style="margin-bottom: 20px;">
+                  <div class="feature-toggle-header" style="border-bottom: none; padding-bottom: 0;">
+                    <div class="feature-toggle-info">
+                      <div class="feature-toggle-title">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        <span>Devices Valid Per License Key</span>
+                      </div>
+                      <p class="feature-toggle-desc">
+                        Control how many personal Macs and Windows PCs can be activated with a single DropDial Pro lifetime license key. Updates dynamically in real-time across the website pricing card, feature lists, and FAQ.
+                      </p>
+                    </div>
+                  </div>
+                  <div class="feature-toggle-body" style="padding-top: 14px;">
+                    <div style="max-width: 320px;">
+                      <label for="pricing-devices-input" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
+                        Max Device Activations Per Key
+                      </label>
+                      <div class="currency-input-wrap">
+                        <span class="currency-symbol-addon" style="font-size: 13px; font-weight: 700;">💻</span>
+                        <input type="number" id="pricing-devices-input" min="1" max="50" step="1" value="3" placeholder="3" required>
+                      </div>
+                      <span class="field-hint">Default: <strong>3</strong> personal devices (e.g. 1 Mac + 2 PCs). Displayed on website as: <em>"Valid for up to <strong>N</strong> personal Macs and PCs"</em></span>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- SECTION 2: Strikethrough Pricing Feature Card -->
                 <div class="feature-toggle-card">
                   <div class="feature-toggle-header" id="strike-toggle-header">

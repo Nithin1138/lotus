@@ -1301,7 +1301,8 @@
           countdownValue,
           countdownUnit,
           countdownLabel,
-          countdownReset: true
+          countdownReset: true,
+          devicesPerLicense: Number(document.getElementById('pricing-devices-input')?.value) || 3
         })
       });
 
@@ -1361,6 +1362,7 @@
           const countdownValInput = document.getElementById('pricing-countdown-val');
           const countdownUnitSelect = document.getElementById('pricing-countdown-unit');
           const countdownLabelInput = document.getElementById('pricing-countdown-label');
+          const devicesInput = document.getElementById('pricing-devices-input');
 
           if (countdownCheck) {
             countdownCheck.checked = !!(data.pricing.countdown && data.pricing.countdown.enabled === true);
@@ -1373,6 +1375,9 @@
           }
           if (countdownLabelInput && data.pricing.countdown?.label) {
             countdownLabelInput.value = data.pricing.countdown.label;
+          }
+          if (devicesInput && data.pricing.devicesPerLicense) {
+            devicesInput.value = data.pricing.devicesPerLicense;
           }
 
           currentCountdownExpiresAt = data.pricing.countdown?.expiresAt || null;
@@ -1397,6 +1402,7 @@
     const countdownUnit = document.getElementById('pricing-countdown-unit').value || 'hours';
     const countdownLabel = document.getElementById('pricing-countdown-label').value.trim() || 'Special Launch Discount Ends In:';
     const countdownReset = document.getElementById('pricing-countdown-reset').checked;
+    const devicesPerLicense = Math.max(1, Math.min(50, Number(document.getElementById('pricing-devices-input')?.value) || 3));
 
     const passcode = document.getElementById('pricing-admin-passcode').value.trim();
     const msg = document.getElementById('pricing-update-msg');
@@ -1439,7 +1445,8 @@
           countdownValue,
           countdownUnit,
           countdownLabel,
-          countdownReset
+          countdownReset,
+          devicesPerLicense
         })
       });
 
@@ -1449,7 +1456,7 @@
       }
 
       msg.style.color = '#10b981';
-      let statusText = `Live pricing saved: ₹${inrAmount} & $${usdAmount}!`;
+      let statusText = `Live pricing saved: ₹${inrAmount} & $${usdAmount} (${devicesPerLicense} devices per license)!`;
       if (strikeEnabled) {
         statusText += ` Strikethrough active (~~₹${strikeInr}~~ / ~~$${strikeUsd}~~).`;
       }
@@ -1457,7 +1464,7 @@
         statusText += ` Countdown active (${countdownValue} ${countdownUnit}).`;
       }
       msg.textContent = statusText;
-      showToast(`Pricing updated everywhere: ₹${inrAmount} / $${usdAmount}`, 'success');
+      showToast(`Pricing & device limits saved: ₹${inrAmount} / $${usdAmount} (${devicesPerLicense} devices)`, 'success');
       document.getElementById('pricing-admin-passcode').value = '';
       if (document.getElementById('pricing-countdown-reset')) {
         document.getElementById('pricing-countdown-reset').checked = false;

@@ -256,9 +256,9 @@ final class RadialWheelView: NSView {
     let closeButtonRect = NSRect(x: 170 - 110 + 220 + 8, y: 308, width: 32, height: 32)
 
     var hubClearButtonRect: NSRect {
-        // Small into (x) button in upper-right quadrant of center circle
-        let size: CGFloat = 17
-        return NSRect(x: wheelCenter.x + 18, y: wheelCenter.y + 17, width: size, height: size)
+        // Small into (x) button centered inside top of middle circle, just above the file
+        let size: CGFloat = 16
+        return NSRect(x: wheelCenter.x - size / 2, y: wheelCenter.y + 24, width: size, height: size)
     }
 
     var isDarkMode: Bool {
@@ -1054,8 +1054,8 @@ final class RadialWheelView: NSView {
             let count = currentPaths.count
 
             let iconImage = hubThumbnail ?? NSWorkspace.shared.icon(forFile: first)
-            let iconSize: CGFloat = count > 1 ? 22 : 24
-            let iconRect = NSRect(x: wheelCenter.x - iconSize / 2, y: wheelCenter.y + (count > 1 ? 4 : 2), width: iconSize, height: iconSize)
+            let iconSize: CGFloat = count > 1 ? 20 : 22
+            let iconRect = NSRect(x: wheelCenter.x - iconSize / 2, y: wheelCenter.y - 1, width: iconSize, height: iconSize)
             iconImage.draw(in: iconRect)
 
             if count > 1 {
@@ -1065,7 +1065,7 @@ final class RadialWheelView: NSView {
                 ]
                 let badgeStr = NSAttributedString(string: "\(count) files", attributes: badgeAttrs)
                 let bSz = badgeStr.size()
-                badgeStr.draw(at: NSPoint(x: wheelCenter.x - bSz.width / 2, y: wheelCenter.y - 12))
+                badgeStr.draw(at: NSPoint(x: wheelCenter.x - bSz.width / 2, y: wheelCenter.y - 14))
 
                 let subAttrs: [NSAttributedString.Key: Any] = [
                     .font: NSFont.systemFont(ofSize: 7.5, weight: .medium),
@@ -1073,7 +1073,7 @@ final class RadialWheelView: NSView {
                 ]
                 let subStr = NSAttributedString(string: "click to switch", attributes: subAttrs)
                 let sSz = subStr.size()
-                subStr.draw(at: NSPoint(x: wheelCenter.x - sSz.width / 2, y: wheelCenter.y - 23))
+                subStr.draw(at: NSPoint(x: wheelCenter.x - sSz.width / 2, y: wheelCenter.y - 25))
             } else {
                 let nameFont = NSFont.systemFont(ofSize: 8.5, weight: .semibold)
                 let nameColor = dark ? NSColor.white : NSColor(srgbRed: 0.12, green: 0.13, blue: 0.15, alpha: 1.0)
@@ -1097,10 +1097,10 @@ final class RadialWheelView: NSView {
                 ]
                 let subStr = NSAttributedString(string: mode.title.uppercased(), attributes: subAttrs)
                 let sSz = subStr.size()
-                subStr.draw(at: NSPoint(x: wheelCenter.x - sSz.width / 2, y: wheelCenter.y - 24))
+                subStr.draw(at: NSPoint(x: wheelCenter.x - sSz.width / 2, y: wheelCenter.y - 25))
             }
 
-            // Small into (x) remove button in upper-right of middle circle
+            // Small into (x) remove button inside top of middle circle (just above the file)
             let clearRect = hubClearButtonRect
             let isHover = isClearHovered
             let clearCircle = NSBezierPath(ovalIn: clearRect)

@@ -21,7 +21,8 @@
       unit: 'hours',
       label: 'Special Launch Discount Ends In:',
       expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString()
-    }
+    },
+    devicesPerLicense: 3
   };
 
   // State
@@ -310,6 +311,12 @@
     if (cardBuy) {
       cardBuy.textContent = `Buy DropDial Pro (${baseConfig.display})`;
     }
+
+    // 5. Dynamic License Devices per Key
+    const devices = PRICING.devicesPerLicense || 3;
+    document.querySelectorAll('[data-license-devices]').forEach(el => {
+      el.textContent = devices;
+    });
   }
 
   /**
@@ -348,6 +355,12 @@
           if (pData.pricing.countdown) {
             PRICING.countdown = pData.pricing.countdown;
             initCountdownTimer(pData.pricing.countdown);
+          }
+          if (pData.pricing.devicesPerLicense) {
+            PRICING.devicesPerLicense = Number(pData.pricing.devicesPerLicense) || 3;
+            document.querySelectorAll('[data-license-devices]').forEach(el => {
+              el.textContent = PRICING.devicesPerLicense;
+            });
           }
         }
       }

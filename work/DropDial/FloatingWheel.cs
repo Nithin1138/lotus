@@ -73,9 +73,9 @@ internal sealed class DropWheel : Window
         Background = Solid("#353A40"),
         BorderBrush = Solid("#60FFFFFF"),
         BorderThickness = new Thickness(1),
-        HorizontalAlignment = HorizontalAlignment.Right,
+        HorizontalAlignment = HorizontalAlignment.Center,
         VerticalAlignment = VerticalAlignment.Top,
-        Margin = new Thickness(0, 8, 8, 0),
+        Margin = new Thickness(0, 8, 0, 0),
         Cursor = Cursors.Hand,
         Visibility = Visibility.Collapsed
     };

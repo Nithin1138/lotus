@@ -730,6 +730,8 @@ module.exports = async function handler(req, res) {
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
+  }
+
   // 7. RESET TEST DATA (2-STEP: PASSCODE + "RESET" WORD CONFIRMATION)
   if (action === 'reset-test-data' || action === 'reset-data') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });

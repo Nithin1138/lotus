@@ -73,7 +73,7 @@ window.ZD_EN = {
   "faq.1.q": "How does the 7-day free trial work?",
   "faq.1.a": "<p>You get unrestricted access to all format conversions, the Actions Dial, batch operations, video trimming, and document tools for 7 days. No credit card or account required. After 7 days, you can purchase a lifetime license key to continue using DropDial.</p>",
   "faq.2.q": "How does the DropDial Pro license work?",
-  "faq.2.a": "<p>DropDial Pro is a single one-time payment of $19 / ₹999 with zero subscriptions or recurring fees. One license can be activated on up to 3 personal devices across macOS and Windows, and includes all future updates.</p>",
+  "faq.2.a": "<p>DropDial Pro is a single one-time payment of $19 / ₹999 with zero subscriptions or recurring fees. One license can be activated on up to <span data-license-devices>3</span> personal devices across macOS and Windows, and includes all future updates.</p>",
   "faq.3.q": "Are my files uploaded anywhere?",
   "faq.3.a": "<p>Never. Everything is processed on your computer by native system engines. DropDial works seamlessly in air-gapped environments without any internet connection.</p>",
   "faq.4.q": "Does license activation require internet?",
