@@ -931,36 +931,81 @@
 
               <form id="update-pricing-form" class="settings-form">
                 
-                <!-- SECTION 1: Dual Currency Active Selling Prices -->
-                <div class="pricing-dual-grid">
-                  <!-- India Selling Price Card -->
+                <!-- SECTION 1: 3-Tier Psychological Architecture Pricing -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                  <!-- Tier 1: Single Platform -->
                   <div class="currency-card">
                     <div class="currency-card-head">
-                      <span class="currency-region-badge">
-                        <span>🇮🇳</span> India Retail Price
-                      </span>
-                      <span class="currency-type-tag">INR Subunits</span>
+                      <span class="currency-region-badge">Single Platform (1 Device)</span>
+                      <span class="currency-type-tag">Tier 1 Floor</span>
                     </div>
-                    <div class="currency-input-wrap">
-                      <span class="currency-symbol-addon">₹</span>
-                      <input type="number" id="price-inr-input" min="99" step="1" value="999" placeholder="999" required>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                      <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">India (₹)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">₹</span>
+                          <input type="number" id="price-single-inr-input" min="99" step="1" value="799" placeholder="799" required>
+                        </div>
+                      </div>
+                      <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Global ($)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">$</span>
+                          <input type="number" id="price-single-usd-input" min="1" step="1" value="15" placeholder="15" required>
+                        </div>
+                      </div>
                     </div>
-                    <span class="field-hint">Actual selling price charged in India (e.g. ₹999)</span>
+                    <span class="field-hint">Entry floor pricing (Default: ₹799 / $15)</span>
                   </div>
 
-                  <!-- Global Selling Price Card -->
+                  <!-- Tier 2: Universal Pro Lifetime (Hero) -->
+                  <div class="currency-card" style="border: 1px solid var(--accent, #ff6500); background: rgba(255, 101, 0, 0.04);">
+                    <div class="currency-card-head">
+                      <span class="currency-region-badge" style="color: var(--accent, #ff6500); font-weight: 700;">Universal Pro (Mac + PC) ★</span>
+                      <span class="currency-type-tag" style="background: var(--accent, #ff6500); color: #fff;">Hero 80%+</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                      <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">India (₹)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">₹</span>
+                          <input type="number" id="price-inr-input" min="99" step="1" value="999" placeholder="999" required>
+                        </div>
+                      </div>
+                      <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Global ($)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">$</span>
+                          <input type="number" id="price-usd-input" min="1" step="1" value="19" placeholder="19" required>
+                        </div>
+                      </div>
+                    </div>
+                    <span class="field-hint">Universal hero offer (Default: ₹999 / $19)</span>
+                  </div>
+
+                  <!-- Tier 3: Commercial / Team License -->
                   <div class="currency-card">
                     <div class="currency-card-head">
-                      <span class="currency-region-badge">
-                        <span>🌍</span> Global Retail Price
-                      </span>
-                      <span class="currency-type-tag">USD Cents</span>
+                      <span class="currency-region-badge">Team License (10 Seats)</span>
+                      <span class="currency-type-tag">Tier 3 Anchor</span>
                     </div>
-                    <div class="currency-input-wrap">
-                      <span class="currency-symbol-addon">$</span>
-                      <input type="number" id="price-usd-input" min="1" step="1" value="19" placeholder="19" required>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                      <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">India (₹)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">₹</span>
+                          <input type="number" id="price-team-inr-input" min="99" step="1" value="3499" placeholder="3499" required>
+                        </div>
+                      </div>
+                      <div>
+                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Global ($)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">$</span>
+                          <input type="number" id="price-team-usd-input" min="1" step="1" value="69" placeholder="69" required>
+                        </div>
+                      </div>
                     </div>
-                    <span class="field-hint">Actual selling price charged globally (e.g. $19)</span>
+                    <span class="field-hint">Commercial anchor (Default: ₹3,499 / $69)</span>
                   </div>
                 </div>
 
@@ -1213,11 +1258,32 @@
         </div>
 
         <div class="form-group">
-          <label for="issue-tier">License Tier</label>
+          <label for="issue-tier">License Tier / Model</label>
           <select id="issue-tier" class="control-select w-100">
-            <option value="pro">Pro Lifetime (Standard - Up to 3 Personal Devices)</option>
-            <option value="team">Studio / Commercial (Commercial Use Permitted)</option>
+            <option value="single">Single Platform (1 Mac or 1 Windows PC)</option>
+            <option value="universal" selected>Universal Pro Lifetime (Mac + PC, Up to 3 Devices)</option>
+            <option value="team">Commercial / Team License (Up to 10 Seats / Machines)</option>
           </select>
+        </div>
+
+        <div class="form-group">
+          <label for="issue-expiry">License Duration / Expiration</label>
+          <select id="issue-expiry" class="control-select w-100">
+            <option value="0">Lifetime (Never Expires - Standard)</option>
+            <option value="120">⚡ 2 Minutes (Testing Immediate Expiry)</option>
+            <option value="300">⚡ 5 Minutes (Testing Quick Expiry)</option>
+            <option value="600">⚡ 10 Minutes (Testing Session Expiry)</option>
+            <option value="3600">1 Hour (Testing Demo)</option>
+            <option value="86400">24 Hours (1-Day Pass)</option>
+            <option value="604800">7 Days (Extended Trial)</option>
+            <option value="2592000">30 Days (Monthly Pass)</option>
+            <option value="custom">Custom Duration (Minutes)...</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="issue-expiry-custom-wrap" style="display: none;">
+          <label for="issue-expiry-custom">Custom Duration (in minutes)</label>
+          <input type="number" id="issue-expiry-custom" min="1" step="1" placeholder="e.g. 15">
         </div>
 
         <div class="form-group checkbox-group">

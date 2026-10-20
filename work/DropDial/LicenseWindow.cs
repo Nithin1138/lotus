@@ -197,8 +197,16 @@ internal sealed class LicenseWindow : Window
         catch { }
 
         UpdateUI();
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        timer.Tick += (_, _) => UpdateUI();
+        timer.Start();
+
         LicenseManager.StatusChanged += UpdateUI;
-        Closed += (_, _) => LicenseManager.StatusChanged -= UpdateUI;
+        Closed += (_, _) =>
+        {
+            timer.Stop();
+            LicenseManager.StatusChanged -= UpdateUI;
+        };
     }
 
     private void UpdateUI()
@@ -208,8 +216,32 @@ internal sealed class LicenseWindow : Window
         if (status.IsPro && status.Info != null)
         {
             string name = string.IsNullOrEmpty(status.Info.Name) ? status.Info.Email : status.Info.Name;
-            statusSubtitle.Foreground = UiTheme.Muted;
-            statusSubtitle.Text = $"Licensed to {name}";
+            if (status.Info.ExpiresAt.HasValue)
+            {
+                int sec = status.Info.SecondsRemaining;
+                statusSubtitle.Foreground = new SolidColorBrush(Color.FromRgb(220, 100, 30));
+                if (sec <= 0)
+                {
+                    statusSubtitle.Text = "Test License Expired";
+                }
+                else if (sec < 60)
+                {
+                    statusSubtitle.Text = $"Licensed to {name} • Test Key ({sec}s left)";
+                }
+                else if (sec < 3600)
+                {
+                    statusSubtitle.Text = $"Licensed to {name} • Test Key ({sec / 60}m {sec % 60}s left)";
+                }
+                else
+                {
+                    statusSubtitle.Text = $"Licensed to {name} • Test Key ({sec / 3600}h left)";
+                }
+            }
+            else
+            {
+                statusSubtitle.Foreground = UiTheme.Muted;
+                statusSubtitle.Text = $"Licensed to {name}";
+            }
 
             keyInput.Text = LicenseManager.GetStoredKey() ?? "";
             keyInput.IsEnabled = false;

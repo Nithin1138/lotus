@@ -204,21 +204,43 @@ module.exports = async function handler(req, res) {
         expiresAt = new Date(now + durationMs).toISOString();
       }
 
+      const singleInr = Number(body.singleInr || body.tiers?.single?.INR?.amount || 799);
+      const singleUsd = Number(body.singleUsd || body.tiers?.single?.USD?.amount || 15);
+      const universalInr = inrAmount || Number(body.universalInr || body.tiers?.universal?.INR?.amount || 999);
+      const universalUsd = usdAmount || Number(body.universalUsd || body.tiers?.universal?.USD?.amount || 19);
+      const teamInr = Number(body.teamInr || body.tiers?.team?.INR?.amount || 3499);
+      const teamUsd = Number(body.teamUsd || body.tiers?.team?.USD?.amount || 69);
+
+      const tiersConfig = {
+        single: {
+          INR: { amount: singleInr, display: `₹${singleInr.toLocaleString('en-IN')}` },
+          USD: { amount: singleUsd, display: `$${singleUsd}` }
+        },
+        universal: {
+          INR: { amount: universalInr, display: `₹${universalInr.toLocaleString('en-IN')}` },
+          USD: { amount: universalUsd, display: `$${universalUsd}` }
+        },
+        team: {
+          INR: { amount: teamInr, display: `₹${teamInr.toLocaleString('en-IN')}` },
+          USD: { amount: teamUsd, display: `$${teamUsd}` }
+        }
+      };
+
       currentPricing = {
         INR: {
-          amount: inrAmount,
-          subunits: Math.round(inrAmount * 100),
+          amount: universalInr,
+          subunits: Math.round(universalInr * 100),
           symbol: '₹',
-          display: `₹${inrAmount.toLocaleString('en-IN')}`,
+          display: `₹${universalInr.toLocaleString('en-IN')}`,
           strikeAmount: strikeInr,
           strikeDisplay: `₹${strikeInr.toLocaleString('en-IN')}`,
           label: 'India Standard'
         },
         USD: {
-          amount: usdAmount,
-          subunits: Math.round(usdAmount * 100),
+          amount: universalUsd,
+          subunits: Math.round(universalUsd * 100),
           symbol: '$',
-          display: `$${usdAmount}`,
+          display: `$${universalUsd}`,
           strikeAmount: strikeUsd,
           strikeDisplay: `$${strikeUsd}`,
           label: 'Global Standard'
@@ -236,6 +258,7 @@ module.exports = async function handler(req, res) {
           expiresAt: expiresAt
         },
         devicesPerLicense: devicesPerLicense,
+        tiers: tiersConfig,
         lastUpdated: new Date().toISOString()
       };
 

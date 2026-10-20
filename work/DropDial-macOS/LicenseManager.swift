@@ -7,6 +7,17 @@ struct LicenseInfo: Equatable {
     let email: String
     let date: String
     let tier: String
+    let expiresAt: Double? // Unix epoch seconds, nil if lifetime
+
+    var isExpired: Bool {
+        guard let exp = expiresAt else { return false }
+        return Date().timeIntervalSince1970 >= exp
+    }
+
+    var secondsRemaining: Int {
+        guard let exp = expiresAt else { return Int.max }
+        return max(0, Int(exp - Date().timeIntervalSince1970))
+    }
 }
 
 enum LicenseStatus: Equatable {
@@ -15,14 +26,16 @@ enum LicenseStatus: Equatable {
     case trialExpired
 
     var isPro: Bool {
-        if case .pro = self { return true }
+        if case .pro(let info) = self {
+            return !info.isExpired
+        }
         return false
     }
 
     var canUseApp: Bool {
         switch self {
-        case .pro:
-            return true
+        case .pro(let info):
+            return !info.isExpired
         case .trial(let days):
             return days >= 0
         case .trialExpired:
@@ -33,7 +46,23 @@ enum LicenseStatus: Equatable {
     var displayText: String {
         switch self {
         case .pro(let info):
-            return "DropDial Pro ✓ (\(info.name.isEmpty ? info.email : info.name))"
+            let displayName = info.name.isEmpty ? info.email : info.name
+            if let _ = info.expiresAt {
+                let sec = info.secondsRemaining
+                if sec <= 0 {
+                    return "Test License Expired"
+                } else if sec < 60 {
+                    return "\(info.tier.capitalized) (Expires in \(sec)s)"
+                } else if sec < 3600 {
+                    let m = sec / 60
+                    let s = sec % 60
+                    return "\(info.tier.capitalized) (Expires in \(m)m \(s)s)"
+                } else {
+                    let h = sec / 3600
+                    return "\(info.tier.capitalized) (Expires in \(h)h)"
+                }
+            }
+            return "DropDial Pro ✓ (\(displayName))"
         case .trial(let days):
             if days <= 0 {
                 return "Trial: Last day"
@@ -71,8 +100,17 @@ final class LicenseManager {
         refreshStatus()
     }
 
+    private var periodicCheckTimer: Timer?
+
     func initialize() {
         refreshStatus()
+        periodicCheckTimer?.invalidate()
+        periodicCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if case .pro(let info) = self.status, info.expiresAt != nil {
+                self.refreshStatus()
+            }
+        }
     }
 
     // MARK: - Status Checking
@@ -86,6 +124,9 @@ final class LicenseManager {
                 status = .pro(info: info)
                 onStatusChanged?()
                 return
+            } else {
+                // Key has expired or is invalid! Clear stored key so status reverts
+                defaults.removeObject(forKey: licenseKeyStoreKey)
             }
         }
 
@@ -240,7 +281,29 @@ final class LicenseManager {
         let date = json["d"] as? String ?? ""
         let tier = json["t"] as? String ?? "pro"
 
-        let info = LicenseInfo(name: name, email: email, date: date, tier: tier)
+        let exp: Double?
+        if let expNum = json["exp"] as? Double {
+            exp = expNum
+        } else if let expInt = json["exp"] as? Int {
+            exp = Double(expInt)
+        } else if let expNum = json["exp"] as? NSNumber {
+            exp = expNum.doubleValue
+        } else {
+            exp = nil
+        }
+
+        if let exp = exp {
+            let now = Date().timeIntervalSince1970
+            if now >= exp {
+                let formatter = DateFormatter()
+                formatter.dateStyle = .short
+                formatter.timeStyle = .medium
+                let dateStr = formatter.string(from: Date(timeIntervalSince1970: exp))
+                return (false, nil, "This test license key expired on \(dateStr)")
+            }
+        }
+
+        let info = LicenseInfo(name: name, email: email, date: date, tier: tier, expiresAt: exp)
         return (true, info, nil)
     }
 
@@ -400,9 +463,17 @@ final class LicenseWindowController: NSWindowController {
         updateDisplay()
     }
 
+    private var windowUpdateTimer: Timer?
+
     func show() {
         messageLabel.stringValue = ""
         updateDisplay()
+
+        windowUpdateTimer?.invalidate()
+        windowUpdateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self, self.window?.isVisible == true else { return }
+            self.updateDisplay()
+        }
 
         // If not already Pro and clipboard contains a DD- key, autofill it seamlessly
         if case .pro = LicenseManager.shared.status { } else {
@@ -424,8 +495,28 @@ final class LicenseWindowController: NSWindowController {
         switch status {
         case .pro(let info):
             let nameStr = info.name.isEmpty ? info.email : info.name
-            statusLabel.stringValue = "Licensed to \(nameStr)"
-            statusLabel.textColor = .secondaryLabelColor
+            if let _ = info.expiresAt {
+                let sec = info.secondsRemaining
+                if sec <= 0 {
+                    statusLabel.stringValue = "Test License Expired"
+                    statusLabel.textColor = .systemRed
+                } else if sec < 60 {
+                    statusLabel.stringValue = "Licensed to \(nameStr) • Test Key (\(sec)s left)"
+                    statusLabel.textColor = .systemOrange
+                } else if sec < 3600 {
+                    let m = sec / 60
+                    let s = sec % 60
+                    statusLabel.stringValue = "Licensed to \(nameStr) • Test Key (\(m)m \(s)s left)"
+                    statusLabel.textColor = .systemOrange
+                } else {
+                    let h = sec / 3600
+                    statusLabel.stringValue = "Licensed to \(nameStr) • Test Key (\(h)h left)"
+                    statusLabel.textColor = .systemOrange
+                }
+            } else {
+                statusLabel.stringValue = "Licensed to \(nameStr)"
+                statusLabel.textColor = .secondaryLabelColor
+            }
 
             keyTextField.stringValue = LicenseManager.shared.getStoredKey() ?? ""
             keyTextField.isEnabled = false
@@ -500,6 +591,8 @@ final class LicenseWindowController: NSWindowController {
     }
 
     @objc private func closeTapped() {
+        windowUpdateTimer?.invalidate()
+        windowUpdateTimer = nil
         window?.close()
     }
 

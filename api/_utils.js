@@ -79,17 +79,22 @@ function getPrivateKey() {
  *
  * Format: DD-<b64url(payload)>.<b64url(raw_signature_64_bytes)>
  */
-function generateLicense(email, name, tier = 'pro') {
+function generateLicense(email, name, tier = 'pro', expiresInSeconds = 0) {
   const privateKeyPem = getPrivateKey();
   const dateStr = new Date().toISOString().slice(0, 10);
 
-  // Exact JSON payload with sorted keys: d, e, n, t
+  // Exact JSON payload with sorted keys: d, e, (exp), n, t
   const payload = {
     d: dateStr,
     e: (email || '').trim().toLowerCase(),
     n: (name || 'DropDial Customer').trim(),
     t: tier
   };
+
+  const expSec = Number(expiresInSeconds);
+  if (expSec > 0) {
+    payload.exp = Math.floor(Date.now() / 1000) + expSec;
+  }
 
   const sortedKeys = Object.keys(payload).sort();
   const payloadJson = JSON.stringify(payload, sortedKeys);

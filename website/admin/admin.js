@@ -444,11 +444,30 @@
 
     tbody.innerHTML = state.licenses.map(lic => {
       const shortKey = lic.id ? (lic.id.slice(0, 14) + '...' + lic.id.slice(-8)) : 'DD-...';
+      let tierClass = 'pro';
+      if ((lic.tier || '').includes('Team') || (lic.tier || '').includes('Studio')) tierClass = 'team';
+      else if ((lic.tier || '').includes('Single')) tierClass = 'single';
+
+      let statusBadge = `<span class="status-pill active">${escapeHtml(lic.status || 'Active')}</span>`;
+      if (lic.expiresAt) {
+        const nowSec = Math.floor(Date.now() / 1000);
+        const diff = lic.expiresAt - nowSec;
+        if (diff <= 0) {
+          statusBadge = `<span class="status-pill inactive" style="background: rgba(239,68,68,0.15); color: #ef4444;">Expired</span>`;
+        } else if (diff < 60) {
+          statusBadge = `<span class="status-pill" style="background: rgba(245,158,11,0.15); color: #f59e0b;">⚡ ${diff}s left</span>`;
+        } else if (diff < 3600) {
+          statusBadge = `<span class="status-pill" style="background: rgba(245,158,11,0.15); color: #f59e0b;">⚡ ${Math.round(diff / 60)}m left</span>`;
+        } else {
+          statusBadge = `<span class="status-pill" style="background: rgba(245,158,11,0.15); color: #f59e0b;">⚡ ${Math.round(diff / 3600)}h left</span>`;
+        }
+      }
+
       return `
         <tr>
           <td><strong>${escapeHtml(lic.name)}</strong></td>
           <td>${escapeHtml(lic.email)}</td>
-          <td><span class="tier-badge ${lic.tier.includes('Team') || lic.tier.includes('Studio') ? 'team' : 'pro'}">${escapeHtml(lic.tier)}</span></td>
+          <td><span class="tier-badge ${tierClass}">${escapeHtml(lic.tier)}</span></td>
           <td>
             <div class="key-cell-wrap">
               <code title="${escapeHtml(lic.id)}">${escapeHtml(shortKey)}</code>
@@ -458,7 +477,7 @@
             </div>
           </td>
           <td class="text-muted">${escapeHtml(lic.date)}</td>
-          <td><span class="status-pill active">${escapeHtml(lic.status)}</span></td>
+          <td>${statusBadge}</td>
           <td>
             <button class="btn btn-secondary btn-sm copy-full-btn" data-copy="${escapeHtml(lic.id)}">Copy Key</button>
           </td>
@@ -708,6 +727,10 @@
     document.getElementById('close-issue-modal-btn')?.addEventListener('click', () => issueModal.style.display = 'none');
     document.getElementById('cancel-issue-btn')?.addEventListener('click', () => issueModal.style.display = 'none');
     document.getElementById('issue-license-form')?.addEventListener('submit', handleIssueLicense);
+    document.getElementById('issue-expiry')?.addEventListener('change', function () {
+      const wrap = document.getElementById('issue-expiry-custom-wrap');
+      if (wrap) wrap.style.display = this.value === 'custom' ? 'block' : 'none';
+    });
 
     // 5. Modals - Create Coupon
     const couponModal = document.getElementById('coupon-modal');
@@ -977,6 +1000,15 @@
     const email = document.getElementById('issue-email').value.trim();
     const tier = document.getElementById('issue-tier').value;
     const sendEmail = document.getElementById('issue-send-email').checked;
+    const expirySelect = document.getElementById('issue-expiry')?.value || '0';
+    let expiresInSeconds = 0;
+    if (expirySelect === 'custom') {
+      const customMins = Number(document.getElementById('issue-expiry-custom')?.value) || 0;
+      expiresInSeconds = customMins * 60;
+    } else {
+      expiresInSeconds = Number(expirySelect) || 0;
+    }
+
     const submitBtn = document.getElementById('generate-key-btn');
 
     if (!name || !email) return;
@@ -998,7 +1030,8 @@
           name,
           email,
           tier,
-          sendEmail
+          sendEmail,
+          expiresInSeconds
         })
       });
 
@@ -1007,14 +1040,25 @@
         throw new Error(data.error || 'Failed to issue cryptographic license.');
       }
 
+      // Display friendly tier label
+      const tierLabels = {
+        single: 'Single Platform',
+        universal: 'Universal Pro Lifetime',
+        team: 'Commercial / Team License',
+        pro: 'Pro Lifetime'
+      };
+      const tierName = tierLabels[tier] || 'Universal Pro Lifetime';
+
       // Add to state
       state.licenses.unshift({
         id: data.licenseKey,
         name,
         email,
-        tier: tier === 'team' ? 'Studio / Commercial' : 'Pro Lifetime',
+        tier: tierName,
+        expiresAt: data.expiresAt || null,
+        expiresInSeconds: data.expiresInSeconds || 0,
         date: new Date().toISOString().slice(0, 10),
-        status: 'Active'
+        status: (data.expiresAt && data.expiresAt <= Math.floor(Date.now() / 1000)) ? 'Expired' : 'Active'
       });
       saveLocalStore();
       renderLicensesTable();
@@ -1280,8 +1324,17 @@
           'Authorization': `Bearer ${encodeURIComponent(passcode)}`
         },
         body: JSON.stringify({
+          singleInr,
+          singleUsd,
           inrAmount,
           usdAmount,
+          teamInr,
+          teamUsd,
+          tiers: {
+            single: { INR: { amount: singleInr }, USD: { amount: singleUsd } },
+            universal: { INR: { amount: inrAmount }, USD: { amount: usdAmount } },
+            team: { INR: { amount: teamInr }, USD: { amount: teamUsd } }
+          },
           strikeEnabled,
           strikeInr,
           strikeUsd,
@@ -1327,10 +1380,19 @@
         const data = await res.json();
         if (data && data.pricing) {
           pricingFormLoaded = true;
+          const singleInrInput = document.getElementById('price-single-inr-input');
+          const singleUsdInput = document.getElementById('price-single-usd-input');
           const inrInput = document.getElementById('price-inr-input');
           const usdInput = document.getElementById('price-usd-input');
+          const teamInrInput = document.getElementById('price-team-inr-input');
+          const teamUsdInput = document.getElementById('price-team-usd-input');
+
+          if (singleInrInput) singleInrInput.value = data.pricing.tiers?.single?.INR?.amount || 799;
+          if (singleUsdInput) singleUsdInput.value = data.pricing.tiers?.single?.USD?.amount || 15;
           if (inrInput && data.pricing.INR) inrInput.value = data.pricing.INR.amount;
           if (usdInput && data.pricing.USD) usdInput.value = data.pricing.USD.amount;
+          if (teamInrInput) teamInrInput.value = data.pricing.tiers?.team?.INR?.amount || 3499;
+          if (teamUsdInput) teamUsdInput.value = data.pricing.tiers?.team?.USD?.amount || 69;
 
           const strikeCheck = document.getElementById('pricing-strike-enabled');
           const strikeInrInput = document.getElementById('price-strike-inr-input');
@@ -1379,8 +1441,12 @@
 
   async function handleUpdatePricing(e) {
     e.preventDefault();
+    const singleInr = Number(document.getElementById('price-single-inr-input')?.value) || 799;
+    const singleUsd = Number(document.getElementById('price-single-usd-input')?.value) || 15;
     const inrAmount = Number(document.getElementById('price-inr-input').value);
     const usdAmount = Number(document.getElementById('price-usd-input').value);
+    const teamInr = Number(document.getElementById('price-team-inr-input')?.value) || 3499;
+    const teamUsd = Number(document.getElementById('price-team-usd-input')?.value) || 69;
     const strikeEnabled = document.getElementById('pricing-strike-enabled').checked;
     const strikeInr = Number(document.getElementById('price-strike-inr-input').value) || 1499;
     const strikeUsd = Number(document.getElementById('price-strike-usd-input').value) || 29;

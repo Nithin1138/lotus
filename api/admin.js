@@ -203,14 +203,16 @@ module.exports = async function handler(req, res) {
   // 2. ISSUE PRO LICENSE MANUALLY (Accepts 'issue-license' or 'generate-key')
   if (action === 'issue-license' || action === 'generate-key') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
-    const { email, name, tier = 'pro', sendEmail = false } = req.body || {};
+    const { email, name, tier = 'pro', sendEmail = false, expiresInSeconds = 0 } = req.body || {};
 
     if (!email || !email.includes('@')) {
       return res.status(400).json({ error: 'Valid customer email is required' });
     }
 
     const customerName = (name || 'DropDial Customer').trim();
-    const licenseKey = generateLicense(email.trim().toLowerCase(), customerName, tier);
+    const expSec = Number(expiresInSeconds) || 0;
+    const licenseKey = generateLicense(email.trim().toLowerCase(), customerName, tier, expSec);
+    const expiresAt = expSec > 0 ? (Math.floor(Date.now() / 1000) + expSec) : null;
 
     let emailSent = false;
     let emailId = null;
@@ -237,7 +239,7 @@ module.exports = async function handler(req, res) {
         const licId = `lic_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
         await sql`
           INSERT INTO licenses (id, customer_name, email, license_key, tier, status, created_at)
-          VALUES (${licId}, ${customerName}, ${email.trim().toLowerCase()}, ${licenseKey}, ${tier === 'team' ? 'Studio / Commercial' : 'Pro Lifetime'}, 'active', NOW())
+          VALUES (${licId}, ${customerName}, ${email.trim().toLowerCase()}, ${licenseKey}, ${tier === 'team' ? 'Studio / Commercial' : (tier === 'single' ? 'Single Platform' : 'Pro Lifetime')}, 'active', NOW())
           ON CONFLICT (id) DO NOTHING;
         `;
 
@@ -259,6 +261,8 @@ module.exports = async function handler(req, res) {
       email: email.trim().toLowerCase(),
       name: customerName,
       tier,
+      expiresAt,
+      expiresInSeconds: expSec,
       date: new Date().toISOString().slice(0, 10),
       emailSent,
       emailId

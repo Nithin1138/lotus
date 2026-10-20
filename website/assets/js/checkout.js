@@ -425,6 +425,21 @@
               el.textContent = PRICING.devicesPerLicense;
             });
           }
+          if (pData.pricing.tiers) {
+            const t = pData.pricing.tiers;
+            if (t.single) {
+              if (t.single.INR) { TIERS.single.INR.amount = t.single.INR.amount; TIERS.single.INR.display = t.single.INR.display || `₹${t.single.INR.amount.toLocaleString('en-IN')}`; }
+              if (t.single.USD) { TIERS.single.USD.amount = t.single.USD.amount; TIERS.single.USD.display = t.single.USD.display || `$${t.single.USD.amount}`; }
+            }
+            if (t.universal) {
+              if (t.universal.INR) { TIERS.universal.INR.amount = t.universal.INR.amount; TIERS.universal.INR.display = t.universal.INR.display || `₹${t.universal.INR.amount.toLocaleString('en-IN')}`; }
+              if (t.universal.USD) { TIERS.universal.USD.amount = t.universal.USD.amount; TIERS.universal.USD.display = t.universal.USD.display || `$${t.universal.USD.amount}`; }
+            }
+            if (t.team) {
+              if (t.team.INR) { TIERS.team.INR.amount = t.team.INR.amount; TIERS.team.INR.display = t.team.INR.display || `₹${t.team.INR.amount.toLocaleString('en-IN')}`; }
+              if (t.team.USD) { TIERS.team.USD.amount = t.team.USD.amount; TIERS.team.USD.display = t.team.USD.display || `$${t.team.USD.amount}`; }
+            }
+          }
         }
       }
     } catch (e) {}

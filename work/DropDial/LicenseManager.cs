@@ -8,7 +8,11 @@ using System.Windows.Forms;
 
 namespace DropDial;
 
-internal sealed record LicenseInfo(string Name, string Email, string Date, string Tier);
+internal sealed record LicenseInfo(string Name, string Email, string Date, string Tier, long? ExpiresAt = null)
+{
+    public bool IsExpired => ExpiresAt.HasValue && DateTimeOffset.UtcNow.ToUnixTimeSeconds() >= ExpiresAt.Value;
+    public int SecondsRemaining => ExpiresAt.HasValue ? Math.Max(0, (int)(ExpiresAt.Value - DateTimeOffset.UtcNow.ToUnixTimeSeconds())) : int.MaxValue;
+}
 
 internal enum LicenseStatusKind
 {
@@ -23,8 +27,10 @@ internal sealed class LicenseStatus
     public LicenseInfo? Info { get; }
     public int DaysRemaining { get; }
 
-    public bool IsPro => Kind == LicenseStatusKind.Pro;
-    public bool CanUseApp => Kind != LicenseStatusKind.TrialExpired || LicenseManager.GetDailyConversionsRemaining() > 0;
+    public bool IsPro => Kind == LicenseStatusKind.Pro && (Info == null || !Info.IsExpired);
+    public bool CanUseApp => (Kind == LicenseStatusKind.Pro && (Info == null || !Info.IsExpired))
+        || (Kind == LicenseStatusKind.Trial && DaysRemaining >= 0)
+        || (Kind == LicenseStatusKind.TrialExpired && LicenseManager.GetDailyConversionsRemaining() > 0);
 
     private LicenseStatus(LicenseStatusKind kind, LicenseInfo? info, int days)
     {
@@ -39,7 +45,15 @@ internal sealed class LicenseStatus
 
     public string DisplayText => Kind switch
     {
-        LicenseStatusKind.Pro => $"DropDial Pro ✓ ({(string.IsNullOrEmpty(Info?.Name) ? Info?.Email : Info?.Name)})",
+        LicenseStatusKind.Pro => Info?.ExpiresAt.HasValue == true
+            ? Info.SecondsRemaining switch
+            {
+                <= 0 => "Test License Expired",
+                < 60 => $"{Capitalize(Info.Tier)} (Expires in {Info.SecondsRemaining}s)",
+                < 3600 => $"{Capitalize(Info.Tier)} (Expires in {Info.SecondsRemaining / 60}m {Info.SecondsRemaining % 60}s)",
+                _ => $"{Capitalize(Info.Tier)} (Expires in {Info.SecondsRemaining / 3600}h)"
+            }
+            : $"DropDial Pro ✓ ({(string.IsNullOrEmpty(Info?.Name) ? Info?.Email : Info?.Name)})",
         LicenseStatusKind.Trial => DaysRemaining switch
         {
             <= 0 => "Trial: Last day",
@@ -48,6 +62,8 @@ internal sealed class LicenseStatus
         },
         _ => $"Free Tier: {LicenseManager.GetDailyConversionsRemaining()}/3 today — Activate Pro"
     };
+
+    private static string Capitalize(string str) => string.IsNullOrEmpty(str) ? "Pro" : char.ToUpper(str[0]) + (str.Length > 1 ? str[1..].ToLower() : "");
 }
 
 internal static class LicenseManager
@@ -95,11 +111,17 @@ internal static class LicenseManager
             if (!string.IsNullOrWhiteSpace(state.LicenseKey))
             {
                 var (isValid, info, _) = VerifyKey(state.LicenseKey);
-                if (isValid && info != null)
+                if (isValid && info != null && !info.IsExpired)
                 {
                     CurrentStatus = LicenseStatus.Pro(info);
                     StatusChanged?.Invoke();
                     return;
+                }
+                else
+                {
+                    // Expired or invalid - clear stored key
+                    state.LicenseKey = null;
+                    SaveState(state);
                 }
             }
 
@@ -262,7 +284,26 @@ internal static class LicenseManager
             string date = root.TryGetProperty("d", out var pd) ? pd.GetString() ?? "" : "";
             string tier = root.TryGetProperty("t", out var pt) ? pt.GetString() ?? "pro" : "pro";
 
-            return (true, new LicenseInfo(name, email, date, tier), null);
+            long? expiresAt = null;
+            if (root.TryGetProperty("exp", out var pexp))
+            {
+                if (pexp.ValueKind == JsonValueKind.Number && pexp.TryGetInt64(out long expVal))
+                {
+                    expiresAt = expVal;
+                }
+            }
+
+            if (expiresAt.HasValue)
+            {
+                long nowSec = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                if (nowSec >= expiresAt.Value)
+                {
+                    var expDate = DateTimeOffset.FromUnixTimeSeconds(expiresAt.Value).LocalDateTime;
+                    return (false, null, $"This test license key expired on {expDate:g}");
+                }
+            }
+
+            return (true, new LicenseInfo(name, email, date, tier, expiresAt), null);
         }
         catch (Exception ex)
         {
