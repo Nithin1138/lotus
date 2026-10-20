@@ -115,6 +115,9 @@ echo "Packaging distribution archives..."
 ZIP_FILE="$OUTPUT_DIR/DropDial-macOS.zip"
 rm -f "$ZIP_FILE"
 ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_FILE"
+if [ -d "$ROOT_DIR/website/downloads" ]; then
+    cp "$ZIP_FILE" "$ROOT_DIR/website/downloads/DropDial-macOS.zip"
+fi
 
 DMG_FILE="$OUTPUT_DIR/DropDial.dmg"
 if [ -f "$ROOT_DIR/packaging/build-dmg.sh" ]; then

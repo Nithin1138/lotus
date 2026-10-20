@@ -358,8 +358,7 @@ module.exports = async function handler(req, res) {
     const repo = process.env.GITHUB_REPO || 'lotus';
 
     if (!ghToken) {
-      let currentVersion = '1.0.0.0';
-      let is1010Launched = false;
+      let currentVersion = '1.0.1.1';
       try {
         const { getDb, ensureSchema } = require('./_db');
         const sql = getDb();
@@ -368,17 +367,14 @@ module.exports = async function handler(req, res) {
           const rows = await sql`SELECT value FROM app_settings WHERE key = 'latest_release' LIMIT 1;`;
           if (rows && rows.length > 0 && rows[0].value && rows[0].value.tag_name) {
             currentVersion = rows[0].value.tag_name;
-            if (currentVersion.replace(/^v/i, '') === '1.0.1.0') {
-              is1010Launched = true;
-            }
           }
         }
       } catch (_) {}
 
       const availableReleases = [
         {
-          tag_name: is1010Launched ? '1.0.1.0' : '1.0.0.0',
-          name: `DropDial ${is1010Launched ? '1.0.1.0' : '1.0.0.0'}`,
+          tag_name: '1.0.1.1',
+          name: 'DropDial 1.0.1.1',
           published_at: new Date().toISOString(),
           status: 'Active Production',
           assets: [
@@ -388,18 +384,12 @@ module.exports = async function handler(req, res) {
             { name: 'DropDial-Windows-x64.zip', size: 73415552 },
             { name: 'DropDial.exe', size: 208896 }
           ]
-        }
-      ];
-
-      // If not yet launched via 2-step verification, show staged draft waiting for launch
-      const stagedDrafts = is1010Launched ? [] : [
+        },
         {
-          id: 'staged_1010',
           tag_name: '1.0.1.0',
           name: 'DropDial 1.0.1.0',
-          body: '# DropDial 1.0.1.0\n\nUniversal offline desktop file converter and native media suite.\n\n- Standalone direct downloads from dropdial.app (zero external release dependencies)\n- Universal Apple Silicon & Intel macOS builds\n- Precision mechanical timer and legal policies',
-          draft: true,
-          published_at: new Date().toISOString(),
+          published_at: '2026-10-21T00:00:00.000Z',
+          status: 'Archived',
           assets: [
             { name: 'DropDial-Setup.exe', size: 208896 },
             { name: 'DropDial.dmg', size: 4583800 },
@@ -409,6 +399,8 @@ module.exports = async function handler(req, res) {
           ]
         }
       ];
+
+      const stagedDrafts = [];
 
       return res.status(200).json({
         success: true,
