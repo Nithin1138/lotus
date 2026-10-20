@@ -980,16 +980,39 @@
               <span>Download for macOS</span>
             </a>
             <span class="dl-spec-caption" data-release-meta-mac>v1.0.1 · 4.3 MB · Universal DMG</span>
-            <details class="mac-open-tip" style="margin-top: 10px; font-size: 11.5px; color: var(--text-muted); cursor: pointer; text-align: left;">
-              <summary style="display: inline-flex; align-items: center; gap: 5px; list-style: none; color: var(--primary); font-weight: 600;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                First time opening on Mac? (Apple Gatekeeper)
+            <details class="mac-open-tip" style="margin-top: 14px; font-size: 12px; color: var(--text-muted); cursor: pointer; text-align: left; background: rgba(255, 255, 255, 0.025); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 14px; transition: border-color 0.2s ease;">
+              <summary style="display: flex; align-items: center; justify-content: space-between; list-style: none; color: var(--primary); font-weight: 600; user-select: none;">
+                <span style="display: inline-flex; align-items: center; gap: 7px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  First time opening on Mac? (2-Click Easy Setup &amp; Safety Note)
+                </span>
+                <span style="font-size: 11px; opacity: 0.7;">View steps ▾</span>
               </summary>
-              <div style="margin-top: 8px; padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 12px; line-height: 1.5; color: var(--text-main);">
-                If macOS shows <em>"Apple could not verify..."</em>:<br>
-                1. Open <strong>System Settings → Privacy &amp; Security</strong><br>
-                2. Scroll down to Security &amp; click <strong>"Open Anyway"</strong><br>
-                <em>Or Right-Click DropDial in Applications and click Open.</em>
+              <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-subtle); font-size: 12px; line-height: 1.6; color: var(--text-main);">
+                <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
+                  <span style="background: rgba(34, 197, 94, 0.15); color: #22c55e; border-radius: 4px; padding: 2px 6px; font-weight: 700; font-size: 11px; white-space: nowrap;">100% Safe &amp; Offline</span>
+                  <span>DropDial runs entirely on your device with zero telemetry. Because it is independent software distributed outside the Mac App Store, macOS displays a standard first-time security note.</span>
+                </div>
+                
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px 12px; margin: 10px 0; border: 1px solid rgba(255,255,255,0.06);">
+                  <strong style="color: #fff; display: block; margin-bottom: 4px;">Method 1 (Recommended — 2 Clicks):</strong>
+                  <ol style="margin: 0 0 0 16px; padding: 0;">
+                    <li>When prompted <em>"Apple could not verify..."</em>, click <strong>Done</strong>.</li>
+                    <li>Open <strong>System Settings → Privacy &amp; Security</strong>, scroll down to the <em>Security</em> section, and click <strong>"Open Anyway"</strong>.</li>
+                  </ol>
+                  <small style="color: var(--text-muted); display: block; margin-top: 5px;">✓ You only do this once — future opens are immediate.</small>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 8px 12px; margin: 8px 0; border: 1px solid rgba(255,255,255,0.04);">
+                  <strong style="color: #eee;">Method 2 (Right-Click in Finder):</strong><br>
+                  In Finder, go to <strong>Applications</strong> → <strong>Right-Click (Control-Click) DropDial</strong> → click <strong>Open</strong> → click <strong>Open</strong>.
+                </div>
+
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 8px;">
+                  ⚡ <strong>Method 3 (1-Step Terminal Install):</strong><br>
+                  Bypasses all dialogs automatically:
+                  <code style="display: block; margin-top: 4px; padding: 4px 8px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--primary); font-family: monospace;">curl -fsSL https://dropdial.app/install.sh | bash</code>
+                </div>
               </div>
             </details>
           </div>
@@ -1117,6 +1140,18 @@
         <details name="faq-accordion">
           <summary data-i18n="faq.7.q">Do I need Microsoft Office?</summary>
           <div data-i18n="faq.7.a"><p>Only for layout-exact exports of Word, Excel, and PowerPoint files into PDF or images. DropDial drives your installed Office suite for 100% pixel-perfect fidelity. Without Office, you can still extract raw text and data.</p></div>
+        </details>
+        <details name="faq-accordion">
+          <summary>Why does macOS say "Apple could not verify DropDial is free of malware"?</summary>
+          <div>
+            <p>This is Apple Gatekeeper's standard notice for independent software distributed directly outside the Mac App Store. It does <strong>not</strong> mean the app is unsafe. DropDial contains zero tracking or analytics, runs 100% locally offline, and never transmits your files.</p>
+            <p><strong>To open in 2 clicks:</strong></p>
+            <ol>
+              <li>Click <strong>Done</strong> on the warning popup.</li>
+              <li>Open <strong>System Settings → Privacy &amp; Security</strong>, scroll down to the <em>Security</em> section, and click <strong>"Open Anyway"</strong>.</li>
+            </ol>
+            <p>You only need to grant permission once; all future launches will open instantly.</p>
+          </div>
         </details>
         <details name="faq-accordion">
           <summary data-i18n="faq.8.q">How do I update or uninstall it?</summary>
