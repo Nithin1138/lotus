@@ -609,6 +609,21 @@
     document.getElementById('recheck-health-btn')?.addEventListener('click', runGatewayHealthChecks);
     document.getElementById('test-email-form')?.addEventListener('submit', handleTestEmail);
     document.getElementById('change-passcode-form')?.addEventListener('submit', handleChangePasscode);
+
+    // 8. Releases Manager
+    document.getElementById('refresh-releases-btn')?.addEventListener('click', () => {
+      loadReleases(true);
+    });
+
+    // Launch Modal controls
+    document.getElementById('close-launch-modal-btn')?.addEventListener('click', closeLaunchModal);
+    document.getElementById('cancel-launch-btn')?.addEventListener('click', closeLaunchModal);
+    document.getElementById('launch-release-form')?.addEventListener('submit', handleLaunchReleaseSubmit);
+
+    // Revert Modal controls
+    document.getElementById('close-revert-modal-btn')?.addEventListener('click', closeRevertModal);
+    document.getElementById('cancel-revert-btn')?.addEventListener('click', closeRevertModal);
+    document.getElementById('revert-release-form')?.addEventListener('submit', handleRevertReleaseSubmit);
   }
 
   async function handleAuthSubmit(e) {
@@ -671,6 +686,7 @@
       transactions: 'Financial Ledger',
       coupons: 'Coupons & Promotional Offers',
       traffic: 'Traffic & Conversion',
+      releases: 'Production Release Manager',
       health: 'System & Gateway Health',
       settings: 'Security & Passcode'
     };
@@ -681,12 +697,17 @@
       transactions: 'Captured Revenue & Settlements',
       coupons: 'Promotional Discounts & Codes',
       traffic: 'Audience & OS Telemetry',
+      releases: '2-Step Cryptographic Verification & Instant Rollback',
       health: 'Infrastructure Connectivity',
       settings: 'Access Management'
     };
 
     document.getElementById('view-title').textContent = titles[tabId] || 'Executive Suite';
     document.getElementById('view-tag').textContent = subtitles[tabId] || 'Admin';
+
+    if (tabId === 'releases') {
+      loadReleases();
+    }
   }
 
   async function handleCreateCoupon(e) {
@@ -1007,6 +1028,324 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  /**
+   * ========================================================
+   * PRODUCTION RELEASE MANAGER (2-STEP VERIFICATION & ROLLBACK)
+   * ========================================================
+   */
+  let cachedReleases = [];
+
+  async function loadReleases(showSuccessToast = false) {
+    const listContainer = document.getElementById('staged-releases-list');
+    const historyTbody = document.getElementById('published-releases-tbody');
+
+    if (listContainer) {
+      listContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg></div>
+          <h4>Scanning releases...</h4>
+          <p>Querying repository for staged drafts and published production tags.</p>
+        </div>
+      `;
+    }
+
+    try {
+      const res = await fetch(`/api/admin?action=list-releases&token=${encodeURIComponent(state.adminToken || '')}`);
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to query releases API');
+      }
+
+      cachedReleases = data.allReleases || [];
+
+      // Update Top Metrics
+      const currentTagEl = document.getElementById('release-current-tag');
+      const prevTagEl = document.getElementById('release-prev-tag');
+      const stagedCountEl = document.getElementById('release-staged-count');
+      const stagedBadge = document.getElementById('badge-staged-releases');
+
+      if (currentTagEl) currentTagEl.textContent = data.currentVersion || 'None';
+      if (prevTagEl) prevTagEl.textContent = data.previousVersion || 'None';
+      
+      const stagedList = data.stagedDrafts || [];
+      if (stagedCountEl) stagedCountEl.textContent = stagedList.length;
+
+      if (stagedBadge) {
+        if (stagedList.length > 0) {
+          stagedBadge.textContent = stagedList.length;
+          stagedBadge.style.display = 'inline-block';
+        } else {
+          stagedBadge.style.display = 'none';
+        }
+      }
+
+      // Render Staged Releases (Available to Launch)
+      if (listContainer) {
+        if (stagedList.length === 0) {
+          listContainer.innerHTML = `
+            <div class="empty-state" style="padding: 32px 16px;">
+              <div class="empty-icon" style="color:var(--emerald);">${ICONS.check}</div>
+              <h4>All Releases Deployed</h4>
+              <p>No staged drafts waiting in CI/CD pipeline. Push a git tag (e.g. <code>v1.0.1.0</code>) to stage a new build.</p>
+            </div>
+          `;
+        } else {
+          listContainer.innerHTML = stagedList.map(r => {
+            const assetCount = (r.assets || []).length;
+            const assetNames = (r.assets || []).map(a => a.name).join(', ') || 'No binary assets attached yet';
+            const cleanBody = (r.body || 'No release description provided.').slice(0, 300);
+            return `
+              <div class="staged-release-card" style="background:var(--bg-card); border:1px solid rgba(245, 158, 11, 0.3); border-radius:var(--radius-lg); padding:20px; margin-bottom:16px; box-shadow:var(--shadow-sm);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+                  <div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <h4 style="font-size:18px; font-weight:700; color:#ffffff; margin:0;">${escapeHtml(r.name || r.tag_name)}</h4>
+                      <span class="badge-status warning">Staged Draft</span>
+                      <span style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted); background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:4px;">${escapeHtml(r.tag_name)}</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">
+                      Built by CI/CD · ${assetCount} binary asset${assetCount === 1 ? '' : 's'} ready (${escapeHtml(assetNames)})
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-primary btn-launch-staged" data-tag="${escapeHtml(r.tag_name)}" style="background:var(--emerald); border-color:var(--emerald);">
+                    <span>2-Step Verify &amp; Launch</span>
+                  </button>
+                </div>
+                <div style="margin-top:14px; padding:12px; background:rgba(0,0,0,0.3); border-radius:var(--radius-md); font-family:var(--font-mono); font-size:12px; color:var(--text-muted); max-height:100px; overflow-y:auto; white-space:pre-wrap;">
+${escapeHtml(cleanBody)}
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          // Wire Launch Buttons
+          listContainer.querySelectorAll('.btn-launch-staged').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const tag = btn.dataset.tag;
+              const targetRelease = stagedList.find(x => x.tag_name === tag);
+              openLaunchModal(targetRelease);
+            });
+          });
+        }
+      }
+
+      // Render Historical Releases Table
+      if (historyTbody) {
+        const publishedList = (data.allReleases || []).filter(r => !r.draft);
+        if (publishedList.length === 0) {
+          historyTbody.innerHTML = `
+            <tr class="empty-state-row">
+              <td colspan="6" class="text-center py-20 text-muted">No published releases found.</td>
+            </tr>
+          `;
+        } else {
+          historyTbody.innerHTML = publishedList.map((r, index) => {
+            const isLatest = index === 0;
+            const assetCount = (r.assets || []).length;
+            const pubDate = r.published_at ? new Date(r.published_at).toLocaleDateString() : 'N/A';
+            return `
+              <tr>
+                <td><strong style="font-family:var(--font-mono);">${escapeHtml(r.tag_name)}</strong></td>
+                <td>${escapeHtml(r.name || r.tag_name)}</td>
+                <td>${escapeHtml(pubDate)}</td>
+                <td><span class="badge-status info">${assetCount} Assets</span></td>
+                <td>
+                  ${isLatest ? '<span class="badge-status success">Active Production</span>' : '<span class="badge-status neutral">Previous Release</span>'}
+                </td>
+                <td style="text-align: right;">
+                  ${isLatest 
+                    ? '<span style="font-size:12px; color:var(--text-muted);">Current Active</span>' 
+                    : `<button type="button" class="btn btn-sm btn-revert-release" data-tag="${escapeHtml(r.tag_name)}" style="background:rgba(239, 68, 68, 0.15); color:var(--rose); border:1px solid rgba(239, 68, 68, 0.3);">
+                        <span>2-Step Revert</span>
+                       </button>`
+                  }
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          // Wire Revert Buttons
+          historyTbody.querySelectorAll('.btn-revert-release').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const tag = btn.dataset.tag;
+              openRevertModal(tag);
+            });
+          });
+        }
+      }
+
+      if (showSuccessToast) {
+        showToast('Production releases and staged drafts refreshed.', 'success');
+      }
+    } catch (err) {
+      console.error('Failed to load releases:', err);
+      if (listContainer) {
+        listContainer.innerHTML = `
+          <div class="empty-state" style="padding: 24px;">
+            <div class="empty-icon" style="color:var(--rose);">${ICONS.alertCircle}</div>
+            <h4>Unable to Query Releases</h4>
+            <p>${escapeHtml(err.message)}</p>
+          </div>
+        `;
+      }
+      showToast(`Releases load error: ${err.message}`, 'error');
+    }
+  }
+
+  // Launch Modal Logic
+  function openLaunchModal(release) {
+    if (!release) return;
+    const modal = document.getElementById('launch-release-modal');
+    if (!modal) return;
+
+    document.getElementById('launch-target-version').value = release.tag_name;
+    document.getElementById('launch-modal-title').textContent = release.name || `DropDial ${release.tag_name}`;
+    document.getElementById('launch-prompt-hint').textContent = `(Type "${release.tag_name}")`;
+    document.getElementById('launch-modal-assets').textContent = `${(release.assets || []).length} Assets built by CI/CD`;
+    document.getElementById('launch-modal-notes').textContent = release.body || 'No release notes.';
+
+    // Reset inputs
+    document.getElementById('launch-confirm-version').value = '';
+    document.getElementById('launch-passcode').value = '';
+
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('launch-confirm-version')?.focus(), 100);
+  }
+
+  function closeLaunchModal() {
+    const modal = document.getElementById('launch-release-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function handleLaunchReleaseSubmit(e) {
+    e.preventDefault();
+    const targetVersion = document.getElementById('launch-target-version').value.trim();
+    const confirmVersion = document.getElementById('launch-confirm-version').value.trim();
+    const passcode = document.getElementById('launch-passcode').value.trim();
+    const submitBtn = document.getElementById('confirm-launch-submit-btn');
+
+    if (targetVersion.toLowerCase() !== confirmVersion.toLowerCase()) {
+      showToast(`Version mismatch: You typed "${confirmVersion}" instead of "${targetVersion}".`, 'error');
+      document.getElementById('launch-confirm-version').focus();
+      return;
+    }
+
+    if (!passcode) {
+      showToast('Admin master passcode is required for Step 2.', 'error');
+      document.getElementById('launch-passcode').focus();
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span>Authorizing &amp; Publishing...</span>`;
+
+    try {
+      const res = await fetch('/api/admin?action=launch-release', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${encodeURIComponent(passcode)}`
+        },
+        body: JSON.stringify({
+          version: targetVersion,
+          confirmVersion: confirmVersion,
+          passcode: passcode
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to launch release to production');
+      }
+
+      showToast(`🚀 Success! Version ${targetVersion} is now LIVE in production!`, 'success');
+      closeLaunchModal();
+      await loadReleases(false);
+    } catch (err) {
+      console.error('Launch failed:', err);
+      showToast(`Launch failed: ${err.message}`, 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<span>Verify &amp; Launch to Production</span>`;
+    }
+  }
+
+  // Revert Modal Logic
+  function openRevertModal(targetTag) {
+    const modal = document.getElementById('revert-release-modal');
+    if (!modal) return;
+
+    document.getElementById('revert-target-version').value = targetTag;
+    document.getElementById('revert-modal-target').textContent = `Revert active production to v${targetTag}`;
+    document.getElementById('revert-prompt-hint').textContent = `(Type "${targetTag}")`;
+
+    // Reset inputs
+    document.getElementById('revert-confirm-version').value = '';
+    document.getElementById('revert-passcode').value = '';
+
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('revert-confirm-version')?.focus(), 100);
+  }
+
+  function closeRevertModal() {
+    const modal = document.getElementById('revert-release-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function handleRevertReleaseSubmit(e) {
+    e.preventDefault();
+    const targetVersion = document.getElementById('revert-target-version').value.trim();
+    const confirmVersion = document.getElementById('revert-confirm-version').value.trim();
+    const passcode = document.getElementById('revert-passcode').value.trim();
+    const submitBtn = document.getElementById('confirm-revert-submit-btn');
+
+    if (targetVersion.toLowerCase() !== confirmVersion.toLowerCase()) {
+      showToast(`Version mismatch: You typed "${confirmVersion}" instead of "${targetVersion}".`, 'error');
+      document.getElementById('revert-confirm-version').focus();
+      return;
+    }
+
+    if (!passcode) {
+      showToast('Admin master passcode is required for Step 2.', 'error');
+      document.getElementById('revert-passcode').focus();
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span>Rolling back production...</span>`;
+
+    try {
+      const res = await fetch('/api/admin?action=revert-release', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${encodeURIComponent(passcode)}`
+        },
+        body: JSON.stringify({
+          targetVersion: targetVersion,
+          confirmVersion: confirmVersion,
+          passcode: passcode
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to rollback release');
+      }
+
+      showToast(`⏮ Successfully rolled back active production to ${targetVersion}!`, 'success');
+      closeRevertModal();
+      await loadReleases(false);
+    } catch (err) {
+      console.error('Rollback failed:', err);
+      showToast(`Rollback failed: ${err.message}`, 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<span>Verify &amp; Rollback Production</span>`;
+    }
   }
 
   if (document.readyState === 'loading') {

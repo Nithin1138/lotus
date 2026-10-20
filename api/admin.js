@@ -216,5 +216,298 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  // 4. LIST ALL RELEASES (STAGED/DRAFT, ACTIVE, PREVIOUS)
+  if (action === 'list-releases') {
+    const ghToken = (process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim();
+    const owner = process.env.GITHUB_OWNER || 'Nithin1138';
+    const repo = process.env.GITHUB_REPO || 'lotus';
+
+    if (!ghToken) {
+      return res.status(200).json({
+        success: true,
+        currentVersion: '1.0.0.0',
+        previousVersion: '0.0.0.0',
+        availableReleases: [],
+        warning: 'GITHUB_TOKEN is not configured on Vercel.'
+      });
+    }
+
+    try {
+      const https = require('https');
+      const fetchGH = (path) => new Promise((resolve, reject) => {
+        let authHeader = ghToken.startsWith('github_pat_') ? `Bearer ${ghToken}` : `token ${ghToken}`;
+        const req = https.request({
+          hostname: 'api.github.com',
+          path,
+          headers: {
+            'User-Agent': 'DropDial-Admin-Release',
+            'Accept': 'application/vnd.github+json',
+            'Authorization': authHeader
+          }
+        }, res => {
+          let body = '';
+          res.on('data', chunk => body += chunk);
+          res.on('end', () => {
+            try {
+              resolve({ status: res.statusCode, data: JSON.parse(body) });
+            } catch (err) {
+              resolve({ status: res.statusCode, data: body });
+            }
+          });
+        });
+        req.on('error', reject);
+        req.setTimeout(10000, () => { req.destroy(); reject(new Error('GitHub API timeout')); });
+        req.end();
+      });
+
+      const { status, data } = await fetchGH(`/repos/${owner}/${repo}/releases?per_page=30`);
+      if (status < 200 || status >= 300 || !Array.isArray(data)) {
+        return res.status(502).json({ error: 'Failed to fetch releases from GitHub', details: data });
+      }
+
+      // Map releases with clean metadata
+      const releases = data.map(r => ({
+        id: r.id,
+        tag_name: r.tag_name,
+        name: r.name || r.tag_name,
+        body: r.body || '',
+        draft: Boolean(r.draft),
+        prerelease: Boolean(r.prerelease),
+        published_at: r.published_at || r.created_at,
+        assets: (r.assets || []).map(a => ({
+          name: a.name,
+          size: a.size,
+          download_count: a.download_count
+        }))
+      }));
+
+      // Active release is the latest published non-draft
+      const published = releases.filter(r => !r.draft);
+      const current = published[0] || null;
+      const previous = published[1] || null;
+      const stagedDrafts = releases.filter(r => r.draft);
+
+      return res.status(200).json({
+        success: true,
+        currentVersion: current ? current.tag_name : 'None',
+        currentRelease: current,
+        previousVersion: previous ? previous.tag_name : 'None',
+        previousRelease: previous,
+        stagedDrafts,
+        allReleases: releases
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  // 5. LAUNCH RELEASE (STEP 2: PASSWORD + VERSION CONFIRMATION)
+  if (action === 'launch-release') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
+    const { version, passcode, confirmVersion } = req.body || {};
+    const expectedPass = getAdminSecret();
+
+    // Verification 1: Passcode
+    if (!passcode) {
+      return res.status(400).json({ error: 'Admin passcode is required to launch a release.' });
+    }
+    const a = Buffer.from(passcode.trim(), 'utf8');
+    const b = Buffer.from(expectedPass, 'utf8');
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return res.status(401).json({ error: 'Invalid admin passcode verification.' });
+    }
+
+    // Verification 2: Strict Version Match
+    const targetTag = (version || '').trim();
+    const typedTag = (confirmVersion || '').trim();
+    if (!targetTag) {
+      return res.status(400).json({ error: 'Target version tag is required.' });
+    }
+    if (targetTag.toLowerCase() !== typedTag.toLowerCase()) {
+      return res.status(400).json({ error: `Version confirmation mismatch: typed "${typedTag}" does not match target "${targetTag}".` });
+    }
+
+    const ghToken = (process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim();
+    const owner = process.env.GITHUB_OWNER || 'Nithin1138';
+    const repo = process.env.GITHUB_REPO || 'lotus';
+
+    if (!ghToken) {
+      return res.status(500).json({ error: 'GITHUB_TOKEN environment variable is not configured.' });
+    }
+
+    try {
+      const https = require('https');
+      const apiReq = (method, path, bodyData = null) => new Promise((resolve, reject) => {
+        let authHeader = ghToken.startsWith('github_pat_') ? `Bearer ${ghToken}` : `token ${ghToken}`;
+        const reqOpts = {
+          hostname: 'api.github.com',
+          path,
+          method,
+          headers: {
+            'User-Agent': 'DropDial-Admin-Release',
+            'Accept': 'application/vnd.github+json',
+            'Authorization': authHeader
+          }
+        };
+        if (bodyData) {
+          reqOpts.headers['Content-Type'] = 'application/json';
+        }
+        const r = https.request(reqOpts, res => {
+          let resBody = '';
+          res.on('data', chunk => resBody += chunk);
+          res.on('end', () => {
+            try {
+              resolve({ status: res.statusCode, data: JSON.parse(resBody) });
+            } catch {
+              resolve({ status: res.statusCode, data: resBody });
+            }
+          });
+        });
+        r.on('error', reject);
+        if (bodyData) r.write(JSON.stringify(bodyData));
+        r.end();
+      });
+
+      // Find release by tag
+      const { status: listStatus, data: listData } = await apiReq('GET', `/repos/${owner}/${repo}/releases?per_page=30`);
+      if (listStatus < 200 || listStatus >= 300 || !Array.isArray(listData)) {
+        return res.status(502).json({ error: 'Failed to query repository releases' });
+      }
+
+      const matched = listData.find(r => r.tag_name.toLowerCase() === targetTag.toLowerCase() || (r.name && r.name.toLowerCase().includes(targetTag.toLowerCase())));
+      if (!matched) {
+        return res.status(404).json({ error: `Release for version "${targetTag}" not found in repository.` });
+      }
+
+      // Publish draft: set draft = false, make_latest = "true"
+      const patchPayload = {
+        draft: false,
+        make_latest: "true"
+      };
+
+      const { status: patchStatus, data: patchData } = await apiReq('PATCH', `/repos/${owner}/${repo}/releases/${matched.id}`, patchPayload);
+      if (patchStatus < 200 || patchStatus >= 300) {
+        return res.status(patchStatus).json({ error: 'Failed to publish release on GitHub', details: patchData });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Version ${targetTag} has been securely verified and launched to production!`,
+        release: {
+          id: patchData.id,
+          tag_name: patchData.tag_name,
+          name: patchData.name,
+          draft: patchData.draft,
+          published_at: patchData.published_at
+        }
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  // 6. REVERT RELEASE (STEP 2: PASSWORD + VERSION CONFIRMATION)
+  if (action === 'revert-release') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
+    const { targetVersion, passcode, confirmVersion } = req.body || {};
+    const expectedPass = getAdminSecret();
+
+    // Verification 1: Passcode
+    if (!passcode) {
+      return res.status(400).json({ error: 'Admin passcode is required to revert a release.' });
+    }
+    const a = Buffer.from(passcode.trim(), 'utf8');
+    const b = Buffer.from(expectedPass, 'utf8');
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return res.status(401).json({ error: 'Invalid admin passcode verification.' });
+    }
+
+    // Verification 2: Strict Version Match
+    const revertTag = (targetVersion || '').trim();
+    const typedTag = (confirmVersion || '').trim();
+    if (!revertTag) {
+      return res.status(400).json({ error: 'Target rollback version is required.' });
+    }
+    if (revertTag.toLowerCase() !== typedTag.toLowerCase()) {
+      return res.status(400).json({ error: `Revert confirmation mismatch: typed "${typedTag}" does not match target "${revertTag}".` });
+    }
+
+    const ghToken = (process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim();
+    const owner = process.env.GITHUB_OWNER || 'Nithin1138';
+    const repo = process.env.GITHUB_REPO || 'lotus';
+
+    if (!ghToken) {
+      return res.status(500).json({ error: 'GITHUB_TOKEN environment variable is not configured.' });
+    }
+
+    try {
+      const https = require('https');
+      const apiReq = (method, path, bodyData = null) => new Promise((resolve, reject) => {
+        let authHeader = ghToken.startsWith('github_pat_') ? `Bearer ${ghToken}` : `token ${ghToken}`;
+        const reqOpts = {
+          hostname: 'api.github.com',
+          path,
+          method,
+          headers: {
+            'User-Agent': 'DropDial-Admin-Release',
+            'Accept': 'application/vnd.github+json',
+            'Authorization': authHeader
+          }
+        };
+        if (bodyData) {
+          reqOpts.headers['Content-Type'] = 'application/json';
+        }
+        const r = https.request(reqOpts, res => {
+          let resBody = '';
+          res.on('data', chunk => resBody += chunk);
+          res.on('end', () => {
+            try {
+              resolve({ status: res.statusCode, data: JSON.parse(resBody) });
+            } catch {
+              resolve({ status: res.statusCode, data: resBody });
+            }
+          });
+        });
+        r.on('error', reject);
+        if (bodyData) r.write(JSON.stringify(bodyData));
+        r.end();
+      });
+
+      // Find release to revert to
+      const { status: listStatus, data: listData } = await apiReq('GET', `/repos/${owner}/${repo}/releases?per_page=30`);
+      if (listStatus < 200 || listStatus >= 300 || !Array.isArray(listData)) {
+        return res.status(502).json({ error: 'Failed to query repository releases' });
+      }
+
+      const matched = listData.find(r => r.tag_name.toLowerCase() === revertTag.toLowerCase() || (r.name && r.name.toLowerCase().includes(revertTag.toLowerCase())));
+      if (!matched) {
+        return res.status(404).json({ error: `Target rollback version "${revertTag}" not found in repository releases.` });
+      }
+
+      // Promote this release as latest
+      const patchPayload = {
+        make_latest: "true"
+      };
+
+      const { status: patchStatus, data: patchData } = await apiReq('PATCH', `/repos/${owner}/${repo}/releases/${matched.id}`, patchPayload);
+      if (patchStatus < 200 || patchStatus >= 300) {
+        return res.status(patchStatus).json({ error: 'Failed to set release as latest on GitHub', details: patchData });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Successfully rolled back active production release to version ${revertTag}!`,
+        release: {
+          id: patchData.id,
+          tag_name: patchData.tag_name,
+          name: patchData.name,
+          published_at: patchData.published_at
+        }
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   return res.status(400).json({ error: `Unknown action: ${action}` });
 };

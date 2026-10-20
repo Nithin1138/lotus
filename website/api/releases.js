@@ -52,10 +52,13 @@ function sanitizeReleaseBody(body) {
   return clean;
 }
 
-function fetchLatestRelease(token) {
+let activeOverrideTag = null;
+
+function fetchRelease(token, targetTag = null) {
   return new Promise((resolve, reject) => {
+    const effectiveTag = targetTag || activeOverrideTag;
     const now = Date.now();
-    if (cachedRelease && now - cacheTime < CACHE_TTL_MS) {
+    if (!effectiveTag && cachedRelease && now - cacheTime < CACHE_TTL_MS) {
       return resolve(cachedRelease);
     }
 
@@ -68,9 +71,13 @@ function fetchLatestRelease(token) {
       headers['Authorization'] = auth;
     }
 
+    const apiPath = effectiveTag 
+      ? `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${encodeURIComponent(effectiveTag)}`
+      : `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
+
     const req = https.request({
       hostname: 'api.github.com',
-      path: `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`,
+      path: apiPath,
       method: 'GET',
       headers
     }, (res) => {
@@ -80,13 +87,16 @@ function fetchLatestRelease(token) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           try {
             const data = JSON.parse(body);
-            cachedRelease = data;
-            cacheTime = Date.now();
+            if (!effectiveTag) {
+              cachedRelease = data;
+              cacheTime = Date.now();
+            }
             resolve(data);
           } catch (err) {
             reject(new Error('Invalid JSON received from GitHub API'));
           }
         } else {
+          // If tag lookup failed or latest 404, reject with message
           reject(new Error(`GitHub API returned status ${res.statusCode}: ${body.slice(0, 100)}`));
         }
       });
@@ -99,6 +109,10 @@ function fetchLatestRelease(token) {
     });
     req.end();
   });
+}
+
+function fetchLatestRelease(token) {
+  return fetchRelease(token, null);
 }
 
 function getAssetRedirectUrl(assetId, token) {
