@@ -23,8 +23,6 @@ internal sealed class ReleaseInfo
 
 internal static class UpdateManager
 {
-    public const string RepoOwner = "Nithin1138";
-    public const string RepoName = "lotus";
     public const string ReleasesApiUrl = "https://dropdial.app/api/releases/latest";
 
     public static string CurrentVersion =>

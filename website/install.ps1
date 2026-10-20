@@ -1,7 +1,7 @@
 # ==============================================================================
 #  DropDial Universal Windows Installer
 #  One-line install in PowerShell:
-#    irm https://raw.githubusercontent.com/Nithin1138/lotus/main/install.ps1 | iex
+#    irm https://dropdial.app/install.ps1 | iex
 # ==============================================================================
 
 $ErrorActionPreference = 'Stop'

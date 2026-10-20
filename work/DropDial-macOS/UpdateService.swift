@@ -14,8 +14,6 @@ struct ReleaseInfo {
 final class UpdateService: NSObject, URLSessionDownloadDelegate {
     static let shared = UpdateService()
 
-    private let repoOwner = "Nithin1138"
-    private let repoName = "lotus"
     private let releasesApiUrl = "https://dropdial.app/api/releases/latest"
 
     var currentVersion: String {

@@ -4,7 +4,7 @@ set -eo pipefail
 # ==============================================================================
 #  DropDial Universal macOS Installer
 #  One-line install:
-#    curl -fsSL https://raw.githubusercontent.com/Nithin1138/lotus/advance-features/install.sh | bash
+#    curl -fsSL https://dropdial.app/install.sh | bash
 # ==============================================================================
 
 BOLD="\033[1m"
@@ -80,17 +80,10 @@ if [ -z "$SOURCE_APP" ] || [ ! -d "$SOURCE_APP" ]; then
         fi
     done
 
-    # Fallback: clone shallowly & compile natively with swiftc (takes ~5s)
-    if [ "$DOWNLOAD_SUCCESS" -eq 0 ]; then
-        echo -e "${CYAN}→ Building from source repository (zero dependencies, ~5 seconds)...${RESET}"
-        git clone --depth 1 -b advance-features https://github.com/Nithin1138/lotus.git "$TMP_DIR/lotus" >/dev/null 2>&1
-        (cd "$TMP_DIR/lotus" && ./build-mac.sh >/dev/null 2>&1)
-        SOURCE_APP="$TMP_DIR/lotus/outputs/DropDial-macOS/DropDial.app"
-    fi
 fi
 
 if [ ! -d "$SOURCE_APP" ]; then
-    echo -e "${ORANGE}Failed to find or build DropDial.app. Please check your internet connection or install Xcode Command Line Tools: xcode-select --install${RESET}"
+    echo -e "${ORANGE}Failed to download DropDial. Please visit https://dropdial.app to download.${RESET}"
     exit 1
 fi
 
