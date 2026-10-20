@@ -96,9 +96,15 @@
     // 1. Modal Elements
     if (priceDisplay) {
       if (priceConfig.oldPrice) {
-        priceDisplay.innerHTML = `<span class="checkout-old-price">${priceConfig.oldPrice}</span><span class="checkout-new-price">${priceConfig.display}</span><span class="checkout-discount-tag">${priceConfig.discountTag}</span>`;
+        priceDisplay.innerHTML = `
+          <div class="checkout-price-group">
+            <span class="checkout-old-price">${priceConfig.oldPrice}</span>
+            <span class="checkout-new-price">${priceConfig.display}</span>
+            <span class="checkout-discount-badge">${priceConfig.discountTag} OFF</span>
+          </div>
+        `;
       } else {
-        priceDisplay.textContent = priceConfig.display;
+        priceDisplay.innerHTML = `<span class="checkout-standard-price">${priceConfig.display}</span>`;
       }
     }
 
@@ -469,13 +475,14 @@
         appliedCoupon = data;
         couponFeedback.className = 'coupon-feedback success';
         couponFeedback.innerHTML = `
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span style="flex:1;"><strong>${data.code}</strong> applied (${data.discountDisplay} discount)!</span>
-          <button type="button" id="coupon-remove-btn" style="background:none; border:none; color:inherit; text-decoration:underline; cursor:pointer; font-size:11px; font-weight:700; padding:2px 4px;">Remove</button>
+          <div class="coupon-success-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="coupon-applied-text">Coupon <strong>${data.code}</strong> applied (${data.discountDisplay} off)</span>
+          </div>
+          <button type="button" id="coupon-remove-btn" class="coupon-remove-link" title="Remove coupon">Remove</button>
         `;
         couponFeedback.style.display = 'flex';
-        couponCodeInput.disabled = true;
-        couponApplyBtn.style.display = 'none';
+        couponInputWrap.style.display = 'none';
 
         document.getElementById('coupon-remove-btn')?.addEventListener('click', function() {
           appliedCoupon = null;
@@ -505,8 +512,27 @@
         const val = code === 'DROPDIAL50' ? 50 : (code === 'LAUNCH20' ? 20 : 10);
         appliedCoupon = { code, type: 'percent', value: val, discountDisplay: `${val}%` };
         couponFeedback.className = 'coupon-feedback success';
-        couponFeedback.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> <span><strong>${code}</strong> applied (${val}% discount)!</span>`;
+        couponFeedback.innerHTML = `
+          <div class="coupon-success-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="coupon-applied-text">Coupon <strong>${code}</strong> applied (${val}% off)</span>
+          </div>
+          <button type="button" id="coupon-remove-btn" class="coupon-remove-link" title="Remove coupon">Remove</button>
+        `;
         couponFeedback.style.display = 'flex';
+        couponInputWrap.style.display = 'none';
+
+        document.getElementById('coupon-remove-btn')?.addEventListener('click', function() {
+          appliedCoupon = null;
+          couponCodeInput.disabled = false;
+          couponCodeInput.value = '';
+          couponApplyBtn.style.display = 'block';
+          couponFeedback.style.display = 'none';
+          couponInputWrap.style.display = 'none';
+          if (couponToggleBtn) couponToggleBtn.style.display = 'inline-flex';
+          applyPricing(isIndia, currentCountry);
+        });
+
         applyPricing(isIndia, currentCountry);
       } else {
         couponFeedback.className = 'coupon-feedback error';
