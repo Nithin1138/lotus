@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -27,6 +28,9 @@ internal sealed class ToolWindow : Window
     private readonly Dictionary<string, Slider> sliders = [];
     private readonly Dictionary<string, TextBlock> sliderValLabels = [];
     private readonly Dictionary<string, FrameworkElement> fieldContainers = [];
+    private readonly Dictionary<int, int> pdfPageRotations = [];
+    private readonly List<string> pdfThumbnailPaths = [];
+    private TextBlock? pdfSequenceText;
     private BitmapSource? originalBitmapSource;
     private BitmapSource? cachedPreviewBase;
     private bool syncingSlider;
@@ -169,7 +173,7 @@ internal sealed class ToolWindow : Window
         left.Children.Add(framePicker);
         framePicker.SelectionChanged += async (_, _) => { if (loaded && framePicker.SelectedItem is ComboBoxItem item) { imageFrame = (int)item.Tag; regions.Clear(); regionList.Items.Clear(); await Initialize(); if (LivePreview) SchedulePreview(); } };
         // A whole PDF page needs more room to mark small text accurately.
-        previewHost.Height = operation.Id == "redactPDF" ? 520 : 300;
+        previewHost.Height = operation.Id == "organizePDF" ? 200 : (operation.Id == "redactPDF" ? 520 : 300);
         previewHost.Background = UiTheme.PreviewBack;
         if (Rotating)
         {
@@ -339,10 +343,54 @@ internal sealed class ToolWindow : Window
         details.Margin = new Thickness(0, 8, 0, 8);
         if (operation.Ordered || operation.Id == "organizePDF")
         {
+            if (operation.Id == "organizePDF")
+            {
+                var toolBar = new WrapPanel { Margin = new Thickness(0, 4, 0, 8) };
+                var revBtn = Button(L.T("⇄ Reverse"), () => { ReversePdfPages(); return Task.CompletedTask; });
+                var rotBtn = Button(L.T("↻ Rotate All 90°"), () => { RotateAllPdfPages(); return Task.CompletedTask; });
+                var rstBtn = Button(L.T("↺ Reset Original"), () => { ResetPdfPages(); return Task.CompletedTask; });
+                revBtn.Margin = new Thickness(0, 0, 6, 4);
+                rotBtn.Margin = new Thickness(0, 0, 6, 4);
+                rstBtn.Margin = new Thickness(0, 0, 6, 4);
+                toolBar.Children.Add(revBtn);
+                toolBar.Children.Add(rotBtn);
+                toolBar.Children.Add(rstBtn);
+                left.Children.Add(toolBar);
+
+                var sequenceBlock = new TextBlock
+                {
+                    Foreground = UiTheme.Accent,
+                    FontWeight = FontWeights.SemiBold,
+                    FontSize = 11,
+                    Margin = new Thickness(0, 0, 0, 6)
+                };
+                pdfSequenceText = sequenceBlock;
+                left.Children.Add(sequenceBlock);
+
+                var panelFactory = new FrameworkElementFactory(typeof(StackPanel));
+                panelFactory.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+                order.ItemsPanel = new ItemsPanelTemplate(panelFactory);
+                ScrollViewer.SetHorizontalScrollBarVisibility(order, ScrollBarVisibility.Auto);
+                ScrollViewer.SetVerticalScrollBarVisibility(order, ScrollBarVisibility.Disabled);
+                order.Height = 250;
+                order.Background = UiTheme.PreviewBack;
+                order.BorderBrush = UiTheme.Line;
+                order.BorderThickness = new Thickness(1);
+            }
+
             left.Children.Add(order);
             order.AllowDrop = true;
             Point? dragStart = null;
-            order.PreviewMouseLeftButtonDown += (_, e) => { dragStart = e.GetPosition(null); };
+            order.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                dragStart = e.GetPosition(null);
+                if (e.OriginalSource is DependencyObject source)
+                {
+                    var container = ItemsControl.ContainerFromElement(order, source) as ListBoxItem;
+                    if (container != null)
+                        order.SelectedItem = container;
+                }
+            };
             order.PreviewMouseMove += (_, e) =>
             {
                 if (e.LeftButton == MouseButtonState.Pressed && dragStart.HasValue && order.SelectedItem is ListBoxItem item)
@@ -367,10 +415,21 @@ internal sealed class ToolWindow : Window
                         if (order.ItemContainerGenerator.ContainerFromIndex(i) is ListBoxItem container)
                         {
                             Point itemPos = container.TransformToAncestor(order).Transform(new Point(0, 0));
-                            if (p.Y >= itemPos.Y && p.Y <= itemPos.Y + container.ActualHeight)
+                            if (operation.Id == "organizePDF")
                             {
-                                targetIndex = i;
-                                break;
+                                if (p.X >= itemPos.X && p.X <= itemPos.X + container.ActualWidth)
+                                {
+                                    targetIndex = i;
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                if (p.Y >= itemPos.Y && p.Y <= itemPos.Y + container.ActualHeight)
+                                {
+                                    targetIndex = i;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -381,17 +440,21 @@ internal sealed class ToolWindow : Window
                         order.Items.RemoveAt(oldIndex);
                         order.Items.Insert(targetIndex, droppedItem);
                         order.SelectedIndex = targetIndex;
-                        if (loaded && VisualPreview) SchedulePreview();
+                        if (operation.Id == "organizePDF")
+                            UpdatePdfSequenceDisplay();
+                        else if (loaded && VisualPreview)
+                            SchedulePreview();
                     }
                 }
             };
-            var reorder = new WrapPanel();
-            reorder.Children.Add(Button(L.T("Move up"), () => { MoveItem(-1); return Task.CompletedTask; }));
-            reorder.Children.Add(Button(L.T("Move down"), () => { MoveItem(1); return Task.CompletedTask; }));
-            reorder.Children.Add(Button(L.T("Remove"), () => { if (order.SelectedIndex >= 0) order.Items.RemoveAt(order.SelectedIndex); return Task.CompletedTask; }));
-            if (operation.Id == "organizePDF")
-                reorder.Children.Add(Button(L.T("Duplicate page"), () => { if (order.SelectedItem is ListBoxItem item) { int index = order.SelectedIndex; order.Items.Insert(index + 1, new ListBoxItem { Content = item.Content, Tag = item.Tag }); } return Task.CompletedTask; }));
-            left.Children.Add(reorder);
+            if (operation.Id != "organizePDF")
+            {
+                var reorder = new WrapPanel();
+                reorder.Children.Add(Button(L.T("Move up"), () => { MoveItem(-1); return Task.CompletedTask; }));
+                reorder.Children.Add(Button(L.T("Move down"), () => { MoveItem(1); return Task.CompletedTask; }));
+                reorder.Children.Add(Button(L.T("Remove"), () => { if (order.SelectedIndex >= 0) order.Items.RemoveAt(order.SelectedIndex); return Task.CompletedTask; }));
+                left.Children.Add(reorder);
+            }
             order.SelectionChanged += (_, _) => { if (loaded && VisualPreview) SchedulePreview(); };
         }
         var previewCard = UiTheme.Card(new ScrollViewer { Content = left, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }, new Thickness(18));
@@ -968,10 +1031,24 @@ internal sealed class ToolWindow : Window
             }
             if (operation.Id == "organizePDF")
             {
+                pdfThumbnailPaths.Clear();
+                pdfPageRotations.Clear();
+                if (info.TryGetProperty("Thumbnails", out var thumbsElem) && thumbsElem.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var elem in thumbsElem.EnumerateArray())
+                    {
+                        if (elem.GetString() is string s && !string.IsNullOrEmpty(s))
+                            pdfThumbnailPaths.Add(s);
+                    }
+                }
+                order.Items.Clear();
                 for (int i = 1; i <= pages; i++)
-                    order.Items.Add(new ListBoxItem { Content = L.F("Page {0}", i), Tag = i });
-                Set("pageOrder", string.Join(",", Enumerable.Range(1, pages)));
-                details.Text = L.F("{0} pages. Drag & drop pages or use buttons to rearrange.", pages);
+                {
+                    string? thumb = (i - 1 < pdfThumbnailPaths.Count) ? pdfThumbnailPaths[i - 1] : null;
+                    order.Items.Add(CreatePdfPageCard(i, thumb));
+                }
+                UpdatePdfSequenceDisplay();
+                details.Text = L.F("{0} pages. Drag & drop page cards horizontally or use ← → buttons to rearrange.", pages);
             }
             status.Text = imageFrame >= 0 ? L.T("This image has several frames. Only the current frame is exported; the original is kept.") : ReadyText;
         }
@@ -1076,10 +1153,24 @@ internal sealed class ToolWindow : Window
             string initial = string.Join(",", Enumerable.Range(1, pages));
             if (order.Items.Count == 0 && values["pageOrder"] == initial)
                 throw new ArgumentException(L.T("Keep at least one page."));
-            if (values["pageOrder"] == initial)
+            if (values["pageOrder"] == initial || !string.IsNullOrEmpty(generated))
                 values["pageOrder"] = generated;
             if (order.SelectedItem is ListBoxItem selected)
                 values["pageNumber"] = selected.Tag.ToString()!;
+
+            var rotDict = new Dictionary<string, int>();
+            for (int i = 0; i < order.Items.Count; i++)
+            {
+                if (order.Items[i] is ListBoxItem itm && itm.Tag is int origIndex)
+                {
+                    if (pdfPageRotations.TryGetValue(origIndex, out int r) && r != 0)
+                    {
+                        rotDict[(i + 1).ToString()] = r;
+                    }
+                }
+            }
+            if (rotDict.Count > 0)
+                values["rotations"] = JsonSerializer.Serialize(rotDict);
         }
         if (imageFrame >= 0)
             values["imageFrame"] = imageFrame.ToString();
@@ -1993,6 +2084,357 @@ internal sealed class ToolWindow : Window
             table.Filter(search);
         details.Text = L.T("Fields are searchable. Turn off “Remove all” to edit metadata.");
     }
+
+    private ListBoxItem CreatePdfPageCard(int pageNum, string? thumbPath)
+    {
+        var card = new Border
+        {
+            Width = 115,
+            Height = 220,
+            Background = UiTheme.Surface,
+            BorderBrush = UiTheme.Line,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Margin = new Thickness(4),
+            Padding = new Thickness(6)
+        };
+
+        var contentStack = new StackPanel();
+
+        var headerGrid = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+        var pageLabel = new TextBlock
+        {
+            Text = L.F("Page {0}", pageNum),
+            FontWeight = FontWeights.Bold,
+            FontSize = 11.5,
+            Foreground = UiTheme.Accent,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        int currentRot = pdfPageRotations.TryGetValue(pageNum, out var r) ? r : 0;
+        var rotBadge = new TextBlock
+        {
+            Text = currentRot > 0 ? $"+{currentRot}°" : "",
+            FontSize = 9.5,
+            Foreground = UiTheme.Muted,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        headerGrid.Children.Add(pageLabel);
+        headerGrid.Children.Add(rotBadge);
+        contentStack.Children.Add(headerGrid);
+
+        var thumbBox = new Border
+        {
+            Width = 95,
+            Height = 125,
+            Background = Brushes.White,
+            BorderBrush = UiTheme.Line,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            ClipToBounds = true,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 6)
+        };
+
+        var img = new Image
+        {
+            Stretch = Stretch.Uniform,
+            RenderTransformOrigin = new Point(0.5, 0.5)
+        };
+
+        var rotTransform = new RotateTransform(currentRot);
+        img.LayoutTransform = rotTransform;
+
+        if (!string.IsNullOrEmpty(thumbPath) && File.Exists(thumbPath))
+        {
+            try
+            {
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.UriSource = new Uri(thumbPath, UriKind.Absolute);
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.EndInit();
+                bmp.Freeze();
+                img.Source = bmp;
+                thumbBox.Child = img;
+            }
+            catch
+            {
+                thumbBox.Child = CreateFallbackPageIcon();
+            }
+        }
+        else
+        {
+            thumbBox.Child = CreateFallbackPageIcon();
+        }
+
+        contentStack.Children.Add(thumbBox);
+
+        var btnRow = new UniformGrid { Columns = 4, Margin = new Thickness(0, 2, 0, 0) };
+
+        var leftBtn = new Button
+        {
+            Content = "←",
+            Height = 22,
+            Margin = new Thickness(1),
+            Padding = new Thickness(0),
+            FontSize = 10,
+            FontWeight = FontWeights.Bold,
+            ToolTip = L.T("Move page earlier")
+        };
+        leftBtn.Click += (_, _) =>
+        {
+            int idx = GetCardIndexByTag(pageNum);
+            if (idx > 0)
+            {
+                var itm = order.Items[idx];
+                order.Items.RemoveAt(idx);
+                order.Items.Insert(idx - 1, itm);
+                order.SelectedIndex = idx - 1;
+                UpdatePdfSequenceDisplay();
+            }
+        };
+
+        var rotBtn = new Button
+        {
+            Content = "⟳",
+            Height = 22,
+            Margin = new Thickness(1),
+            Padding = new Thickness(0),
+            FontSize = 10,
+            FontWeight = FontWeights.Bold,
+            ToolTip = L.T("Rotate 90° clockwise")
+        };
+        rotBtn.Click += (_, _) =>
+        {
+            int prev = pdfPageRotations.TryGetValue(pageNum, out var pr) ? pr : 0;
+            int nextRot = (prev + 90) % 360;
+            pdfPageRotations[pageNum] = nextRot;
+            rotBadge.Text = nextRot > 0 ? $"+{nextRot}°" : "";
+            rotTransform.Angle = nextRot;
+            UpdatePdfSequenceDisplay();
+        };
+
+        var delBtn = new Button
+        {
+            Content = "✕",
+            Height = 22,
+            Margin = new Thickness(1),
+            Padding = new Thickness(0),
+            FontSize = 10,
+            FontWeight = FontWeights.Bold,
+            Foreground = Brushes.Crimson,
+            ToolTip = L.T("Exclude page from output")
+        };
+        delBtn.Click += (_, _) =>
+        {
+            if (order.Items.Count > 1)
+            {
+                int idx = GetCardIndexByTag(pageNum);
+                if (idx >= 0)
+                {
+                    order.Items.RemoveAt(idx);
+                    UpdatePdfSequenceDisplay();
+                }
+            }
+        };
+
+        var rightBtn = new Button
+        {
+            Content = "→",
+            Height = 22,
+            Margin = new Thickness(1),
+            Padding = new Thickness(0),
+            FontSize = 10,
+            FontWeight = FontWeights.Bold,
+            ToolTip = L.T("Move page later")
+        };
+        rightBtn.Click += (_, _) =>
+        {
+            int idx = GetCardIndexByTag(pageNum);
+            if (idx >= 0 && idx < order.Items.Count - 1)
+            {
+                var itm = order.Items[idx];
+                order.Items.RemoveAt(idx);
+                order.Items.Insert(idx + 1, itm);
+                order.SelectedIndex = idx + 1;
+                UpdatePdfSequenceDisplay();
+            }
+        };
+
+        btnRow.Children.Add(leftBtn);
+        btnRow.Children.Add(rotBtn);
+        btnRow.Children.Add(delBtn);
+        btnRow.Children.Add(rightBtn);
+        contentStack.Children.Add(btnRow);
+
+        card.Child = contentStack;
+
+        return new ListBoxItem
+        {
+            Tag = pageNum,
+            Content = card,
+            Padding = new Thickness(0),
+            Margin = new Thickness(0),
+            BorderThickness = new Thickness(0),
+            Background = Brushes.Transparent
+        };
+    }
+
+    private static FrameworkElement CreateFallbackPageIcon()
+    {
+        return new TextBlock
+        {
+            Text = "📄",
+            FontSize = 32,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+    }
+
+    private int GetCardIndexByTag(int tag)
+    {
+        for (int i = 0; i < order.Items.Count; i++)
+        {
+            if (order.Items[i] is ListBoxItem itm && itm.Tag is int val && val == tag)
+                return i;
+        }
+        return -1;
+    }
+
+    private void UpdatePdfSequenceDisplay()
+    {
+        if (operation.Id != "organizePDF") return;
+        var currentPages = order.Items.Cast<ListBoxItem>().Select(x => x.Tag?.ToString()).Where(x => x != null).ToList();
+        string seq = string.Join(", ", currentPages);
+        if (pdfSequenceText != null)
+        {
+            pdfSequenceText.Text = L.F("Output Sequence: [{0}]  ·  {1} of {2} pages", seq, currentPages.Count, pages);
+        }
+        Set("pageOrder", string.Join(",", currentPages));
+    }
+
+    private void ReversePdfPages()
+    {
+        if (operation.Id != "organizePDF") return;
+        var items = order.Items.Cast<ListBoxItem>().Reverse().ToList();
+        order.Items.Clear();
+        foreach (var itm in items)
+            order.Items.Add(itm);
+        UpdatePdfSequenceDisplay();
+    }
+
+    private void RotateAllPdfPages()
+    {
+        if (operation.Id != "organizePDF") return;
+        for (int i = 0; i < order.Items.Count; i++)
+        {
+            if (order.Items[i] is ListBoxItem itm && itm.Tag is int pageNum)
+            {
+                int prev = pdfPageRotations.TryGetValue(pageNum, out var pr) ? pr : 0;
+                pdfPageRotations[pageNum] = (prev + 90) % 360;
+            }
+        }
+        RebuildPdfCards();
+    }
+
+    private void ResetPdfPages()
+    {
+        if (operation.Id != "organizePDF") return;
+        pdfPageRotations.Clear();
+        order.Items.Clear();
+        for (int i = 1; i <= pages; i++)
+        {
+            string? thumb = (i - 1 < pdfThumbnailPaths.Count) ? pdfThumbnailPaths[i - 1] : null;
+            order.Items.Add(CreatePdfPageCard(i, thumb));
+        }
+        UpdatePdfSequenceDisplay();
+    }
+
+    private void RebuildPdfCards()
+    {
+        var currentTags = order.Items.Cast<ListBoxItem>().Select(x => (int)x.Tag).ToList();
+        order.Items.Clear();
+        foreach (var pNum in currentTags)
+        {
+            string? thumb = (pNum - 1 < pdfThumbnailPaths.Count) ? pdfThumbnailPaths[pNum - 1] : null;
+            order.Items.Add(CreatePdfPageCard(pNum, thumb));
+        }
+        UpdatePdfSequenceDisplay();
+    }
+
+    private void ApplyPdfQuickAction(string action)
+    {
+        if (string.IsNullOrWhiteSpace(action) || action == "Select action..." || action == "none") return;
+        if (action == "Reverse All Pages")
+        {
+            ReversePdfPages();
+        }
+        else if (action.Contains("90"))
+        {
+            RotateAllPdfPages();
+        }
+        else if (action.Contains("180"))
+        {
+            for (int i = 0; i < order.Items.Count; i++)
+            {
+                if (order.Items[i] is ListBoxItem itm && itm.Tag is int p)
+                {
+                    int prev = pdfPageRotations.TryGetValue(p, out var pr) ? pr : 0;
+                    pdfPageRotations[p] = (prev + 180) % 360;
+                }
+            }
+            RebuildPdfCards();
+        }
+        else if (action.Contains("270"))
+        {
+            for (int i = 0; i < order.Items.Count; i++)
+            {
+                if (order.Items[i] is ListBoxItem itm && itm.Tag is int p)
+                {
+                    int prev = pdfPageRotations.TryGetValue(p, out var pr) ? pr : 0;
+                    pdfPageRotations[p] = (prev + 270) % 360;
+                }
+            }
+            RebuildPdfCards();
+        }
+        else if (action == "Extract Even Pages")
+        {
+            var evenItems = order.Items.Cast<ListBoxItem>().Where(x => x.Tag is int p && p % 2 == 0).ToList();
+            if (evenItems.Count > 0)
+            {
+                order.Items.Clear();
+                foreach (var itm in evenItems) order.Items.Add(itm);
+                UpdatePdfSequenceDisplay();
+            }
+        }
+        else if (action == "Extract Odd Pages")
+        {
+            var oddItems = order.Items.Cast<ListBoxItem>().Where(x => x.Tag is int p && p % 2 != 0).ToList();
+            if (oddItems.Count > 0)
+            {
+                order.Items.Clear();
+                foreach (var itm in oddItems) order.Items.Add(itm);
+                UpdatePdfSequenceDisplay();
+            }
+        }
+        else if (action == "Delete First Page")
+        {
+            if (order.Items.Count > 1)
+            {
+                order.Items.RemoveAt(0);
+                UpdatePdfSequenceDisplay();
+            }
+        }
+        else if (action == "Delete Last Page")
+        {
+            if (order.Items.Count > 1)
+            {
+                order.Items.RemoveAt(order.Items.Count - 1);
+                UpdatePdfSequenceDisplay();
+            }
+        }
+    }
+
     private void MoveItem(int direction)
     {
         int index = order.SelectedIndex, next = index + direction;
@@ -2242,6 +2684,8 @@ internal sealed class ToolWindow : Window
             FieldsToCropFrame();
         if (Rotating)
             UpdateRotationPreview();
+        if (operation.Id == "organizePDF" && editedField == "action")
+            ApplyPdfQuickAction(Get("action"));
         if (operation.Id is "redactImage" or "redactVideo" && regionList.SelectedItem is ListBoxItem item && item.Tag is Dictionary<string, object> r)
         {
             try

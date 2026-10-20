@@ -143,8 +143,18 @@ def inspect(path,folder,frame=None):
         return office.inspect(path,folder)
     elif Path(path).suffix.lower()=='.pdf':
         import pypdfium2 as pdfium, documents
-        doc=pdfium.PdfDocument(path); result['Pages']=len(doc); result['Metadata']=documents.metadata(path)
-        preview=folder/'preview.png'; doc[0].render(scale=1.3).to_pil().save(preview); result['Preview']=str(preview); doc.close()
+        doc=pdfium.PdfDocument(path); total_pages=len(doc); result['Pages']=total_pages; result['Metadata']=documents.metadata(path)
+        preview=folder/'preview.png'; doc[0].render(scale=1.3).to_pil().save(preview); result['Preview']=str(preview)
+        thumbs = []
+        for pi in range(min(total_pages, 80)):
+            tpath = folder / f'page_thumb_{pi+1}.png'
+            try:
+                doc[pi].render(scale=0.35).to_pil().save(tpath)
+                thumbs.append(str(tpath))
+            except Exception:
+                break
+        result['Thumbnails'] = thumbs
+        doc.close()
     if result.get('Preview') is None or not Path(str(result.get('Preview'))).exists():
         result['Preview'] = make_card_preview(path, folder, kind)
     return result
