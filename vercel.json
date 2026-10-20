@@ -3,6 +3,7 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/download", "destination": "/api/download" },
+    { "source": "/api/releases/latest", "destination": "/api/releases" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/website/$1" }
   ]

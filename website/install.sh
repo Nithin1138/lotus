@@ -65,7 +65,7 @@ if [ -z "$SOURCE_APP" ] || [ ! -d "$SOURCE_APP" ]; then
 
     # Try downloading latest release asset from dropdial.app CDN or GitHub
     DOWNLOAD_SUCCESS=0
-    for CANDIDATE_URL in "https://dropdial.app/downloads/DropDial-macOS.zip" "https://github.com/Nithin1138/lotus/releases/latest/download/DropDial-macOS.zip"; do
+    for CANDIDATE_URL in "https://dropdial.app/api/releases?download=DropDial-macOS.zip" "https://dropdial.app/downloads/DropDial-macOS.zip"; do
         echo -e "${GRAY}→ Checking prebuilt release asset: ${CANDIDATE_URL}...${RESET}"
         if curl -fsSL -I "$CANDIDATE_URL" >/dev/null 2>&1; then
             echo -e "${CYAN}→ Downloading prebuilt DropDial...${RESET}"

@@ -25,7 +25,7 @@ internal static class UpdateManager
 {
     public const string RepoOwner = "Nithin1138";
     public const string RepoName = "lotus";
-    public const string ReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest";
+    public const string ReleasesApiUrl = "https://dropdial.app/api/releases/latest";
 
     public static string CurrentVersion =>
         typeof(UpdateManager).Assembly.GetName().Version is { } v
@@ -92,7 +92,7 @@ internal static class UpdateManager
             string tagName = tagElem.GetString() ?? "";
             string title = root.TryGetProperty("name", out var nameElem) ? (nameElem.GetString() ?? tagName) : tagName;
             string body = root.TryGetProperty("body", out var bodyElem) ? (bodyElem.GetString() ?? "") : "";
-            string htmlUrl = root.TryGetProperty("html_url", out var urlElem) ? (urlElem.GetString() ?? $"https://github.com/{RepoOwner}/{RepoName}/releases/latest") : $"https://github.com/{RepoOwner}/{RepoName}/releases/latest";
+            string htmlUrl = root.TryGetProperty("html_url", out var urlElem) ? (urlElem.GetString() ?? "https://dropdial.app") : "https://dropdial.app";
 
             string? downloadUrl = null;
             bool isZip = false;
@@ -117,6 +117,11 @@ internal static class UpdateManager
                             downloadUrl = assetUrl;
                             isZip = true;
                         }
+                    }
+                    else if (downloadUrl == null && (assetName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || assetName.EndsWith(".msi", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        downloadUrl = assetUrl;
+                        isZip = false;
                     }
                 }
             }
@@ -184,6 +189,10 @@ internal static class UpdateManager
             if (release.IsZip && !string.IsNullOrEmpty(release.DownloadUrl))
             {
                 _ = DownloadAndApplyUpdateAsync(release);
+            }
+            else if (!string.IsNullOrEmpty(release.DownloadUrl))
+            {
+                OpenBrowser(release.DownloadUrl);
             }
             else
             {

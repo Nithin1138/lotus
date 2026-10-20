@@ -16,7 +16,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
 
     private let repoOwner = "Nithin1138"
     private let repoName = "lotus"
-    private let releasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest"
+    private let releasesApiUrl = "https://dropdial.app/api/releases/latest"
 
     var currentVersion: String {
         return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
@@ -98,7 +98,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
 
             let releaseTitle = json["name"] as? String ?? tagName
             let releaseBody = json["body"] as? String ?? ""
-            let htmlUrl = json["html_url"] as? String ?? "https://github.com/\(self.repoOwner)/\(self.repoName)/releases/latest"
+            let htmlUrl = json["html_url"] as? String ?? "https://dropdial.app"
 
             // Look for matching macOS asset: prefer .zip for direct in-place update, fallback to .dmg
             var downloadUrl: String?

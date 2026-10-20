@@ -229,12 +229,12 @@
   const releaseWin = {
     tag: "v1.0.0",
     size: "50 MB",
-    url: "https://github.com/Nithin1138/lotus/releases/download/0.0.0.0/DropDial-Setup.exe"
+    url: "/api/releases?download=DropDial-Setup.exe"
   };
   const releaseMac = {
     tag: "v1.0.0",
     size: "4.3 MB",
-    url: "/downloads/DropDial.dmg"
+    url: "/api/releases?download=DropDial.dmg"
   };
 
   // Zero-PII Anonymous Telemetry Ping for Admin Dashboard
@@ -257,8 +257,8 @@
     }
   });
 
-  // Dynamically update download links from GitHub releases if available
-  fetch("https://api.github.com/repos/Nithin1138/lotus/releases/latest")
+  // Dynamically update download links from releases proxy if available
+  fetch("/api/releases")
     .then(res => res.ok ? res.json() : null)
     .then(data => {
       if (!data || !data.assets) return;

@@ -38,10 +38,10 @@ if (-not (Test-Path $installDir)) {
 }
 
 # 5. Resolve Release Asset URL
-$downloadUrl = "https://github.com/Nithin1138/lotus/releases/download/0.0.0.0/DropDial-Windows-x64.zip"
+$downloadUrl = "https://dropdial.app/api/releases?download=DropDial-Windows-x64.zip"
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
-    $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/Nithin1138/lotus/releases/latest" -Headers @{ "User-Agent" = "DropDial-Installer" } -TimeoutSec 6 -ErrorAction SilentlyContinue
+    $releaseInfo = Invoke-RestMethod -Uri "https://dropdial.app/api/releases/latest" -Headers @{ "User-Agent" = "DropDial-Installer" } -TimeoutSec 6 -ErrorAction SilentlyContinue
     if ($releaseInfo -and $releaseInfo.assets) {
         $winAsset = $releaseInfo.assets | Where-Object { 
             $_.name -like "*win*.zip" -or $_.name -like "*windows*.zip"
@@ -51,7 +51,7 @@ try {
         }
     }
 } catch {
-    # Fallback to predefined 0.0.0.0 tag asset
+    # Fallback to default endpoint
 }
 
 $tempZip = Join-Path $env:TEMP ("DropDial-Setup-" + [System.Guid]::NewGuid().ToString("N") + ".zip")

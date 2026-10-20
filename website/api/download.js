@@ -7,8 +7,8 @@
  * to the correct installation binary.
  */
 
-const MAC_DOWNLOAD_URL = 'https://dropdial.app/downloads/DropDial.dmg';
-const WIN_DOWNLOAD_URL = 'https://github.com/Nithin1138/lotus/releases/download/0.0.0.0/DropDial-Setup.exe';
+const MAC_DOWNLOAD_URL = 'https://dropdial.app/api/releases?download=DropDial.dmg';
+const WIN_DOWNLOAD_URL = 'https://dropdial.app/api/releases?download=DropDial-Setup.exe';
 
 module.exports = function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
