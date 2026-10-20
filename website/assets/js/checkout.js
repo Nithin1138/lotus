@@ -163,6 +163,12 @@
       if (el.textContent !== val) {
         el.textContent = val;
         el.classList.remove('digit-flip');
+        const card = el.closest('.ocs-digit-card');
+        if (card) {
+          card.classList.remove('flip-active');
+          void card.offsetWidth;
+          card.classList.add('flip-active');
+        }
         void el.offsetWidth; // Force reflow to re-trigger CSS keyframe
         el.classList.add('digit-flip');
       }
