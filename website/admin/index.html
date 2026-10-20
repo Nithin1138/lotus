@@ -211,6 +211,23 @@
              ============================================== -->
         <section id="tab-overview" class="tab-view active">
           
+          <!-- Revenue & Profit Filter Bar -->
+          <div class="revenue-filter-bar">
+            <div class="rf-title-group">
+              <div class="rf-label">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span>Revenue &amp; Profit Filter</span>
+              </div>
+              <span class="rf-active-caption" id="rf-active-caption">All-Time Direct Sales</span>
+            </div>
+            <div class="rf-pill-group" id="revenue-period-filters" role="group" aria-label="Revenue time filter">
+              <button type="button" class="rf-pill-btn active" data-period="all">All Time</button>
+              <button type="button" class="rf-pill-btn" data-period="monthly">Monthly</button>
+              <button type="button" class="rf-pill-btn" data-period="weekly">Weekly</button>
+              <button type="button" class="rf-pill-btn" data-period="today">Today</button>
+            </div>
+          </div>
+
           <!-- KPI Metrics Row -->
           <div class="kpi-grid">
             
@@ -1040,12 +1057,30 @@
                       <span class="field-hint">Displayed next to the pulsating lightning icon on the website</span>
                     </div>
 
-                    <div style="margin-bottom: 16px; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+                    <!-- Instant Reset Countdown From Now Action Card -->
+                    <div class="countdown-reset-action-card">
+                      <div class="cra-info">
+                        <div class="cra-header">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                          <strong>Restart Countdown Freshly From Now</strong>
+                        </div>
+                        <p class="cra-desc">Instantly reset the limited-time sale countdown to start ticking from this exact second for <span id="cra-duration-desc" style="color:var(--text-main); font-weight:700;">24 hours</span>.</p>
+                        <div class="cra-status">
+                          <span class="cra-dot"></span>
+                          <span id="cra-expiry-label">Expires: Calculating...</span>
+                        </div>
+                      </div>
+                      <button type="button" class="cra-btn" id="btn-reset-countdown-now">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <span>Reset Countdown From Now</span>
+                      </button>
+                    </div>
+
+                    <div style="margin-bottom: 16px; padding: 10px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
                       <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-main);">
                         <input type="checkbox" id="pricing-countdown-reset" style="width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer;">
-                        <span>Restart timer countdown from now upon saving</span>
+                        <span>Also restart timer countdown from now when clicking "Update Live Pricing" below</span>
                       </label>
-                      <span class="field-hint" style="margin-left: 26px;">Check this when launching a fresh promotion or extending an expired sale.</span>
                     </div>
 
                     <!-- Live Ticking Simulator Preview -->

@@ -163,8 +163,8 @@ module.exports = async function handler(req, res) {
       if (sql) {
         dbConfigured = true;
         await ensureSchema();
-        dbLicenses = await sql`SELECT id, customer_name as "name", email, license_key as "licenseKey", tier, status, TO_CHAR(created_at, 'YYYY-MM-DD') as "date" FROM licenses ORDER BY created_at DESC LIMIT 100;`;
-        dbTransactions = await sql`SELECT id, order_id as "orderId", payment_id as "paymentId", amount as "amountRaw", currency, customer_name as "customerName", email, status, coupon_code as "coupon", country, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') as "timestamp" FROM transactions ORDER BY created_at DESC LIMIT 100;`;
+        dbLicenses = await sql`SELECT id, customer_name as "name", email, license_key as "licenseKey", tier, status, TO_CHAR(created_at, 'YYYY-MM-DD') as "date", TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as "createdAtIso" FROM licenses ORDER BY created_at DESC LIMIT 500;`;
+        dbTransactions = await sql`SELECT id, order_id as "orderId", payment_id as "paymentId", amount as "amountRaw", currency, customer_name as "customerName", email, status, coupon_code as "coupon", country, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') as "timestamp", TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as "createdAtIso" FROM transactions ORDER BY created_at DESC LIMIT 500;`;
       }
     } catch (dbErr) {
       console.warn('[Admin Stats Neon DB Warning]:', dbErr.message);

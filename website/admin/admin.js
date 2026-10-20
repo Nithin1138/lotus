@@ -56,6 +56,7 @@
     authenticated: false,
     adminToken: null,
     activeTab: 'overview',
+    revenuePeriod: 'all', // 'all', 'monthly', 'weekly', 'today'
     licenses: [],
     transactions: [],
     coupons: [],
@@ -269,13 +270,51 @@
     updateBadges();
   }
 
+  function getTxDate(tx) {
+    if (tx.createdAtIso) {
+      const d = new Date(tx.createdAtIso);
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (tx.timestamp) {
+      const d = new Date(tx.timestamp.replace(' ', 'T'));
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (tx.date) {
+      const d = new Date(tx.date);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+  }
+
+  function isTxInPeriod(tx, period) {
+    if (!period || period === 'all') return true;
+    const d = getTxDate(tx);
+    if (!d) return true;
+
+    const now = Date.now();
+    const txTime = d.getTime();
+    if (period === 'today') {
+      return (now - txTime) <= (24 * 3600 * 1000);
+    }
+    if (period === 'weekly') {
+      return (now - txTime) <= (7 * 24 * 3600 * 1000);
+    }
+    if (period === 'monthly') {
+      return (now - txTime) <= (30 * 24 * 3600 * 1000);
+    }
+    return true;
+  }
+
   function renderKPIs() {
+    const period = state.revenuePeriod || 'all';
     let grossInr = 0;
     let grossUsd = 0;
     let inrOrders = 0;
     let usdOrders = 0;
 
-    state.transactions.forEach(tx => {
+    const filteredTx = state.transactions.filter(tx => isTxInPeriod(tx, period));
+
+    filteredTx.forEach(tx => {
       const isCaptured = (tx.status || '').toLowerCase() === 'captured';
       if (isCaptured) {
         if (tx.currency === 'INR') {
@@ -288,7 +327,7 @@
       }
     });
 
-    // Approximate unified total in INR and USD
+    // Unified total in INR and USD
     const unifiedInr = grossInr + Math.round(grossUsd * 85);
     const unifiedUsd = grossUsd + Math.round(grossInr / 85);
 
@@ -301,12 +340,30 @@
     document.getElementById('kpi-split-text').textContent = `India: ₹${grossInr.toLocaleString('en-IN')} • Global: $${grossUsd}`;
     document.getElementById('kpi-net-profit').textContent = netProfitInr > 0 ? `₹${netProfitInr.toLocaleString('en-IN')}` : '₹0';
 
-    const activeCount = state.licenses.filter(l => (l.status || '').toLowerCase() === 'active').length;
+    const periodLabels = {
+      all: 'All-Time Direct Sales',
+      monthly: 'This Month (Last 30 Days)',
+      weekly: 'This Week (Last 7 Days)',
+      today: 'Today (Last 24 Hours)'
+    };
+
+    const captionEl = document.getElementById('rf-active-caption');
+    if (captionEl) {
+      captionEl.textContent = `${periodLabels[period] || 'All-Time'}: ₹${unifiedInr.toLocaleString('en-IN')} gross (${inrOrders + usdOrders} orders)`;
+    }
+
+    const growthBadge = document.getElementById('kpi-growth-badge');
+    if (growthBadge) {
+      growthBadge.textContent = period === 'all' ? 'Live' : period.toUpperCase();
+    }
+
+    const filteredLicenses = state.licenses.filter(l => isTxInPeriod(l, period));
+    const activeCount = filteredLicenses.filter(l => (l.status || '').toLowerCase() === 'active').length;
     document.getElementById('kpi-total-licenses').textContent = activeCount;
 
     // Traffic & Conversion
     const totalViews = state.stats.pageviews || 0;
-    const completedPurchases = Math.max(state.transactions.length, state.stats.purchases || 0);
+    const completedPurchases = Math.max(filteredTx.length, state.stats.purchases || 0);
     const convRate = totalViews > 0 ? ((completedPurchases / totalViews) * 100).toFixed(1) : '0.0';
 
     document.getElementById('kpi-total-views').textContent = totalViews.toLocaleString();
@@ -696,12 +753,31 @@
     document.getElementById('change-passcode-form')?.addEventListener('submit', handleChangePasscode);
     document.getElementById('update-pricing-form')?.addEventListener('submit', handleUpdatePricing);
 
+    // Revenue & Profit Period Filter
+    document.querySelectorAll('#revenue-period-filters .rf-pill-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('#revenue-period-filters .rf-pill-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        state.revenuePeriod = this.dataset.period || 'all';
+        renderKPIs();
+      });
+    });
+
+    // Reset countdown freshly button
+    document.getElementById('btn-reset-countdown-now')?.addEventListener('click', handleResetCountdownFreshly);
+
     // Live preview listeners for pricing controls
     ['price-inr-input', 'price-usd-input', 'price-strike-inr-input', 'price-strike-usd-input', 'pricing-countdown-val', 'pricing-countdown-label'].forEach(id => {
-      document.getElementById(id)?.addEventListener('input', updatePricingPreviews);
+      document.getElementById(id)?.addEventListener('input', () => {
+        updatePricingPreviews();
+        updateCountdownExpiryDisplay();
+      });
     });
     ['pricing-strike-enabled', 'pricing-countdown-enabled', 'pricing-countdown-unit'].forEach(id => {
-      document.getElementById(id)?.addEventListener('change', updatePricingPreviews);
+      document.getElementById(id)?.addEventListener('change', () => {
+        updatePricingPreviews();
+        updateCountdownExpiryDisplay();
+      });
     });
 
     // Toggle card header click handlers
@@ -1139,6 +1215,114 @@
   }
 
   let pricingFormLoaded = false;
+  let currentCountdownExpiresAt = null;
+
+  function updateCountdownExpiryDisplay() {
+    const val = Number(document.getElementById('pricing-countdown-val')?.value || 24);
+    const unit = document.getElementById('pricing-countdown-unit')?.value || 'hours';
+    const durationDesc = document.getElementById('cra-duration-desc');
+    if (durationDesc) {
+      durationDesc.textContent = `${val} ${unit}`;
+    }
+
+    const expiryLabel = document.getElementById('cra-expiry-label');
+    if (!expiryLabel) return;
+
+    if (!currentCountdownExpiresAt) {
+      expiryLabel.textContent = `Expires in: ${val} ${unit} from fresh start`;
+      return;
+    }
+
+    const expiryTime = new Date(currentCountdownExpiresAt).getTime();
+    const now = Date.now();
+    const diff = expiryTime - now;
+
+    if (diff <= 0) {
+      expiryLabel.textContent = `Expired (${new Date(currentCountdownExpiresAt).toLocaleDateString()} ${new Date(currentCountdownExpiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}) • Click Reset to restart from now`;
+    } else {
+      const hours = Math.floor(diff / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const days = Math.floor(hours / 24);
+      const remHours = hours % 24;
+      const timeStr = days > 0 ? `${days}d ${remHours}h ${mins}m left` : `${hours}h ${mins}m left`;
+      expiryLabel.textContent = `Active target: ${new Date(currentCountdownExpiresAt).toLocaleDateString()} ${new Date(currentCountdownExpiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${timeStr})`;
+    }
+  }
+
+  async function handleResetCountdownFreshly() {
+    const countdownValue = Number(document.getElementById('pricing-countdown-val')?.value || 24);
+    const countdownUnit = document.getElementById('pricing-countdown-unit')?.value || 'hours';
+    const countdownLabel = (document.getElementById('pricing-countdown-label')?.value || 'Special Launch Discount Ends In:').trim();
+
+    const inrAmount = Number(document.getElementById('price-inr-input')?.value || 999);
+    const usdAmount = Number(document.getElementById('price-usd-input')?.value || 19);
+    const strikeEnabled = document.getElementById('pricing-strike-enabled')?.checked ?? true;
+    const strikeInr = Number(document.getElementById('price-strike-inr-input')?.value || 1499);
+    const strikeUsd = Number(document.getElementById('price-strike-usd-input')?.value || 29);
+
+    const passcode = document.getElementById('pricing-admin-passcode')?.value.trim() ||
+                     state.adminToken ||
+                     sessionStorage.getItem('dd_admin_token') ||
+                     localStorage.getItem('dd_admin_token');
+
+    if (!passcode) {
+      document.getElementById('pricing-admin-passcode')?.focus();
+      showToast('Enter your admin passcode below to authorize countdown reset', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btn-reset-countdown-now');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner-sm"></span> Resetting...`;
+    }
+
+    try {
+      const res = await fetch('/api/pricing', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${encodeURIComponent(passcode)}`
+        },
+        body: JSON.stringify({
+          inrAmount,
+          usdAmount,
+          strikeEnabled,
+          strikeInr,
+          strikeUsd,
+          countdownEnabled: true,
+          countdownValue,
+          countdownUnit,
+          countdownLabel,
+          countdownReset: true
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to reset countdown');
+      }
+
+      pricingFormLoaded = true;
+      if (data.pricing?.countdown) {
+        currentCountdownExpiresAt = data.pricing.countdown.expiresAt;
+      }
+      const cdInput = document.getElementById('pricing-countdown-enabled');
+      if (cdInput) cdInput.checked = true;
+
+      showToast(`Countdown timer restarted! Counting fresh from now for ${countdownValue} ${countdownUnit}.`, 'success');
+      updatePricingPreviews();
+      updateCountdownExpiryDisplay();
+    } catch (err) {
+      showToast(`Reset error: ${err.message}`, 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+  }
 
   async function fetchLivePricing(force = false) {
     if (pricingFormLoaded && !force) return;
@@ -1185,7 +1369,10 @@
             countdownLabelInput.value = data.pricing.countdown.label;
           }
 
+          currentCountdownExpiresAt = data.pricing.countdown?.expiresAt || null;
+
           updatePricingPreviews();
+          updateCountdownExpiryDisplay();
         }
       }
     } catch (e) {}
@@ -1270,9 +1457,13 @@
         document.getElementById('pricing-countdown-reset').checked = false;
       }
       pricingFormLoaded = true;
+      if (data.pricing?.countdown) {
+        currentCountdownExpiresAt = data.pricing.countdown.expiresAt;
+      }
       const cdInput = document.getElementById('pricing-countdown-enabled');
       if (cdInput) cdInput.checked = countdownEnabled;
       updatePricingPreviews();
+      updateCountdownExpiryDisplay();
     } catch (err) {
       msg.style.color = '#ef4444';
       msg.textContent = `Update failed: ${err.message}`;
