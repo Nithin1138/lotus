@@ -3,55 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DropDial Setup Guide · macOS &amp; Windows Step-by-Step Installation</title>
-<meta name="description" content="Complete step-by-step setup guide for DropDial on macOS and Windows. Learn how to install, approve Gatekeeper/SmartScreen, grant permissions, use menu bar shortcuts, and activate your lifetime license.">
+<title>Setup Guide · DropDial for macOS &amp; Windows</title>
+<meta name="description" content="Simple, step-by-step setup guide for DropDial. Clear instructions for downloading, first-time launch approval, permissions, menu bar shortcuts, and license activation.">
 <link rel="canonical" href="https://dropdial.app/guide">
 <meta name="robots" content="index, follow">
 
-<!-- Open Graph Protocol -->
+<!-- Open Graph -->
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://dropdial.app/guide">
 <meta property="og:site_name" content="DropDial">
-<meta property="og:title" content="DropDial Setup Guide · macOS &amp; Windows Installation &amp; Shortcuts">
-<meta property="og:description" content="Clear step-by-step instructions for installing and using DropDial. From first download to menu bar shortcuts, system permissions, and license activation.">
+<meta property="og:title" content="DropDial Setup Guide · macOS &amp; Windows">
+<meta property="og:description" content="Simple step-by-step instructions for installing and using DropDial on Mac and Windows.">
 <meta property="og:image" content="https://dropdial.app/assets/img/og-image.png">
 
-<!-- Twitter Card -->
+<!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="DropDial Setup Guide · macOS &amp; Windows">
-<meta name="twitter:description" content="Step-by-step setup guide for DropDial. Clear, side-by-side flows for Mac and Windows.">
+<meta name="twitter:title" content="DropDial Setup Guide">
+<meta name="twitter:description" content="Simple step-by-step instructions for installing and using DropDial.">
 <meta name="twitter:image" content="https://dropdial.app/assets/img/og-image.png">
 
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="stylesheet" href="/assets/css/site.css?v=16">
-<link rel="stylesheet" href="/assets/css/guide.css?v=1">
-
-<!-- Structured Data Breadcrumbs -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": "https://dropdial.app/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Setup Guide",
-      "item": "https://dropdial.app/guide"
-    }
-  ]
-}
-</script>
+<link rel="stylesheet" href="/assets/css/guide.css?v=2">
 </head>
 <body data-flow="both">
 <a class="skip" href="#main">Skip to content</a>
 
-<!-- Main Header Navigation -->
+<!-- Header Navigation -->
 <header class="nav" id="top">
   <div class="wrap nav-row">
     <a class="brand" href="/" aria-label="DropDial home">
@@ -85,825 +63,415 @@
         </svg>
       </button>
       <a class="btn btn-small" href="/#buy" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;">Buy Pro</a>
-      <a class="btn btn-small btn-ghost" href="/#download">Free Download</a>
+      <a class="btn btn-small btn-ghost" href="/#download">Download</a>
     </div>
   </div>
 </header>
 
-<main id="main">
-  <!-- Hero Section -->
-  <section class="guide-hero wrap">
-    <a class="guide-breadcrumb" href="/">
-      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>
-      <span>Back to DropDial Overview</span>
-    </a>
-    <p class="eyebrow">Official Onboarding &amp; Setup Guide</p>
-    <h1>Get Started with <em>DropDial</em></h1>
-    <p class="lead">
-      Step-by-step instructions for macOS and Windows. Clear guidance on what to do, where to do it, and how to do it—from download to menu bar shortcuts, permissions, and license activation.
+<main class="guide-page" id="main">
+  <!-- Clean Header -->
+  <header class="guide-header">
+    <a class="guide-back" href="/">← DropDial Home</a>
+    <h1 class="guide-title">Setup &amp; Quick Start</h1>
+    <p class="guide-subtitle">
+      Simple step-by-step instructions from first download to daily shortcuts, permissions, and license activation.
     </p>
 
-    <!-- Platform View Switcher -->
-    <div class="guide-filter-wrap" role="tablist" aria-label="Platform selection">
-      <button type="button" class="guide-filter-btn active" id="btn-flow-both" onclick="setGuideFlow('both')">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="3" y="3" width="8" height="18" rx="2" opacity="0.8"/><rect x="13" y="3" width="8" height="18" rx="2"/></svg>
-        <span>Side-by-Side (Both)</span>
-      </button>
-      <button type="button" class="guide-filter-btn" id="btn-flow-mac" onclick="setGuideFlow('mac')">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>
-        <span>macOS Only</span>
-      </button>
-      <button type="button" class="guide-filter-btn" id="btn-flow-win" onclick="setGuideFlow('win')">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>
-        <span>Windows Only</span>
-      </button>
+    <!-- Platform Selector Tabs -->
+    <div class="guide-tabs" role="tablist">
+      <button type="button" class="guide-tab-btn active" id="tab-both" onclick="setFlow('both')">Side-by-Side</button>
+      <button type="button" class="guide-tab-btn" id="tab-mac" onclick="setFlow('mac')">macOS</button>
+      <button type="button" class="guide-tab-btn" id="tab-win" onclick="setFlow('win')">Windows</button>
     </div>
+  </header>
+
+  <!-- Step-by-Step Flow List -->
+  <div class="guide-steps">
+
+    <!-- STEP 01: DOWNLOAD -->
+    <section class="step-block">
+      <div class="step-title-row">
+        <span class="step-num">01</span>
+        <h2 class="step-heading">Download Package</h2>
+      </div>
+
+      <div class="step-grid">
+        <!-- Mac -->
+        <article class="step-card mac">
+          <div class="step-card-head">
+            <span class="platform-pill"> macOS (Apple Silicon &amp; Intel)</span>
+            <span class="badge-subtle highlight">Universal DMG</span>
+          </div>
+
+          <ol>
+            <li>
+              <strong>Download Universal DMG</strong>
+              <p>Save <code>DropDial.dmg</code> to your Downloads folder.</p>
+            </li>
+            <li>
+              <strong>Or install via Terminal (Optional)</strong>
+              <div class="cmd-box">
+                <code id="cmd-mac">curl -fsSL https://dropdial.app/install.sh | bash</code>
+                <button type="button" class="copy-mini-btn" onclick="copySnippet('cmd-mac', this)">Copy</button>
+              </div>
+            </li>
+          </ol>
+
+          <div class="step-card-foot">
+            <span class="hint">v1.0.1 · 4.9 MB</span>
+            <a class="btn-mini" href="/downloads/DropDial.dmg" download="DropDial.dmg">Download DMG</a>
+          </div>
+        </article>
+
+        <!-- Windows -->
+        <article class="step-card win">
+          <div class="step-card-head">
+            <span class="platform-pill">⊞ Windows 10 &amp; 11 (64-bit)</span>
+            <span class="badge-subtle">Standalone .exe</span>
+          </div>
+
+          <ol>
+            <li>
+              <strong>Download Setup Executable</strong>
+              <p>Save <code>DropDial-Setup.exe</code> to your Downloads folder.</p>
+            </li>
+            <li>
+              <strong>Or install via PowerShell (Optional)</strong>
+              <div class="cmd-box">
+                <code id="cmd-win">irm https://dropdial.app/install.ps1 | iex</code>
+                <button type="button" class="copy-mini-btn" onclick="copySnippet('cmd-win', this)">Copy</button>
+              </div>
+            </li>
+          </ol>
+
+          <div class="step-card-foot">
+            <span class="hint">v1.0.1 · 208 KB</span>
+            <a class="btn-mini" href="/downloads/DropDial-Setup.exe" download="DropDial-Setup.exe">Download .exe</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- STEP 02: FIRST LAUNCH APPROVAL -->
+    <section class="step-block">
+      <div class="step-title-row">
+        <span class="step-num">02</span>
+        <h2 class="step-heading">First-Time Launch Approval</h2>
+      </div>
+
+      <div class="step-grid">
+        <!-- Mac -->
+        <article class="step-card mac">
+          <div class="step-card-head">
+            <span class="platform-pill"> macOS Gatekeeper Approval</span>
+            <span class="badge-subtle highlight">1-Click or Settings</span>
+          </div>
+
+          <ol>
+            <li>
+              <strong>Open the DMG</strong>
+              <p>Double-click <code>DropDial.dmg</code> to open the installer window.</p>
+            </li>
+            <li>
+              <strong>Option A (Fastest · 1-Click)</strong>
+              <p>Double-click <strong>"Open DropDial (First Time).command"</strong> in the DMG window. It copies the app to <code>/Applications</code>, clears Gatekeeper, and opens DropDial.</p>
+            </li>
+            <li>
+              <strong>Option B (Manual)</strong>
+              <p>Drag <code>DropDial.app</code> to Applications. On first open, click <strong>Done</strong> on the alert, open <strong>System Settings → Privacy &amp; Security</strong>, scroll down, and click <strong>“Open Anyway”</strong>.</p>
+            </li>
+          </ol>
+
+          <div class="step-card-foot">
+            <span class="hint">✓ One-time setup only. Future launches open instantly.</span>
+          </div>
+        </article>
+
+        <!-- Windows -->
+        <article class="step-card win">
+          <div class="step-card-head">
+            <span class="platform-pill">⊞ Windows SmartScreen</span>
+            <span class="badge-subtle">No Admin Needed</span>
+          </div>
+
+          <ol>
+            <li>
+              <strong>Run Setup Executable</strong>
+              <p>Double-click <code>DropDial-Setup.exe</code>.</p>
+            </li>
+            <li>
+              <strong>Click "More info"</strong>
+              <p>If the blue Defender SmartScreen prompt appears, click <strong>"More info"</strong>.</p>
+            </li>
+            <li>
+              <strong>Click "Run anyway"</strong>
+              <p>Click <strong>"Run anyway"</strong> at the bottom. DropDial extracts and creates desktop &amp; Start menu shortcuts automatically.</p>
+            </li>
+          </ol>
+
+          <div class="step-card-foot">
+            <span class="hint">✓ Installs cleanly inside user profile without registry clutter.</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- STEP 03: PERMISSIONS -->
+    <section class="step-block">
+      <div class="step-title-row">
+        <span class="step-num">03</span>
+        <h2 class="step-heading">Permissions &amp; Background Setup</h2>
+      </div>
+
+      <div class="step-grid">
+        <!-- Mac -->
+        <article class="step-card mac">
+          <div class="step-card-head">
+            <span class="platform-pill"> macOS Accessibility</span>
+            <span class="badge-subtle highlight">Required for Drag Detection</span>
+          </div>
+
+          <ol>
+            <li>
+              <strong>Open System Settings</strong>
+              <p>When prompted on first launch, click <strong>Open System Settings</strong> (or go to <strong>System Settings → Privacy &amp; Security → Accessibility</strong>).</p>
+            </li>
+            <li>
+              <strong>Enable DropDial</strong>
+              <p>Toggle the switch next to <strong>DropDial</strong> to <strong>ON</strong> (blue).</p>
+            </li>
+            <li>
+              <strong>Why this is needed</strong>
+              <p>macOS requires Accessibility permission so DropDial can detect file drag gestures and project radial dials at your cursor. DropDial never collects or transmits data.</p>
+            </li>
+          </ol>
+
+          <div class="step-card-foot">
+            <span class="hint">✓ 100% offline &amp; private. Zero telemetry.</span>
+          </div>
+        </article>
+
+        <!-- Windows -->
+        <article class="step-card win">
+          <div class="step-card-head">
+            <span class="platform-pill">⊞ Windows Background Hooks</span>
+            <span class="badge-subtle">Zero Extra Config</span>
+          </div>
+
+          <ol>
+            <li>
+              <strong>Native Windows Support</strong>
+              <p>Windows manages global mouse drag detection natively. No special accessibility permissions or admin rights are required.</p>
+            </li>
+            <li>
+              <strong>Optional: Launch at Startup</strong>
+              <p>Right-click the DropDial tray icon → <strong>Settings</strong> → check <strong>"Run at Windows Startup"</strong> so DropDial is always ready.</p>
+            </li>
+          </ol>
+
+          <div class="step-card-foot">
+            <span class="hint">✓ Ready to use immediately upon launch.</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- STEP 04: SHORTCUTS & USAGE -->
+    <section class="step-block">
+      <div class="step-title-row">
+        <span class="step-num">04</span>
+        <h2 class="step-heading">Shortcuts &amp; Everyday Use</h2>
+      </div>
+
+      <div class="step-grid">
+        <!-- Mac -->
+        <article class="step-card mac">
+          <div class="step-card-head">
+            <span class="platform-pill"> macOS Gestures</span>
+            <span class="badge-subtle">Menu Bar Status Item</span>
+          </div>
+
+          <ol>
+            <li>
+              <strong>Format Conversion Dial</strong>
+              <p>Drag any file in Finder and hold <kbd>Shift</kbd>. The circular format dial appears around your mouse. Hover over a target format (e.g. <code>WEBP</code>, <code>MP4</code>, <code>PDF</code>) and drop!</p>
+            </li>
+            <li>
+              <strong>Universal Actions Dial</strong>
+              <p>Drag any file and hold <kbd>Ctrl</kbd> (<kbd>⌃</kbd>) to trigger actions: <strong>AirDrop</strong>, <strong>Copy Path</strong>, <strong>Terminal</strong>, <strong>Float Shelf</strong>, or <strong>Strip EXIF</strong>.</p>
+            </li>
+            <li>
+              <strong>Menu Bar Quick Panel</strong>
+              <p>Click the circular DropDial icon in the top-right menu bar for standalone Media Tools (Video Trimmer, Audio Bleep, PDF OCR, Image Redact) and Settings.</p>
+            </li>
+          </ol>
+
+          <div class="step-card-foot">
+            <span class="hint">Dismiss dial anytime with <kbd>Esc</kbd> or by releasing outside petals.</span>
+          </div>
+        </article>
+
+        <!-- Windows -->
+        <article class="step-card win">
+          <div class="step-card-head">
+            <span class="platform-pill">⊞ Windows Gestures</span>
+            <span class="badge-subtle">Taskbar System Tray</span>
+          </div>
+
+          <ol>
+            <li>
+              <strong>Format Conversion Dial</strong>
+              <p>Drag any file in File Explorer or your desktop and hold <kbd>Shift</kbd>. The radial wheel opens at your cursor. Hover over your desired target format and release.</p>
+            </li>
+            <li>
+              <strong>Universal Actions Dial</strong>
+              <p>Drag any file and hold <kbd>Ctrl</kbd> for quick Windows actions: <strong>Copy Path</strong>, <strong>Open in PowerShell</strong>, <strong>Strip Metadata</strong>, or <strong>Float Scratchpad</strong>.</p>
+            </li>
+            <li>
+              <strong>Tray Quick Menu</strong>
+              <p>Right-click the DropDial icon in the bottom-right system tray (click <code>^</code> if hidden) for Settings, Media Tools, and recent conversion history.</p>
+            </li>
+          </ol>
+
+          <div class="step-card-foot">
+            <span class="hint">Dismiss dial anytime with <kbd>Esc</kbd> or by releasing outside petals.</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- STEP 05: LICENSE ACTIVATION -->
+    <section class="step-block">
+      <div class="step-title-row">
+        <span class="step-num">05</span>
+        <h2 class="step-heading">License Activation</h2>
+      </div>
+
+      <div class="step-grid">
+        <!-- Mac -->
+        <article class="step-card mac">
+          <div class="step-card-head">
+            <span class="platform-pill"> macOS License</span>
+            <span class="badge-subtle highlight">100% Offline Key</span>
+          </div>
+
+          <ol>
+            <li>
+              <strong>Open Preferences</strong>
+              <p>Click the Menu Bar icon → <strong>Preferences...</strong> (or press <kbd>⌘</kbd> + <kbd>,</kbd>).</p>
+            </li>
+            <li>
+              <strong>Enter License Key</strong>
+              <p>In the <strong>License</strong> tab, paste your key from your purchase confirmation email (e.g. <code>DDPRO-XXXX-XXXX-XXXX</code>).</p>
+            </li>
+            <li>
+              <strong>Activate</strong>
+              <p>Click <strong>Activate</strong>. The key is cryptographically verified locally. Valid for up to 3 personal devices with lifetime updates.</p>
+            </li>
+          </ol>
+
+          <div class="step-card-foot">
+            <span class="hint">✓ Zero internet connection required for license validation.</span>
+          </div>
+        </article>
+
+        <!-- Windows -->
+        <article class="step-card win">
+          <div class="step-card-head">
+            <span class="platform-pill">⊞ Windows License</span>
+            <span class="badge-subtle highlight">100% Offline Key</span>
+          </div>
+
+          <ol>
+            <li>
+              <strong>Open Settings</strong>
+              <p>Right-click the Taskbar System Tray icon → <strong>Settings</strong>.</p>
+            </li>
+            <li>
+              <strong>Enter License Key</strong>
+              <p>Navigate to the <strong>License</strong> tab and paste your key from your purchase confirmation email.</p>
+            </li>
+            <li>
+              <strong>Activate</strong>
+              <p>Click <strong>Activate</strong>. All 7-day trial limits and batch restrictions are removed permanently.</p>
+            </li>
+          </ol>
+
+          <div class="step-card-foot">
+            <span class="hint">✓ Easily transferable to a new PC anytime.</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Quick Matrix Reference Table -->
+  <section class="guide-summary-section">
+    <h3 class="guide-summary-title">Shortcuts Quick Reference</h3>
+    <p class="guide-summary-subtitle">Side-by-side shortcut comparison between macOS and Windows.</p>
+
+    <table class="clean-table">
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th> macOS</th>
+          <th>⊞ Windows</th>
+          <th>Behavior</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Convert Formats</strong></td>
+          <td>Drag file + <kbd>Shift</kbd></td>
+          <td>Drag file + <kbd>Shift</kbd></td>
+          <td>Opens circular format dial; release on petal to convert.</td>
+        </tr>
+        <tr>
+          <td><strong>Actions Dial</strong></td>
+          <td>Drag file + <kbd>Ctrl</kbd> (<kbd>⌃</kbd>)</td>
+          <td>Drag file + <kbd>Ctrl</kbd></td>
+          <td>Opens universal actions (AirDrop, Copy Path, Terminal, EXIF).</td>
+        </tr>
+        <tr>
+          <td><strong>Open Settings</strong></td>
+          <td><kbd>⌘</kbd> + <kbd>,</kbd> (or Menu Bar)</td>
+          <td>Right-click Tray icon → Settings</td>
+          <td>Configure output directories, hotkeys, theme, and license.</td>
+        </tr>
+        <tr>
+          <td><strong>Cancel Dial</strong></td>
+          <td><kbd>Esc</kbd></td>
+          <td><kbd>Esc</kbd></td>
+          <td>Closes the radial wheel without converting.</td>
+        </tr>
+      </tbody>
+    </table>
   </section>
 
-  <!-- Step-by-Step Side-by-Side Flow Container -->
-  <section class="wrap guide-steps-container">
+  <!-- Clean FAQ -->
+  <section class="guide-faq-section">
+    <h3>Quick Troubleshooting</h3>
 
-    <!-- STEP 1: DOWNLOAD -->
-    <div class="guide-step-row" id="step-1">
-      <div class="guide-step-lead">
-        <div class="step-circle">1</div>
-        <div class="step-meta">
-          <h2>Download &amp; Package Selection</h2>
-          <p>Get the official release package for your operating system.</p>
-        </div>
+    <div class="faq-simple-grid">
+      <div class="faq-simple-card">
+        <h4>Wheel doesn't appear when dragging?</h4>
+        <p>On macOS, verify <strong>System Settings → Privacy &amp; Security → Accessibility</strong> has DropDial enabled. On Windows, ensure DropDial is active in your system tray.</p>
       </div>
 
-      <div class="guide-columns">
-        <!-- macOS Column -->
-        <article class="guide-card mac">
-          <div class="guide-card-header">
-            <span class="guide-platform-tag">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>
-              <span>macOS (Apple Silicon &amp; Intel)</span>
-            </span>
-            <span class="guide-badge-pill recommended">Universal DMG</span>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><circle cx="8" cy="8" r="7"/></svg>
-              What to do
-            </span>
-            <div class="guide-content">
-              Download the official <strong>Universal DMG</strong> installer or use the one-line Terminal command.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-              Where to do it
-            </span>
-            <div class="guide-content">
-              Saved automatically into your Mac's <code>~/Downloads</code> folder.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><polygon points="5 3 13 8 5 13 5 3"/></svg>
-              How to do it
-            </span>
-            <ul class="guide-step-list">
-              <li class="guide-step-item">
-                <span class="guide-sub-num">A</span>
-                <div class="guide-sub-text">
-                  Click the <strong>Download for macOS</strong> button below to save <code>DropDial.dmg</code>.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">B</span>
-                <div class="guide-sub-text">
-                  <strong>Alternative (Developer Terminal)</strong>: Run this command in Terminal to download and install automatically:
-                  <div class="guide-code-box">
-                    <code id="cmd-mac-dl">curl -fsSL https://dropdial.app/install.sh | bash</code>
-                    <button type="button" class="guide-copy-btn" onclick="copySnippet('cmd-mac-dl', this)">Copy</button>
-                  </div>
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div class="guide-action-row">
-            <a class="guide-btn primary" href="/downloads/DropDial.dmg" download="DropDial.dmg">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-              <span>Download DropDial.dmg (4.9 MB)</span>
-            </a>
-          </div>
-        </article>
-
-        <!-- Windows Column -->
-        <article class="guide-card win">
-          <div class="guide-card-header">
-            <span class="guide-platform-tag">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>
-              <span>Windows 10 &amp; 11 (64-bit)</span>
-            </span>
-            <span class="guide-badge-pill">Standalone .exe</span>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><circle cx="8" cy="8" r="7"/></svg>
-              What to do
-            </span>
-            <div class="guide-content">
-              Download the single executable <strong>DropDial-Setup.exe</strong> or run the PowerShell one-liner.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-              Where to do it
-            </span>
-            <div class="guide-content">
-              Saved into your Windows <code>Downloads</code> directory.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><polygon points="5 3 13 8 5 13 5 3"/></svg>
-              How to do it
-            </span>
-            <ul class="guide-step-list">
-              <li class="guide-step-item">
-                <span class="guide-sub-num">A</span>
-                <div class="guide-sub-text">
-                  Click the <strong>Download for Windows</strong> button below to save <code>DropDial-Setup.exe</code>.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">B</span>
-                <div class="guide-sub-text">
-                  <strong>Alternative (PowerShell)</strong>: Run this in PowerShell to install and create shortcuts:
-                  <div class="guide-code-box">
-                    <code id="cmd-win-dl">irm https://dropdial.app/install.ps1 | iex</code>
-                    <button type="button" class="guide-copy-btn" onclick="copySnippet('cmd-win-dl', this)">Copy</button>
-                  </div>
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div class="guide-action-row">
-            <a class="guide-btn primary" href="/downloads/DropDial-Setup.exe" download="DropDial-Setup.exe">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-              <span>Download DropDial-Setup.exe (208 KB)</span>
-            </a>
-          </div>
-        </article>
-      </div>
-    </div>
-
-
-    <!-- STEP 2: INSTALLATION & FIRST LAUNCH -->
-    <div class="guide-step-row" id="step-2">
-      <div class="guide-step-lead">
-        <div class="step-circle">2</div>
-        <div class="step-meta">
-          <h2>Installation &amp; One-Time Launch Approval</h2>
-          <p>Bypass Gatekeeper or SmartScreen on initial launch (Indie Software Notice).</p>
-        </div>
+      <div class="faq-simple-card">
+        <h4>Where are converted files saved?</h4>
+        <p>By default, converted files are placed in the exact same folder alongside the original file. You can change this in DropDial Settings to a dedicated folder.</p>
       </div>
 
-      <div class="guide-columns">
-        <!-- macOS Column -->
-        <article class="guide-card mac">
-          <div class="guide-card-header">
-            <span class="guide-platform-tag">macOS Installation</span>
-            <span class="guide-badge-pill recommended">Recommended Flow</span>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><circle cx="8" cy="8" r="7"/></svg>
-              What to do
-            </span>
-            <div class="guide-content">
-              Open the DMG and approve the one-time macOS Gatekeeper developer security check.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-              Where to do it
-            </span>
-            <div class="guide-content">
-              Directly inside the opened <strong>DropDial DMG window</strong> or in <strong>System Settings → Privacy &amp; Security</strong>.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><polygon points="5 3 13 8 5 13 5 3"/></svg>
-              How to do it
-            </span>
-            <ul class="guide-step-list">
-              <li class="guide-step-item">
-                <span class="guide-sub-num">1</span>
-                <div class="guide-sub-text">
-                  Double-click <code>DropDial.dmg</code> to open the installer window.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">2</span>
-                <div class="guide-sub-text">
-                  <strong>Method 1 (Fastest · 1-Click)</strong>: Double-click <strong>"Open DropDial (First Time).command"</strong> tagged in orange in the DMG window. It copies the app to <code>/Applications</code>, removes quarantine, and launches it automatically.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">3</span>
-                <div class="guide-sub-text">
-                  <strong>Method 2 (Manual)</strong>: Drag <code>DropDial.app</code> to the <code>Applications</code> folder shortcut. When you first open it, click <strong>Done</strong> on the Gatekeeper alert, open <strong>System Settings → Privacy &amp; Security</strong>, scroll down to <em>Security</em>, and click <strong>“Open Anyway”</strong>.
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div class="guide-callout">
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm3.78-9.72a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l4-4z"/></svg>
-            <div>
-              <strong>One-time only:</strong> macOS only asks on the very first launch. Every future launch starts instantly from your Applications folder or Spotlight search.
-            </div>
-          </div>
-        </article>
-
-        <!-- Windows Column -->
-        <article class="guide-card win">
-          <div class="guide-card-header">
-            <span class="guide-platform-tag">Windows Installation</span>
-            <span class="guide-badge-pill">SmartScreen Pass</span>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><circle cx="8" cy="8" r="7"/></svg>
-              What to do
-            </span>
-            <div class="guide-content">
-              Run the executable and bypass Microsoft Defender SmartScreen (standard for new direct indie software).
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-              Where to do it
-            </span>
-            <div class="guide-content">
-              On the blue <em>"Windows protected your PC"</em> banner dialog.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><polygon points="5 3 13 8 5 13 5 3"/></svg>
-              How to do it
-            </span>
-            <ul class="guide-step-list">
-              <li class="guide-step-item">
-                <span class="guide-sub-num">1</span>
-                <div class="guide-sub-text">
-                  Double-click <code>DropDial-Setup.exe</code> in your Downloads folder.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">2</span>
-                <div class="guide-sub-text">
-                  If SmartScreen appears, click <strong>"More info"</strong> (under the warning text).
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">3</span>
-                <div class="guide-sub-text">
-                  Click the <strong>"Run anyway"</strong> button that appears at the bottom-right.
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div class="guide-callout">
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm3.78-9.72a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l4-4z"/></svg>
-            <div>
-              <strong>No Admin Required:</strong> DropDial installs entirely within your user profile (<code>%LocalAppData%\DropDial</code>). No registry tampering or administrator privileges needed.
-            </div>
-          </div>
-        </article>
-      </div>
-    </div>
-
-
-    <!-- STEP 3: PERMISSIONS & SYSTEM ACCESS -->
-    <div class="guide-step-row" id="step-3">
-      <div class="guide-step-lead">
-        <div class="step-circle">3</div>
-        <div class="step-meta">
-          <h2>Permissions &amp; Background Detection</h2>
-          <p>Why permissions are needed and where to configure them.</p>
-        </div>
+      <div class="faq-simple-card">
+        <h4>Does DropDial upload files to the cloud?</h4>
+        <p>Never. 100% of conversions, video trimming, and OCR text recognition run locally on your device with bundled native engines.</p>
       </div>
 
-      <div class="guide-columns">
-        <!-- macOS Column -->
-        <article class="guide-card mac">
-          <div class="guide-card-header">
-            <span class="guide-platform-tag">macOS Permissions</span>
-            <span class="guide-badge-pill">Essential</span>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><circle cx="8" cy="8" r="7"/></svg>
-              What to do
-            </span>
-            <div class="guide-content">
-              Grant <strong>Accessibility</strong> permission so DropDial can detect file drags across Finder and desktop windows.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-              Where to do it
-            </span>
-            <div class="guide-content">
-              <strong>System Settings → Privacy &amp; Security → Accessibility</strong> (and <strong>Input Monitoring</strong> if prompted).
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><polygon points="5 3 13 8 5 13 5 3"/></svg>
-              How to do it
-            </span>
-            <ul class="guide-step-list">
-              <li class="guide-step-item">
-                <span class="guide-sub-num">1</span>
-                <div class="guide-sub-text">
-                  On first launch, macOS will present a permission dialog. Click <strong>"Open System Settings"</strong>.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">2</span>
-                <div class="guide-sub-text">
-                  Under <em>Accessibility</em>, find <strong>DropDial</strong> and toggle the switch to <strong>ON</strong> (blue). Authenticate with Touch ID or your Mac password.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">3</span>
-                <div class="guide-sub-text">
-                  <em>If DropDial does not appear automatically:</em> Click the <strong>+</strong> button, navigate to <code>/Applications/DropDial.app</code>, and click Open.
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div class="guide-callout orange">
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/></svg>
-            <div>
-              <strong>Why Accessibility is needed:</strong> macOS requires this permission for any utility that registers global mouse drag events and projects overlay wheels at your cursor. DropDial never records keystrokes.
-            </div>
-          </div>
-        </article>
-
-        <!-- Windows Column -->
-        <article class="guide-card win">
-          <div class="guide-card-header">
-            <span class="guide-platform-tag">Windows Permissions</span>
-            <span class="guide-badge-pill">Zero Extra Setup</span>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><circle cx="8" cy="8" r="7"/></svg>
-              What to do
-            </span>
-            <div class="guide-content">
-              Windows uses native desktop hooks; no special accessibility or system privilege elevation is required.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-              Where to do it
-            </span>
-            <div class="guide-content">
-              Inside DropDial <strong>Settings</strong> (accessible by right-clicking the tray icon).
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><polygon points="5 3 13 8 5 13 5 3"/></svg>
-              How to do it
-            </span>
-            <ul class="guide-step-list">
-              <li class="guide-step-item">
-                <span class="guide-sub-num">1</span>
-                <div class="guide-sub-text">
-                  DropDial starts automatically in the background upon launch.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">2</span>
-                <div class="guide-sub-text">
-                  To ensure DropDial is always ready, check <strong>"Run at Windows Startup"</strong> in Settings.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">3</span>
-                <div class="guide-sub-text">
-                  If tray notifications don't show, ensure <em>Notifications</em> are enabled in <strong>Windows Settings → System → Notifications</strong>.
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div class="guide-callout">
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm3.78-9.72a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l4-4z"/></svg>
-            <div>
-              <strong>Instant Ready:</strong> Because Windows exposes native global low-level hooks, DropDial works immediately after opening without toggling system privacy panels.
-            </div>
-          </div>
-        </article>
-      </div>
-    </div>
-
-
-    <!-- STEP 4: MENU BAR / TRAY & EVERYDAY USE -->
-    <div class="guide-step-row" id="step-4">
-      <div class="guide-step-lead">
-        <div class="step-circle">4</div>
-        <div class="step-meta">
-          <h2>Menu Bar / Tray &amp; How to Use</h2>
-          <p>Triggering the radial dials, shortcuts, and managing media tools.</p>
-        </div>
-      </div>
-
-      <div class="guide-columns">
-        <!-- macOS Column -->
-        <article class="guide-card mac">
-          <div class="guide-card-header">
-            <span class="guide-platform-tag">macOS Everyday Use</span>
-            <span class="guide-badge-pill">Top Menu Bar</span>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-              Where to find DropDial
-            </span>
-            <div class="guide-content">
-              Look for the circular DropDial icon in the <strong>top-right macOS menu bar</strong>.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><polygon points="5 3 13 8 5 13 5 3"/></svg>
-              How to trigger conversions &amp; actions
-            </span>
-            <ul class="guide-step-list">
-              <li class="guide-step-item">
-                <span class="guide-sub-num">1</span>
-                <div class="guide-sub-text">
-                  <strong>Convert File Formats</strong>: Drag any file in Finder, hold <kbd>Shift</kbd>, and move slightly. The radial conversion wheel appears right around your mouse cursor. Hover over your desired target format (e.g., <code>WEBP</code>, <code>MP4</code>, <code>MP3</code>, <code>PDF</code>) and drop!
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">2</span>
-                <div class="guide-sub-text">
-                  <strong>Universal Actions Dial</strong>: Drag any file and hold <kbd>Ctrl</kbd> (<kbd>⌃</kbd>). Instantly trigger actions like <strong>AirDrop</strong>, <strong>Copy Path</strong>, <strong>Terminal here</strong>, <strong>Float Shelf</strong>, or <strong>Strip EXIF</strong>.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">3</span>
-                <div class="guide-sub-text">
-                  <strong>Menu Bar Quick Panel</strong>: Click the icon in the menu bar to open Media Tools (Video Trimmer, Audio Bleep, PDF OCR, Image Redact), view conversion history, or configure custom shortcuts.
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div class="guide-callout">
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm3.78-9.72a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l4-4z"/></svg>
-            <div>
-              <strong>Converted File Destination:</strong> Converted files are saved in the exact same directory alongside your source file with a neat suffix (e.g. <code>photo-converted.webp</code>), or to a custom output folder set in Preferences.
-            </div>
-          </div>
-        </article>
-
-        <!-- Windows Column -->
-        <article class="guide-card win">
-          <div class="guide-card-header">
-            <span class="guide-platform-tag">Windows Everyday Use</span>
-            <span class="guide-badge-pill">Taskbar System Tray</span>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-              Where to find DropDial
-            </span>
-            <div class="guide-content">
-              Look for the DropDial icon in the <strong>bottom-right taskbar system tray</strong> (click <code>^</code> if icons are hidden).
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><polygon points="5 3 13 8 5 13 5 3"/></svg>
-              How to trigger conversions &amp; actions
-            </span>
-            <ul class="guide-step-list">
-              <li class="guide-step-item">
-                <span class="guide-sub-num">1</span>
-                <div class="guide-sub-text">
-                  <strong>Convert File Formats</strong>: Drag any file in File Explorer or your desktop, hold <kbd>Shift</kbd>, and drag. The radial wheel blooms around your cursor. Release on the target format to convert instantly.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">2</span>
-                <div class="guide-sub-text">
-                  <strong>Universal Actions Dial</strong>: Drag any file and hold <kbd>Ctrl</kbd>. Select Windows actions like <strong>Copy Windows Path</strong>, <strong>Open in PowerShell</strong>, <strong>Clean Metadata</strong>, or <strong>Float Scratchpad</strong>.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">3</span>
-                <div class="guide-sub-text">
-                  <strong>Tray Quick Menu</strong>: Right-click the system tray icon to launch standalone tools, open Settings, check recent conversions, or pause shortcut listening.
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div class="guide-callout">
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm3.78-9.72a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l4-4z"/></svg>
-            <div>
-              <strong>Native Windows Notifications:</strong> When large video conversions or PDF OCR scans finish, Windows displays an actionable toast notification to open the folder or copy the file.
-            </div>
-          </div>
-        </article>
-      </div>
-    </div>
-
-
-    <!-- STEP 5: LICENSE ACTIVATION -->
-    <div class="guide-step-row" id="step-5">
-      <div class="guide-step-lead">
-        <div class="step-circle">5</div>
-        <div class="step-meta">
-          <h2>Pro License Key Activation</h2>
-          <p>Unlocking lifetime access, batch conversions, and all 40+ offline tools.</p>
-        </div>
-      </div>
-
-      <div class="guide-columns">
-        <!-- macOS Column -->
-        <article class="guide-card mac">
-          <div class="guide-card-header">
-            <span class="guide-platform-tag">macOS License Activation</span>
-            <span class="guide-badge-pill recommended">100% Offline Validation</span>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><circle cx="8" cy="8" r="7"/></svg>
-              What to do
-            </span>
-            <div class="guide-content">
-              Enter your Pro license key to permanently remove the 7-day trial limit across up to 3 personal devices.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-              Where to do it
-            </span>
-            <div class="guide-content">
-              Click the <strong>Menu Bar icon → Preferences...</strong> (or press <kbd>⌘</kbd> + <kbd>,</kbd>) → navigate to the <strong>License</strong> tab.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><polygon points="5 3 13 8 5 13 5 3"/></svg>
-              How to do it
-            </span>
-            <ul class="guide-step-list">
-              <li class="guide-step-item">
-                <span class="guide-sub-num">1</span>
-                <div class="guide-sub-text">
-                  Copy the license key received in your purchase confirmation email (format: <code>DDPRO-XXXX-XXXX-XXXX</code>).
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">2</span>
-                <div class="guide-sub-text">
-                  Paste it into the <strong>License Key</strong> field and click <strong>Activate License</strong>.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">3</span>
-                <div class="guide-sub-text">
-                  The key is cryptographically verified locally. Your status will switch to <strong>DropDial Pro (Lifetime)</strong> instantly.
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div class="guide-callout">
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm3.78-9.72a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l4-4z"/></svg>
-            <div>
-              <strong>Zero DRM Server Phoning:</strong> DropDial uses modern offline public-key cryptography. You never need an active internet connection to keep your software unlocked.
-            </div>
-          </div>
-        </article>
-
-        <!-- Windows Column -->
-        <article class="guide-card win">
-          <div class="guide-card-header">
-            <span class="guide-platform-tag">Windows License Activation</span>
-            <span class="guide-badge-pill">100% Offline Validation</span>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><circle cx="8" cy="8" r="7"/></svg>
-              What to do
-            </span>
-            <div class="guide-content">
-              Activate your lifetime license key for unlimited offline conversions and media tools.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-              Where to do it
-            </span>
-            <div class="guide-content">
-              Right-click the <strong>Taskbar System Tray icon → Settings → License</strong>.
-            </div>
-          </div>
-
-          <div class="guide-section">
-            <span class="guide-label">
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><polygon points="5 3 13 8 5 13 5 3"/></svg>
-              How to do it
-            </span>
-            <ul class="guide-step-list">
-              <li class="guide-step-item">
-                <span class="guide-sub-num">1</span>
-                <div class="guide-sub-text">
-                  Copy your license key from your order confirmation email.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">2</span>
-                <div class="guide-sub-text">
-                  In DropDial Settings, paste into the <strong>License Key</strong> box and press <strong>Activate</strong>.
-                </div>
-              </li>
-              <li class="guide-step-item">
-                <span class="guide-sub-num">3</span>
-                <div class="guide-sub-text">
-                  Confirmation appears immediately. All batch conversion limits and tool watermarks are removed permanently.
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div class="guide-callout">
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm3.78-9.72a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.28 6.72a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l4-4z"/></svg>
-            <div>
-              <strong>Transfer Anytime:</strong> If you get a new PC or Mac, you can reuse your license key on your replacement computer with zero hassle or deactivate the old device.
-            </div>
-          </div>
-        </article>
-      </div>
-    </div>
-
-  </section>
-
-  <!-- SHORTCUTS & GESTURES MATRIX -->
-  <section class="wrap guide-matrix-wrap">
-    <div class="guide-matrix-header">
-      <p class="eyebrow">Quick Reference</p>
-      <h3>Keyboard Shortcuts &amp; Gestures Matrix</h3>
-      <p>Compare how DropDial operates between macOS and Windows.</p>
-    </div>
-
-    <div style="overflow-x:auto;">
-      <table class="guide-table">
-        <thead>
-          <tr>
-            <th>Action / Feature</th>
-            <th> macOS Gesture</th>
-            <th>⊞ Windows Gesture</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Convert File Dial</strong></td>
-            <td>Drag file + <kbd>Shift</kbd></td>
-            <td>Drag file + <kbd>Shift</kbd></td>
-            <td>Shows radial format selector around cursor; drop to convert locally.</td>
-          </tr>
-          <tr>
-            <td><strong>Universal Actions Dial</strong></td>
-            <td>Drag file + <kbd>Ctrl</kbd> (<kbd>⌃</kbd>)</td>
-            <td>Drag file + <kbd>Ctrl</kbd></td>
-            <td>Quick dial for AirDrop/Share, Copy Path, Terminal, Float Shelf, Strip EXIF.</td>
-          </tr>
-          <tr>
-            <td><strong>Open Settings</strong></td>
-            <td><kbd>⌘</kbd> + <kbd>,</kbd> (or Menu Bar click)</td>
-            <td>Right-click Tray icon → Settings</td>
-            <td>Configure default output directories, hotkeys, theme, and license key.</td>
-          </tr>
-          <tr>
-            <td><strong>Quick Media Tools</strong></td>
-            <td>Click Menu Bar icon</td>
-            <td>Right-click System Tray icon</td>
-            <td>Direct access to Video Trimmer, Audio Bleep, PDF OCR, and Image Redact.</td>
-          </tr>
-          <tr>
-            <td><strong>Cancel Active Dial</strong></td>
-            <td><kbd>Esc</kbd> or release off petals</td>
-            <td><kbd>Esc</kbd> or release off petals</td>
-            <td>Dismisses the overlay wheel immediately without performing any action.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- SETUP FAQ & TROUBLESHOOTING -->
-  <section class="wrap guide-faq-wrap">
-    <p class="eyebrow" style="text-align:center;">Troubleshooting</p>
-    <h3>Frequently Asked Setup Questions</h3>
-
-    <div class="guide-faq-list">
-      <details class="guide-faq-item">
-        <summary>The radial dial doesn't pop up when I drag a file and hold Shift. What should I check?</summary>
-        <div class="guide-faq-content">
-          <p><strong>On macOS:</strong> Make sure DropDial is granted permission under <strong>System Settings → Privacy &amp; Security → Accessibility</strong>. Without Accessibility permission, macOS prevents applications from detecting global mouse drag positions outside their own window.</p>
-          <p><strong>On Windows:</strong> Verify that DropDial is running in your taskbar system tray (look in the <code>^</code> tray overflow area). Make sure you start dragging the file <em>before or simultaneously with</em> pressing <kbd>Shift</kbd>.</p>
-        </div>
-      </details>
-
-      <details class="guide-faq-item">
-        <summary>Where are my converted files saved?</summary>
-        <div class="guide-faq-content">
-          <p>By default, DropDial saves the newly converted file in the <strong>exact same folder</strong> as the original file, appending the new extension (e.g. <code>recording.mp4</code> becomes <code>recording.webm</code>). You can specify a dedicated output folder (such as <code>~/Downloads</code> or <code>~/Desktop</code>) in DropDial <strong>Settings → Output Directory</strong>.</p>
-        </div>
-      </details>
-
-      <details class="guide-faq-item">
-        <summary>Do I need to be connected to the internet to convert files or use the OCR tool?</summary>
-        <div class="guide-faq-content">
-          <p><strong>Never.</strong> DropDial is 100% offline. All conversion engines (FFmpeg, Apple Vision OCR, Windows Tesseract OCR, image codecs) are bundled directly inside the application. No files are ever uploaded to any cloud server.</p>
-        </div>
-      </details>
-
-      <details class="guide-faq-item">
-        <summary>How many computers can I use my Pro Lifetime license on?</summary>
-        <div class="guide-faq-content">
-          <p>Each DropDial Pro Lifetime license can be used on up to <strong>3 personal computers</strong> concurrently (Mac, Windows, or any mix of both). If you upgrade or replace your machine, you can simply transfer your license key.</p>
-        </div>
-      </details>
-
-      <details class="guide-faq-item">
-        <summary>How do I update to a newer version of DropDial?</summary>
-        <div class="guide-faq-content">
-          <p>Simply download the latest <code>DropDial.dmg</code> (macOS) or <code>DropDial-Setup.exe</code> (Windows) from the website and replace the existing app. All your settings, license activation, and custom hotkeys are preserved automatically.</p>
-        </div>
-      </details>
-    </div>
-  </section>
-
-  <!-- CTA Banner -->
-  <section class="wrap" style="text-align:center;margin-bottom:80px;">
-    <div style="background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:44px 28px;box-shadow:0 8px 32px rgba(0,0,0,0.06);">
-      <h2 style="font-size:clamp(1.8rem,3.8vw,2.4rem);margin-bottom:12px;">Ready to convert with zero cloud uploads?</h2>
-      <p style="color:var(--muted);max-width:540px;margin:0 auto 24px;font-size:1.05rem;">
-        Experience instant drag-and-drop file conversion on your desktop. 7-day free trial, no credit card required.
-      </p>
-      <div style="display:inline-flex;flex-wrap:wrap;gap:12px;justify-content:center;">
-        <a class="btn btn-primary" href="/#download" style="padding:12px 24px;">Download Free Trial</a>
-        <a class="btn" href="/#buy" style="background:var(--accent);color:#fff;border-color:var(--accent);padding:12px 24px;font-weight:700;">Buy Pro Lifetime · $19</a>
+      <div class="faq-simple-card">
+        <h4>How do updates work?</h4>
+        <p>Simply download the latest DMG or setup executable and replace the app. All your settings and lifetime license activation remain intact.</p>
       </div>
     </div>
   </section>
@@ -935,11 +503,11 @@
 
 <script src="/assets/js/site.js?v=15"></script>
 <script>
-// Guide Platform Flow Switcher
-function setGuideFlow(flow) {
+// Clean Platform Filter
+function setFlow(flow) {
   document.body.setAttribute("data-flow", flow);
-  document.querySelectorAll(".guide-filter-btn").forEach(btn => btn.classList.remove("active"));
-  const activeBtn = document.getElementById("btn-flow-" + flow);
+  document.querySelectorAll(".guide-tab-btn").forEach(btn => btn.classList.remove("active"));
+  const activeBtn = document.getElementById("tab-" + flow);
   if (activeBtn) activeBtn.classList.add("active");
   try {
     sessionStorage.setItem("dropdial_guide_flow", flow);
@@ -950,38 +518,28 @@ function setGuideFlow(flow) {
 function copySnippet(elementId, btn) {
   const codeEl = document.getElementById(elementId);
   if (!codeEl) return;
-  const text = codeEl.textContent.trim();
-  navigator.clipboard.writeText(text).then(() => {
-    const originalText = btn.textContent;
+  navigator.clipboard.writeText(codeEl.textContent.trim()).then(() => {
+    const prev = btn.textContent;
     btn.textContent = "Copied!";
-    btn.style.color = "var(--accent)";
-    btn.style.borderColor = "var(--accent)";
-    setTimeout(() => {
-      btn.textContent = originalText;
-      btn.style.color = "";
-      btn.style.borderColor = "";
-    }, 1800);
-  }).catch(() => {
-    // fallback
+    setTimeout(() => btn.textContent = prev, 1600);
   });
 }
 
-// Restore user guide flow preference or auto-detect on small screens
+// Restore saved preference or auto-detect on small screens
 (function() {
   try {
     const saved = sessionStorage.getItem("dropdial_guide_flow");
     if (saved && (saved === "both" || saved === "mac" || saved === "win")) {
-      setGuideFlow(saved);
+      setFlow(saved);
       return;
     }
   } catch(e) {}
-  
-  // If screen is smaller than 860px, auto-detect platform for optimal readability
-  if (window.innerWidth < 860) {
+
+  if (window.innerWidth < 800) {
     const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/i.test(navigator.userAgent);
-    setGuideFlow(isMac ? "mac" : "win");
+    setFlow(isMac ? "mac" : "win");
   } else {
-    setGuideFlow("both");
+    setFlow("both");
   }
 })();
 </script>
