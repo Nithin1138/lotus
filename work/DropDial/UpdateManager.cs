@@ -171,13 +171,12 @@ internal static class UpdateManager
 
     private static void ShowUpdatePrompt(ReleaseInfo release)
     {
-        string summary = string.IsNullOrWhiteSpace(release.Body) ? "Includes performance improvements and bug fixes." : release.Body.Trim();
-        if (summary.Length > 300) summary = summary.Substring(0, 300) + "...";
+        string current = CurrentVersion.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? CurrentVersion : "v" + CurrentVersion;
+        string available = release.TagName.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? release.TagName : "v" + release.TagName;
 
         string message = $"A new version of DropDial is available!\n\n" +
-                         $"Latest Version: {release.TagName}\n" +
-                         $"Current Version: v{CurrentVersion}\n\n" +
-                         $"Release Notes:\n{summary}\n\n" +
+                         $"Current version: {current}\n" +
+                         $"Available version: {available}\n\n" +
                          $"Would you like to download and install this update now?";
 
         var choice = MessageBox.Show(message, "DropDial Update Available", MessageBoxButtons.YesNo, MessageBoxIcon.Information);

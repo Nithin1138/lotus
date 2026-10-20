@@ -169,15 +169,10 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
         let alert = NSAlert()
         alert.messageText = "A New Version of DropDial is Available!"
         
-        var notes = release.body.trimmingCharacters(in: .whitespacesAndNewlines)
-        if notes.isEmpty {
-            notes = "Includes performance improvements and bug fixes."
-        }
-        if notes.count > 350 {
-            notes = String(notes.prefix(350)) + "..."
-        }
+        let current = currentVersion.hasPrefix("v") || currentVersion.hasPrefix("V") ? currentVersion : "v\(currentVersion)"
+        let available = release.tagName.hasPrefix("v") || release.tagName.hasPrefix("V") ? release.tagName : "v\(release.tagName)"
 
-        alert.informativeText = "Version \(release.tagName) is now available (Current: v\(currentVersion)).\n\nRelease Summary:\n\(notes)"
+        alert.informativeText = "Current version: \(current)\nAvailable version: \(available)"
         alert.alertStyle = .informational
 
         alert.addButton(withTitle: "Update Now")
