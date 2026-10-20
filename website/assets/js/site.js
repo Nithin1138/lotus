@@ -48,6 +48,112 @@
   addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 
+  /* ---------- Theme Management & Impressive View Transition ---------- */
+  const themeToggle = $("#theme-toggle");
+
+  function getPreferredTheme() {
+    try {
+      const stored = localStorage.getItem("dropdial_theme");
+      if (stored === "light" || stored === "dark") return stored;
+    } catch (e) {}
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+
+  function applyTheme(theme, updateStorage = true) {
+    document.documentElement.setAttribute("data-theme", theme);
+    if (updateStorage) {
+      try {
+        localStorage.setItem("dropdial_theme", theme);
+      } catch (e) {}
+    }
+    if (themeToggle) {
+      const isDark = theme === "dark";
+      themeToggle.setAttribute("aria-label", isDark ? "Switch to light theme" : "Switch to dark theme");
+      themeToggle.setAttribute("title", isDark ? "Switch to light theme (T)" : "Switch to dark theme (T)");
+    }
+  }
+
+  function triggerThemeTransition(e) {
+    const currentTheme = document.documentElement.getAttribute("data-theme") || getPreferredTheme();
+    const nextTheme = currentTheme === "dark" ? "light" : "dark";
+
+    // Extract origin point for the expanding circular ripple
+    let x = window.innerWidth / 2;
+    let y = 0;
+    if (e && e.clientX !== undefined && e.clientX > 0) {
+      x = e.clientX;
+      y = e.clientY;
+    } else if (themeToggle) {
+      const rect = themeToggle.getBoundingClientRect();
+      x = rect.left + rect.width / 2;
+      y = rect.top + rect.height / 2;
+    }
+
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
+
+    const isReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (document.startViewTransition && !isReducedMotion) {
+      const transition = document.startViewTransition(() => {
+        applyTheme(nextTheme);
+      });
+
+      transition.ready.then(() => {
+        document.documentElement.animate(
+          {
+            clipPath: [
+              `circle(0px at ${x}px ${y}px)`,
+              `circle(${endRadius}px at ${x}px ${y}px)`
+            ]
+          },
+          {
+            duration: 520,
+            easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+            pseudoElement: "::view-transition-new(root)"
+          }
+        );
+      });
+    } else {
+      // Graceful fallback with smooth CSS class
+      document.documentElement.classList.add("theme-transitioning");
+      applyTheme(nextTheme);
+      setTimeout(() => {
+        document.documentElement.classList.remove("theme-transitioning");
+      }, 400);
+    }
+  }
+
+  if (themeToggle) {
+    themeToggle.addEventListener("click", triggerThemeTransition);
+    const initialTheme = document.documentElement.getAttribute("data-theme") || getPreferredTheme();
+    applyTheme(initialTheme, false);
+  }
+
+  // Keyboard shortcut: Press 'T' (when not focused in inputs) to toggle theme
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "t" || e.key === "T") {
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+      if (tag !== "input" && tag !== "textarea" && tag !== "select" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        triggerThemeTransition();
+      }
+    }
+  });
+
+  // Listen to OS theme changes if user has not explicitly chosen
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+      try {
+        if (!localStorage.getItem("dropdial_theme")) {
+          applyTheme(e.matches ? "dark" : "light", false);
+        }
+      } catch (err) {}
+    });
+  }
+
   /* ---------- Platform & Latest Releases ---------- */
   const isMac = /Macintosh|Mac OS X|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
