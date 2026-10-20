@@ -38,7 +38,7 @@ if (-not (Test-Path $installDir)) {
 }
 
 # 5. Resolve Release Asset URL
-$downloadUrl = "https://dropdial.app/api/releases?download=DropDial-Windows-x64.zip"
+$downloadUrl = "https://dropdial.app/downloads/DropDial-Windows-x64.zip"
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
     $releaseInfo = Invoke-RestMethod -Uri "https://dropdial.app/api/releases/latest" -Headers @{ "User-Agent" = "DropDial-Installer" } -TimeoutSec 6 -ErrorAction SilentlyContinue

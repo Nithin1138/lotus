@@ -169,121 +169,112 @@ module.exports = async function handler(req, res) {
   try {
     const release = await fetchLatestRelease(token);
 
-    // 1. Download Mode: ?download=DropDial-macOS.zip
-    if (downloadTarget) {
-      const asset = (release.assets || []).find(a => 
-        a.name.toLowerCase() === downloadTarget.toLowerCase() ||
-        a.name.toLowerCase().endsWith(downloadTarget.toLowerCase())
-      );
-
-      if (!asset) {
-        return res.status(404).json({
-          error: `Asset '${downloadTarget}' not found.`,
-          available: (release.assets || []).map(a => a.name)
-        });
-      }
-
-      const redirectUrl = await getAssetRedirectUrl(asset.id, token);
-      res.writeHead(302, {
-        'Location': redirectUrl,
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      });
+  // 1. Download Mode: prioritize dropdial.app direct hosted assets for 100% uptime
+  if (downloadTarget) {
+    const lower = downloadTarget.toLowerCase();
+    if (lower.includes('.dmg')) {
+      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial.dmg` });
       return res.end();
     }
-
-    // 2. Metadata Mode: Return release payload with proxied download URLs
-    const proxiedAssets = (release.assets || []).map(asset => ({
-      id: asset.id,
-      name: asset.name,
-      size: asset.size,
-      content_type: asset.content_type,
-      browser_download_url: `${baseUrl}/api/releases?download=${encodeURIComponent(asset.name)}`
-    }));
-
-    return res.status(200).json({
-      tag_name: release.tag_name,
-      version: release.tag_name,
-      latest_version: release.tag_name,
-      name: release.name || release.tag_name,
-      body: sanitizeReleaseBody(release.body),
-      published_at: release.published_at,
-      html_url: `${baseUrl}/#download`,
-      assets: proxiedAssets
-    });
-
-  } catch (error) {
-    // Log internal error exclusively to server console (viewable in Vercel function logs)
-    console.error('[DropDial Release Service]', error.message);
-
-    // If client requested a direct file download and asset resolution failed:
-    if (downloadTarget) {
-      const lowerTarget = downloadTarget.toLowerCase();
-      if (lowerTarget.includes('.dmg')) {
-        res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial.dmg` });
-        return res.end();
-      }
-      if (lowerTarget.includes('macos.zip')) {
-        res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-macOS.zip` });
-        return res.end();
-      }
-      return res.status(503).json({
-        error: 'The requested download is temporarily unavailable. Please try again shortly or contact support@dropdial.app.'
-      });
+    if (lower.includes('macos.zip') || lower.includes('mac.zip')) {
+      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-macOS.zip` });
+      return res.end();
     }
-
-    // Check if Neon DB has a latest_release saved by admin
-    let fallbackTag = 'v1.0.0';
-    try {
-      const { getDb, ensureSchema } = require('./_db');
-      const sql = getDb();
-      if (sql) {
-        await ensureSchema();
-        const rows = await sql`SELECT value FROM app_settings WHERE key = 'latest_release' LIMIT 1;`;
-        if (rows && rows.length > 0 && rows[0].value && rows[0].value.tag_name) {
-          fallbackTag = rows[0].value.tag_name;
-        }
-      }
-    } catch (_) {}
-
-    // Never leak GitHub or repo details: return graceful fallback release under 100% DropDial brand
-    return res.status(200).json({
-      tag_name: fallbackTag,
-      version: fallbackTag,
-      latest_version: fallbackTag,
-      name: `DropDial ${fallbackTag}`,
-      body: 'Performance optimizations and desktop workflow enhancements.',
-      published_at: new Date().toISOString(),
-      html_url: `${baseUrl}/#download`,
-      assets: [
-        {
-          id: 1,
-          name: 'DropDial-Setup.exe',
-          size: 52428800,
-          content_type: 'application/x-msdownload',
-          browser_download_url: `${baseUrl}/api/releases?download=DropDial-Setup.exe`
-        },
-        {
-          id: 2,
-          name: 'DropDial.dmg',
-          size: 4500000,
-          content_type: 'application/x-apple-diskimage',
-          browser_download_url: `${baseUrl}/api/releases?download=DropDial.dmg`
-        },
-        {
-          id: 3,
-          name: 'DropDial-macOS.zip',
-          size: 4300000,
-          content_type: 'application/zip',
-          browser_download_url: `${baseUrl}/api/releases?download=DropDial-macOS.zip`
-        },
-        {
-          id: 4,
-          name: 'DropDial-Windows-x64.zip',
-          size: 52428800,
-          content_type: 'application/zip',
-          browser_download_url: `${baseUrl}/api/releases?download=DropDial-Windows-x64.zip`
-        }
-      ]
-    });
+    if (lower.includes('setup.exe')) {
+      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Setup.exe` });
+      return res.end();
+    }
+    if (lower.includes('windows') || lower.includes('win')) {
+      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Windows-x64.zip` });
+      return res.end();
+    }
+    if (lower.endsWith('.exe')) {
+      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial.exe` });
+      return res.end();
+    }
   }
+
+  // Canonical DropDial self-hosted assets list (zero GitHub dependency)
+  const canonicalAssets = [
+    {
+      id: 1,
+      name: 'DropDial-Setup.exe',
+      size: 208896,
+      content_type: 'application/x-msdownload',
+      browser_download_url: `${baseUrl}/downloads/DropDial-Setup.exe`
+    },
+    {
+      id: 2,
+      name: 'DropDial.dmg',
+      size: 4549640,
+      content_type: 'application/x-apple-diskimage',
+      browser_download_url: `${baseUrl}/downloads/DropDial.dmg`
+    },
+    {
+      id: 3,
+      name: 'DropDial-macOS.zip',
+      size: 4057336,
+      content_type: 'application/zip',
+      browser_download_url: `${baseUrl}/downloads/DropDial-macOS.zip`
+    },
+    {
+      id: 4,
+      name: 'DropDial-Windows-x64.zip',
+      size: 73415552,
+      content_type: 'application/zip',
+      browser_download_url: `${baseUrl}/downloads/DropDial-Windows-x64.zip`
+    },
+    {
+      id: 5,
+      name: 'DropDial.exe',
+      size: 208896,
+      content_type: 'application/x-msdownload',
+      browser_download_url: `${baseUrl}/downloads/DropDial.exe`
+    }
+  ];
+
+  try {
+    if (token) {
+      const release = await fetchLatestRelease(token);
+      if (release && release.tag_name) {
+        return res.status(200).json({
+          tag_name: release.tag_name,
+          version: release.tag_name,
+          latest_version: release.tag_name,
+          name: release.name || release.tag_name,
+          body: sanitizeReleaseBody(release.body),
+          published_at: release.published_at,
+          html_url: `${baseUrl}/#download`,
+          assets: canonicalAssets
+        });
+      }
+    }
+  } catch (error) {
+    console.warn('[DropDial Release Service] Serving canonical release assets:', error.message);
+  }
+
+  // Check if Neon DB has a latest_release saved by admin
+  let activeTag = '1.0.0.0';
+  try {
+    const { getDb, ensureSchema } = require('./_db');
+    const sql = getDb();
+    if (sql) {
+      await ensureSchema();
+      const rows = await sql`SELECT value FROM app_settings WHERE key = 'latest_release' LIMIT 1;`;
+      if (rows && rows.length > 0 && rows[0].value && rows[0].value.tag_name) {
+        activeTag = rows[0].value.tag_name;
+      }
+    }
+  } catch (_) {}
+
+  return res.status(200).json({
+    tag_name: activeTag,
+    version: activeTag,
+    latest_version: activeTag,
+    name: `DropDial ${activeTag}`,
+    body: 'High-performance offline conversions, Actions Dial, and media tools for macOS and Windows.',
+    published_at: new Date().toISOString(),
+    html_url: `${baseUrl}/#download`,
+    assets: canonicalAssets
+  });
 };
