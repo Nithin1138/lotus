@@ -1,8 +1,8 @@
 // DropDial copy and demo strings.
 // DropDial copy and demo strings.
 window.ZD_ZH = {
-  "doc.title": "DropDial · Drag. Drop. Convert.",
-  "doc.description": "DropDial is an instant drag-and-drop file converter, media suite, and universal actions dial for macOS and Windows. 100% offline and private.",
+  "doc.title": "DropDial (Drop Dial) · Instant Drag-and-Drop Offline File Converter",
+  "doc.description": "DropDial (Drop Dial) is an instant drag-and-drop file converter, media suite, and universal actions dial for macOS and Windows. 188+ formats, 100% offline and private.",
   "skip": "Skip to content",
   "nav.how": "How it works",
   "nav.features": "Features",
@@ -13,8 +13,8 @@ window.ZD_ZH = {
   "nav.faq": "FAQ",
   "nav.download": "Download",
   "hero.eyebrow": "7-Day Free Trial · macOS & Windows · 100% Offline",
-  "hero.title": "Drag. Drop. <em>Convert.</em>",
-  "hero.lead": "Hold <kbd>Shift</kbd> to convert formats or <kbd>⌃</kbd> for universal file actions at your cursor. Instant offline file conversions, media tools, and desktop shortcuts with zero cloud uploads.",
+  "hero.title": "DropDial · Drag. Drop. <em>Convert.</em>",
+  "hero.lead": "DropDial (Drop Dial) is the instant drag-and-drop offline file converter for your Mac and PC. Hold <kbd>Shift</kbd> to convert formats or <kbd>⌃</kbd> for universal file actions at your cursor with zero cloud uploads.",
   "cta.download": "Download Free Trial",
   "cta.buy": "Buy Pro ($19 / ₹999)",
   "cta.fine": "macOS (Apple Silicon & Intel) & Windows · 100% Local & Private",
