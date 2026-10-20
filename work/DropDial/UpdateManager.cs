@@ -153,12 +153,7 @@ internal static class UpdateManager
 
                 if (isUserInitiated)
                 {
-                    MessageBox.Show(
-                        $"You are running DropDial v{CurrentVersion}, which is currently the newest version available.",
-                        "DropDial is Up to Date",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information
-                    );
+                    ShowUpToDateDialog();
                 }
             }
         }
@@ -199,6 +194,16 @@ internal static class UpdateManager
         {
             Settings.Set("IgnoredUpdateVersion", release.TagName);
         }
+    }
+
+    private static void ShowUpToDateDialog()
+    {
+        MessageBox.Show(
+            $"You are running DropDial v{CurrentVersion}, which is currently the newest version available.",
+            "DropDial is Up to Date",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information
+        );
     }
 
     private static void ShowErrorDialog(string error)

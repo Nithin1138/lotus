@@ -765,7 +765,7 @@ internal sealed class ToolWindow : Window
             customRatio.Children.Add(inputs);
             parameters.Children.Add(customRatio);
             void ShowCustomRatio() => customRatio.Visibility = Get("ratio") == "custom" ? Visibility.Visible : Visibility.Collapsed;
-            ((ComboBox)controls["ratio"]).SelectionChanged += (_, _) => ShowCustomRatio();
+            ((ComboBox)controls["ratio"]).SelectionChanged += (_, _) => { ShowCustomRatio(); if (Cropping) UpdateCropRatio(Get("ratio")); };
             ShowCustomRatio();
         }
         if (advanced.Children.Count > 0)
@@ -1982,6 +1982,14 @@ internal sealed class ToolWindow : Window
     // The frame is shown over the original picture; the cropped result and the video's "result" view replace it.
     private void UpdateCropVisibility() =>
         cropFrame.Visibility = Cropping && loaded && cropFrame.HasSource && showingOriginal && transport?.EffectSelected != true ? Visibility.Visible : Visibility.Collapsed;
+    private void UpdateCropRatio(string? ratioText = null)
+    {
+        if (!cropFrame.HasSource) return;
+        cropFrame.Ratio = !string.IsNullOrWhiteSpace(ratioText) && ratioText != "custom"
+            ? CropRatio.Parse(ratioText)
+            : CurrentRatio();
+        FieldsToCropFrame();
+    }
     private CropRatio? CurrentRatio()
     {
         string ratio = Get("ratio", "free");

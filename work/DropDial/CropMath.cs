@@ -17,12 +17,15 @@ internal readonly record struct CropRatio(double A, double B)
 
     public static CropRatio? Parse(string? text)
     {
-        if (string.IsNullOrWhiteSpace(text) || text.Trim() == "free")
+        if (string.IsNullOrWhiteSpace(text) || text.Trim() == "free" || text.StartsWith("Free Style", StringComparison.OrdinalIgnoreCase) || text.Equals("Original Ratio", StringComparison.OrdinalIgnoreCase))
             return null;
-        string[] parts = text.Split(':');
+        string clean = text.Trim();
+        int paren = clean.IndexOf('(');
+        if (paren > 0) clean = clean[..paren].Trim();
+        string[] parts = clean.Split(':');
         if (parts.Length != 2
-            || !double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double a)
-            || !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double b)
+            || !double.TryParse(parts[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double a)
+            || !double.TryParse(parts[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double b)
             || !double.IsFinite(a) || !double.IsFinite(b) || a <= 0 || b <= 0)
             return null;
         return new CropRatio(a, b);

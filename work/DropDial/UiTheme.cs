@@ -29,6 +29,7 @@ internal static class UiTheme
     public static readonly Brush Accent = Frozen("#D55418");
     public static Brush WindowBack { get; private set; } = Brushes.White;
     public static Brush Surface { get; private set; } = Brushes.White;
+    public static Brush CardBrush => Surface;
     public static Brush Line { get; private set; } = Brushes.LightGray;
     public static Brush Tint { get; private set; } = Brushes.White;
     public static Brush PreviewBack { get; private set; } = Brushes.White;
