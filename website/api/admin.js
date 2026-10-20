@@ -37,6 +37,10 @@ function verifyToken(req) {
     provided = queryToken.trim();
   }
 
+  try {
+    provided = decodeURIComponent(provided);
+  } catch (_) {}
+
   const expected = getAdminSecret();
   if (!provided) return false;
 
@@ -92,17 +96,19 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
-  // Public endpoint: verify login credentials
-  if (action === 'login') {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
-    const { password } = req.body || {};
+  // Public endpoint: verify login credentials (supports 'login' or 'verify', GET or POST)
+  if (action === 'login' || action === 'verify') {
+    const candidate = req.body?.password || req.body?.passcode || req.body?.token || req.query?.token || req.query?.passcode || req.query?.password;
     const expected = getAdminSecret();
-    if (!password) {
+    let provided = (candidate || '').trim();
+    try { provided = decodeURIComponent(provided); } catch (_) {}
+
+    if (!provided) {
       return res.status(400).json({ error: 'Passcode is required' });
     }
 
     try {
-      const a = Buffer.from(password.trim(), 'utf8');
+      const a = Buffer.from(provided, 'utf8');
       const b = Buffer.from(expected, 'utf8');
       const valid = a.length === b.length && crypto.timingSafeEqual(a, b);
 
@@ -184,6 +190,12 @@ module.exports = async function handler(req, res) {
       },
       licenses: dbLicenses,
       transactions: dbTransactions,
+      metrics: {
+        pageviews: serverlessStats.pageViews || 0,
+        pricingViews: serverlessStats.pricingViews || 0,
+        checkouts: serverlessStats.checkoutInitiated || 0,
+        purchases: serverlessStats.purchased || 0
+      },
       serverlessStats
     });
   }
@@ -738,13 +750,23 @@ module.exports = async function handler(req, res) {
     const { passcode, confirmWord } = req.body || {};
     const expectedPass = getAdminSecret();
 
-    // Verification 1: Passcode
-    if (!passcode) {
-      return res.status(400).json({ error: 'Admin passcode is required to reset test data.' });
+    let providedPass = (passcode || req.headers['x-admin-key'] || (req.headers['authorization'] || '').replace(/^Bearer\s+/i, '')).trim();
+    try { providedPass = decodeURIComponent(providedPass); } catch (_) {}
+
+    let passValid = false;
+    try {
+      const a = Buffer.from(providedPass, 'utf8');
+      const b = Buffer.from(expectedPass, 'utf8');
+      if (a.length === b.length && crypto.timingSafeEqual(a, b)) {
+        passValid = true;
+      }
+    } catch (_) {}
+
+    if (!passValid && verifyToken(req)) {
+      passValid = true;
     }
-    const a = Buffer.from(passcode.trim(), 'utf8');
-    const b = Buffer.from(expectedPass, 'utf8');
-    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+
+    if (!passValid) {
       return res.status(401).json({ error: 'Invalid admin passcode verification.' });
     }
 
@@ -759,11 +781,16 @@ module.exports = async function handler(req, res) {
       const sql = getDb();
       if (sql) {
         await ensureSchema();
-        // Clear test transactions and licenses
-        await sql`TRUNCATE TABLE transactions;`;
-        await sql`TRUNCATE TABLE licenses;`;
-        // Reset coupon uses count
-        await sql`UPDATE coupons SET uses = 0;`;
+        // Clear test transactions and licenses safely with DELETE
+        try {
+          await sql`DELETE FROM transactions;`;
+          await sql`DELETE FROM licenses;`;
+          await sql`UPDATE coupons SET uses = 0;`;
+        } catch (_) {
+          await sql`TRUNCATE TABLE transactions;`;
+          await sql`TRUNCATE TABLE licenses;`;
+          await sql`UPDATE coupons SET uses = 0;`;
+        }
         dbReset = true;
       }
     } catch (dbErr) {
@@ -782,7 +809,15 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       success: true,
       message: 'All test revenue, profits, captured transactions, test licenses, coupons, and visitor stats have been completely reset to zero.',
-      dbReset
+      dbReset,
+      licenses: [],
+      transactions: [],
+      metrics: {
+        pageviews: 0,
+        pricingViews: 0,
+        checkouts: 0,
+        purchases: 0
+      }
     });
   }
 

@@ -203,23 +203,11 @@
               purchases: statsData.metrics.purchases || state.stats.purchases || 0
             };
           }
-          if (Array.isArray(statsData.licenses) && statsData.licenses.length > 0) {
+          if (Array.isArray(statsData.licenses)) {
             state.licenses = statsData.licenses;
-          } else if (state.licenses.length > 0 && statsData.neonDb) {
-            // Neon DB is active but table has 0 rows -> sync existing licenses into Neon
-            fetch('/api/admin', {
-              method: 'POST',
-              headers,
-              body: JSON.stringify({
-                action: 'sync-store',
-                token: state.adminToken,
-                licenses: state.licenses,
-                transactions: state.transactions
-              })
-            }).catch(() => {});
           }
 
-          if (Array.isArray(statsData.transactions) && statsData.transactions.length > 0) {
+          if (Array.isArray(statsData.transactions)) {
             state.transactions = statsData.transactions;
           }
           saveLocalStore();
@@ -1922,7 +1910,7 @@ ${escapeHtml(cleanBody)}
     const confirmInput = document.getElementById('reset-confirm-word');
     const passInput = document.getElementById('reset-passcode');
     if (confirmInput) confirmInput.value = '';
-    if (passInput) passInput.value = '';
+    if (passInput) passInput.value = state.adminToken || '';
     modal.style.display = 'flex';
     setTimeout(() => confirmInput?.focus(), 100);
   }
@@ -1971,26 +1959,30 @@ ${escapeHtml(cleanBody)}
         throw new Error(data.error || 'Failed to purge test data');
       }
 
-      // Clear local storage caches
+      // Clear all local storage caches
       try {
-        localStorage.removeItem('dd_admin_transactions');
+        localStorage.removeItem('dd_admin_licenses');
+        localStorage.removeItem('dd_admin_tx');
         localStorage.removeItem('dd_admin_coupons');
+        localStorage.removeItem('dd_admin_stats');
+        localStorage.removeItem('dd_admin_transactions');
       } catch (_) {}
 
-      showToast(`🧹 Cleaned! All test revenue, profits, licenses, and coupons reset to zero.`, 'success');
-      closeResetModal();
-
-      // Clear state and re-render dashboard
+      // Clear in-memory state and re-render dashboard
       state.transactions = [];
       state.licenses = [];
-      state.stats = { pageviews: 0, pricing: 0, checkout: 0, purchases: 0 };
-      renderKPIs();
-      renderTransactionsTable();
-      renderLicensesTable();
+      state.coupons.forEach(c => { c.uses = 0; });
+      state.stats = { pageviews: 0, pricingViews: 0, checkouts: 0, purchases: 0 };
+      saveLocalStore();
+
+      renderAllViews();
       renderCouponsTable();
-      if (typeof fetchDashboardData === 'function') {
-        fetchDashboardData(true);
-      }
+
+      showToast(`🧹 Reset complete! All test revenue, profits, licenses, and coupons wiped to zero.`, 'success');
+      closeResetModal();
+
+      // Refresh live server state
+      await syncRealTimeData(false);
     } catch (err) {
       console.error('Reset test data failed:', err);
       showToast(`Reset failed: ${err.message}`, 'error');
