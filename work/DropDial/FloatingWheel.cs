@@ -110,6 +110,10 @@ internal sealed class DropWheel : Window
     private double scrollAccum = 0;
     /// 60 fps animation timer.
     private readonly System.Windows.Threading.DispatcherTimer rotationTimer;
+    /// Locks further side flips within the same scroll gesture to guarantee stopping cleanly at the target side.
+    private bool isWheelGestureLocked = false;
+    /// Debounce timer for when scroll gestures settle or discrete mouse wheel stops.
+    private readonly System.Windows.Threading.DispatcherTimer wheelSettleTimer;
     public long Instance { get; private set; }
     public WheelMode CurrentMode => mode;
     public bool ToolsMode => mode == WheelMode.Tools;
@@ -273,6 +277,21 @@ internal sealed class DropWheel : Window
         rotationTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render)
         { Interval = TimeSpan.FromSeconds(1.0 / 60.0) };
         rotationTimer.Tick += TickRotation;
+
+        // Settle timer to reset wheel lock when scroll bursts/momentum end.
+        wheelSettleTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render)
+        { Interval = TimeSpan.FromMilliseconds(260) };
+        wheelSettleTimer.Tick += (_, _) =>
+        {
+            wheelSettleTimer.Stop();
+            isWheelGestureLocked = false;
+            scrollAccum = 0;
+            if (!rotationTimer.IsEnabled && Math.Abs(wheelAngle - targetAngle) > 0.01)
+            {
+                targetAngle = 0;
+                rotationTimer.Start();
+            }
+        };
 
         Recolor();
     }
@@ -661,6 +680,8 @@ internal sealed class DropWheel : Window
     private void ResetRotation()
     {
         rotationTimer.Stop();
+        wheelSettleTimer.Stop();
+        isWheelGestureLocked = false;
         currentSideIndex = 0;
         wheelAngle = 0;
         targetAngle = 0;
@@ -673,24 +694,49 @@ internal sealed class DropWheel : Window
         if (allOperations.Count <= 8 || groups != null) return;
         e.Handled = true;
 
+        // Reset settle timer on every wheel event
+        wheelSettleTimer.Stop();
+        wheelSettleTimer.Start();
+
+        // If locked during this gesture/wheel burst, stay on the newly selected side!
+        // Absorb remaining momentum/scroll events so it does not cycle back or overshoot.
+        if (isWheelGestureLocked)
+        {
+            return;
+        }
+
+        // Live interactive rotation tracking
         scrollAccum += e.Delta;
+        // Interactive angular response (step ~ 120.0 standard notch)
         const double step = 120.0;
-        if (Math.Abs(scrollAccum) >= step)
+        wheelAngle = Math.Clamp(-scrollAccum / step * 36.0, -42.0, 42.0);
+        Render(operations, wheelAngle);
+
+        if (Math.Abs(scrollAccum) >= 80.0)
         {
             bool forward = scrollAccum < 0;
             scrollAccum = 0;
+            isWheelGestureLocked = true; // Lock: prevents bouncing back during the same spin!
+
             int oldSide = currentSideIndex;
             int total = TotalSides;
             currentSideIndex = forward ? (currentSideIndex + 1) % total : (currentSideIndex - 1 + total) % total;
+
             if (currentSideIndex != oldSide)
             {
                 SoundManager.PlayTick();
                 SyncWindow();
                 hint.Text = Prompt();
                 UpdatePaginationDots();
-                wheelAngle = forward ? 120.0 : -120.0;
+                wheelAngle = forward ? -75.0 : 75.0;
                 targetAngle = 0;
                 Render(operations, wheelAngle);
+                if (!rotationTimer.IsEnabled)
+                    rotationTimer.Start();
+            }
+            else
+            {
+                targetAngle = 0;
                 if (!rotationTimer.IsEnabled)
                     rotationTimer.Start();
             }

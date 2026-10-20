@@ -115,7 +115,7 @@ module.exports = async function handler(req, res) {
   }
 
   // 1. STATS & SYSTEM HEALTH
-  if (action === 'stats') {
+  if (action === 'stats' || action === 'health') {
     const razorpayKey = (process.env.RAZORPAY_KEY_ID || '').trim();
     const razorpaySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
     const resendKey = (process.env.RESEND_API_KEY || '').trim();
@@ -144,6 +144,8 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
+      razorpay: Boolean(razorpayKey && razorpaySecret),
+      resend: Boolean(resendKey),
       health,
       serverlessStats
     });
@@ -193,9 +195,9 @@ module.exports = async function handler(req, res) {
   // 3. SEND TEST EMAIL VIA RESEND
   if (action === 'test-email') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
-    const { to } = req.body || {};
+    const to = (req.body?.to || req.body?.email || req.query?.to || req.query?.email || '').trim().toLowerCase();
     if (!to || !to.includes('@')) {
-      return res.status(400).json({ error: 'Valid recipient email required' });
+      return res.status(400).json({ success: false, error: 'Valid recipient email required' });
     }
 
     const dummyKey = generateLicense(to, 'Admin Test User', 'pro');
@@ -205,6 +207,9 @@ module.exports = async function handler(req, res) {
         name: 'Admin Test User',
         licenseKey: dummyKey
       });
+      if (!emailResult.success) {
+        return res.status(400).json(emailResult);
+      }
       return res.status(200).json(emailResult);
     } catch (e) {
       return res.status(500).json({ success: false, error: e.message });

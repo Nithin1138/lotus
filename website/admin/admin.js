@@ -872,18 +872,22 @@
         },
         body: JSON.stringify({
           action: 'test-email',
-          email
+          to: email,
+          email: email
         })
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
         resultBox.style.color = '#10b981';
-        resultBox.textContent = `Test license email delivered to ${email} (ID: ${data.id})`;
+        resultBox.textContent = `Test license email delivered to ${email} (ID: ${data.id || data.emailId || 'sent'})`;
         showToast('Test email sent!', 'success');
       } else {
         resultBox.style.color = '#ef4444';
-        resultBox.textContent = `Resend delivery notice: ${data.warning || data.error?.message || 'Check RESEND_API_KEY'}`;
+        const msg = data.warning ||
+          (typeof data.error === 'string' ? data.error : data.error?.message || data.error?.name) ||
+          'Check RESEND_API_KEY in Vercel environment variables';
+        resultBox.textContent = `Resend delivery notice: ${msg}`;
       }
     } catch (err) {
       resultBox.style.color = '#ef4444';

@@ -160,6 +160,10 @@ final class RadialWheelView: NSView {
     private var scrollVelocity: CGFloat = 0
     /// Scratch accumulator so small scrolls snap to item boundaries.
     private var scrollAccumulator: CGFloat = 0
+    /// Locks further side flips within the same scroll gesture to guarantee stopping cleanly at the target side.
+    private var isGestureLocked: Bool = false
+    /// Debounce timer for when scroll gestures settle or discrete mouse wheel stops.
+    private var gestureSettleTimer: Timer?
 
     var hoveredIndex: Int = -1
     var isHubHovered: Bool = false
@@ -201,18 +205,48 @@ final class RadialWheelView: NSView {
 
     // MARK: - Scroll-to-rotate
     override func scrollWheel(with event: NSEvent) {
-        // Only allow rotation if there are more than 8 items!
-        guard allItems.count > 8, mode == .tools || mode == .conversions else { return }
+        // Only allow rotation if there are multiple sides (> 8 items)
+        guard allItems.count > 8 else { return }
 
-        // Accumulate physical delta (trackpad gives fine-grained deltas).
-        let delta = event.scrollingDeltaX != 0 ? event.scrollingDeltaX : -event.scrollingDeltaY
-        scrollAccumulator += delta
+        // Reset settle timer on every scroll event (fires 260ms after events stop)
+        gestureSettleTimer?.invalidate()
+        gestureSettleTimer = Timer.scheduledTimer(withTimeInterval: 0.26, repeats: false) { [weak self] _ in
+            self?.handleGestureSettled()
+        }
 
-        // Each 24 pt of scroll flips to the next/previous side
-        let step: CGFloat = 24.0
-        if abs(scrollAccumulator) >= step {
-            let forward = scrollAccumulator > 0
+        // Handle trackpad gesture phases
+        if event.phase == .began {
+            isGestureLocked = false
             scrollAccumulator = 0
+            rotationTimer?.invalidate()
+            rotationTimer = nil
+        } else if event.phase == .ended || event.phase == .cancelled {
+            handleGestureEnded()
+            return
+        }
+
+        let delta = event.scrollingDeltaX != 0 ? event.scrollingDeltaX : -event.scrollingDeltaY
+        if abs(delta) < 0.0001 { return }
+
+        // If this gesture has already switched to the target side, stay locked at that side!
+        // Absorb remaining inertia / momentum events so it does not cycle back or overshoot.
+        if isGestureLocked {
+            return
+        }
+
+        // Track live rotation interactively with physical gesture
+        scrollAccumulator += delta
+        wheelRotationAngle += delta * 0.95
+        // Elastic resistance clamp before threshold
+        wheelRotationAngle = max(-42.0, min(42.0, wheelRotationAngle))
+        needsDisplay = true
+
+        // Once threshold is crossed, commit to the target side and lock
+        let step: CGFloat = 26.0
+        if abs(scrollAccumulator) >= step || abs(wheelRotationAngle) >= 30.0 {
+            let forward = scrollAccumulator > 0 || wheelRotationAngle > 0
+            scrollAccumulator = 0
+            isGestureLocked = true // Lock: prevents returning to the same side during this gesture!
 
             let oldSide = currentSideIndex
             let total = totalSides
@@ -223,12 +257,34 @@ final class RadialWheelView: NSView {
                 syncDisplayedItems()
                 hoveredIndex = -1
 
-                // Spin animation: smooth rotation flip into the new side
-                wheelRotationAngle = forward ? 120.0 : -120.0
+                // Smoothly spin and settle at 0 on the new side (e.g. Side 2)
+                wheelRotationAngle = forward ? -75.0 : 75.0
                 targetRotationAngle = 0
                 startRotationAnimation()
-                needsDisplay = true
+            } else {
+                targetRotationAngle = 0
+                startRotationAnimation()
             }
+            needsDisplay = true
+        }
+    }
+
+    private func handleGestureEnded() {
+        if !isGestureLocked && wheelRotationAngle != 0 {
+            // Did not cross threshold before lifting: spring back to 0 on current side
+            targetRotationAngle = 0
+            startRotationAnimation()
+        }
+    }
+
+    private func handleGestureSettled() {
+        gestureSettleTimer?.invalidate()
+        gestureSettleTimer = nil
+        isGestureLocked = false
+        scrollAccumulator = 0
+        if rotationTimer == nil && wheelRotationAngle != 0 {
+            targetRotationAngle = 0
+            startRotationAnimation()
         }
     }
 
@@ -257,6 +313,9 @@ final class RadialWheelView: NSView {
     func resetRotation() {
         rotationTimer?.invalidate()
         rotationTimer = nil
+        gestureSettleTimer?.invalidate()
+        gestureSettleTimer = nil
+        isGestureLocked = false
         currentSideIndex = 0
         wheelRotationAngle = 0
         targetRotationAngle = 0

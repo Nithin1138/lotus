@@ -265,6 +265,17 @@
     let currentSide = Math.floor(initialIdx / pageSize);
     let currentLocal = initialIdx % pageSize;
 
+    // Smooth interactive rotation & gesture lock state
+    let isWheelLocked = false;
+    let wheelTimeout = null;
+    let scrollAccumulator = 0;
+    let interactiveAngle = 0;
+    let isDragging = false;
+    let isPointerLocked = false;
+    let startAngle = 0;
+    let dragDelta = 0;
+    let activeSpinCancel = null;
+
     function renderCurrentSide(fromAngle = 0) {
       const layers = wheelUI.base(svg);
       const start = currentSide * pageSize;
@@ -341,8 +352,14 @@
         }
       };
 
+      if (activeSpinCancel) {
+        activeSpinCancel();
+        activeSpinCancel = null;
+      }
       if (fromAngle !== 0) {
-        wheelUI.spin(layers.rotator, fromAngle, 0);
+        activeSpinCancel = wheelUI.spin(layers.rotator, fromAngle, 0, () => {
+          activeSpinCancel = null;
+        });
       }
 
       if (currentLocal >= n) currentLocal = 0;
@@ -368,24 +385,54 @@
       }
 
       // Wheel mouse & trackpad scroll listener: spins and rotates sides ONLY when full (> 8 items)
-      let scrollAccumulator = 0;
       svg.onwheel = e => {
         if (!isFull) return; // Only rotate when wheel is full (> 8 items)!
         e.preventDefault();
-        const delta = e.deltaX !== 0 ? e.deltaX : -e.deltaY;
-        scrollAccumulator += delta;
-        const step = 20;
-        if (Math.abs(scrollAccumulator) >= step) {
-          const forward = scrollAccumulator > 0;
+
+        // Reset settle timeout on every wheel event (260ms of silence unlocks next gesture)
+        clearTimeout(wheelTimeout);
+        wheelTimeout = setTimeout(() => {
+          isWheelLocked = false;
           scrollAccumulator = 0;
+          if (interactiveAngle !== 0) {
+            if (activeSpinCancel) activeSpinCancel();
+            activeSpinCancel = wheelUI.spin(layers.rotator, interactiveAngle, 0, () => {
+              activeSpinCancel = null;
+            });
+            interactiveAngle = 0;
+          }
+        }, 260);
+
+        // If locked during this scroll gesture/flick, stay firmly on the newly selected side!
+        // Absorb remaining momentum/scroll events so it never bounces back or cycles.
+        if (isWheelLocked) {
+          return;
+        }
+
+        if (activeSpinCancel) {
+          activeSpinCancel();
+          activeSpinCancel = null;
+        }
+
+        const delta = e.deltaX !== 0 ? e.deltaX : -e.deltaY;
+        if (Math.abs(delta) < 0.1) return;
+
+        scrollAccumulator += delta;
+        // Live interactive rotation following the user's scroll gesture
+        interactiveAngle = Math.max(-42, Math.min(42, interactiveAngle + delta * 0.9));
+        layers.rotator.setAttribute("transform", `rotate(${interactiveAngle} ${C} ${C})`);
+
+        const step = 22;
+        if (Math.abs(scrollAccumulator) >= step || Math.abs(interactiveAngle) >= 28) {
+          const forward = scrollAccumulator > 0 || interactiveAngle > 0;
+          scrollAccumulator = 0;
+          interactiveAngle = 0;
+          isWheelLocked = true; // Lock: guarantees stopping at the other side (Side 2) without flipping back!
           rotateSide(forward);
         }
       };
 
       // Pointer drag rotation ONLY when full (> 8 items)
-      let isDragging = false;
-      let startAngle = 0;
-      let dragDelta = 0;
       svg.onpointerdown = e => {
         if (!isFull) return; // Only drag-rotate when wheel is full (> 8 items)!
         if (e.button !== 0) return;
@@ -395,12 +442,18 @@
         const r = Math.hypot(e.clientX - cx, e.clientY - cy);
         if (r < 50 * (rect.width / 380) || r > 185 * (rect.width / 380)) return;
         isDragging = true;
+        isPointerLocked = false;
         startAngle = Math.atan2(e.clientY - cy, e.clientX - cx);
         dragDelta = 0;
+        if (activeSpinCancel) {
+          activeSpinCancel();
+          activeSpinCancel = null;
+        }
         svg.setPointerCapture(e.pointerId);
       };
+
       svg.onpointermove = e => {
-        if (!isDragging || !isFull) return;
+        if (!isDragging || !isFull || isPointerLocked) return;
         const rect = svg.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
@@ -410,15 +463,31 @@
         while (diff < -Math.PI) diff += Math.PI * 2;
         dragDelta += diff;
         startAngle = curAngle;
-        if (Math.abs(dragDelta) >= 0.45) { // ~26 deg rotation gesture
+
+        // Direct tactile visual rotation tracking
+        const deg = Math.max(-42, Math.min(42, dragDelta * 180 / Math.PI));
+        layers.rotator.setAttribute("transform", `rotate(${deg} ${C} ${C})`);
+
+        if (Math.abs(dragDelta) >= 0.40) { // ~23 deg threshold
           const forward = dragDelta > 0;
+          isPointerLocked = true; // Lock: single-side commit
           dragDelta = 0;
           rotateSide(forward);
         }
       };
+
       svg.onpointerup = svg.onpointercancel = e => {
         if (isDragging) {
           isDragging = false;
+          if (!isPointerLocked && dragDelta !== 0) {
+            // Dragged slightly but didn't reach threshold: spring back to 0
+            if (activeSpinCancel) activeSpinCancel();
+            activeSpinCancel = wheelUI.spin(layers.rotator, dragDelta * 180 / Math.PI, 0, () => {
+              activeSpinCancel = null;
+            });
+          }
+          isPointerLocked = false;
+          dragDelta = 0;
           try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
         }
       };
@@ -427,7 +496,7 @@
     function rotateSide(forward) {
       currentSide = forward ? (currentSide + 1) % totalSides : (currentSide - 1 + totalSides) % totalSides;
       currentLocal = 0;
-      renderCurrentSide(forward ? 120 : -120);
+      renderCurrentSide(forward ? -75 : 75);
     }
 
     renderCurrentSide(0);

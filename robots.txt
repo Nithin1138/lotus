@@ -1,0 +1,60 @@
+# DropDial Robots.txt - Global Search Engine Crawling Guidelines
+User-agent: *
+Allow: /
+Allow: /favicon.ico
+Allow: /assets/
+Disallow: /api/
+Disallow: /website/api/
+Disallow: /admin/
+Disallow: /website/admin/
+
+# Sitemaps
+Sitemap: https://dropdial.app/sitemap.xml
+Sitemap: https://dropdial.org/sitemap.xml
+
+# Googlebot Rules
+User-agent: Googlebot
+Allow: /
+Allow: /favicon.ico
+Allow: /assets/
+Disallow: /api/
+Disallow: /admin/
+
+# Googlebot-Image Rules (Ensures Favicon & Rich Image Snippets Indexing)
+User-agent: Googlebot-Image
+Allow: /
+Allow: /favicon.ico
+Allow: /assets/img/
+Allow: /docs/images/
+
+# Bingbot Rules
+User-agent: Bingbot
+Allow: /
+Allow: /favicon.ico
+Allow: /assets/
+Disallow: /api/
+Disallow: /admin/
+
+# Applebot (Spotlight & Siri Search)
+User-agent: Applebot
+Allow: /
+Allow: /favicon.ico
+Allow: /assets/
+Disallow: /api/
+
+# DuckDuckBot
+User-agent: DuckDuckBot
+Allow: /
+Allow: /favicon.ico
+Allow: /assets/
+Disallow: /api/
+
+# Social Media Previews & Crawlers
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
