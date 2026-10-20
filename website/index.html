@@ -425,8 +425,13 @@
         <svg class="theme-icon moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
         </svg>
-      </button>
-      <a class="btn btn-small" href="#buy" data-open-checkout id="nav-header-buy-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;">Buy Pro</a>
+      <div class="nav-buy-wrap">
+        <span class="nav-urgency-badge" id="nav-urgency-badge" style="display:none;">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <span id="nav-urgency-timer">Sale</span>
+        </span>
+        <a class="btn btn-small" href="#buy" data-open-checkout id="nav-header-buy-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;">Buy Pro</a>
+      </div>
       <a class="btn btn-small btn-ghost" href="#download" data-i18n="nav.download">Free Download</a>
     </div>
   </div>
@@ -445,7 +450,13 @@
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>
             <span>Download Free Trial</span>
           </a>
-          <a class="btn" href="#buy" data-open-checkout id="nav-buy-btn" style="background:var(--accent);color:#fff;border:1px solid var(--accent);font-weight:700;">Buy Pro</a>
+          <div class="hero-buy-wrap">
+            <span class="hero-urgency-tag" id="hero-urgency-tag" style="display:none;">
+              <span class="hut-dot"></span>
+              <span id="hero-urgency-timer">Sale Ending Soon</span>
+            </span>
+            <a class="btn" href="#buy" data-open-checkout id="nav-buy-btn" style="background:var(--accent);color:#fff;border:1px solid var(--accent);font-weight:700;">Buy Pro</a>
+          </div>
         </div>
         <p class="fineprint"><span data-release-meta>macOS (Apple Silicon &amp; Intel) &amp; Windows</span> · <span>7-day free trial · 100% private</span></p>
       </div>
@@ -792,17 +803,21 @@
       <div class="offer-countdown-banner" id="offer-countdown-banner">
         <div class="ocb-inner">
           <div class="ocb-badge">
-            <span class="ocb-icon">⚡️</span>
+            <span class="ocb-icon-badge">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </span>
             <span id="ocb-label">Special Launch Discount Ends In:</span>
           </div>
           <div class="ocb-timer" id="ocb-timer">
-            <div class="ocb-unit"><span class="ocb-num" id="ocb-days">00</span><span class="ocb-tag">Days</span></div>
-            <span class="ocb-colon">:</span>
-            <div class="ocb-unit"><span class="ocb-num" id="ocb-hours">00</span><span class="ocb-tag">Hours</span></div>
-            <span class="ocb-colon">:</span>
-            <div class="ocb-unit"><span class="ocb-num" id="ocb-mins">00</span><span class="ocb-tag">Mins</span></div>
-            <span class="ocb-colon">:</span>
-            <div class="ocb-unit"><span class="ocb-num" id="ocb-secs">00</span><span class="ocb-tag">Secs</span></div>
+            <div class="ocb-unit"><span class="ocb-num" id="ocb-days">00</span><span class="ocb-tag">d</span></div>
+            <span class="ocb-sep">:</span>
+            <div class="ocb-unit"><span class="ocb-num" id="ocb-hours">00</span><span class="ocb-tag">h</span></div>
+            <span class="ocb-sep">:</span>
+            <div class="ocb-unit"><span class="ocb-num" id="ocb-mins">00</span><span class="ocb-tag">m</span></div>
+            <span class="ocb-sep">:</span>
+            <div class="ocb-unit"><span class="ocb-num" id="ocb-secs">00</span><span class="ocb-tag">s</span></div>
           </div>
         </div>
       </div>
@@ -878,7 +893,13 @@
               Direct developer priority support
             </li>
           </ul>
-          <a class="btn btn-primary" href="#buy" data-open-checkout id="card-buy-btn" style="text-align: center; justify-content: center; background: var(--accent); color: #fff;">Buy DropDial Pro</a>
+          <div class="card-buy-wrap">
+            <span class="card-urgency-tag" id="card-urgency-tag" style="display:none;">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span>Launch discount ends in <b id="card-urgency-timer">23h 58m</b></span>
+            </span>
+            <a class="btn btn-primary" href="#buy" data-open-checkout id="card-buy-btn" style="text-align: center; justify-content: center; background: var(--accent); color: #fff; width: 100%;">Buy DropDial Pro</a>
+          </div>
         </div>
       </div>
     </div>

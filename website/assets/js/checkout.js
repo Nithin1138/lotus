@@ -126,10 +126,15 @@
     }
 
     const banner = document.getElementById('offer-countdown-banner');
-    if (!banner) return;
+    const heroTag = document.getElementById('hero-urgency-tag');
+    const navTag = document.getElementById('nav-urgency-badge');
+    const cardTag = document.getElementById('card-urgency-tag');
 
     if (!countdownConfig || countdownConfig.enabled === false) {
-      banner.style.display = 'none';
+      if (banner) banner.style.display = 'none';
+      if (heroTag) heroTag.style.display = 'none';
+      if (navTag) navTag.style.display = 'none';
+      if (cardTag) cardTag.style.display = 'none';
       return;
     }
 
@@ -147,8 +152,11 @@
       countdownConfig.expiresAt = new Date(targetTime).toISOString();
     }
 
-    // Ensure banner is displayed cleanly as flexbox
-    banner.style.display = 'flex';
+    // Ensure elements are displayed
+    if (banner) banner.style.display = 'flex';
+    if (heroTag) heroTag.style.display = 'inline-flex';
+    if (navTag) navTag.style.display = 'inline-flex';
+    if (cardTag) cardTag.style.display = 'inline-flex';
 
     function updateTick() {
       const currentTime = Date.now();
@@ -178,6 +186,19 @@
       if (hoursEl) hoursEl.textContent = pad(hours);
       if (minsEl) minsEl.textContent = pad(minutes);
       if (secsEl) secsEl.textContent = pad(seconds);
+
+      // Micro countdown tags on "Buy" buttons
+      const shortTime = days > 0 ? `${days}d ${hours}h left` : `${hours}h ${pad(minutes)}m left`;
+      const fullTime = days > 0 ? `${days}d ${hours}h ${pad(minutes)}m ${pad(seconds)}s` : `${hours}h ${pad(minutes)}m ${pad(seconds)}s`;
+
+      const heroTimerEl = document.getElementById('hero-urgency-timer');
+      if (heroTimerEl) heroTimerEl.textContent = `Offer: ${shortTime}`;
+
+      const navTimerEl = document.getElementById('nav-urgency-timer');
+      if (navTimerEl) navTimerEl.textContent = shortTime;
+
+      const cardTimerEl = document.getElementById('card-urgency-timer');
+      if (cardTimerEl) cardTimerEl.textContent = fullTime;
     }
 
     updateTick();
