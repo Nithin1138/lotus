@@ -127,13 +127,11 @@
 
     const banner = document.getElementById('offer-countdown-banner');
     const heroTag = document.getElementById('hero-urgency-tag');
-    const navTag = document.getElementById('nav-urgency-badge');
     const cardTag = document.getElementById('card-urgency-tag');
 
     if (!countdownConfig || countdownConfig.enabled === false) {
       if (banner) banner.style.display = 'none';
       if (heroTag) heroTag.style.display = 'none';
-      if (navTag) navTag.style.display = 'none';
       if (cardTag) cardTag.style.display = 'none';
       return;
     }
@@ -155,8 +153,17 @@
     // Ensure elements are displayed
     if (banner) banner.style.display = 'flex';
     if (heroTag) heroTag.style.display = 'inline-flex';
-    if (navTag) navTag.style.display = 'inline-flex';
     if (cardTag) cardTag.style.display = 'inline-flex';
+
+    function updateDigit(el, val) {
+      if (!el) return;
+      if (el.textContent !== val) {
+        el.textContent = val;
+        el.classList.remove('digit-flip');
+        void el.offsetWidth; // Force reflow to re-trigger CSS keyframe
+        el.classList.add('digit-flip');
+      }
+    }
 
     function updateTick() {
       const currentTime = Date.now();
@@ -182,10 +189,10 @@
       const minsEl = document.getElementById('ocb-mins');
       const secsEl = document.getElementById('ocb-secs');
 
-      if (daysEl) daysEl.textContent = pad(days);
-      if (hoursEl) hoursEl.textContent = pad(hours);
-      if (minsEl) minsEl.textContent = pad(minutes);
-      if (secsEl) secsEl.textContent = pad(seconds);
+      updateDigit(daysEl, pad(days));
+      updateDigit(hoursEl, pad(hours));
+      updateDigit(minsEl, pad(minutes));
+      updateDigit(secsEl, pad(seconds));
 
       // Micro countdown tags on "Buy" buttons
       const shortTime = days > 0 ? `${days}d ${hours}h left` : `${hours}h ${pad(minutes)}m left`;
@@ -193,9 +200,6 @@
 
       const heroTimerEl = document.getElementById('hero-urgency-timer');
       if (heroTimerEl) heroTimerEl.textContent = `Offer: ${shortTime}`;
-
-      const navTimerEl = document.getElementById('nav-urgency-timer');
-      if (navTimerEl) navTimerEl.textContent = shortTime;
 
       const cardTimerEl = document.getElementById('card-urgency-timer');
       if (cardTimerEl) cardTimerEl.textContent = fullTime;

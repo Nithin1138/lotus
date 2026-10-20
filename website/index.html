@@ -425,13 +425,8 @@
         <svg class="theme-icon moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
         </svg>
-      <div class="nav-buy-wrap">
-        <span class="nav-urgency-badge" id="nav-urgency-badge" style="display:none;">
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          <span id="nav-urgency-timer">Sale</span>
-        </span>
-        <a class="btn btn-small" href="#buy" data-open-checkout id="nav-header-buy-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;">Buy Pro</a>
-      </div>
+      </button>
+      <a class="btn btn-small" href="#buy" data-open-checkout id="nav-header-buy-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;">Buy Pro</a>
       <a class="btn btn-small btn-ghost" href="#download" data-i18n="nav.download">Free Download</a>
     </div>
   </div>
@@ -799,32 +794,58 @@
   <section class="section" id="pricing">
     <div class="wrap" style="text-align: center;">
       
-      <!-- Promotional Urgency Banner with Live Countdown Timer -->
-      <div class="offer-countdown-banner" id="offer-countdown-banner">
-        <div class="ocb-inner">
-          <div class="ocb-badge">
-            <span class="ocb-icon-badge">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-              </svg>
-            </span>
-            <span id="ocb-label">Special Launch Discount Ends In:</span>
+      <p class="eyebrow" style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">Simple, Transparent Pricing</p>
+      <h2>Pay Once. Own It Forever.</h2>
+      <p class="section-lead" style="max-width: 580px; margin: 0 auto 32px;">No subscriptions, no cloud accounts, and no monthly fees. Try everything free for 7 days, then unlock lifetime access.</p>
+
+      <!-- Prominent Special Offer Countdown: D:H at left, Title in center, M:S at right -->
+      <div class="offer-countdown-section" id="offer-countdown-banner">
+        <div class="ocs-container">
+          <!-- Left: Days & Hours -->
+          <div class="ocs-group ocs-left">
+            <div class="ocs-digit-card">
+              <div class="ocs-num-wrap">
+                <span class="ocs-digit-val" id="ocb-days">00</span>
+              </div>
+              <span class="ocs-unit-label">Days</span>
+            </div>
+            <span class="ocs-colon">:</span>
+            <div class="ocs-digit-card">
+              <div class="ocs-num-wrap">
+                <span class="ocs-digit-val" id="ocb-hours">00</span>
+              </div>
+              <span class="ocs-unit-label">Hours</span>
+            </div>
           </div>
-          <div class="ocb-timer" id="ocb-timer">
-            <div class="ocb-unit"><span class="ocb-num" id="ocb-days">00</span><span class="ocb-tag">d</span></div>
-            <span class="ocb-sep">:</span>
-            <div class="ocb-unit"><span class="ocb-num" id="ocb-hours">00</span><span class="ocb-tag">h</span></div>
-            <span class="ocb-sep">:</span>
-            <div class="ocb-unit"><span class="ocb-num" id="ocb-mins">00</span><span class="ocb-tag">m</span></div>
-            <span class="ocb-sep">:</span>
-            <div class="ocb-unit"><span class="ocb-num" id="ocb-secs">00</span><span class="ocb-tag">s</span></div>
+
+          <!-- Center: Special Offer Title & Subtitle -->
+          <div class="ocs-center">
+            <div class="ocs-badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span>Limited Time Launch Deal</span>
+            </div>
+            <h3 class="ocs-title" id="ocb-label">Special Offer Ends In</h3>
+            <p class="ocs-sub">Lock in lifetime access before price increases</p>
+          </div>
+
+          <!-- Right: Minutes & Seconds -->
+          <div class="ocs-group ocs-right">
+            <div class="ocs-digit-card">
+              <div class="ocs-num-wrap">
+                <span class="ocs-digit-val" id="ocb-mins">00</span>
+              </div>
+              <span class="ocs-unit-label">Mins</span>
+            </div>
+            <span class="ocs-colon">:</span>
+            <div class="ocs-digit-card">
+              <div class="ocs-num-wrap">
+                <span class="ocs-digit-val" id="ocb-secs">00</span>
+              </div>
+              <span class="ocs-unit-label">Secs</span>
+            </div>
           </div>
         </div>
       </div>
-
-      <p class="eyebrow" style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">Simple, Transparent Pricing</p>
-      <h2>Pay Once. Own It Forever.</h2>
-      <p class="section-lead" style="max-width: 580px; margin: 0 auto 36px;">No subscriptions, no cloud accounts, and no monthly fees. Try everything free for 7 days, then unlock lifetime access.</p>
 
       <div class="pricing-grid">
         <!-- Card 1: Free Trial -->
