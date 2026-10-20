@@ -606,7 +606,6 @@ internal sealed class Resident : IDisposable
                 if (resume) ResumeJob(job); else PauseJob(job);
         });
         var cancelAll = items.Items.Add(L.T("Cancel all jobs"), null, (_, _) => { foreach (var job in jobs.ToList()) CancelJob(job); });
-        items.Items.Add(L.T("Third-party notices"), null, (_, _) => OpenNotices());
         items.Items.Add(L.T("Open latest output folder"), null, (_, _) => { if (lastOutput != null) ExplorerIntegration.Reveal(lastOutput); });
         items.Items.Add(new Forms.ToolStripSeparator());
         items.Items.Add(L.T("Process a picture or files from the clipboard…"), null, (_, _) => OpenFromClipboard());
@@ -629,8 +628,6 @@ internal sealed class Resident : IDisposable
             themeMenu.DropDownItems.Add(new Forms.ToolStripMenuItem(label, null, (_, _) => { UiTheme.Choose(choice); taskIndicator.ApplyTheme(); }) { Tag = choice });
         themeMenu.DropDownOpening += (_, _) => { foreach (Forms.ToolStripMenuItem item in themeMenu.DropDownItems) item.Checked = (string)item.Tag! == UiTheme.Choice; };
         items.Items.Add(themeMenu);
-        var soundItem = new Forms.ToolStripMenuItem(L.T("Sound effects"), null, (_, _) => SoundManager.Enabled = !SoundManager.Enabled) { Checked = SoundManager.Enabled };
-        items.Items.Add(soundItem);
         items.Items.Add(L.T("Customize wheel…"), null, (_, _) => { if (orderWindow == null) { orderWindow = new WheelOrderWindow(); orderWindow.Closed += (_, _) => orderWindow = null; orderWindow.Show(); } orderWindow.Activate(); });
         items.Items.Add(L.T("Flows…"), null, (_, _) => { if (flowWindow == null) { flowWindow = new FlowWindow(() => { }); flowWindow.Closed += (_, _) => flowWindow = null; flowWindow.Show(); } flowWindow.Activate(); });
         Forms.ToolStripMenuItem? explorerItem = null;
@@ -684,7 +681,6 @@ internal sealed class Resident : IDisposable
             otherFolder.Text = OutputFolder.Current is { } chosen ? L.T("Choose a folder…") + "  (" + chosen + ")" : L.T("Choose a folder…");
             if (explorerItem != null)
                 explorerItem.Checked = ExplorerIntegration.Enabled;
-            soundItem.Checked = SoundManager.Enabled;
             bool canPause = jobs.Any(CanPause), canResume = jobs.Any(j => j.Pause != null);
             showProgress.Enabled = cancelAll.Enabled = jobs.Count > 0;
             pauseAll.Enabled = canPause || canResume;

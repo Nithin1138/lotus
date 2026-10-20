@@ -60,10 +60,23 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             guard let self = self else { return }
 
-            if let error = error {
+            if let _ = error {
                 if isUserInitiated {
                     DispatchQueue.main.async {
-                        self.showFailureAlert(error: error.localizedDescription)
+                        self.showConnectionAlert()
+                    }
+                }
+                return
+            }
+
+            let httpResponse = response as? HTTPURLResponse
+            if let http = httpResponse, http.statusCode == 404 {
+                // No releases published yet on the repository; app is up to date
+                DispatchQueue.main.async {
+                    self.latestRelease = nil
+                    self.onUpdateStatusChanged?()
+                    if isUserInitiated {
+                        self.showUpToDateAlert()
                     }
                 }
                 return
@@ -72,9 +85,12 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
             guard let data = data,
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let tagName = json["tag_name"] as? String else {
-                if isUserInitiated {
-                    DispatchQueue.main.async {
-                        self.showFailureAlert(error: "Invalid response from update server.")
+                // Invalid response or no release tag found; treat as up to date
+                DispatchQueue.main.async {
+                    self.latestRelease = nil
+                    self.onUpdateStatusChanged?()
+                    if isUserInitiated {
+                        self.showUpToDateAlert()
                     }
                 }
                 return
@@ -166,8 +182,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
         alert.informativeText = "Version \(release.tagName) is now available (Current: v\(currentVersion)).\n\nRelease Summary:\n\(notes)"
         alert.alertStyle = .informational
 
-        alert.addButton(withTitle: release.isZip ? "Update Now" : "Download Update")
-        alert.addButton(withTitle: "Manual Download (Browser)")
+        alert.addButton(withTitle: "Update Now")
         alert.addButton(withTitle: "Later")
 
         let response = alert.runModal()
@@ -175,12 +190,10 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
         case .alertFirstButtonReturn:
             if release.isZip && release.downloadUrl != nil {
                 startDownloadAndApply(release: release)
-            } else {
-                openManualDownload(url: release.downloadUrl ?? release.htmlUrl)
+            } else if let dl = release.downloadUrl ?? URL(string: release.htmlUrl)?.absoluteString {
+                openManualDownload(url: dl)
             }
         case .alertSecondButtonReturn:
-            openManualDownload(url: release.htmlUrl)
-        case .alertThirdButtonReturn:
             UserDefaults.standard.set(release.tagName, forKey: "dropdial_ignored_update_version")
         default:
             break
@@ -196,17 +209,13 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
         alert.runModal()
     }
 
-    private func showFailureAlert(error: String) {
+    private func showConnectionAlert() {
         let alert = NSAlert()
         alert.messageText = "Check for Updates"
-        alert.informativeText = "Could not check for updates:\n\(error)\n\nYou can visit GitHub to check and download updates manually."
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "Open Releases Page")
-        alert.addButton(withTitle: "Close")
-
-        if alert.runModal() == .alertFirstButtonReturn {
-            openManualDownload(url: "https://github.com/\(repoOwner)/\(repoName)/releases")
-        }
+        alert.informativeText = "Unable to check for updates. Please check your internet connection."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     func openManualDownload(url: String) {
@@ -266,14 +275,9 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
         self.progressBar = bar
 
         let cancelBtn = NSButton(title: "Cancel", target: self, action: #selector(cancelUpdateDownload))
-        cancelBtn.frame = NSRect(x: winW - 100, y: 14, width: 80, height: 28)
+        cancelBtn.frame = NSRect(x: (winW - 100) / 2, y: 14, width: 100, height: 28)
         cancelBtn.bezelStyle = .rounded
         content.addSubview(cancelBtn)
-
-        let manualBtn = NSButton(title: "Manual Download", target: self, action: #selector(fallbackManualDownload))
-        manualBtn.frame = NSRect(x: 18, y: 14, width: 140, height: 28)
-        manualBtn.bezelStyle = .rounded
-        content.addSubview(manualBtn)
 
         win.contentView = content
         win.makeKeyAndOrderFront(nil)
@@ -285,15 +289,6 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
         downloadTask = nil
         progressWindow?.close()
         progressWindow = nil
-    }
-
-    @objc private func fallbackManualDownload() {
-        cancelUpdateDownload()
-        if let rel = latestRelease {
-            openManualDownload(url: rel.htmlUrl)
-        } else {
-            openManualDownload(url: "https://github.com/\(repoOwner)/\(repoName)/releases/latest")
-        }
     }
 
     // MARK: - URLSessionDownloadDelegate
@@ -399,14 +394,11 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
                 self.progressWindow = nil
 
                 let alert = NSAlert()
-                alert.messageText = "Auto-Update Could Not Complete"
-                alert.informativeText = "An error occurred while installing the update (\(error.localizedDescription)).\n\nWould you like to download the update manually?"
+                alert.messageText = "Update Failed"
+                alert.informativeText = "An error occurred while installing the update (\(error.localizedDescription))."
                 alert.alertStyle = .warning
-                alert.addButton(withTitle: "Download in Browser")
-                alert.addButton(withTitle: "Cancel")
-                if alert.runModal() == .alertFirstButtonReturn {
-                    self.fallbackManualDownload()
-                }
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
             }
         }
     }
@@ -420,13 +412,10 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
 
                 let alert = NSAlert()
                 alert.messageText = "Download Failed"
-                alert.informativeText = "The update download was interrupted: \(error.localizedDescription).\n\nWould you like to download it manually?"
+                alert.informativeText = "The update download was interrupted: \(error.localizedDescription)."
                 alert.alertStyle = .warning
-                alert.addButton(withTitle: "Manual Download")
-                alert.addButton(withTitle: "Cancel")
-                if alert.runModal() == .alertFirstButtonReturn {
-                    self.fallbackManualDownload()
-                }
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
             }
         }
     }

@@ -9,32 +9,10 @@ internal static class SoundManager
 
     public static bool Enabled
     {
-        get => Settings.GetBool(SoundKey, true);
-        set => Settings.Set(SoundKey, value);
+        get => false;
+        set { }
     }
 
-    private static long lastTickMs;
-
-    public static void PlayTick()
-    {
-        if (!Enabled) return;
-        long now = Environment.TickCount64;
-        if (now - lastTickMs < 35) return;
-        lastTickMs = now;
-        try
-        {
-            SystemSounds.Asterisk.Play();
-        }
-        catch { }
-    }
-
-    public static void PlayPop()
-    {
-        if (!Enabled) return;
-        try
-        {
-            SystemSounds.Beep.Play();
-        }
-        catch { }
-    }
+    public static void PlayTick() { }
+    public static void PlayPop() { }
 }

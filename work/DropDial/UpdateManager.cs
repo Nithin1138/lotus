@@ -65,8 +65,15 @@ internal static class UpdateManager
             var response = await client.GetAsync(ReleasesApiUrl);
             if (!response.IsSuccessStatusCode)
             {
+                if ((int)response.StatusCode == 404)
+                {
+                    AvailableUpdate = null;
+                    if (isUserInitiated)
+                        ShowUpToDateDialog();
+                    return;
+                }
                 if (isUserInitiated)
-                    ShowErrorDialog($"Could not check for updates (server returned {(int)response.StatusCode}).");
+                    ShowErrorDialog("Unable to check for updates. Please check your internet connection.");
                 return;
             }
 
@@ -76,8 +83,9 @@ internal static class UpdateManager
 
             if (!root.TryGetProperty("tag_name", out var tagElem))
             {
+                AvailableUpdate = null;
                 if (isUserInitiated)
-                    ShowErrorDialog("Invalid release information received from server.");
+                    ShowUpToDateDialog();
                 return;
             }
 
@@ -172,11 +180,9 @@ internal static class UpdateManager
                          $"Latest Version: {release.TagName}\n" +
                          $"Current Version: v{CurrentVersion}\n\n" +
                          $"Release Notes:\n{summary}\n\n" +
-                         $"Click 'Yes' to update automatically now,\n" +
-                         $"'No' to download manually in your browser,\n" +
-                         $"or 'Cancel' to remind me later.";
+                         $"Would you like to download and install this update now?";
 
-        var choice = MessageBox.Show(message, "DropDial Update Available", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information);
+        var choice = MessageBox.Show(message, "DropDial Update Available", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
 
         if (choice == DialogResult.Yes)
         {
@@ -189,10 +195,6 @@ internal static class UpdateManager
                 OpenBrowser(release.HtmlUrl);
             }
         }
-        else if (choice == DialogResult.No)
-        {
-            OpenBrowser(release.HtmlUrl);
-        }
         else
         {
             Settings.Set("IgnoredUpdateVersion", release.TagName);
@@ -201,17 +203,12 @@ internal static class UpdateManager
 
     private static void ShowErrorDialog(string error)
     {
-        var result = MessageBox.Show(
-            $"Could not check for updates:\n{error}\n\nWould you like to open the releases page on GitHub directly?",
+        MessageBox.Show(
+            error,
             "Check for Updates",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Warning
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information
         );
-
-        if (result == DialogResult.Yes)
-        {
-            OpenBrowser($"https://github.com/{RepoOwner}/{RepoName}/releases");
-        }
     }
 
     public static void OpenBrowser(string url)
