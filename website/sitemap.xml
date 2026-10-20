@@ -31,4 +31,12 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://dropdial.app/privacy"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://dropdial.app/privacy"/>
   </url>
+  <url>
+    <loc>https://dropdial.app/guide</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://dropdial.app/guide"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://dropdial.app/guide"/>
+  </url>
 </urlset>
