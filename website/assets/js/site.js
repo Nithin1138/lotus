@@ -288,6 +288,36 @@
     })
     .catch(() => {});
 
+  /* ---------- FAQ Exclusive Accordion ---------- */
+  const faqList = $$(".faq details");
+  faqList.forEach((targetDetail) => {
+    // When a user clicks an FAQ item summary
+    const summary = targetDetail.querySelector("summary");
+    if (summary) {
+      summary.addEventListener("click", () => {
+        // If clicking to open this detail, close all other open details immediately
+        if (!targetDetail.open) {
+          faqList.forEach((otherDetail) => {
+            if (otherDetail !== targetDetail && otherDetail.open) {
+              otherDetail.open = false;
+            }
+          });
+        }
+      });
+    }
+
+    // Also monitor native toggle event (handles keyboard Space/Enter and external triggers)
+    targetDetail.addEventListener("toggle", () => {
+      if (targetDetail.open) {
+        faqList.forEach((otherDetail) => {
+          if (otherDetail !== targetDetail && otherDetail.open) {
+            otherDetail.open = false;
+          }
+        });
+      }
+    });
+  });
+
   /* ---------- Interactive demo ---------- */
   // Menus follow the app's Catalog.cs: what each extension converts to, and which tools it offers for a single file.
   const IMAGES = ["jpg", "png", "webp", "heic", "tiff", "svg", "avif", "bmp"];

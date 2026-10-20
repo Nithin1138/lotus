@@ -1046,13 +1046,62 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   user-select: none;
 }
 
-.faq { margin-top: 36px; display: grid; gap: 10px; }
-.faq details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 0 20px; }
-.faq summary { cursor: pointer; list-style: none; padding: 18px 32px 18px 0; font-weight: 600; position: relative; }
+.faq { margin-top: 36px; display: grid; gap: 12px; }
+.faq details {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0 22px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.faq details:hover {
+  border-color: rgba(255, 101, 0, 0.25);
+}
+.faq details[open] {
+  border-color: rgba(255, 101, 0, 0.45);
+  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.08);
+}
+.faq summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 18px 32px 18px 0;
+  font-weight: 600;
+  font-size: 1.05rem;
+  position: relative;
+  user-select: none;
+  transition: color 0.15s ease;
+}
 .faq summary::-webkit-details-marker { display: none; }
-.faq summary::after { content: ""; position: absolute; right: 2px; top: 50%; width: 10px; height: 10px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: translateY(-70%) rotate(45deg); transition: transform .2s; }
-.faq details[open] summary::after { transform: translateY(-30%) rotate(-135deg); }
-.faq details > div { padding: 0 0 20px; color: var(--muted); }
+.faq summary::after {
+  content: "";
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+.faq details[open] summary {
+  color: var(--ink);
+}
+.faq details[open] summary::after {
+  transform: translateY(-30%) rotate(-135deg);
+  border-color: var(--accent);
+}
+.faq details > div {
+  padding: 0 0 22px;
+  color: var(--muted);
+  line-height: 1.65;
+  font-size: 0.98rem;
+  animation: faqFadeIn 0.25s ease;
+}
+@keyframes faqFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .faq-more { margin-top: 28px; color: var(--muted); }
 
 .footer { border-top: 1px solid var(--line); padding-block: 32px; font-size: .9rem; color: var(--muted); }
