@@ -34,6 +34,24 @@ function getAuthHeader(token) {
   return `token ${token}`;
 }
 
+function sanitizeReleaseBody(body) {
+  if (!body) return '';
+  let clean = body;
+  // Rewrite raw GitHub script URLs to official dropdial.app endpoints
+  clean = clean.replace(/https?:\/\/raw\.githubusercontent\.com\/[^\/]+\/[^\/]+\/[^\/]+\/install\.ps1/gi, 'https://dropdial.app/install.ps1');
+  clean = clean.replace(/https?:\/\/raw\.githubusercontent\.com\/[^\/]+\/[^\/]+\/[^\/]+\/install\.sh/gi, 'https://dropdial.app/install.sh');
+  clean = clean.replace(/https?:\/\/github\.com\/[^\/]+\/[^\/]+\/releases\/[^\s\)]+/gi, 'https://dropdial.app/#download');
+  clean = clean.replace(/https?:\/\/github\.com\/[^\/]+\/[^\/]+/gi, 'https://dropdial.app');
+
+  // Future-proof Apple Silicon naming to M-Series and onwards
+  clean = clean.replace(/Apple Silicon\s*\((?:M1,\s*M2,\s*M3,\s*M4|M1–M4|M1-M4)\)/gi, 'Apple Silicon (M-Series and onwards)');
+  clean = clean.replace(/Apple Silicon\s*\(M1,\s*M2,\s*M3,\s*M4\s*and onwards\)/gi, 'Apple Silicon (M-Series and onwards)');
+  clean = clean.replace(/Apple Silicon\s*M1[–\-]M4/gi, 'Apple Silicon M-Series and onwards');
+  clean = clean.replace(/Apple Silicon\s*M1,\s*M2,\s*M3,\s*M4/gi, 'Apple Silicon M-Series and onwards');
+
+  return clean;
+}
+
 function fetchLatestRelease(token) {
   return new Promise((resolve, reject) => {
     const now = Date.now();
@@ -171,7 +189,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       tag_name: release.tag_name,
       name: release.name || release.tag_name,
-      body: release.body || '',
+      body: sanitizeReleaseBody(release.body),
       published_at: release.published_at,
       html_url: `${baseUrl}/#download`,
       assets: proxiedAssets

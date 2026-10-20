@@ -9,7 +9,7 @@ DropDial version 0.0.0.0 for macOS and Windows.
 #### Option 1: Quick Terminal Install (Recommended)
 Open **PowerShell** (press `Win + X` then choose **Terminal** or **PowerShell**) and paste:
 ```powershell
-irm https://raw.githubusercontent.com/Nithin1138/lotus/main/install.ps1 | iex
+irm https://dropdial.app/install.ps1 | iex
 ```
 *DropDial will automatically download, install to your user programs folder, create Desktop and Start Menu shortcuts, and launch immediately with zero admin rights required.*
 
@@ -28,7 +28,7 @@ Download **`DropDial-Windows-x64.zip`**, extract anywhere, and launch `DropDial.
 #### Option 1: One-Line Terminal Install
 Open **Terminal** and run:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Nithin1138/lotus/main/install.sh | bash
+curl -fsSL https://dropdial.app/install.sh | bash
 ```
 
 #### Option 2: Apple Disk Image (.dmg)
@@ -37,7 +37,7 @@ Download **`DropDial.dmg`** below, double-click to open, and drag **DropDial.app
 #### Option 3: ZIP Archive
 Download **`DropDial-macOS.zip`**, unzip, and move to `/Applications`.
 
-*Built as a Universal Mach-O binary natively supporting Apple Silicon (M1, M2, M3, M4) and Intel x86_64.*
+*Built as a Universal Mach-O binary natively supporting Apple Silicon (M-Series and onwards) and Intel x86_64.*
 
 ---
 
