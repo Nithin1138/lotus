@@ -148,6 +148,26 @@ code { font: .9em var(--mono); background: var(--bg-alt); border: 1px solid var(
 .nav.scrolled { border-bottom-color: var(--line); }
 .nav-row { display: flex; align-items: center; gap: 24px; height: 64px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; font: 700 1.12rem var(--font-display); color: var(--ink); text-decoration: none; letter-spacing: -.01em; }
+.brand img,
+.lost img,
+.checkout-modal-title img {
+  display: inline-block;
+  vertical-align: middle;
+  object-fit: contain;
+  transition: opacity 0.2s ease;
+}
+[data-theme="light"] .brand img,
+[data-theme="light"] .lost img,
+[data-theme="light"] .checkout-modal-title img {
+  content: url('/assets/img/logo-dark.png');
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .brand img,
+  :root:not([data-theme="dark"]) .lost img,
+  :root:not([data-theme="dark"]) .checkout-modal-title img {
+    content: url('/assets/img/logo-dark.png');
+  }
+}
 .nav-links { display: flex; gap: 26px; margin-left: 12px; }
 .nav-links a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: .95rem; }
 .nav-links a:hover { color: var(--ink); }

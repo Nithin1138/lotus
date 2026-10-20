@@ -190,7 +190,7 @@
       <div class="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-modal-heading">
         <div class="checkout-modal-header">
           <h3 class="checkout-modal-title" id="checkout-modal-heading">
-            <img src="/assets/img/logo.png" alt="DropDial" width="28" height="28">
+            <img src="${(document.documentElement.getAttribute('data-theme') || 'dark') === 'light' ? '/assets/img/logo-dark.png' : '/assets/img/logo.png'}" alt="DropDial" width="28" height="28">
             DropDial Pro Lifetime
           </h3>
           <button type="button" class="checkout-close-btn" id="checkout-close" aria-label="Close">
