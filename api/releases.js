@@ -206,14 +206,14 @@ module.exports = async function handler(req, res) {
     {
       id: 2,
       name: 'DropDial.dmg',
-      size: 4549640,
+      size: 4588551,
       content_type: 'application/x-apple-diskimage',
       browser_download_url: `${baseUrl}/downloads/DropDial.dmg`
     },
     {
       id: 3,
       name: 'DropDial-macOS.zip',
-      size: 4057336,
+      size: 4094501,
       content_type: 'application/zip',
       browser_download_url: `${baseUrl}/downloads/DropDial-macOS.zip`
     },
