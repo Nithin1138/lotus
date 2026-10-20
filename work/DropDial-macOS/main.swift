@@ -127,11 +127,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var globalKeyMonitor: Any?
     private var localKeyMonitor: Any?
-    private var globalFlagsMonitor: Any?
-    private var globalDragMonitor: Any?
-    private var globalMouseDownMonitor: Any?
-    private var globalMouseUpMonitor: Any?
-    private var dragStartLocation: NSPoint?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
@@ -310,10 +305,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 0. Remove any previous monitors to prevent duplicate triggers
         if let m = globalKeyMonitor { NSEvent.removeMonitor(m); globalKeyMonitor = nil }
         if let m = localKeyMonitor { NSEvent.removeMonitor(m); localKeyMonitor = nil }
-        if let m = globalFlagsMonitor { NSEvent.removeMonitor(m); globalFlagsMonitor = nil }
-        if let m = globalDragMonitor { NSEvent.removeMonitor(m); globalDragMonitor = nil }
-        if let m = globalMouseDownMonitor { NSEvent.removeMonitor(m); globalMouseDownMonitor = nil }
-        if let m = globalMouseUpMonitor { NSEvent.removeMonitor(m); globalMouseUpMonitor = nil }
 
         // 1. Carbon Global HotKeys (No Accessibility permissions required!)
         HotKeyManager.shared.setup()
@@ -329,91 +320,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return nil
             }
             return event
-        }
-
-        // 4. Mouse Down & Up monitors: Record starting point of mouse drag
-        globalMouseDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
-            self?.dragStartLocation = NSEvent.mouseLocation
-        }
-
-        globalMouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] event in
-            self?.dragStartLocation = nil
-        }
-
-        // 5. Flags monitor (Shift, Command, or Control): ONLY triggers if user is actively dragging files
-        globalFlagsMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged]) { [weak self] event in
-            guard let self = self else { return }
-
-            // MUST have left mouse button held down
-            let isMouseDown = (NSEvent.pressedMouseButtons & 1) != 0
-            guard isMouseDown else { return }
-
-            // MUST have dragged at least 16pt from start (prevents accidental trigger on clicks / Cmd+clicks)
-            let cur = NSEvent.mouseLocation
-            if let start = self.dragStartLocation {
-                let dist = hypot(cur.x - start.x, cur.y - start.y)
-                guard dist >= 16.0 else { return }
-            } else {
-                return
-            }
-
-            // CRITICAL: Must have real files currently being dragged on the system
-            let files = self.getDraggedFiles()
-            guard !files.isEmpty else { return }
-
-            let mode: WheelMode?
-            if event.modifierFlags.contains(.control) {
-                mode = .actions
-            } else if event.modifierFlags.contains(.command) {
-                mode = .tools
-            } else if event.modifierFlags.contains(.shift) {
-                mode = .conversions
-            } else {
-                mode = nil
-            }
-
-            guard let targetMode = mode else { return }
-
-            if DropWheelWindowController.shared.window?.isVisible == true {
-                DropWheelWindowController.shared.setMode(targetMode)
-            } else {
-                DropWheelWindowController.shared.loadFiles(files, mode: targetMode)
-            }
-        }
-
-        // 6. Drag monitor: Triggers when dragging files with Shift, Command, or Control held
-        globalDragMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged]) { [weak self] event in
-            guard let self = self else { return }
-
-            let mode: WheelMode?
-            if event.modifierFlags.contains(.control) {
-                mode = .actions
-            } else if event.modifierFlags.contains(.command) {
-                mode = .tools
-            } else if event.modifierFlags.contains(.shift) {
-                mode = .conversions
-            } else {
-                mode = nil
-            }
-
-            guard let targetMode = mode else { return }
-
-            // MUST have dragged at least 16pt from start (prevents jitter / accidental micro-movements)
-            let cur = NSEvent.mouseLocation
-            if let start = self.dragStartLocation {
-                let dist = hypot(cur.x - start.x, cur.y - start.y)
-                guard dist >= 16.0 else { return }
-            }
-
-            // CRITICAL: Must have real files currently being dragged on the system
-            let files = self.getDraggedFiles()
-            guard !files.isEmpty else { return }
-
-            if DropWheelWindowController.shared.window?.isVisible == true {
-                DropWheelWindowController.shared.setMode(targetMode)
-            } else {
-                DropWheelWindowController.shared.loadFiles(files, mode: targetMode)
-            }
         }
     }
 

@@ -206,14 +206,14 @@ module.exports = async function handler(req, res) {
     {
       id: 2,
       name: 'DropDial.dmg',
-      size: 4588551,
+      size: 4583800,
       content_type: 'application/x-apple-diskimage',
       browser_download_url: `${baseUrl}/downloads/DropDial.dmg`
     },
     {
       id: 3,
       name: 'DropDial-macOS.zip',
-      size: 4094501,
+      size: 4091042,
       content_type: 'application/zip',
       browser_download_url: `${baseUrl}/downloads/DropDial-macOS.zip`
     },
@@ -253,8 +253,8 @@ module.exports = async function handler(req, res) {
     console.warn('[DropDial Release Service] Serving canonical release assets:', error.message);
   }
 
-  // Check if Neon DB has a latest_release saved by admin
-  let activeTag = '1.0.1.0';
+  // Check if Neon DB has a latest_release saved by admin via 2-step verification
+  let activeTag = '1.0.0.0';
   try {
     const { getDb, ensureSchema } = require('./_db');
     const sql = getDb();

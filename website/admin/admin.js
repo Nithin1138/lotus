@@ -766,6 +766,12 @@
     // Reset countdown freshly button
     document.getElementById('btn-reset-countdown-now')?.addEventListener('click', handleResetCountdownFreshly);
 
+    // Reset test data & revenue modal (2-step verification)
+    document.getElementById('open-reset-modal-btn')?.addEventListener('click', openResetModal);
+    document.getElementById('close-reset-modal-btn')?.addEventListener('click', closeResetModal);
+    document.getElementById('cancel-reset-btn')?.addEventListener('click', closeResetModal);
+    document.getElementById('reset-data-form')?.addEventListener('submit', handleResetDataSubmit);
+
     // Live preview listeners for pricing controls
     ['price-inr-input', 'price-usd-input', 'price-strike-inr-input', 'price-strike-usd-input', 'pricing-countdown-val', 'pricing-countdown-label'].forEach(id => {
       document.getElementById(id)?.addEventListener('input', () => {
@@ -1606,7 +1612,18 @@
       if (currentTagEl) currentTagEl.textContent = data.currentVersion || 'None';
       if (prevTagEl) prevTagEl.textContent = data.previousVersion || 'None';
       
-      const stagedList = data.stagedDrafts || [];
+      const rawStaged = data.stagedDrafts || [];
+      const currentNorm = (data.currentVersion || '').replace(/^v/i, '').trim().toLowerCase();
+      const seenDraftVersions = new Set();
+      const stagedList = [];
+      for (const d of rawStaged) {
+        const v = (d.tag_name || '').replace(/^v/i, '').trim().toLowerCase();
+        // Skip if already current active production version, or if already added
+        if (v && v !== currentNorm && !seenDraftVersions.has(v)) {
+          seenDraftVersions.add(v);
+          stagedList.push(d);
+        }
+      }
       if (stagedCountEl) stagedCountEl.textContent = stagedList.length;
 
       if (stagedBadge) {
@@ -1888,6 +1905,91 @@ ${escapeHtml(cleanBody)}
     } finally {
       submitBtn.disabled = false;
       submitBtn.innerHTML = `<span>Verify &amp; Rollback Production</span>`;
+    }
+  }
+
+  // 2-Step Permanent Reset Test Data & Financials Modal Logic
+  function openResetModal() {
+    const modal = document.getElementById('reset-data-modal');
+    if (!modal) return;
+    const confirmInput = document.getElementById('reset-confirm-word');
+    const passInput = document.getElementById('reset-passcode');
+    if (confirmInput) confirmInput.value = '';
+    if (passInput) passInput.value = '';
+    modal.style.display = 'flex';
+    setTimeout(() => confirmInput?.focus(), 100);
+  }
+
+  function closeResetModal() {
+    const modal = document.getElementById('reset-data-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function handleResetDataSubmit(e) {
+    e.preventDefault();
+    const confirmWord = (document.getElementById('reset-confirm-word')?.value || '').trim();
+    const passcode = (document.getElementById('reset-passcode')?.value || '').trim();
+    const submitBtn = document.getElementById('confirm-reset-submit-btn');
+
+    if (confirmWord.toUpperCase() !== 'RESET') {
+      showToast('Confirmation mismatch: You must type "RESET" in capital letters.', 'error');
+      document.getElementById('reset-confirm-word')?.focus();
+      return;
+    }
+
+    if (!passcode) {
+      showToast('Admin master passcode is required for Step 2.', 'error');
+      document.getElementById('reset-passcode')?.focus();
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span>Purging Test Data...</span>`;
+
+    try {
+      const res = await fetch('/api/admin?action=reset-test-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${encodeURIComponent(passcode)}`
+        },
+        body: JSON.stringify({
+          confirmWord,
+          passcode
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to purge test data');
+      }
+
+      // Clear local storage caches
+      try {
+        localStorage.removeItem('dd_admin_transactions');
+        localStorage.removeItem('dd_admin_coupons');
+      } catch (_) {}
+
+      showToast(`🧹 Cleaned! All test revenue, profits, licenses, and coupons reset to zero.`, 'success');
+      closeResetModal();
+
+      // Clear state and re-render dashboard
+      state.transactions = [];
+      state.licenses = [];
+      state.stats = { pageviews: 0, pricing: 0, checkout: 0, purchases: 0 };
+      renderKPIs();
+      renderTransactionsTable();
+      renderLicensesTable();
+      renderCouponsTable();
+      if (typeof fetchDashboardData === 'function') {
+        fetchDashboardData(true);
+      }
+    } catch (err) {
+      console.error('Reset test data failed:', err);
+      showToast(`Reset failed: ${err.message}`, 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<span>Verify &amp; Wipe Test Data</span>`;
     }
   }
 

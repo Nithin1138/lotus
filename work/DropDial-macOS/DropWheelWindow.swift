@@ -89,6 +89,7 @@ final class RadialWheelView: NSView {
 
     var hoveredIndex: Int = -1
     var isHubHovered: Bool = false
+    var isClearHovered: Bool = false
     var hoveredTopBarIndex: Int = -1 // 0: Convert, 1: Tools, 2: Actions
     var isCloseHovered: Bool = false
     var currentPaths: [String] = []
@@ -96,6 +97,7 @@ final class RadialWheelView: NSView {
 
     var onSelectSlice: ((SliceItem, [String]?) -> Void)?
     var onHubClicked: (() -> Void)?
+    var onClearFiles: (() -> Void)?
     var onFilesDropped: (([String]) -> Void)?
     var onModeChanged: ((WheelMode) -> Void)?
 
@@ -252,6 +254,12 @@ final class RadialWheelView: NSView {
     let hubRadius: CGFloat = 46
     let topBarRect = NSRect(x: 170 - 110, y: 308, width: 220, height: 32)
     let closeButtonRect = NSRect(x: 170 - 110 + 220 + 8, y: 308, width: 32, height: 32)
+
+    var hubClearButtonRect: NSRect {
+        // Small into (x) button in upper-right quadrant of center circle
+        let size: CGFloat = 17
+        return NSRect(x: wheelCenter.x + 18, y: wheelCenter.y + 17, width: size, height: size)
+    }
 
     var isDarkMode: Bool {
         let t = UserDefaults.standard.string(forKey: "DROPDIAL_THEME") ?? "system"
@@ -507,6 +515,11 @@ final class RadialWheelView: NSView {
             return -10 - max(0, min(2, btnIdx)) // -10: Convert, -11: Tools, -12: Actions
         }
 
+        // 1.5 Check center clear file button (Small into (x) mark)
+        if !currentPaths.isEmpty && hubClearButtonRect.contains(point) {
+            return -4 // Clear file from middle
+        }
+
         let dx = point.x - wheelCenter.x
         let dy = point.y - wheelCenter.y
         let dist = sqrt(dx * dx + dy * dy)
@@ -611,6 +624,13 @@ final class RadialWheelView: NSView {
             return
         }
 
+        if hit == -4 {
+            // Clicked small into (x) button -> Remove file from middle without changing mode!
+            onClearFiles?()
+            updateCursor(for: pt)
+            return
+        }
+
         if hit == -2 {
             onHubClicked?()
         } else if hit >= 0 && hit < items.count {
@@ -630,16 +650,18 @@ final class RadialWheelView: NSView {
 
         let hit = indexForPoint(pt)
         let newHub = (hit == -2)
+        let newClear = (hit == -4)
         let newIndex = (hit >= 0) ? hit : -1
         let newTopBar = (hit <= -10) ? (-hit - 10) : -1
         let newClose = (hit == -20)
 
-        if newIndex != hoveredIndex || newHub != isHubHovered || newTopBar != hoveredTopBarIndex || newClose != isCloseHovered {
-            if (newIndex != hoveredIndex && newIndex >= 0) || (newTopBar != hoveredTopBarIndex && newTopBar >= 0) || (newClose != isCloseHovered && newClose) {
+        if newIndex != hoveredIndex || newHub != isHubHovered || newClear != isClearHovered || newTopBar != hoveredTopBarIndex || newClose != isCloseHovered {
+            if (newIndex != hoveredIndex && newIndex >= 0) || (newTopBar != hoveredTopBarIndex && newTopBar >= 0) || (newClose != isCloseHovered && newClose) || (newClear != isClearHovered && newClear) {
                 SoundManager.playTick()
             }
             hoveredIndex = newIndex
             isHubHovered = newHub
+            isClearHovered = newClear
             hoveredTopBarIndex = newTopBar
             isCloseHovered = newClose
             needsDisplay = true
@@ -650,6 +672,7 @@ final class RadialWheelView: NSView {
         NSCursor.arrow.set()
         hoveredIndex = -1
         isHubHovered = false
+        isClearHovered = false
         hoveredTopBarIndex = -1
         isCloseHovered = false
         needsDisplay = true
@@ -657,7 +680,7 @@ final class RadialWheelView: NSView {
 
     private func updateCursor(for point: NSPoint) {
         let hit = indexForPoint(point)
-        if hit == -20 {
+        if hit == -20 || hit == -4 {
             NSCursor.pointingHand.set()
         } else if hit <= -10 {
             NSCursor.pointingHand.set()
@@ -1076,6 +1099,41 @@ final class RadialWheelView: NSView {
                 let sSz = subStr.size()
                 subStr.draw(at: NSPoint(x: wheelCenter.x - sSz.width / 2, y: wheelCenter.y - 24))
             }
+
+            // Small into (x) remove button in upper-right of middle circle
+            let clearRect = hubClearButtonRect
+            let isHover = isClearHovered
+            let clearCircle = NSBezierPath(ovalIn: clearRect)
+
+            context.saveGState()
+            if isHover {
+                NSColor(srgbRed: 0.95, green: 0.22, blue: 0.22, alpha: 0.95).setFill()
+            } else {
+                if dark {
+                    NSColor(srgbRed: 0.22, green: 0.24, blue: 0.28, alpha: 0.90).setFill()
+                } else {
+                    NSColor(srgbRed: 0.88, green: 0.89, blue: 0.92, alpha: 0.92).setFill()
+                }
+            }
+            clearCircle.fill()
+
+            let strokeColor = isHover ? NSColor.white : (dark ? NSColor(white: 1.0, alpha: 0.25) : NSColor(white: 0.0, alpha: 0.15))
+            strokeColor.setStroke()
+            clearCircle.lineWidth = 1.0
+            clearCircle.stroke()
+
+            // Draw crisp cross lines (into mark)
+            let crossPath = NSBezierPath()
+            let pad: CGFloat = 4.8
+            crossPath.move(to: NSPoint(x: clearRect.minX + pad, y: clearRect.minY + pad))
+            crossPath.line(to: NSPoint(x: clearRect.maxX - pad, y: clearRect.maxY - pad))
+            crossPath.move(to: NSPoint(x: clearRect.maxX - pad, y: clearRect.minY + pad))
+            crossPath.line(to: NSPoint(x: clearRect.minX + pad, y: clearRect.maxY - pad))
+            crossPath.lineWidth = 1.6
+            crossPath.lineCapStyle = .round
+            (isHover ? NSColor.white : (dark ? NSColor(white: 0.9, alpha: 1.0) : NSColor(srgbRed: 0.2, green: 0.2, blue: 0.2, alpha: 1.0))).setStroke()
+            crossPath.stroke()
+            context.restoreGState()
         } else {
             // Default: Name DropDial & Drag and Drop / Click
             let dropdialAttrs: [NSAttributedString.Key: Any] = [
@@ -1259,6 +1317,14 @@ final class DropWheelWindowController: NSWindowController {
 
         wheelView.onFilesDropped = { [weak self] paths in
             self?.loadFiles(paths)
+        }
+
+        wheelView.onClearFiles = { [weak self] in
+            guard let self = self else { return }
+            SoundManager.playPop()
+            self.currentPaths = []
+            self.wheelView.currentPaths = []
+            self.wheelView.configure(paths: [], mode: self.currentMode)
         }
 
         wheelView.onHubClicked = { [weak self] in

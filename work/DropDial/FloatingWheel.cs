@@ -65,6 +65,20 @@ internal sealed class DropWheel : Window
     private readonly Image hubThumbnail = new() { Width = 26, Height = 26, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2) };
     private readonly TextBlock hubFileName = new() { FontSize = 8.5, FontWeight = FontWeights.SemiBold, TextAlignment = TextAlignment.Center, MaxWidth = 92, TextTrimming = TextTrimming.CharacterEllipsis };
     private readonly TextBlock hubFileMode = new() { FontSize = 8, FontWeight = FontWeights.Medium, Foreground = Solid("#FF6208"), TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 1, 0, 0) };
+    private readonly Border hubClearBtn = new()
+    {
+        Width = 18,
+        Height = 18,
+        CornerRadius = new CornerRadius(9),
+        Background = Solid("#353A40"),
+        BorderBrush = Solid("#60FFFFFF"),
+        BorderThickness = new Thickness(1),
+        HorizontalAlignment = HorizontalAlignment.Right,
+        VerticalAlignment = VerticalAlignment.Top,
+        Margin = new Thickness(0, 8, 8, 0),
+        Cursor = Cursors.Hand,
+        Visibility = Visibility.Collapsed
+    };
 
     private readonly StackPanel hubIdlePanel = new() { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
     private readonly TextBlock hubBrand = new() { Text = "Lotus", FontSize = 14, FontWeight = FontWeights.Bold, Foreground = Solid("#FF6208"), TextAlignment = TextAlignment.Center };
@@ -233,6 +247,27 @@ internal sealed class DropWheel : Window
         hubGrid.Children.Add(hubSlicePanel);
         hubGrid.Children.Add(hubFilePanel);
         hubGrid.Children.Add(hubIdlePanel);
+
+        var clearX = new TextBlock
+        {
+            Text = "✕",
+            FontSize = 9.5,
+            FontWeight = FontWeights.Bold,
+            Foreground = Brushes.White,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        hubClearBtn.Child = clearX;
+        hubClearBtn.MouseEnter += (_, _) => hubClearBtn.Background = Solid("#E53E3E");
+        hubClearBtn.MouseLeave += (_, _) => hubClearBtn.Background = Solid("#353A40");
+        hubClearBtn.MouseLeftButtonUp += (_, e) =>
+        {
+            e.Handled = true; // Prevents mode cycling on center click!
+            SoundManager.PlayPop();
+            LoadFiles(Array.Empty<string>(), mode);
+        };
+        hubGrid.Children.Add(hubClearBtn);
+
         center.Child = hubGrid;
 
         Canvas.SetLeft(center, Center - 56);
@@ -401,6 +436,7 @@ internal sealed class DropWheel : Window
             hubSlicePanel.Visibility = Visibility.Collapsed;
             hubFilePanel.Visibility = Visibility.Visible;
             hubIdlePanel.Visibility = Visibility.Collapsed;
+            hubClearBtn.Visibility = Visibility.Visible;
 
             if (paths.Length == 1)
             {
@@ -432,6 +468,7 @@ internal sealed class DropWheel : Window
         hubSlicePanel.Visibility = Visibility.Collapsed;
         hubFilePanel.Visibility = Visibility.Collapsed;
         hubIdlePanel.Visibility = Visibility.Visible;
+        hubClearBtn.Visibility = Visibility.Collapsed;
         hubBrand.Foreground = Solid("#FF6208");
         hubIdleSub.Foreground = UiTheme.Muted;
     }

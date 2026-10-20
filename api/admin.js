@@ -346,7 +346,8 @@ module.exports = async function handler(req, res) {
     const repo = process.env.GITHUB_REPO || 'lotus';
 
     if (!ghToken) {
-      let currentVersion = '1.0.1.0';
+      let currentVersion = '1.0.0.0';
+      let is1010Launched = false;
       try {
         const { getDb, ensureSchema } = require('./_db');
         const sql = getDb();
@@ -355,39 +356,55 @@ module.exports = async function handler(req, res) {
           const rows = await sql`SELECT value FROM app_settings WHERE key = 'latest_release' LIMIT 1;`;
           if (rows && rows.length > 0 && rows[0].value && rows[0].value.tag_name) {
             currentVersion = rows[0].value.tag_name;
+            if (currentVersion.replace(/^v/i, '') === '1.0.1.0') {
+              is1010Launched = true;
+            }
           }
         }
       } catch (_) {}
 
+      const availableReleases = [
+        {
+          tag_name: is1010Launched ? '1.0.1.0' : '1.0.0.0',
+          name: `DropDial ${is1010Launched ? '1.0.1.0' : '1.0.0.0'}`,
+          published_at: new Date().toISOString(),
+          status: 'Active Production',
+          assets: [
+            { name: 'DropDial-Setup.exe', size: 208896 },
+            { name: 'DropDial.dmg', size: 4583800 },
+            { name: 'DropDial-macOS.zip', size: 4091042 },
+            { name: 'DropDial-Windows-x64.zip', size: 73415552 },
+            { name: 'DropDial.exe', size: 208896 }
+          ]
+        }
+      ];
+
+      // If not yet launched via 2-step verification, show staged draft waiting for launch
+      const stagedDrafts = is1010Launched ? [] : [
+        {
+          id: 'staged_1010',
+          tag_name: '1.0.1.0',
+          name: 'DropDial 1.0.1.0',
+          body: '# DropDial 1.0.1.0\n\nUniversal offline desktop file converter and native media suite.\n\n- Standalone direct downloads from dropdial.app (zero external release dependencies)\n- Universal Apple Silicon & Intel macOS builds\n- Precision mechanical timer and legal policies',
+          draft: true,
+          published_at: new Date().toISOString(),
+          assets: [
+            { name: 'DropDial-Setup.exe', size: 208896 },
+            { name: 'DropDial.dmg', size: 4583800 },
+            { name: 'DropDial-macOS.zip', size: 4091042 },
+            { name: 'DropDial-Windows-x64.zip', size: 73415552 },
+            { name: 'DropDial.exe', size: 208896 }
+          ]
+        }
+      ];
+
       return res.status(200).json({
         success: true,
         currentVersion,
-        previousVersion: '1.0.0.0',
-        availableReleases: [
-          {
-            tag_name: currentVersion,
-            name: `DropDial ${currentVersion}`,
-            published_at: new Date().toISOString(),
-            status: 'Active Production',
-            assets: [
-              { name: 'DropDial-Setup.exe', size: 208896 },
-              { name: 'DropDial.dmg', size: 4588551 },
-              { name: 'DropDial-macOS.zip', size: 4094501 },
-              { name: 'DropDial-Windows-x64.zip', size: 73415552 },
-              { name: 'DropDial.exe', size: 208896 }
-            ]
-          },
-          {
-            tag_name: '1.0.0.0',
-            name: 'DropDial 1.0.0.0',
-            published_at: '2026-10-20T17:00:00Z',
-            status: 'Previous Release',
-            assets: [
-              { name: 'DropDial.dmg', size: 4549640 },
-              { name: 'DropDial-macOS.zip', size: 4057336 }
-            ]
-          }
-        ],
+        previousVersion: is1010Launched ? '1.0.0.0' : 'None',
+        availableReleases,
+        stagedDrafts,
+        allReleases: availableReleases,
         warning: null
       });
     }
@@ -446,13 +463,24 @@ module.exports = async function handler(req, res) {
       const current = published[0] || null;
       const previous = published[1] || null;
       
-      // Only treat as staged draft if this tag is NOT already published as an active release
-      const publishedTags = new Set(published.map(p => p.tag_name.toLowerCase()));
-      const stagedDrafts = releases.filter(r => r.draft && !publishedTags.has(r.tag_name.toLowerCase()));
+      // Clean tag normalizer (strip 'v' and trim)
+      const cleanVer = (tag) => (tag || '').replace(/^v/i, '').trim().toLowerCase();
+      const publishedVersions = new Set(published.map(p => cleanVer(p.tag_name)));
+
+      // Deduplicate drafts by normalized version so 'v1.0.1.0' and '1.0.1.0' never both appear
+      const seenDraftVersions = new Set();
+      const stagedDrafts = [];
+      for (const r of releases.filter(r => r.draft)) {
+        const v = cleanVer(r.tag_name);
+        if (!publishedVersions.has(v) && !seenDraftVersions.has(v)) {
+          seenDraftVersions.add(v);
+          stagedDrafts.push(r);
+        }
+      }
 
       return res.status(200).json({
         success: true,
-        currentVersion: current ? current.tag_name : 'None',
+        currentVersion: current ? current.tag_name : '1.0.0.0',
         currentRelease: current,
         previousVersion: previous ? previous.tag_name : 'None',
         previousRelease: previous,
@@ -702,6 +730,58 @@ module.exports = async function handler(req, res) {
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
+  // 7. RESET TEST DATA (2-STEP: PASSCODE + "RESET" WORD CONFIRMATION)
+  if (action === 'reset-test-data' || action === 'reset-data') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
+    const { passcode, confirmWord } = req.body || {};
+    const expectedPass = getAdminSecret();
+
+    // Verification 1: Passcode
+    if (!passcode) {
+      return res.status(400).json({ error: 'Admin passcode is required to reset test data.' });
+    }
+    const a = Buffer.from(passcode.trim(), 'utf8');
+    const b = Buffer.from(expectedPass, 'utf8');
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return res.status(401).json({ error: 'Invalid admin passcode verification.' });
+    }
+
+    // Verification 2: Strict "RESET" confirmation word
+    if ((confirmWord || '').trim().toUpperCase() !== 'RESET') {
+      return res.status(400).json({ error: 'Confirmation mismatch: you must type "RESET" in all caps to confirm.' });
+    }
+
+    let dbReset = false;
+    try {
+      const { getDb, ensureSchema } = require('./_db');
+      const sql = getDb();
+      if (sql) {
+        await ensureSchema();
+        // Clear test transactions and licenses
+        await sql`TRUNCATE TABLE transactions;`;
+        await sql`TRUNCATE TABLE licenses;`;
+        // Reset coupon uses count
+        await sql`UPDATE coupons SET uses = 0;`;
+        dbReset = true;
+      }
+    } catch (dbErr) {
+      console.warn('[Admin Reset Neon DB Warning]:', dbErr.message);
+    }
+
+    // Reset serverless visitor and conversion stats
+    serverlessStats = {
+      pageViews: 0,
+      pricingViews: 0,
+      checkoutInitiated: 0,
+      purchased: 0,
+      lastUpdated: new Date().toISOString()
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: 'All test revenue, profits, captured transactions, test licenses, coupons, and visitor stats have been completely reset to zero.',
+      dbReset
+    });
   }
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
