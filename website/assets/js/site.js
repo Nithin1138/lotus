@@ -66,12 +66,6 @@
         localStorage.setItem("dropdial_theme", theme);
       } catch (e) {}
     }
-    const logoSrc = theme === "light" ? "/assets/img/logo-dark.png" : "/assets/img/logo.png";
-    document.querySelectorAll(".brand img, .lost img, .checkout-modal-title img").forEach((img) => {
-      if (img.getAttribute("src") !== logoSrc) {
-        img.src = logoSrc;
-      }
-    });
     if (themeToggle) {
       const isDark = theme === "dark";
       themeToggle.setAttribute("aria-label", isDark ? "Switch to light theme" : "Switch to dark theme");
