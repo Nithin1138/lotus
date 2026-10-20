@@ -90,28 +90,25 @@
   padding: 3px 8px; border-radius: 6px;
   background: rgba(16,185,129,0.15); color: #10b981;
   border: 1px solid rgba(16,185,129,0.3);
-.cko-price-perks {
-  display: flex; flex-direction: column; gap: 4px;
-  margin-top: 6px;
-}
-.cko-perk-line {
-  font-size: 0.72rem; color: #64748b; font-weight: 500;
-  display: flex; align-items: center; gap: 6px; line-height: 1.35;
-  white-space: nowrap;
-}
-.cko-perk-dot {
-  font-size: 0.42rem; color: #ff6500; flex-shrink: 0; opacity: 0.85;
+  text-transform: uppercase; white-space: nowrap;
 }
 .cko-one-time-label { font-size: 0.73rem; color: #475569; font-weight: 500; margin-top: 2px; }
 
-.cko-feature-pills { display: flex; flex-direction: column; gap: 5px; padding-top: 2px; flex-shrink: 0; }
-.cko-pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 0.72rem; font-weight: 600; color: #94a3b8;
-  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
-  padding: 4px 9px; border-radius: 100px; white-space: nowrap;
+.cko-feature-pills,
+.cko-feature-lines {
+  display: flex; flex-direction: column; gap: 6px;
+  padding-top: 2px; flex-shrink: 0;
 }
-.cko-pill svg { color: #10b981; flex-shrink: 0; }
+.cko-pill,
+.cko-feature-line {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.77rem; font-weight: 550; color: #94a3b8;
+  background: transparent !important; border: none !important;
+  padding: 0 !important; border-radius: 0 !important;
+  white-space: nowrap; line-height: 1.35;
+}
+.cko-pill svg,
+.cko-feature-line svg { color: #10b981; flex-shrink: 0; }
 
 /* ── Divider ── */
 .cko-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 16px 0; }
@@ -155,7 +152,7 @@
 
 /* Feedback lives OUTSIDE input-wrap — always accessible for Remove */
 .cko-coupon-feedback {
-  display: flex; align-items: center; justify-content: flex-start;
+  display: flex; align-items: center;
   gap: 8px; margin-top: 8px; padding: 8px 12px;
   border-radius: 8px; font-size: 0.82rem; font-weight: 500;
 }
@@ -166,12 +163,6 @@
 .cko-coupon-feedback.error {
   justify-content: flex-start;
   background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171;
-}
-.cko-coupon-error-inner {
-  display: inline-flex; align-items: center; gap: 8px; text-align: left;
-}
-.cko-coupon-error-inner svg {
-  flex-shrink: 0; color: #ef4444;
 }
 .cko-coupon-pill { display: flex; align-items: center; gap: 7px; flex: 1; }
 .cko-coupon-pill strong { font-weight: 800; letter-spacing: 0.5px; }
@@ -330,10 +321,9 @@
 [data-theme="light"] .cko-price-old { color: #94a3b8; }
 [data-theme="light"] .cko-price-new { color: #059669; text-shadow: none; }
 [data-theme="light"] .cko-price-badge { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
-[data-theme="light"] .cko-perk-line { color: #64748b; }
-[data-theme="light"] .cko-perk-dot { color: #ea580c; }
 [data-theme="light"] .cko-one-time-label { color: #94a3b8; }
-[data-theme="light"] .cko-pill { background: #f8fafc; border-color: #e2e8f0; color: #475569; }
+[data-theme="light"] .cko-pill,
+[data-theme="light"] .cko-feature-line { background: transparent !important; border: none !important; color: #475569; }
 [data-theme="light"] .cko-divider { background: #f1f5f9; }
 [data-theme="light"] .cko-coupon-toggle { color: #ea580c; }
 [data-theme="light"] .cko-coupon-toggle:hover { color: #c2410c; }
