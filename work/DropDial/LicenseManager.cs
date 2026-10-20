@@ -24,7 +24,7 @@ internal sealed class LicenseStatus
     public int DaysRemaining { get; }
 
     public bool IsPro => Kind == LicenseStatusKind.Pro;
-    public bool CanUseApp => Kind != LicenseStatusKind.TrialExpired;
+    public bool CanUseApp => Kind != LicenseStatusKind.TrialExpired || LicenseManager.GetDailyConversionsRemaining() > 0;
 
     private LicenseStatus(LicenseStatusKind kind, LicenseInfo? info, int days)
     {
@@ -46,7 +46,7 @@ internal sealed class LicenseStatus
             1 => "Trial: 1 day left",
             _ => $"Trial: {DaysRemaining} days left"
         },
-        _ => "Trial Expired — Activate Pro"
+        _ => $"Free Tier: {LicenseManager.GetDailyConversionsRemaining()}/3 today — Activate Pro"
     };
 }
 
@@ -71,6 +71,8 @@ internal static class LicenseManager
     {
         public string? LicenseKey { get; set; }
         public long TrialStartTime { get; set; }
+        public string? DailyConversionDate { get; set; }
+        public int DailyConversionCount { get; set; }
     }
 
     static LicenseManager()
@@ -142,6 +144,51 @@ internal static class LicenseManager
     {
         RefreshStatus();
         return CurrentStatus.CanUseApp;
+    }
+
+    public const int MaxFreeDailyConversions = 3;
+
+    public static int GetDailyConversionsRemaining()
+    {
+        var state = LoadState();
+        string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        if (state.DailyConversionDate != today) return MaxFreeDailyConversions;
+        return Math.Max(0, MaxFreeDailyConversions - state.DailyConversionCount);
+    }
+
+    public static void RecordDailyConversion()
+    {
+        var state = LoadState();
+        string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        if (state.DailyConversionDate != today)
+        {
+            state.DailyConversionDate = today;
+            state.DailyConversionCount = 1;
+        }
+        else
+        {
+            state.DailyConversionCount++;
+        }
+        SaveState(state);
+        StatusChanged?.Invoke();
+    }
+
+    public static (bool Allowed, string? Reason) CanPerformConversion(int fileCount = 1, bool isProTool = false)
+    {
+        RefreshStatus();
+        if (CurrentStatus.IsPro) return (true, null);
+        if (CurrentStatus.Kind == LicenseStatusKind.Trial && CurrentStatus.DaysRemaining >= 0) return (true, null);
+
+        if (isProTool) return (false, "Advanced Pro Tools require DropDial Pro.");
+        if (fileCount > 3) return (false, $"Bulk batch conversion ({fileCount} files) requires DropDial Pro.");
+
+        if (GetDailyConversionsRemaining() > 0)
+        {
+            RecordDailyConversion();
+            return (true, null);
+        }
+
+        return (false, "You have reached your 3 free conversions for today. Unlock unlimited lifetime conversions with DropDial Pro.");
     }
 
     public static (bool IsValid, LicenseInfo? Info, string? Error) VerifyKey(string licenseKey)

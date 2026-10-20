@@ -37,6 +37,13 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'A valid email address is required to receive your license key.' });
     }
 
+    const tier = (body.tier || 'universal').toLowerCase();
+    const tierPricing = {
+      single: { INR: 79900, USD: 1500 },
+      universal: { INR: 99900, USD: 1900 },
+      team: { INR: 349900, USD: 6900 }
+    };
+
     const isIndia = country === 'IN' || (body.currency || '').toUpperCase() === 'INR';
     const currency = isIndia ? 'INR' : 'USD';
     let basePricing = { INR: { subunits: 99900 }, USD: { subunits: 1900 } };
@@ -47,7 +54,7 @@ module.exports = async function handler(req, res) {
       }
     } catch (e) {}
 
-    let amountInSubunits = isIndia ? (basePricing.INR?.subunits || 99900) : (basePricing.USD?.subunits || 1900);
+    let amountInSubunits = (tierPricing[tier] ? (isIndia ? tierPricing[tier].INR : tierPricing[tier].USD) : (isIndia ? (basePricing.INR?.subunits || 99900) : (basePricing.USD?.subunits || 1900)));
     let appliedCoupon = null;
 
     // Apply coupon discount if provided

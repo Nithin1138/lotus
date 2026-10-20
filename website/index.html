@@ -795,9 +795,9 @@
   <section class="section" id="pricing">
     <div class="wrap" style="text-align: center;">
       
-      <p class="eyebrow" style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">Simple, Transparent Pricing</p>
-      <h2>Pay Once. Own It Forever.</h2>
-      <p class="section-lead" style="max-width: 580px; margin: 0 auto 16px;">No subscriptions, no cloud accounts, and no monthly fees. Try everything free for 7 days, then unlock lifetime access.</p>
+      <p class="eyebrow" style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">Simple, Transparent Lifetime Pricing</p>
+      <h2>An OS Upgrade for Mac &amp; PC. Pay Once, Own Forever.</h2>
+      <p class="section-lead" style="max-width: 680px; margin: 0 auto 16px;">Zero subscriptions, zero cloud accounts, and zero recurring fees. Start with our 7-day unrestricted trial or 3 free daily conversions, then unlock lifetime peace of mind.</p>
 
       <div class="pricing-urgency-header" id="ocb-header" style="display: none;">
         <span class="ocs-badge">
@@ -832,75 +832,128 @@
         </aside>
 
         <div class="pricing-grid">
-        <!-- Card 1: Free Trial -->
-        <div class="pricing-card">
-          <h3 class="pricing-title">7-Day Free Trial</h3>
-          <p class="pricing-desc">Full access to test every format conversion, the Actions Dial, and media tools on your Mac or PC.</p>
-          <div class="pricing-price" id="trial-pricing-price">$0 <span>/ 7 days</span></div>
-          <ul class="pricing-features">
-            <li>
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
-              All 333+ format conversions &amp; media tools
-            </li>
-            <li>
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
-              Universal Actions Dial (AirDrop, Terminal, Copy Path, Move)
-            </li>
-            <li>
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
-              No credit card or account registration required
-            </li>
-            <li>
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
-              100% private — zero telemetry or tracking
-            </li>
-          </ul>
-          <a class="btn btn-ghost" href="#download" style="text-align: center; justify-content: center;">Download Free Trial</a>
-        </div>
-
-        <!-- Card 2: Pro Lifetime -->
-        <div class="pricing-card featured">
-          <div class="pricing-badge">LIFETIME ACCESS</div>
-          <h3 class="pricing-title">DropDial Pro</h3>
-          <p class="pricing-desc">One-time payment for lifetime access, all future tool updates, and offline peace of mind.</p>
-          
-          <div class="pricing-price-container" id="pro-pricing-container">
-            <div class="pricing-strike-wrap" id="pro-pricing-strike-wrap" style="display: none;">
-              <span class="pricing-strike-amount" id="pro-pricing-strike-amount">₹1,499</span>
-              <span class="pricing-discount-badge" id="pro-pricing-discount-badge">33% OFF</span>
+          <!-- Tier 1: Single Platform -->
+          <div class="pricing-card" id="pricing-card-single">
+            <div class="pricing-badge badge-subtle">ENTRY FLOOR</div>
+            <h3 class="pricing-title">Single Platform</h3>
+            <p class="pricing-desc">Single device license for either Mac or Windows PC. Perfect for dedicated solo setups.</p>
+            
+            <div class="pricing-price-container">
+              <div class="pricing-price" id="tier-single-price">$15 <span>one-time</span></div>
             </div>
-            <div class="pricing-price" id="pro-pricing-price">$19 <span>one-time</span></div>
+
+            <ul class="pricing-features">
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                <strong>1 Device</strong> (1 Mac or 1 Windows PC)
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                <strong>Pay Once, Own Forever</strong> — zero SaaS anxiety
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                All 333+ format conversions &amp; media tools
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                100% offline &amp; private — zero data collection
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                Instant digital key delivery
+              </li>
+            </ul>
+            <a class="btn btn-secondary" href="#buy" data-open-checkout data-tier="single" style="text-align: center; justify-content: center; width: 100%;">Buy Single</a>
+            <div style="text-align: center; margin-top: 10px; font-size: 12px; color: var(--text-muted);">
+              Or test first with <a href="#download" style="color: var(--text); text-decoration: underline;">7-day free trial</a>
+            </div>
           </div>
 
-          <ul class="pricing-features">
-            <li>
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
-              <strong>Lifetime License</strong> — zero subscriptions
-            </li>
-            <li>
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
-              Valid for up to <span data-license-devices>3</span> personal Macs and PCs
-            </li>
-            <li>
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
-              100% offline cryptographic key verification
-            </li>
-            <li>
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
-              Instant license key delivery
-            </li>
-            <li>
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
-              Free lifetime updates and new media tools
-            </li>
-            <li>
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
-              Direct developer priority support
-            </li>
-          </ul>
-          <a class="btn btn-primary" href="#buy" data-open-checkout id="card-buy-btn" style="text-align: center; justify-content: center; background: var(--accent); color: #fff; width: 100%;">Buy</a>
+          <!-- Tier 2: Universal Pro Lifetime (HERO) -->
+          <div class="pricing-card featured" id="pricing-card-universal">
+            <div class="pricing-badge">RECOMMENDED • HERO VALUE</div>
+            <h3 class="pricing-title">Universal Pro Lifetime</h3>
+            <p class="pricing-desc">The no-regrets pack. Universal access across both Mac &amp; PC for all your personal machines.</p>
+            
+            <div class="pricing-price-container" id="pro-pricing-container">
+              <div class="pricing-strike-wrap" id="pro-pricing-strike-wrap" style="display: none;">
+                <span class="pricing-strike-amount" id="pro-pricing-strike-amount">₹1,499</span>
+                <span class="pricing-discount-badge" id="pro-pricing-discount-badge">33% OFF</span>
+              </div>
+              <div class="pricing-price" id="pro-pricing-price">$19 <span>one-time</span></div>
+            </div>
+
+            <ul class="pricing-features">
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                <strong>Up to 3 Devices</strong> (Any mix of Mac &amp; PC)
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                <strong>Unlimited Bulk Batch Conversion</strong> (no daily caps)
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                <strong>Full Pro Suite</strong>: Video Trimmer, OCR, Redact, Audio Bleep
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                100% offline cryptographic key verification
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                Free lifetime updates and new media tools
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                Direct developer priority support
+              </li>
+            </ul>
+            <a class="btn btn-primary" href="#buy" data-open-checkout data-tier="universal" id="card-buy-btn" style="text-align: center; justify-content: center; background: var(--accent); color: #fff; width: 100%;">Buy Universal Pro</a>
+            <div style="text-align: center; margin-top: 10px; font-size: 12px; color: var(--accent-light, #10b981); font-weight: 500;">
+              Just $4 more to unlock all your Macs &amp; PCs
+            </div>
+          </div>
+
+          <!-- Tier 3: Commercial / Team License (DECOY ANCHOR) -->
+          <div class="pricing-card" id="pricing-card-team">
+            <div class="pricing-badge badge-team">COMMERCIAL / TEAM</div>
+            <h3 class="pricing-title">Team License</h3>
+            <p class="pricing-desc">For design studios, video agencies, and engineering teams. Single multi-seat key with commercial rights.</p>
+            
+            <div class="pricing-price-container">
+              <div class="pricing-price" id="tier-team-price">$69 <span>one-time</span></div>
+            </div>
+
+            <ul class="pricing-features">
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                <strong>Up to 10 Seats / Machines</strong> (Mac &amp; PC)
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                <strong>Commercial Use Rights</strong> for client work
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                Centralized multi-seat key management
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                Official expense invoice &amp; tax receipt
+              </li>
+              <li>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>
+                Same-day developer priority support
+              </li>
+            </ul>
+            <a class="btn btn-secondary" href="#buy" data-open-checkout data-tier="team" style="text-align: center; justify-content: center; width: 100%;">Buy Team Pack</a>
+            <div style="text-align: center; margin-top: 10px; font-size: 12px; color: var(--text-muted);">
+              Easily expensed for client projects &amp; agency setups
+            </div>
+          </div>
         </div>
-      </div>
 
       <!-- Right Side of Middle 2 Cards: Minutes & Seconds (M : S) -->
       <aside class="pricing-side-timer right-side" id="ocs-right-wing" aria-label="Minutes and Seconds remaining" style="display: none;">
@@ -924,6 +977,24 @@
       </aside>
 
     </div>
+
+      <!-- Cognitive Reframing Card: The "Peace of Mind" Guarantee -->
+      <div class="pricing-reframe-card">
+        <div class="pricing-reframe-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="pricing-reframe-body">
+          <h3 class="pricing-reframe-title">The &ldquo;Peace of Mind&rdquo; Guarantee</h3>
+          <p class="pricing-reframe-quote">
+            &ldquo;You won&rsquo;t use DropDial every single hour. <strong>And that&rsquo;s the point.</strong> It sits silently in your menu bar at 0% CPU. But the next time a client sends an unopenable <code>.webp</code>, <code>.heic</code>, or <code>.mkv</code> five minutes before a critical deadline, you won&rsquo;t waste 20 minutes waiting for ad-filled cloud websites or risking sensitive company file leaks. You drop it. It&rsquo;s converted in 1 second. <strong>For ₹999 / $19 once in your lifetime, you have bought peace of mind forever.</strong>&rdquo;
+          </p>
+          <div class="pricing-reframe-badges">
+            <span class="reframe-pill">✓ Instant Offline Key Delivery</span>
+            <span class="reframe-pill">✓ 100% Private &amp; Air-Gapped</span>
+            <span class="reframe-pill">✓ 14-Day Money-Back Guarantee</span>
+          </div>
+        </div>
+      </div>
   </div>
 </section>
 

@@ -1627,7 +1627,9 @@ final class DropWheelWindowController: NSWindowController {
     }
 
     private func executeJob(action: String, paths: [String], params: [String: String]?) {
-        guard LicenseManager.shared.canUseApp() else {
+        let isProTool = Catalog.findTool(id: action) != nil
+        let perm = LicenseManager.shared.canPerformConversion(fileCount: paths.count, isProTool: isProTool)
+        guard perm.allowed else {
             hideWheel()
             LicenseWindowController.shared.show()
             return

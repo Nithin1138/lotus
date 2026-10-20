@@ -1344,19 +1344,237 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 
 
 /* Pricing Section */
+/* Pricing Section */
 #pricing .wrap { max-width: 1280px; }
-.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; width: 100%; max-width: 840px; margin: 40px auto 0; }
-.pricing-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 32px 28px; text-align: left; display: flex; flex-direction: column; position: relative; }
-.pricing-card.featured { border-color: var(--accent); box-shadow: 0 8px 30px -10px rgba(213, 84, 24, .25); }
-.pricing-badge { position: absolute; top: -12px; right: 24px; background: var(--accent); color: #fff; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 4px 12px; border-radius: 999px; }
+.pricing-grid { 
+  display: grid; 
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 24px; 
+  width: 100%; 
+  max-width: 1140px; 
+  margin: 36px auto 0; 
+  align-items: stretch;
+}
+
+@media (max-width: 1024px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 480px;
+  }
+}
+
+.pricing-card { 
+  background: var(--surface); 
+  border: 1px solid var(--line); 
+  border-radius: var(--radius); 
+  padding: 32px 26px; 
+  text-align: left; 
+  display: flex; 
+  flex-direction: column; 
+  position: relative;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.pricing-card.featured { 
+  border-color: var(--accent); 
+  box-shadow: 0 14px 40px -10px rgba(213, 84, 24, .35); 
+  background: linear-gradient(180deg, var(--surface) 0%, rgba(213, 84, 24, 0.05) 100%);
+  position: relative;
+  z-index: 2;
+}
+
+@media (min-width: 1025px) {
+  .pricing-card.featured {
+    transform: scale(1.03);
+  }
+  .pricing-card.featured:hover {
+    transform: scale(1.05) translateY(-4px);
+  }
+}
+
+.pricing-badge { 
+  position: absolute; 
+  top: -12px; 
+  right: 24px; 
+  background: var(--accent); 
+  color: #fff; 
+  font-size: .72rem; 
+  font-weight: 700; 
+  text-transform: uppercase; 
+  letter-spacing: .5px; 
+  padding: 4px 12px; 
+  border-radius: 999px; 
+  box-shadow: 0 4px 12px rgba(213, 84, 24, 0.4);
+}
+
+.pricing-badge.badge-subtle {
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
+  box-shadow: none;
+}
+
+.pricing-badge.badge-team {
+  background: #3b82f6;
+  color: #fff;
+  border: 1px solid #60a5fa;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
 .pricing-title { font-size: 1.3rem; font-weight: 700; color: var(--ink); margin: 0 0 6px; }
-.pricing-desc { font-size: .9rem; color: var(--muted); margin: 0 0 20px; min-height: 40px; }
-.pricing-price { font-size: 2.4rem; font-weight: 800; color: var(--ink); display: flex; align-items: baseline; gap: 6px; margin-bottom: 24px; }
-.pricing-price span { font-size: .95rem; font-weight: 500; color: var(--muted); }
-.pricing-features { list-style: none; padding: 0; margin: 0 0 28px; display: flex; flex-direction: column; gap: 12px; font-size: .92rem; color: var(--ink); }
-.pricing-features li { display: flex; align-items: center; gap: 10px; line-height: 1.4; }
-.pricing-features svg { color: var(--accent); flex-shrink: 0; }
+.pricing-desc { font-size: .88rem; color: var(--muted); margin: 0 0 18px; min-height: 38px; line-height: 1.45; }
+.pricing-price { font-size: 2.3rem; font-weight: 800; color: var(--ink); display: flex; align-items: baseline; gap: 6px; margin-bottom: 22px; }
+.pricing-price span { font-size: .92rem; font-weight: 500; color: var(--muted); }
+.pricing-features { list-style: none; padding: 0; margin: 0 0 28px; display: flex; flex-direction: column; gap: 11px; font-size: .9rem; color: var(--ink); }
+.pricing-features li { display: flex; align-items: flex-start; gap: 10px; line-height: 1.4; }
+.pricing-features svg { color: var(--accent); flex-shrink: 0; margin-top: 2px; }
 .pricing-card .btn, .pricing-card .card-buy-wrap { margin-top: auto; }
+
+/* Pricing Reframe Card */
+.pricing-reframe-card {
+  max-width: 980px;
+  margin: 44px auto 0;
+  padding: 26px 30px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: var(--radius);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.pricing-reframe-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.pricing-reframe-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.pricing-reframe-text h4 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 6px;
+  line-height: 1.35;
+}
+
+.pricing-reframe-text p {
+  font-size: 0.92rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.pricing-reframe-guarantees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.prf-guarantee-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.prf-guarantee-pill svg {
+  color: #10b981;
+}
+
+/* Modal Tier Selector */
+.cko-tier-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cko-tier-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 8px 6px;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.cko-tier-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cko-tier-btn.active {
+  background: rgba(213, 84, 24, 0.15);
+  border-color: var(--accent);
+}
+
+.cko-tier-btn .cko-tb-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.cko-tier-btn.active .cko-tb-title {
+  color: var(--ink);
+}
+
+.cko-tier-btn .cko-tb-price {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.cko-tier-btn.active .cko-tb-price {
+  color: var(--accent);
+}
+
+.cko-tier-btn .cko-tb-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 4px;
+  display: inline-block;
+  align-self: center;
+  margin-bottom: 2px;
+}
 
 /* ==============================================================================
    Modernized Urgency Offer Countdown Banner & Hero Buy Urgency Tag
@@ -1389,9 +1607,9 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 
 .pricing-showcase .pricing-grid {
   margin: 0 auto;
-  width: 840px;
-  max-width: 840px;
-  flex: 0 1 840px;
+  width: 100%;
+  max-width: 1140px;
+  flex: 1 1 1140px;
 }
 
 /* Side Countdown Wings */

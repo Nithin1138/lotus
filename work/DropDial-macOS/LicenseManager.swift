@@ -26,7 +26,7 @@ enum LicenseStatus: Equatable {
         case .trial(let days):
             return days >= 0
         case .trialExpired:
-            return false
+            return LicenseManager.shared.getDailyConversionsRemaining() > 0
         }
     }
 
@@ -43,7 +43,8 @@ enum LicenseStatus: Equatable {
                 return "Trial: \(days) days left"
             }
         case .trialExpired:
-            return "Trial Expired — Activate Pro"
+            let rem = LicenseManager.shared.getDailyConversionsRemaining()
+            return "Free Tier: \(rem)/3 today — Activate Pro"
         }
     }
 }
@@ -121,6 +122,70 @@ final class LicenseManager {
     func canUseApp() -> Bool {
         refreshStatus()
         return status.canUseApp
+    }
+
+    // MARK: - Daily Freemium Conversion Tracking
+    private let dailyConversionsDateKey = "DROPDIAL_DAILY_CONV_DATE"
+    private let dailyConversionsCountKey = "DROPDIAL_DAILY_CONV_COUNT"
+    let maxFreeDailyConversions = 3
+
+    func getDailyConversionsUsed() -> Int {
+        let defaults = UserDefaults.standard
+        let todayStr = getTodayDateString()
+        let storedDate = defaults.string(forKey: dailyConversionsDateKey) ?? ""
+        if storedDate != todayStr {
+            return 0
+        }
+        return defaults.integer(forKey: dailyConversionsCountKey)
+    }
+
+    func getDailyConversionsRemaining() -> Int {
+        return max(0, maxFreeDailyConversions - getDailyConversionsUsed())
+    }
+
+    func recordDailyConversion() {
+        let defaults = UserDefaults.standard
+        let todayStr = getTodayDateString()
+        let storedDate = defaults.string(forKey: dailyConversionsDateKey) ?? ""
+        var count = 0
+        if storedDate == todayStr {
+            count = defaults.integer(forKey: dailyConversionsCountKey)
+        }
+        defaults.set(todayStr, forKey: dailyConversionsDateKey)
+        defaults.set(count + 1, forKey: dailyConversionsCountKey)
+        onStatusChanged?()
+    }
+
+    private func getTodayDateString() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
+    }
+
+    func canPerformConversion(fileCount: Int = 1, isProTool: Bool = false) -> (allowed: Bool, reason: String?) {
+        refreshStatus()
+        if status.isPro {
+            return (true, nil)
+        }
+        if case .trial(let days) = status, days >= 0 {
+            return (true, nil)
+        }
+
+        // Trial has expired — Freemium daily hook
+        if isProTool {
+            return (false, "Advanced Pro Tools (Trimming, OCR, Redact, Audio Bleep) require DropDial Pro.")
+        }
+        if fileCount > 3 {
+            return (false, "Bulk batch conversion (\(fileCount) files) requires DropDial Pro.")
+        }
+
+        let remaining = getDailyConversionsRemaining()
+        if remaining > 0 {
+            recordDailyConversion()
+            return (true, nil)
+        }
+
+        return (false, "You've reached your 3 free conversions for today. Unlock unlimited lifetime conversions with DropDial Pro.")
     }
 
     // MARK: - Offline ECDSA P-256 Key Verification
@@ -397,7 +462,8 @@ final class LicenseWindowController: NSWindowController {
             primaryButton.isEnabled = true
 
         case .trialExpired:
-            statusLabel.stringValue = "Free trial expired — enter a key to activate"
+            let rem = LicenseManager.shared.getDailyConversionsRemaining()
+            statusLabel.stringValue = "Trial expired • Free tier: \(rem)/\(LicenseManager.shared.maxFreeDailyConversions) conversions left today"
             statusLabel.textColor = .systemOrange
 
             keyTextField.stringValue = ""

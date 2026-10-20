@@ -41,6 +41,11 @@ let currentPricing = {
     expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString()
   },
   devicesPerLicense: 3,
+  tiers: {
+    single: { INR: { amount: 799, display: '₹799' }, USD: { amount: 15, display: '$15' } },
+    universal: { INR: { amount: 999, display: '₹999' }, USD: { amount: 19, display: '$19' } },
+    team: { INR: { amount: 3499, display: '₹3,499' }, USD: { amount: 69, display: '$69' } }
+  },
   lastUpdated: new Date().toISOString()
 };
 

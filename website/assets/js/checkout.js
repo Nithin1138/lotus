@@ -29,6 +29,39 @@
   let currentCountry = 'US';
   let isIndia = false;
   let selectedCurrency = 'USD';
+  // 3-Tier Pricing Architecture
+  const TIERS = {
+    single: {
+      id: "single",
+      name: "Single Platform",
+      badge: "ENTRY FLOOR",
+      devices: "1 Device (Mac or Windows PC)",
+      INR: { amount: 799, display: "₹799", strikeAmount: 1199, strikeDisplay: "₹1,199" },
+      USD: { amount: 15, display: "$15", strikeAmount: 22, strikeDisplay: "$22" },
+      features: ["1 Device (Mac or Windows)", "Pay Once, Own Forever", "100% Offline & Private"]
+    },
+    universal: {
+      id: "universal",
+      name: "Universal Pro Lifetime",
+      badge: "RECOMMENDED",
+      devices: "Up to 3 Devices (Mac & PC)",
+      INR: { amount: 999, display: "₹999", strikeAmount: 1499, strikeDisplay: "₹1,499" },
+      USD: { amount: 19, display: "$19", strikeAmount: 29, strikeDisplay: "$29" },
+      features: ["3 Devices (Mac & Windows)", "Unlimited Batch & Pro Tools", "Lifetime Free Updates"]
+    },
+    team: {
+      id: "team",
+      name: "Commercial / Team License",
+      badge: "COMMERCIAL",
+      devices: "Up to 10 Seats / Machines",
+      INR: { amount: 3499, display: "₹3,499", strikeAmount: 4999, strikeDisplay: "₹4,999" },
+      USD: { amount: 69, display: "$69", strikeAmount: 99, strikeDisplay: "$99" },
+      features: ["Up to 10 Seats / Machines", "Commercial & Client Rights", "Priority Developer Support"]
+    }
+  };
+
+  let selectedTier = "universal";
+
   let appliedCoupon = null;
   let countdownTimerInterval = null;
 
@@ -86,9 +119,12 @@
    * Calculates the active price considering any applied coupon
    */
   function getActivePriceConfig() {
-    const base = PRICING[selectedCurrency];
+    const currentTier = TIERS[selectedTier] || TIERS.universal;
+    const base = currentTier[selectedCurrency] || currentTier.USD;
     if (!appliedCoupon) {
       return {
+        tier: selectedTier,
+        tierName: currentTier.name,
         amount: base.amount,
         display: base.display,
         oldPrice: null,
@@ -104,12 +140,14 @@
     }
 
     const finalAmount = Math.max(1, base.amount - discountAmount);
-    const finalDisplay = `${base.symbol}${finalAmount}`;
+    const finalDisplay = `${selectedCurrency === 'INR' ? '₹' : '$'}${finalAmount}`;
     const discountTag = appliedCoupon.type === 'percent'
       ? `-${appliedCoupon.value}%`
-      : `-${base.symbol}${discountAmount}`;
+      : `-${selectedCurrency === 'INR' ? '₹' : '$'}${discountAmount}`;
 
     return {
+      tier: selectedTier,
+      tierName: currentTier.name,
       amount: finalAmount,
       display: finalDisplay,
       oldPrice: base.display,
@@ -299,17 +337,42 @@
 
     const pricingCardPrice = document.getElementById('pro-pricing-price');
     if (pricingCardPrice) {
-      pricingCardPrice.innerHTML = `${baseConfig.display} <span>one-time</span>`;
+      pricingCardPrice.innerHTML = `${TIERS.universal[selectedCurrency].display} <span>one-time</span>`;
     }
 
-    const trialPricingPrice = document.getElementById('trial-pricing-price');
-    if (trialPricingPrice) {
-      trialPricingPrice.innerHTML = `${baseConfig.symbol}0 <span>/ 7 days</span>`;
+    const singlePricingPrice = document.getElementById('tier-single-price');
+    if (singlePricingPrice) {
+      singlePricingPrice.innerHTML = `${TIERS.single[selectedCurrency].display} <span>one-time</span>`;
     }
 
-    const cardBuy = document.getElementById('card-buy-btn');
-    if (cardBuy) {
-      cardBuy.textContent = 'Buy';
+    const teamPricingPrice = document.getElementById('tier-team-price');
+    if (teamPricingPrice) {
+      teamPricingPrice.innerHTML = `${TIERS.team[selectedCurrency].display} <span>one-time</span>`;
+    }
+
+    // Modal tier pills
+    const pillSingle = document.getElementById('cko-tb-single-price');
+    if (pillSingle) pillSingle.textContent = TIERS.single[selectedCurrency].display;
+    const pillUniversal = document.getElementById('cko-tb-universal-price');
+    if (pillUniversal) pillUniversal.textContent = TIERS.universal[selectedCurrency].display;
+    const pillTeam = document.getElementById('cko-tb-team-price');
+    if (pillTeam) pillTeam.textContent = TIERS.team[selectedCurrency].display;
+
+    // Modal active tier features
+    const featLinesEl = document.getElementById('checkout-feature-lines');
+    if (featLinesEl) {
+      const activeTierObj = TIERS[selectedTier] || TIERS.universal;
+      featLinesEl.innerHTML = activeTierObj.features.map(f => `
+        <div class="cko-feature-line">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>${f}</span>
+        </div>
+      `).join('');
+    }
+
+    const modalTitle = document.getElementById('checkout-modal-heading');
+    if (modalTitle) {
+      modalTitle.textContent = `DropDial ${(TIERS[selectedTier] || TIERS.universal).name}`;
     }
 
     // 5. Dynamic License Devices per Key
@@ -453,6 +516,23 @@
           <!-- Form View -->
           <div id="checkout-form-view">
 
+            <!-- Tier Selector -->
+            <div class="cko-tier-selector" id="checkout-tier-selector">
+              <button type="button" class="cko-tier-btn" data-tier-choice="single">
+                <span class="cko-tb-title">Single</span>
+                <span class="cko-tb-price" id="cko-tb-single-price">$15</span>
+              </button>
+              <button type="button" class="cko-tier-btn active" data-tier-choice="universal">
+                <span class="cko-tb-badge">POPULAR</span>
+                <span class="cko-tb-title">Universal</span>
+                <span class="cko-tb-price" id="cko-tb-universal-price">$19</span>
+              </button>
+              <button type="button" class="cko-tier-btn" data-tier-choice="team">
+                <span class="cko-tb-title">Team</span>
+                <span class="cko-tb-price" id="cko-tb-team-price">$69</span>
+              </button>
+            </div>
+
             <!-- Price Hero -->
             <div class="cko-price-hero">
               <div class="cko-price-left">
@@ -461,7 +541,7 @@
                 </div>
                 <div class="cko-one-time-label">One-time · No subscription</div>
               </div>
-              <div class="cko-feature-lines">
+              <div class="cko-feature-lines" id="checkout-feature-lines">
                 <div class="cko-feature-line">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                   <span>3 Devices (Mac &amp; Windows)</span>
@@ -660,6 +740,19 @@
       applyPricing(false, 'US');
     });
 
+    // Tier Selector inside Modal
+    document.querySelectorAll('[data-tier-choice]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const choice = btn.getAttribute('data-tier-choice');
+        if (choice && TIERS[choice]) {
+          selectedTier = choice;
+          document.querySelectorAll('[data-tier-choice]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          applyPricing(isIndia, currentCountry);
+        }
+      });
+    });
+
     // Triggers across the page
     const triggers = [
       '#nav-buy-btn',
@@ -673,7 +766,8 @@
       document.querySelectorAll(sel).forEach(function (el) {
         el.addEventListener('click', function (e) {
           e.preventDefault();
-          openModal();
+          const tier = el.getAttribute('data-tier') || 'universal';
+          openModal(tier);
         });
       });
     });
@@ -787,7 +881,15 @@
     }
   }
 
-  function openModal() {
+  function openModal(tier) {
+    if (tier && TIERS[tier]) {
+      selectedTier = tier;
+    }
+    document.querySelectorAll('[data-tier-choice]').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-tier-choice') === selectedTier);
+    });
+    applyPricing(isIndia, currentCountry);
+
     hideError();
     formView.style.display = 'block';
     successView.style.display = 'none';
@@ -844,7 +946,8 @@
           email: email,
           country: currentCountry,
           currency: selectedCurrency,
-          amount: PRICING[selectedCurrency].amount,
+          tier: selectedTier,
+          amount: getActivePriceConfig().amount,
           couponCode: appliedCoupon ? appliedCoupon.code : ''
         })
       });
@@ -894,7 +997,7 @@
                 razorpay_signature: response.razorpay_signature,
                 email: email,
                 name: name,
-                tier: 'Pro Lifetime',
+                tier: (TIERS[selectedTier] ? TIERS[selectedTier].name : 'Universal Pro Lifetime'),
                 amount: activePrice.amount,
                 currency: selectedCurrency,
                 couponCode: appliedCoupon ? appliedCoupon.code : null,
