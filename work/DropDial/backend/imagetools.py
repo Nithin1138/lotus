@@ -4,7 +4,7 @@ from PIL import Image,ImageOps,ImageFont,ImageDraw,ImageColor
 from common import *
 
 def resize(image,params):
-    width,height=image.size; mode=params.get('mode','percent')
+    width,height=image.size; mode=params.get('mode', 'size' if (params.get('width') or params.get('height')) else 'percent')
     if mode=='percent': factor=number(params,'percent',50)/100; new=(round(width*factor),round(height*factor))
     elif mode=='edge': factor=number(params,'edge',1920)/max(width,height); new=(round(width*factor),round(height*factor))
     else:

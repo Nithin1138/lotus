@@ -115,7 +115,11 @@ def split_video(path,params):
 def snapshots(path,params):
     info=probe(path); rate=video_stream(info).get('avg_frame_rate','30/1'); a,b=map(float,rate.split('/')); fps=a/b if b and a else 30
     times=params.get('times','').strip()
-    values=[float(x.strip()) for x in times.split(',')] if times else [number(params,'time',0)+number(params,'frame',0)/fps]
+    cnt=int(number(params,'count',0))
+    if times: values=[float(x.strip()) for x in times.split(',')]
+    elif cnt>1:
+        dur=duration(info); values=[round(dur*(i+1)/(cnt+1),3) for i in range(cnt)]
+    else: values=[number(params,'time',0)+number(params,'frame',0)/fps]
     if any(x<0 or x>=duration(info) for x in values): raise ValueError(T('The frame time is outside the video'))
     if len(values)==1:
         with output_file(path,'snapshot','.png') as state: ffmpeg(['-ss',values[0],'-i',path,'-frames:v','1',state['temp']])
