@@ -235,8 +235,8 @@
         }
       }
 
-      // 3. Fetch live active pricing
-      await fetchLivePricing();
+      // 3. Fetch live active pricing (only force on manual user refresh)
+      await fetchLivePricing(!isBackground);
 
       if (syncText) {
         const now = new Date();
@@ -1138,12 +1138,16 @@
     }
   }
 
-  async function fetchLivePricing() {
+  let pricingFormLoaded = false;
+
+  async function fetchLivePricing(force = false) {
+    if (pricingFormLoaded && !force) return;
     try {
-      const res = await fetch('/api/pricing');
+      const res = await fetch('/api/pricing?t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data && data.pricing) {
+          pricingFormLoaded = true;
           const inrInput = document.getElementById('price-inr-input');
           const usdInput = document.getElementById('price-usd-input');
           if (inrInput && data.pricing.INR) inrInput.value = data.pricing.INR.amount;
@@ -1154,7 +1158,7 @@
           const strikeUsdInput = document.getElementById('price-strike-usd-input');
 
           if (strikeCheck) {
-            strikeCheck.checked = data.pricing.strikethrough ? data.pricing.strikethrough.enabled !== false : true;
+            strikeCheck.checked = data.pricing.strikethrough ? (data.pricing.strikethrough.enabled === true) : true;
           }
           if (strikeInrInput) {
             strikeInrInput.value = data.pricing.strikethrough?.inrAmount || data.pricing.INR?.strikeAmount || 1499;
@@ -1169,7 +1173,7 @@
           const countdownLabelInput = document.getElementById('pricing-countdown-label');
 
           if (countdownCheck) {
-            countdownCheck.checked = data.pricing.countdown ? data.pricing.countdown.enabled !== false : true;
+            countdownCheck.checked = !!(data.pricing.countdown && data.pricing.countdown.enabled === true);
           }
           if (countdownValInput) {
             countdownValInput.value = data.pricing.countdown?.value || 24;
@@ -1265,6 +1269,9 @@
       if (document.getElementById('pricing-countdown-reset')) {
         document.getElementById('pricing-countdown-reset').checked = false;
       }
+      pricingFormLoaded = true;
+      const cdInput = document.getElementById('pricing-countdown-enabled');
+      if (cdInput) cdInput.checked = countdownEnabled;
       updatePricingPreviews();
     } catch (err) {
       msg.style.color = '#ef4444';

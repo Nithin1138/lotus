@@ -16,7 +16,7 @@
     USD: { code: 'USD', symbol: '$', amount: 19, display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
     strikethrough: { enabled: true, inrAmount: 1499, usdAmount: 29 },
     countdown: {
-      enabled: true,
+      enabled: false,
       value: 24,
       unit: 'hours',
       label: 'Special Launch Discount Ends In:',
@@ -125,13 +125,15 @@
       countdownTimerInterval = null;
     }
 
-    const banner = document.getElementById('offer-countdown-banner');
+    const leftWing = document.getElementById('ocs-left-wing');
+    const rightWing = document.getElementById('ocs-right-wing');
     const headerEl = document.getElementById('ocb-header');
     const heroTag = document.getElementById('hero-urgency-tag');
     const cardTag = document.getElementById('card-urgency-tag');
 
     if (!countdownConfig || countdownConfig.enabled === false) {
-      if (banner) banner.style.display = 'none';
+      if (leftWing) leftWing.style.display = 'none';
+      if (rightWing) rightWing.style.display = 'none';
       if (headerEl) headerEl.style.display = 'none';
       if (heroTag) heroTag.style.display = 'none';
       if (cardTag) cardTag.style.display = 'none';
@@ -153,7 +155,8 @@
     }
 
     // Ensure elements are displayed
-    if (banner) banner.style.display = 'flex';
+    if (leftWing) leftWing.style.display = 'flex';
+    if (rightWing) rightWing.style.display = 'flex';
     if (headerEl) headerEl.style.display = 'flex';
     if (heroTag) heroTag.style.display = 'inline-flex';
     if (cardTag) cardTag.style.display = 'inline-flex';
@@ -315,7 +318,7 @@
   async function fetchCountryPricing() {
     // 1. Fetch live dynamic base pricing
     try {
-      const pRes = await fetch('/api/pricing', { method: 'GET', cache: 'default' });
+      const pRes = await fetch('/api/pricing?t=' + Date.now(), { method: 'GET', cache: 'no-store' });
       if (pRes.ok) {
         const pData = await pRes.json();
         if (pData && pData.pricing) {
@@ -361,7 +364,7 @@
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
       const offset = new Date().getTimezoneOffset();
-      const res = await fetch(`/api/geo?tz=${encodeURIComponent(tz)}&offset=${offset}`, { method: 'GET', cache: 'default' });
+      const res = await fetch(`/api/geo?tz=${encodeURIComponent(tz)}&offset=${offset}&t=${Date.now()}`, { method: 'GET', cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data && typeof data.isIndia === 'boolean') {

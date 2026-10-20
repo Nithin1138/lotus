@@ -122,16 +122,35 @@ module.exports = async function handler(req, res) {
       // Try to load latest pricing from Neon
       const rows = await sql`SELECT value FROM app_settings WHERE key = 'pricing' LIMIT 1;`;
       if (rows && rows.length > 0 && rows[0].value) {
-        currentPricing = { ...currentPricing, ...rows[0].value };
+        let val = rows[0].value;
+        if (typeof val === 'string') {
+          try { val = JSON.parse(val); } catch (e) {}
+        }
+        if (val && typeof val === 'object') {
+          currentPricing = {
+            ...currentPricing,
+            ...val,
+            INR: { ...currentPricing.INR, ...(val.INR || {}) },
+            USD: { ...currentPricing.USD, ...(val.USD || {}) },
+            strikethrough: { ...currentPricing.strikethrough, ...(val.strikethrough || {}) },
+            countdown: {
+              ...currentPricing.countdown,
+              ...(val.countdown || {}),
+              enabled: val.countdown ? (val.countdown.enabled === true) : currentPricing.countdown.enabled
+            }
+          };
+        }
       }
     } catch (dbErr) {
       console.warn('[Neon DB Pricing Read Warning]:', dbErr.message);
     }
   }
 
-  // GET: Public fetch of active pricing
+  // GET: Public fetch of active pricing (no-cache for instant admin synchronization)
   if (req.method === 'GET') {
-    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=60');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     return res.status(200).json({
       success: true,
       pricing: currentPricing
@@ -152,7 +171,7 @@ module.exports = async function handler(req, res) {
       const strikeInr = Number(body.strikeInr) > 0 ? Number(body.strikeInr) : (currentPricing.strikethrough?.inrAmount || 1499);
       const strikeUsd = Number(body.strikeUsd) > 0 ? Number(body.strikeUsd) : (currentPricing.strikethrough?.usdAmount || 29);
 
-      const countdownEnabled = body.countdownEnabled !== undefined ? !!body.countdownEnabled : (currentPricing.countdown?.enabled ?? true);
+      const countdownEnabled = body.countdownEnabled !== undefined ? (body.countdownEnabled === true || body.countdownEnabled === 'true') : false;
       const countdownValue = Number(body.countdownValue) > 0 ? Number(body.countdownValue) : (currentPricing.countdown?.value || 24);
       const countdownUnit = (body.countdownUnit === 'days') ? 'days' : 'hours';
       const countdownLabel = (body.countdownLabel || currentPricing.countdown?.label || 'Special Launch Discount Ends In:').trim();
@@ -212,10 +231,11 @@ module.exports = async function handler(req, res) {
       if (sql) {
         try {
           await ensureSchema();
+          const pricingJson = JSON.stringify(currentPricing);
           await sql`
             INSERT INTO app_settings (key, value, updated_at)
-            VALUES ('pricing', ${JSON.stringify(currentPricing)}, NOW())
-            ON CONFLICT (key) DO UPDATE SET value = ${JSON.stringify(currentPricing)}, updated_at = NOW();
+            VALUES ('pricing', ${pricingJson}::jsonb, NOW())
+            ON CONFLICT (key) DO UPDATE SET value = ${pricingJson}::jsonb, updated_at = NOW();
           `;
         } catch (dbErr) {
           console.warn('[Neon DB Pricing Write Warning]:', dbErr.message);
