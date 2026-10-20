@@ -15,7 +15,13 @@
     INR: { code: 'INR', symbol: '₹', amount: 999, display: '₹999', strikeAmount: 1499, strikeDisplay: '₹1,499' },
     USD: { code: 'USD', symbol: '$', amount: 19, display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
     strikethrough: { enabled: true, inrAmount: 1499, usdAmount: 29 },
-    countdown: { enabled: true, value: 24, unit: 'hours', label: 'Special Launch Discount Ends In:', expiresAt: null }
+    countdown: {
+      enabled: true,
+      value: 24,
+      unit: 'hours',
+      label: 'Special Launch Discount Ends In:',
+      expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString()
+    }
   };
 
   // State
@@ -122,7 +128,7 @@
     const banner = document.getElementById('offer-countdown-banner');
     if (!banner) return;
 
-    if (!countdownConfig || countdownConfig.enabled === false || !countdownConfig.expiresAt) {
+    if (!countdownConfig || countdownConfig.enabled === false) {
       banner.style.display = 'none';
       return;
     }
@@ -132,24 +138,30 @@
       labelEl.textContent = countdownConfig.label;
     }
 
-    const targetTime = new Date(countdownConfig.expiresAt).getTime();
+    let targetTime = countdownConfig.expiresAt ? new Date(countdownConfig.expiresAt).getTime() : 0;
+    const now = Date.now();
+    // If expiresAt is in the past or missing, roll forward automatically so urgency offer is always live
+    if (!targetTime || targetTime <= now) {
+      const durationHours = countdownConfig.unit === 'days' ? ((countdownConfig.value || 1) * 24) : (countdownConfig.value || 24);
+      targetTime = now + (durationHours * 3600 * 1000);
+      countdownConfig.expiresAt = new Date(targetTime).toISOString();
+    }
+
+    // Ensure banner is displayed cleanly as flexbox
+    banner.style.display = 'flex';
 
     function updateTick() {
-      const now = Date.now();
-      const remaining = targetTime - now;
+      const currentTime = Date.now();
+      let remaining = targetTime - currentTime;
 
       if (remaining <= 0) {
-        banner.style.display = 'none';
-        if (countdownTimerInterval) {
-          clearInterval(countdownTimerInterval);
-          countdownTimerInterval = null;
-        }
-        return;
+        // Roll over for next cycle so countdown banner stays active
+        const durationHours = countdownConfig.unit === 'days' ? ((countdownConfig.value || 1) * 24) : (countdownConfig.value || 24);
+        targetTime = Date.now() + (durationHours * 3600 * 1000);
+        remaining = targetTime - Date.now();
       }
 
-      banner.style.display = '';
-
-      const totalSeconds = Math.floor(remaining / 1000);
+      const totalSeconds = Math.max(0, Math.floor(remaining / 1000));
       const days = Math.floor(totalSeconds / 86400);
       const hours = Math.floor((totalSeconds % 86400) / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -362,7 +374,10 @@
     // 3. Sync pricing with modal DOM
     applyPricing(isIndia, currentCountry);
 
-    // 4. Edge geo refinement in background
+    // 4. Start urgency countdown timer immediately
+    initCountdownTimer(PRICING.countdown);
+
+    // 5. Edge geo refinement in background
     fetchCountryPricing();
   }
 

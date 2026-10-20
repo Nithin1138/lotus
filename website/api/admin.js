@@ -69,7 +69,18 @@ module.exports = async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const action = req.query.action || req.body?.action || 'stats';
+  // Parse body safely whether sent as raw string, object or stream
+  let body = {};
+  if (typeof req.body === 'string') {
+    try {
+      body = JSON.parse(req.body);
+    } catch (_) {}
+  } else if (req.body && typeof req.body === 'object') {
+    body = req.body;
+  }
+  req.body = body;
+
+  const action = req.query.action || body.action || 'stats';
 
   // Public endpoint: lightweight event tracking from landing page (zero PII)
   if (action === 'track') {

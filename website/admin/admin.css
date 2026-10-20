@@ -448,6 +448,29 @@ body.admin-body {
   gap: 10px;
 }
 
+.live-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-xl);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--emerald);
+  user-select: none;
+}
+
+.pulse-dot {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.25); }
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;

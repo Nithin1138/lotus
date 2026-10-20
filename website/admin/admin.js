@@ -132,15 +132,29 @@
     }
   }
 
+  let realTimeSyncInterval = null;
+  let isSyncing = false;
+
   function grantAccess() {
     state.authenticated = true;
     document.getElementById('auth-gate').style.display = 'none';
     document.getElementById('admin-dashboard-app').style.display = 'flex';
     syncRealTimeData();
     renderAllViews();
+
+    if (realTimeSyncInterval) clearInterval(realTimeSyncInterval);
+    realTimeSyncInterval = setInterval(() => {
+      if (state.authenticated) {
+        syncRealTimeData(true);
+      }
+    }, 8000);
   }
 
   function lockSession() {
+    if (realTimeSyncInterval) {
+      clearInterval(realTimeSyncInterval);
+      realTimeSyncInterval = null;
+    }
     sessionStorage.removeItem('dd_admin_token');
     localStorage.removeItem('dd_admin_token');
     state.authenticated = false;
@@ -156,12 +170,27 @@
   }
 
   /**
-   * Fetch Live Telemetry & Server Records
+   * Fetch Live Telemetry & Server Records in Real Time
    */
-  async function syncRealTimeData() {
+  async function syncRealTimeData(isBackground = false) {
+    if (isSyncing) return;
+    isSyncing = true;
+    const syncText = document.getElementById('live-sync-text');
+    const refreshBtn = document.getElementById('refresh-data-btn');
+
+    if (!isBackground && refreshBtn) {
+      refreshBtn.style.transform = 'rotate(180deg)';
+      refreshBtn.style.transition = 'transform 0.4s ease';
+    }
+
     try {
+      const headers = {
+        'Authorization': `Bearer ${state.adminToken || ''}`,
+        'x-admin-key': state.adminToken || ''
+      };
+
       // 1. Fetch live telemetry stats, persistent licenses & transactions
-      const statsRes = await fetch(`/api/admin?action=stats&token=${encodeURIComponent(state.adminToken || '')}`);
+      const statsRes = await fetch(`/api/admin?action=stats&token=${encodeURIComponent(state.adminToken || '')}`, { headers });
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         if (statsData.success) {
@@ -173,10 +202,10 @@
               purchases: statsData.metrics.purchases || state.stats.purchases || 0
             };
           }
-          if (Array.isArray(statsData.licenses) && statsData.licenses.length > 0) {
+          if (Array.isArray(statsData.licenses)) {
             state.licenses = statsData.licenses;
           }
-          if (Array.isArray(statsData.transactions) && statsData.transactions.length > 0) {
+          if (Array.isArray(statsData.transactions)) {
             state.transactions = statsData.transactions;
           }
           saveLocalStore();
@@ -184,7 +213,7 @@
       }
 
       // 2. Fetch live coupons
-      const couponRes = await fetch(`/api/coupons?action=list&token=${encodeURIComponent(state.adminToken || '')}`);
+      const couponRes = await fetch(`/api/coupons?action=list&token=${encodeURIComponent(state.adminToken || '')}`, { headers });
       if (couponRes.ok) {
         const couponData = await couponRes.json();
         if (couponData.success && Array.isArray(couponData.coupons)) {
@@ -195,8 +224,21 @@
 
       // 3. Fetch live active pricing
       await fetchLivePricing();
+
+      if (syncText) {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        syncText.textContent = `Live (${timeStr})`;
+      }
     } catch (e) {
-      // Offline safe fallback
+      if (syncText) syncText.textContent = 'Live (Offline)';
+    } finally {
+      isSyncing = false;
+      if (!isBackground && refreshBtn) {
+        setTimeout(() => {
+          refreshBtn.style.transform = 'none';
+        }, 400);
+      }
     }
 
     renderAllViews();
@@ -510,14 +552,23 @@
     renderCouponsTable();
 
     try {
-      await fetch('/api/coupons', {
+      const res = await fetch('/api/coupons', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.adminToken || ''}`
+          'Authorization': `Bearer ${state.adminToken || ''}`,
+          'x-admin-key': state.adminToken || ''
         },
-        body: JSON.stringify({ action: 'toggle', code })
+        body: JSON.stringify({ action: 'toggle', code, token: state.adminToken })
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.coupons)) {
+          state.coupons = data.coupons;
+          saveLocalStore();
+          renderCouponsTable();
+        }
+      }
     } catch (_) {}
 
     showToast(`Coupon ${code} is now ${coupon.active ? 'Active' : 'Disabled'}.`, 'info');
@@ -532,14 +583,24 @@
     updateBadges();
 
     try {
-      await fetch('/api/coupons', {
+      const res = await fetch('/api/coupons', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.adminToken || ''}`
+          'Authorization': `Bearer ${state.adminToken || ''}`,
+          'x-admin-key': state.adminToken || ''
         },
-        body: JSON.stringify({ action: 'delete', code })
+        body: JSON.stringify({ action: 'delete', code, token: state.adminToken })
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.coupons)) {
+          state.coupons = data.coupons;
+          saveLocalStore();
+          renderCouponsTable();
+          updateBadges();
+        }
+      }
     } catch (_) {}
 
     showToast(`Coupon ${code} deleted successfully.`, 'info');
@@ -792,21 +853,39 @@
 
     // Sync to server API
     try {
-      await fetch('/api/coupons', {
+      const res = await fetch('/api/coupons', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.adminToken || ''}`
+          'Authorization': `Bearer ${state.adminToken || ''}`,
+          'x-admin-key': state.adminToken || ''
         },
         body: JSON.stringify({
           action: 'save',
+          token: state.adminToken,
           ...newCoupon
         })
       });
-    } catch (_) {}
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.coupons)) {
+          state.coupons = data.coupons;
+          saveLocalStore();
+          renderCouponsTable();
+          updateBadges();
+        }
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || 'Server error while saving coupon', 'error');
+        return;
+      }
+    } catch (netErr) {
+      console.warn('[Coupon Sync Offline]:', netErr.message);
+    }
 
     document.getElementById('coupon-modal').style.display = 'none';
-    showToast(`Coupon ${code} created successfully!`, 'success');
+    showToast(`Coupon ${code} created & saved successfully!`, 'success');
   }
 
   async function handleIssueLicense(e) {
