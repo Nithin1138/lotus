@@ -2,6 +2,7 @@ import AppKit
 import AVFoundation
 import AVKit
 import CoreImage
+import PDFKit
 
 // MARK: - Interactive Crop Overlay View
 struct RedactBox {
@@ -657,6 +658,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     private let splitSummaryLabel = NSTextField(labelWithString: "")
     private var splitCutModeContainer: NSView?
     private var splitEqualPartsContainer: NSView?
+    private var pdfOrganizerView: PDFPageOrganizerView?
 
     private var originalWidth: Int = 0
     private var originalHeight: Int = 0
@@ -670,8 +672,12 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         self.tool = tool
 
         let isVideoStudio = (tool.id == "trimVideo" || tool.id == "cropVideo" || tool.id == "splitVideo" || tool.id == "editVideo")
+        let isOrganizePDF = (tool.id == "organizePDF")
+        let winW: CGFloat = isOrganizePDF ? 640 : 480
         let winH: CGFloat
-        if tool.id == "editImage" {
+        if isOrganizePDF {
+            winH = 620
+        } else if tool.id == "editImage" {
             winH = 680
         } else if isVideoStudio {
             winH = 650
@@ -682,13 +688,15 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         }
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: winH),
+            contentRect: NSRect(x: 0, y: 0, width: winW, height: winH),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
         if isVideoStudio {
             window.title = "DropDial · Video Studio"
+        } else if isOrganizePDF {
+            window.title = "DropDial · PDF Page Organizer"
         } else {
             window.title = "DropDial · " + tool.label
         }
@@ -760,9 +768,12 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
         // Preview Container Card
         let isVideoStudio = (tool.id == "trimVideo" || tool.id == "cropVideo" || tool.id == "splitVideo" || tool.id == "editVideo")
-        let previewH: CGFloat = isVideoStudio ? 240 : ((tool.id == "editImage" || tool.id == "watermark" || tool.id == "compress") ? 220 : 250)
+        let isOrganizePDF = (tool.id == "organizePDF")
+        let winContentW = container.bounds.width
+        let previewH: CGFloat = isOrganizePDF ? 320 : (isVideoStudio ? 240 : ((tool.id == "editImage" || tool.id == "watermark" || tool.id == "compress") ? 220 : 250))
+        let previewW: CGFloat = winContentW - 40
         let previewY = topY - previewH - 12
-        let previewContainer = NSView(frame: NSRect(x: 20, y: previewY, width: 440, height: previewH))
+        let previewContainer = NSView(frame: NSRect(x: 20, y: previewY, width: previewW, height: previewH))
         previewContainer.wantsLayer = true
         previewContainer.layer?.backgroundColor = NSColor(white: 0.08, alpha: 0.95).cgColor
         previewContainer.layer?.cornerRadius = 10
@@ -786,12 +797,21 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         cropOverlayView.isHidden = (tool.id != "cropImage" && tool.id != "cropVideo" && tool.id != "redactImage")
         previewContainer.addSubview(cropOverlayView)
 
+        if isOrganizePDF, let firstPDF = paths.first {
+            let organizer = PDFPageOrganizerView(frame: previewContainer.bounds, pdfPath: firstPDF)
+            organizer.autoresizingMask = [.width, .height]
+            previewContainer.addSubview(organizer)
+            self.pdfOrganizerView = organizer
+            previewImageView.isHidden = true
+            cropOverlayView.isHidden = true
+        }
+
         container.addSubview(previewContainer)
 
         // Settings Form Container
         let formY: CGFloat = 64
         let formH: CGFloat = previewY - formY - 10
-        let formContainer = NSView(frame: NSRect(x: 20, y: formY, width: 440, height: formH))
+        let formContainer = NSView(frame: NSRect(x: 20, y: formY, width: winContentW - 40, height: formH))
         formContainer.wantsLayer = true
         container.addSubview(formContainer)
 
@@ -836,8 +856,8 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         cancelButton.action = #selector(cancelClicked)
         container.addSubview(cancelButton)
 
-        let saveButton = NSButton(frame: NSRect(x: 270, y: 16, width: 190, height: 32))
-        saveButton.title = isVideoStudio ? "Save Video" : "Save New File"
+        let saveButton = NSButton(frame: NSRect(x: winContentW - 210, y: 16, width: 190, height: 32))
+        saveButton.title = isOrganizePDF ? "Save Organized PDF" : (isVideoStudio ? "Save Video" : "Save New File")
         saveButton.bezelStyle = .rounded
         saveButton.keyEquivalent = "\r" // Return
         saveButton.bezelColor = NSColor(srgbRed: 1.0, green: 0.384, blue: 0.031, alpha: 1.0)
@@ -2812,16 +2832,365 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         container.addSubview(desc)
     }
 
+    // MARK: - Interactive PDF Page Organizer (Drag & Arrange)
+    final class PDFPageCardView: NSView, NSDraggingSource {
+        let originalPageIndex: Int
+        var rotationAngle: Int = 0
+        var thumbnail: NSImage
+        
+        var onMoveLeft: (() -> Void)?
+        var onMoveRight: (() -> Void)?
+        var onRotate: (() -> Void)?
+        var onDelete: (() -> Void)?
+        
+        private let imageView = NSImageView()
+        private let badgeLabel = NSTextField(labelWithString: "")
+        private let rotBadge = NSTextField(labelWithString: "")
+        private var mouseDownPos: NSPoint = .zero
+        
+        init(pageIndex: Int, thumbnail: NSImage, frame: NSRect) {
+            self.originalPageIndex = pageIndex
+            self.thumbnail = thumbnail
+            super.init(frame: frame)
+            wantsLayer = true
+            setupViews()
+        }
+        
+        required init?(coder: NSCoder) { fatalError() }
+        
+        private func setupViews() {
+            layer?.cornerRadius = 8
+            layer?.borderWidth = 1.5
+            layer?.borderColor = NSColor(white: 0.25, alpha: 0.9).cgColor
+            layer?.backgroundColor = NSColor(white: 0.14, alpha: 0.95).cgColor
+            
+            let paperView = NSView(frame: NSRect(x: 10, y: 70, width: bounds.width - 20, height: bounds.height - 80))
+            paperView.wantsLayer = true
+            paperView.layer?.backgroundColor = NSColor.white.cgColor
+            paperView.layer?.cornerRadius = 5
+            paperView.layer?.shadowColor = NSColor.black.cgColor
+            paperView.layer?.shadowOpacity = 0.35
+            paperView.layer?.shadowOffset = CGSize(width: 0, height: -2)
+            paperView.layer?.shadowRadius = 4
+            addSubview(paperView)
+            
+            imageView.frame = paperView.bounds.insetBy(dx: 4, dy: 4)
+            imageView.autoresizingMask = [.width, .height]
+            imageView.image = thumbnail
+            imageView.imageScaling = .scaleProportionallyUpOrDown
+            paperView.addSubview(imageView)
+            
+            badgeLabel.frame = NSRect(x: 6, y: 44, width: bounds.width - 12, height: 18)
+            badgeLabel.alignment = .center
+            badgeLabel.font = NSFont.systemFont(ofSize: 11, weight: .bold)
+            badgeLabel.textColor = NSColor(srgbRed: 1.0, green: 0.55, blue: 0.15, alpha: 1.0)
+            badgeLabel.stringValue = "Page \(originalPageIndex)"
+            addSubview(badgeLabel)
+            
+            rotBadge.frame = NSRect(x: 6, y: 30, width: bounds.width - 12, height: 14)
+            rotBadge.alignment = .center
+            rotBadge.font = NSFont.systemFont(ofSize: 9.5, weight: .medium)
+            rotBadge.textColor = NSColor(white: 0.7, alpha: 1.0)
+            addSubview(rotBadge)
+            
+            let btnY: CGFloat = 6
+            let btnH: CGFloat = 20
+            let btnW: CGFloat = 22
+            let startX: CGFloat = (bounds.width - (btnW * 4 + 6)) / 2
+            
+            let leftBtn = NSButton(title: "←", target: self, action: #selector(leftClicked))
+            leftBtn.frame = NSRect(x: startX, y: btnY, width: btnW, height: btnH)
+            leftBtn.bezelStyle = .rounded
+            leftBtn.font = NSFont.systemFont(ofSize: 10, weight: .bold)
+            leftBtn.toolTip = "Move page earlier"
+            addSubview(leftBtn)
+            
+            let rotBtn = NSButton(title: "⟳", target: self, action: #selector(rotClicked))
+            rotBtn.frame = NSRect(x: startX + btnW + 2, y: btnY, width: btnW, height: btnH)
+            rotBtn.bezelStyle = .rounded
+            rotBtn.font = NSFont.systemFont(ofSize: 10, weight: .bold)
+            rotBtn.toolTip = "Rotate 90° clockwise"
+            addSubview(rotBtn)
+            
+            let delBtn = NSButton(title: "✕", target: self, action: #selector(delClicked))
+            delBtn.frame = NSRect(x: startX + (btnW + 2) * 2, y: btnY, width: btnW, height: btnH)
+            delBtn.bezelStyle = .rounded
+            delBtn.font = NSFont.systemFont(ofSize: 10, weight: .bold)
+            delBtn.contentTintColor = NSColor(srgbRed: 0.95, green: 0.3, blue: 0.3, alpha: 1.0)
+            delBtn.toolTip = "Exclude page from output"
+            addSubview(delBtn)
+            
+            let rightBtn = NSButton(title: "→", target: self, action: #selector(rightClicked))
+            rightBtn.frame = NSRect(x: startX + (btnW + 2) * 3, y: btnY, width: btnW, height: btnH)
+            rightBtn.bezelStyle = .rounded
+            rightBtn.font = NSFont.systemFont(ofSize: 10, weight: .bold)
+            rightBtn.toolTip = "Move page later"
+            addSubview(rightBtn)
+        }
+        
+        @objc private func leftClicked() { onMoveLeft?() }
+        @objc private func rightClicked() { onMoveRight?() }
+        @objc private func rotClicked() {
+            rotationAngle = (rotationAngle + 90) % 360
+            updateRotationView()
+            onRotate?()
+        }
+        @objc private func delClicked() { onDelete?() }
+        
+        func applyRotation(_ angle: Int) {
+            rotationAngle = angle % 360
+            updateRotationView()
+        }
+        
+        private func updateRotationView() {
+            if rotationAngle == 0 {
+                rotBadge.stringValue = ""
+                imageView.layer?.transform = CATransform3DIdentity
+            } else {
+                rotBadge.stringValue = "+\(rotationAngle)°"
+                let rad = CGFloat(rotationAngle) * .pi / 180.0
+                imageView.layer?.transform = CATransform3DMakeRotation(-rad, 0, 0, 1)
+            }
+        }
+        
+        override func mouseDown(with event: NSEvent) {
+            mouseDownPos = convert(event.locationInWindow, from: nil)
+            super.mouseDown(with: event)
+        }
+        
+        override func mouseDragged(with event: NSEvent) {
+            let p = convert(event.locationInWindow, from: nil)
+            if hypot(p.x - mouseDownPos.x, p.y - mouseDownPos.y) > 8 {
+                let pbItem = NSPasteboardItem()
+                pbItem.setString("\(originalPageIndex)", forType: NSPasteboard.PasteboardType("com.dropdial.pdfpage"))
+                let dragItem = NSDraggingItem(pasteboardWriter: pbItem)
+                dragItem.setDraggingFrame(bounds, contents: thumbnail)
+                beginDraggingSession(with: [dragItem], event: event, source: self)
+            }
+        }
+        
+        func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+            return .move
+        }
+    }
+
+    final class PDFPageOrganizerView: NSView {
+        struct PageItem {
+            let originalIndex: Int
+            var rotation: Int
+            let thumbnail: NSImage
+        }
+        
+        private var initialPages: [PageItem] = []
+        private var currentPages: [PageItem] = []
+        
+        private let scrollView = NSScrollView()
+        private let documentContainer = NSView()
+        private let statusLabel = NSTextField(labelWithString: "Loading pages...")
+        private let orderLabel = NSTextField(labelWithString: "")
+        
+        init(frame: NSRect, pdfPath: String) {
+            super.init(frame: frame)
+            wantsLayer = true
+            registerForDraggedTypes([NSPasteboard.PasteboardType("com.dropdial.pdfpage")])
+            setupUI()
+            loadPDF(path: pdfPath)
+        }
+        
+        required init?(coder: NSCoder) { fatalError() }
+        
+        private func setupUI() {
+            let topBar = NSView(frame: NSRect(x: 0, y: bounds.height - 38, width: bounds.width, height: 38))
+            addSubview(topBar)
+            
+            statusLabel.frame = NSRect(x: 10, y: 18, width: 220, height: 18)
+            statusLabel.font = NSFont.systemFont(ofSize: 11.5, weight: .semibold)
+            statusLabel.textColor = .white
+            topBar.addSubview(statusLabel)
+            
+            orderLabel.frame = NSRect(x: 10, y: 2, width: bounds.width - 200, height: 16)
+            orderLabel.font = NSFont.monospacedSystemFont(ofSize: 10.5, weight: .regular)
+            orderLabel.textColor = NSColor(srgbRed: 1.0, green: 0.55, blue: 0.15, alpha: 1.0)
+            topBar.addSubview(orderLabel)
+            
+            let revBtn = NSButton(title: "⇄ Reverse", target: self, action: #selector(reverseClicked))
+            revBtn.frame = NSRect(x: bounds.width - 190, y: 7, width: 90, height: 26)
+            revBtn.bezelStyle = .rounded
+            revBtn.font = NSFont.systemFont(ofSize: 11)
+            topBar.addSubview(revBtn)
+            
+            let rotAllBtn = NSButton(title: "↻ Rotate 90°", target: self, action: #selector(rotateAllClicked))
+            rotAllBtn.frame = NSRect(x: bounds.width - 96, y: 7, width: 90, height: 26)
+            rotAllBtn.bezelStyle = .rounded
+            rotAllBtn.font = NSFont.systemFont(ofSize: 11)
+            topBar.addSubview(rotAllBtn)
+            
+            let scrollH = bounds.height - 44
+            scrollView.frame = NSRect(x: 0, y: 0, width: bounds.width, height: scrollH)
+            scrollView.hasHorizontalScroller = true
+            scrollView.hasVerticalScroller = false
+            scrollView.autohidesScrollers = true
+            scrollView.borderType = .noBorder
+            scrollView.backgroundColor = .clear
+            
+            scrollView.documentView = documentContainer
+            addSubview(scrollView)
+        }
+        
+        private func loadPDF(path: String) {
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let doc = PDFDocument(url: URL(fileURLWithPath: path)) else { return }
+                var items: [PageItem] = []
+                for i in 0..<doc.pageCount {
+                    if let page = doc.page(at: i) {
+                        let thumb = page.thumbnail(of: CGSize(width: 100, height: 140), for: .mediaBox)
+                        items.append(PageItem(originalIndex: i + 1, rotation: 0, thumbnail: thumb))
+                    }
+                }
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.initialPages = items
+                    self.currentPages = items
+                    self.rebuildCardViews()
+                }
+            }
+        }
+        
+        func rebuildCardViews() {
+            documentContainer.subviews.forEach { $0.removeFromSuperview() }
+            let cardW: CGFloat = 120
+            let cardH: CGFloat = 240
+            let gap: CGFloat = 12
+            let totalW = max(bounds.width, CGFloat(currentPages.count) * (cardW + gap) + gap)
+            documentContainer.frame = NSRect(x: 0, y: 0, width: totalW, height: scrollView.bounds.height)
+            
+            for (idx, item) in currentPages.enumerated() {
+                let x = gap + CGFloat(idx) * (cardW + gap)
+                let y = (documentContainer.bounds.height - cardH) / 2
+                let card = PDFPageCardView(pageIndex: item.originalIndex, thumbnail: item.thumbnail, frame: NSRect(x: x, y: y, width: cardW, height: cardH))
+                card.applyRotation(item.rotation)
+                card.onMoveLeft = { [weak self] in
+                    guard let self = self, idx > 0 else { return }
+                    self.currentPages.swapAt(idx, idx - 1)
+                    self.rebuildCardViews()
+                }
+                card.onMoveRight = { [weak self] in
+                    guard let self = self, idx < self.currentPages.count - 1 else { return }
+                    self.currentPages.swapAt(idx, idx + 1)
+                    self.rebuildCardViews()
+                }
+                card.onRotate = { [weak self] in
+                    guard let self = self else { return }
+                    self.currentPages[idx].rotation = card.rotationAngle
+                    self.updateSummary()
+                }
+                card.onDelete = { [weak self] in
+                    guard let self = self, self.currentPages.count > 1 else { return }
+                    self.currentPages.remove(at: idx)
+                    self.rebuildCardViews()
+                }
+                documentContainer.addSubview(card)
+            }
+            updateSummary()
+        }
+        
+        private func updateSummary() {
+            statusLabel.stringValue = "PDF Pages (\(currentPages.count) of \(initialPages.count))"
+            let orderStr = currentPages.map { "\($0.originalIndex)" }.joined(separator: ", ")
+            orderLabel.stringValue = "Output Sequence: [\(orderStr)]"
+        }
+        
+        @objc private func reverseClicked() {
+            currentPages.reverse()
+            rebuildCardViews()
+        }
+        
+        @objc private func rotateAllClicked() {
+            for i in 0..<currentPages.count {
+                currentPages[i].rotation = (currentPages[i].rotation + 90) % 360
+            }
+            rebuildCardViews()
+        }
+        
+        func resetAll() {
+            currentPages = initialPages
+            rebuildCardViews()
+        }
+        
+        func applyAction(_ action: String) {
+            if action == "Reverse All Pages" {
+                currentPages.reverse()
+            } else if action.contains("90") {
+                for i in 0..<currentPages.count { currentPages[i].rotation = (currentPages[i].rotation + 90) % 360 }
+            } else if action.contains("180") {
+                for i in 0..<currentPages.count { currentPages[i].rotation = (currentPages[i].rotation + 180) % 360 }
+            } else if action.contains("270") {
+                for i in 0..<currentPages.count { currentPages[i].rotation = (currentPages[i].rotation + 270) % 360 }
+            } else if action == "Extract Even Pages" {
+                currentPages = initialPages.filter { $0.originalIndex % 2 == 0 }
+            } else if action == "Extract Odd Pages" {
+                currentPages = initialPages.filter { $0.originalIndex % 2 != 0 }
+            } else if action == "Delete First Page" {
+                if currentPages.count > 1 { currentPages.removeFirst() }
+            } else if action == "Delete Last Page" {
+                if currentPages.count > 1 { currentPages.removeLast() }
+            }
+            rebuildCardViews()
+        }
+        
+        func getPageOrder() -> String {
+            return currentPages.map { "\($0.originalIndex)" }.joined(separator: ", ")
+        }
+        
+        func getRotationsJSON() -> String {
+            var dict: [String: Int] = [:]
+            for (newPos, item) in currentPages.enumerated() {
+                if item.rotation != 0 {
+                    dict["\(newPos + 1)"] = item.rotation
+                }
+            }
+            guard !dict.isEmpty else { return "{}" }
+            if let data = try? JSONSerialization.data(withJSONObject: dict, options: []),
+               let str = String(data: data, encoding: .utf8) {
+                return str
+            }
+            return "{}"
+        }
+        
+        override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+            return .move
+        }
+        
+        override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+            guard let item = sender.draggingPasteboard.pasteboardItems?.first,
+                  let str = item.string(forType: NSPasteboard.PasteboardType("com.dropdial.pdfpage")),
+                  let origPage = Int(str) else { return false }
+            
+            let dropPoint = convert(sender.draggingLocation, from: nil)
+            let cardW: CGFloat = 120 + 12
+            let targetIndex = max(0, min(currentPages.count - 1, Int(dropPoint.x / cardW)))
+            
+            if let fromIndex = currentPages.firstIndex(where: { $0.originalIndex == origPage }) {
+                let moved = currentPages.remove(at: fromIndex)
+                currentPages.insert(moved, at: targetIndex)
+                rebuildCardViews()
+                return true
+            }
+            return false
+        }
+    }
+
     // MARK: - Organize PDF Form
     private func setupOrganizePDFForm(in container: NSView) {
-        let actLabel = NSTextField(labelWithString: "Page Action:")
-        actLabel.frame = NSRect(x: 0, y: 70, width: 110, height: 20)
+        let actLabel = NSTextField(labelWithString: "Quick Action:")
+        actLabel.frame = NSRect(x: 0, y: 55, width: 95, height: 20)
         actLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
         actLabel.textColor = .white
         container.addSubview(actLabel)
 
-        let actPopup = NSPopUpButton(frame: NSRect(x: 120, y: 68, width: 260, height: 24))
+        let actPopup = NSPopUpButton(frame: NSRect(x: 100, y: 53, width: 220, height: 24))
         let actions = [
+            "Select action...",
             "Reverse All Pages",
             "Rotate All 90° Clockwise",
             "Rotate All 180°",
@@ -2832,14 +3201,32 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             "Delete Last Page"
         ]
         for a in actions { actPopup.addItem(withTitle: a) }
+        actPopup.target = self
+        actPopup.action = #selector(pdfQuickActionSelected(_:))
         container.addSubview(actPopup)
         fieldInputs["action"] = actPopup
 
-        let desc = NSTextField(labelWithString: "Rearranges or rotates pages cleanly without lossy re-rendering.")
-        desc.frame = NSRect(x: 0, y: 25, width: 440, height: 20)
+        let resetBtn = NSButton(title: "↺ Reset Original Order", target: self, action: #selector(resetPdfOrderClicked))
+        resetBtn.frame = NSRect(x: 330, y: 52, width: 160, height: 26)
+        resetBtn.bezelStyle = .rounded
+        resetBtn.font = NSFont.systemFont(ofSize: 11)
+        container.addSubview(resetBtn)
+
+        let desc = NSTextField(labelWithString: "💡 Drag page cards horizontally or use ← → buttons to rearrange. Click ⟳ to rotate a page or ✕ to delete it.")
+        desc.frame = NSRect(x: 0, y: 15, width: container.bounds.width, height: 32)
         desc.font = NSFont.systemFont(ofSize: 11)
         desc.textColor = NSColor(white: 0.8, alpha: 1.0)
         container.addSubview(desc)
+    }
+
+    @objc private func pdfQuickActionSelected(_ sender: NSPopUpButton) {
+        guard let title = sender.titleOfSelectedItem, title != "Select action..." else { return }
+        pdfOrganizerView?.applyAction(title)
+        sender.selectItem(at: 0)
+    }
+
+    @objc private func resetPdfOrderClicked() {
+        pdfOrganizerView?.resetAll()
     }
 
     @objc private func toolSliderChanged(_ sender: NSSlider) {
@@ -3324,8 +3711,21 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             if let sField = fieldInputs["start"] as? NSTextField { params["start"] = sField.stringValue }
             if let eField = fieldInputs["end"] as? NSTextField { params["end"] = eField.stringValue }
         } else if tool.id == "organizePDF" {
+            if let organizer = self.pdfOrganizerView {
+                let order = organizer.getPageOrder()
+                if !order.isEmpty {
+                    params["pageOrder"] = order
+                }
+                let rotJSON = organizer.getRotationsJSON()
+                if rotJSON != "{}" {
+                    params["rotations"] = rotJSON
+                }
+            }
             if let aPopup = fieldInputs["action"] as? NSPopUpButton {
-                params["action"] = aPopup.titleOfSelectedItem ?? "Reverse All Pages"
+                let title = aPopup.titleOfSelectedItem ?? ""
+                if !title.isEmpty && title != "Select action..." {
+                    params["action"] = title
+                }
             }
         } else if tool.id == "compress" {
             let q = qualitySlider?.integerValue ?? 80

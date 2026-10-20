@@ -340,6 +340,51 @@ internal sealed class ToolWindow : Window
         if (operation.Ordered || operation.Id == "organizePDF")
         {
             left.Children.Add(order);
+            order.AllowDrop = true;
+            Point? dragStart = null;
+            order.PreviewMouseLeftButtonDown += (_, e) => { dragStart = e.GetPosition(null); };
+            order.PreviewMouseMove += (_, e) =>
+            {
+                if (e.LeftButton == MouseButtonState.Pressed && dragStart.HasValue && order.SelectedItem is ListBoxItem item)
+                {
+                    Point pos = e.GetPosition(null);
+                    Vector diff = dragStart.Value - pos;
+                    if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance || Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
+                    {
+                        DragDrop.DoDragDrop(order, item, DragDropEffects.Move);
+                        dragStart = null;
+                    }
+                }
+            };
+            order.Drop += (_, e) =>
+            {
+                if (e.Data.GetData(typeof(ListBoxItem)) is ListBoxItem droppedItem)
+                {
+                    int targetIndex = -1;
+                    Point p = e.GetPosition(order);
+                    for (int i = 0; i < order.Items.Count; i++)
+                    {
+                        if (order.ItemContainerGenerator.ContainerFromIndex(i) is ListBoxItem container)
+                        {
+                            Point itemPos = container.TransformToAncestor(order).Transform(new Point(0, 0));
+                            if (p.Y >= itemPos.Y && p.Y <= itemPos.Y + container.ActualHeight)
+                            {
+                                targetIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                    if (targetIndex < 0) targetIndex = order.Items.Count - 1;
+                    int oldIndex = order.Items.IndexOf(droppedItem);
+                    if (oldIndex >= 0 && targetIndex >= 0 && oldIndex != targetIndex)
+                    {
+                        order.Items.RemoveAt(oldIndex);
+                        order.Items.Insert(targetIndex, droppedItem);
+                        order.SelectedIndex = targetIndex;
+                        if (loaded && VisualPreview) SchedulePreview();
+                    }
+                }
+            };
             var reorder = new WrapPanel();
             reorder.Children.Add(Button(L.T("Move up"), () => { MoveItem(-1); return Task.CompletedTask; }));
             reorder.Children.Add(Button(L.T("Move down"), () => { MoveItem(1); return Task.CompletedTask; }));
@@ -926,7 +971,7 @@ internal sealed class ToolWindow : Window
                 for (int i = 1; i <= pages; i++)
                     order.Items.Add(new ListBoxItem { Content = L.F("Page {0}", i), Tag = i });
                 Set("pageOrder", string.Join(",", Enumerable.Range(1, pages)));
-                details.Text = L.F("{0} pages. Rearrange the list or type a page order.", pages);
+                details.Text = L.F("{0} pages. Drag & drop pages or use buttons to rearrange.", pages);
             }
             status.Text = imageFrame >= 0 ? L.T("This image has several frames. Only the current frame is exported; the original is kept.") : ReadyText;
         }
