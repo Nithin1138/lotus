@@ -246,12 +246,12 @@
   // Native Releases for macOS and Windows
   const releaseWin = {
     tag: "v1.0.1",
-    size: "50 MB",
+    size: "204 KB",
     url: "/api/releases?download=DropDial-Setup.exe"
   };
   const releaseMac = {
     tag: "v1.0.1",
-    size: "4.3 MB",
+    size: "4.4 MB",
     url: "/api/releases?download=DropDial.dmg"
   };
 
@@ -321,12 +321,19 @@
 
       const activeTag = displayTag || "v1.0.1";
 
+      const formatSize = (bytes) => {
+        if (!bytes || isNaN(bytes)) return "";
+        if (bytes < 1048576) return `${Math.round(bytes / 1024)} KB`;
+        const mb = bytes / (1024 * 1024);
+        return mb < 10 ? `${mb.toFixed(1)} MB` : `${Math.round(mb)} MB`;
+      };
+
       if (winAsset) {
         releaseWin.url = winAsset.browser_download_url;
         releaseWin.tag = activeTag;
-        const sizeMb = Math.round(winAsset.size / 1024 / 1024);
+        const winSizeFormatted = formatSize(winAsset.size);
         $$("[data-download-win]").forEach(a => { a.href = releaseWin.url; });
-        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · ${sizeMb} MB · Standalone Windows (.exe)`; });
+        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · ${winSizeFormatted} · Standalone Windows (.exe)`; });
       } else if (latestTag) {
         $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · ${releaseWin.size} · Standalone Windows (.exe)`; });
       }
@@ -334,9 +341,9 @@
       if (macAsset) {
         releaseMac.url = macAsset.browser_download_url;
         releaseMac.tag = activeTag;
-        const sizeMb = (macAsset.size / 1024 / 1024).toFixed(1);
+        const macSizeFormatted = formatSize(macAsset.size);
         $$("[data-download-mac]").forEach(a => { a.href = releaseMac.url; });
-        $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${releaseMac.tag} · ${sizeMb} MB · Universal Mach-O DMG`; });
+        $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${releaseMac.tag} · ${macSizeFormatted} · Universal Mach-O DMG`; });
       } else if (latestTag) {
         $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${releaseMac.tag} · ${releaseMac.size} · Universal Mach-O DMG`; });
       }
