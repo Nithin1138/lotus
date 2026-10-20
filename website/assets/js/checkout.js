@@ -129,14 +129,12 @@
     const rightWing = document.getElementById('ocs-right-wing');
     const headerEl = document.getElementById('ocb-header');
     const heroTag = document.getElementById('hero-urgency-tag');
-    const cardTag = document.getElementById('card-urgency-tag');
 
     if (!countdownConfig || countdownConfig.enabled === false) {
       if (leftWing) leftWing.style.display = 'none';
       if (rightWing) rightWing.style.display = 'none';
       if (headerEl) headerEl.style.display = 'none';
       if (heroTag) heroTag.style.display = 'none';
-      if (cardTag) cardTag.style.display = 'none';
       return;
     }
 
@@ -159,7 +157,6 @@
     if (rightWing) rightWing.style.display = 'flex';
     if (headerEl) headerEl.style.display = 'flex';
     if (heroTag) heroTag.style.display = 'inline-flex';
-    if (cardTag) cardTag.style.display = 'inline-flex';
 
     function updateDigit(el, val) {
       if (!el) return;
@@ -206,9 +203,6 @@
 
       const heroTimerEl = document.getElementById('hero-urgency-timer');
       if (heroTimerEl) heroTimerEl.textContent = `Offer: ${shortTime}`;
-
-      const cardTimerEl = document.getElementById('card-urgency-timer');
-      if (cardTimerEl) cardTimerEl.textContent = fullTime;
     }
 
     updateTick();
