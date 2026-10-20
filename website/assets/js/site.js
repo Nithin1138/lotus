@@ -257,11 +257,38 @@
     }
   });
 
-  // Dynamically update download links from releases proxy if available
+  // Dynamically update download links and universal version badge from releases proxy
   fetch("/api/releases")
     .then(res => res.ok ? res.json() : null)
     .then(data => {
-      if (!data || !data.assets) return;
+      if (!data) return;
+
+      const latestTag = data.tag_name || data.version || data.latest_version;
+      if (latestTag) {
+        const cleanTag = String(latestTag).trim();
+        const displayTag = cleanTag.toLowerCase().startsWith('v') ? cleanTag : `v${cleanTag}`;
+
+        // Dynamically update the version badge above download section
+        $$("[data-latest-version-badge], #dl-version-text").forEach(el => {
+          el.textContent = `${displayTag} Universal`;
+        });
+
+        // Keep release objects updated
+        releaseWin.tag = displayTag;
+        releaseMac.tag = displayTag;
+
+        // Update JSON-LD schema
+        const schemaEl = document.querySelector('script[type="application/ld+json"]');
+        if (schemaEl) {
+          try {
+            const schema = JSON.parse(schemaEl.textContent);
+            schema.softwareVersion = cleanTag.replace(/^v/i, '');
+            schemaEl.textContent = JSON.stringify(schema, null, 2);
+          } catch (_) {}
+        }
+      }
+
+      if (!data.assets || !Array.isArray(data.assets)) return;
       const winExe = data.assets.find(a => a.name.toLowerCase().endsWith(".exe"));
       const winZip = data.assets.find(a => a.name.toLowerCase().endsWith(".zip") && (a.name.toLowerCase().includes("win") || a.name.toLowerCase().includes("windows")));
       const winAsset = winExe || winZip;
@@ -270,19 +297,26 @@
       const macZip = data.assets.find(a => a.name.toLowerCase().endsWith(".zip") && a.name.toLowerCase().includes("mac"));
       const macAsset = macDmg || macZip;
 
+      const activeTag = latestTag || data.tag_name || "v1.0.0";
+
       if (winAsset) {
         releaseWin.url = winAsset.browser_download_url;
-        releaseWin.tag = data.tag_name;
+        releaseWin.tag = activeTag;
         const sizeMb = Math.round(winAsset.size / 1024 / 1024);
         $$("[data-download-win]").forEach(a => { a.href = releaseWin.url; });
-        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${data.tag_name} · ${sizeMb} MB · Standalone Windows (.exe)`; });
+        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · ${sizeMb} MB · Standalone Windows (.exe)`; });
+      } else if (latestTag) {
+        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · ${releaseWin.size} · Standalone Windows (.exe)`; });
       }
+
       if (macAsset) {
         releaseMac.url = macAsset.browser_download_url;
-        releaseMac.tag = data.tag_name;
+        releaseMac.tag = activeTag;
         const sizeMb = (macAsset.size / 1024 / 1024).toFixed(1);
         $$("[data-download-mac]").forEach(a => { a.href = releaseMac.url; });
-        $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${data.tag_name} · ${sizeMb} MB · Universal Mach-O DMG`; });
+        $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${releaseMac.tag} · ${sizeMb} MB · Universal Mach-O DMG`; });
+      } else if (latestTag) {
+        $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${releaseMac.tag} · ${releaseMac.size} · Universal Mach-O DMG`; });
       }
     })
     .catch(() => {});

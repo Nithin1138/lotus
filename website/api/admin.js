@@ -265,9 +265,22 @@ module.exports = async function handler(req, res) {
     const repo = process.env.GITHUB_REPO || 'lotus';
 
     if (!ghToken) {
+      let currentVersion = '1.0.0.0';
+      try {
+        const { getDb, ensureSchema } = require('./_db');
+        const sql = getDb();
+        if (sql) {
+          await ensureSchema();
+          const rows = await sql`SELECT value FROM app_settings WHERE key = 'latest_release' LIMIT 1;`;
+          if (rows && rows.length > 0 && rows[0].value && rows[0].value.tag_name) {
+            currentVersion = rows[0].value.tag_name;
+          }
+        }
+      } catch (_) {}
+
       return res.status(200).json({
         success: true,
-        currentVersion: '1.0.0.0',
+        currentVersion,
         previousVersion: '0.0.0.0',
         availableReleases: [],
         warning: 'GITHUB_TOKEN is not configured on Vercel.'
@@ -435,6 +448,22 @@ module.exports = async function handler(req, res) {
         return res.status(patchStatus).json({ error: 'Failed to publish release on GitHub', details: patchData });
       }
 
+      // Save launched release to Neon DB app_settings for instant global consistency
+      try {
+        const { getDb, ensureSchema } = require('./_db');
+        const sql = getDb();
+        if (sql) {
+          await ensureSchema();
+          await sql`
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES ('latest_release', ${JSON.stringify({ tag_name: targetTag, name: patchData.name || targetTag, published_at: patchData.published_at || new Date().toISOString() })}, NOW())
+            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+          `;
+        }
+      } catch (dbErr) {
+        console.warn('[Admin Launch Release DB Warning]:', dbErr.message);
+      }
+
       return res.status(200).json({
         success: true,
         message: `Version ${targetTag} has been securely verified and launched to production!`,
@@ -537,6 +566,22 @@ module.exports = async function handler(req, res) {
       const { status: patchStatus, data: patchData } = await apiReq('PATCH', `/repos/${owner}/${repo}/releases/${matched.id}`, patchPayload);
       if (patchStatus < 200 || patchStatus >= 300) {
         return res.status(patchStatus).json({ error: 'Failed to set release as latest on GitHub', details: patchData });
+      }
+
+      // Save reverted release to Neon DB app_settings
+      try {
+        const { getDb, ensureSchema } = require('./_db');
+        const sql = getDb();
+        if (sql) {
+          await ensureSchema();
+          await sql`
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES ('latest_release', ${JSON.stringify({ tag_name: revertTag, name: patchData.name || revertTag, published_at: patchData.published_at || new Date().toISOString() })}, NOW())
+            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+          `;
+        }
+      } catch (dbErr) {
+        console.warn('[Admin Revert Release DB Warning]:', dbErr.message);
       }
 
       return res.status(200).json({

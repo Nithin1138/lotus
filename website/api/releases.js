@@ -202,6 +202,8 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       tag_name: release.tag_name,
+      version: release.tag_name,
+      latest_version: release.tag_name,
       name: release.name || release.tag_name,
       body: sanitizeReleaseBody(release.body),
       published_at: release.published_at,
@@ -220,10 +222,26 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    // Check if Neon DB has a latest_release saved by admin
+    let fallbackTag = 'v1.0.0';
+    try {
+      const { getDb, ensureSchema } = require('./_db');
+      const sql = getDb();
+      if (sql) {
+        await ensureSchema();
+        const rows = await sql`SELECT value FROM app_settings WHERE key = 'latest_release' LIMIT 1;`;
+        if (rows && rows.length > 0 && rows[0].value && rows[0].value.tag_name) {
+          fallbackTag = rows[0].value.tag_name;
+        }
+      }
+    } catch (_) {}
+
     // Never leak GitHub or repo details: return graceful fallback release under 100% DropDial brand
     return res.status(200).json({
-      tag_name: 'v1.0.0',
-      name: 'DropDial v1.0.0',
+      tag_name: fallbackTag,
+      version: fallbackTag,
+      latest_version: fallbackTag,
+      name: `DropDial ${fallbackTag}`,
       body: 'Performance optimizations and desktop workflow enhancements.',
       published_at: new Date().toISOString(),
       html_url: `${baseUrl}/#download`,
