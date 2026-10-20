@@ -217,6 +217,15 @@ module.exports = async function handler(req, res) {
 
     // If client requested a direct file download and asset resolution failed:
     if (downloadTarget) {
+      const lowerTarget = downloadTarget.toLowerCase();
+      if (lowerTarget.includes('.dmg')) {
+        res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial.dmg` });
+        return res.end();
+      }
+      if (lowerTarget.includes('macos.zip')) {
+        res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-macOS.zip` });
+        return res.end();
+      }
       return res.status(503).json({
         error: 'The requested download is temporarily unavailable. Please try again shortly or contact support@dropdial.app.'
       });
