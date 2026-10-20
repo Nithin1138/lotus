@@ -205,16 +205,7 @@
 
   setCliPlatform(isMac ? "mac" : "win");
 
-  // Sleek Mac Guide Toggle
-  const macGuideToggle = $("#mac-guide-toggle");
-  const macGuidePanel = $("#mac-guide-panel");
-  if (macGuideToggle && macGuidePanel) {
-    macGuideToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const isOpen = macGuidePanel.classList.toggle("is-open");
-      macGuideToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-    });
-  }
+
 
   if (switchBtn) {
     switchBtn.addEventListener("click", () => {
