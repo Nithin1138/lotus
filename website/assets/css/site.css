@@ -1127,7 +1127,8 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 
 
 /* Pricing Section */
-.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 840px; margin: 40px auto 0; }
+#pricing .wrap { max-width: 1280px; }
+.pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; width: 100%; max-width: 840px; margin: 40px auto 0; }
 .pricing-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 32px 28px; text-align: left; display: flex; flex-direction: column; position: relative; }
 .pricing-card.featured { border-color: var(--accent); box-shadow: 0 8px 30px -10px rgba(213, 84, 24, .25); }
 .pricing-badge { position: absolute; top: -12px; right: 24px; background: var(--accent); color: #fff; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 4px 12px; border-radius: 999px; }
@@ -1135,9 +1136,10 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 .pricing-desc { font-size: .9rem; color: var(--muted); margin: 0 0 20px; min-height: 40px; }
 .pricing-price { font-size: 2.4rem; font-weight: 800; color: var(--ink); display: flex; align-items: baseline; gap: 6px; margin-bottom: 24px; }
 .pricing-price span { font-size: .95rem; font-weight: 500; color: var(--muted); }
-.pricing-features { list-style: none; padding: 0; margin: 0 0 32px; display: grid; gap: 12px; font-size: .92rem; color: var(--ink); flex: 1; }
-.pricing-features li { display: flex; align-items: center; gap: 10px; }
+.pricing-features { list-style: none; padding: 0; margin: 0 0 28px; display: flex; flex-direction: column; gap: 12px; font-size: .92rem; color: var(--ink); }
+.pricing-features li { display: flex; align-items: center; gap: 10px; line-height: 1.4; }
 .pricing-features svg { color: var(--accent); flex-shrink: 0; }
+.pricing-card .btn, .pricing-card .card-buy-wrap { margin-top: auto; }
 
 /* ==============================================================================
    Modernized Urgency Offer Countdown Banner & Hero Buy Urgency Tag
@@ -1160,19 +1162,19 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 28px;
+  gap: 32px;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 24px auto 0;
-  padding: 0 16px;
+  padding: 0 12px;
   position: relative;
 }
 
 .pricing-showcase .pricing-grid {
   margin: 0 auto;
-  max-width: 820px;
-  width: 100%;
-  flex: 1;
+  width: 840px;
+  max-width: 840px;
+  flex: 0 1 840px;
 }
 
 /* Side Countdown Wings */
