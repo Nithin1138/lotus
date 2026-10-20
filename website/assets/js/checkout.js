@@ -840,7 +840,7 @@
           payBtn.innerHTML = `<span>Verifying Payment & Generating License…</span>`;
 
           try {
-            // 3. Verify payment signature and deliver license via Resend
+            const activePrice = getActivePriceConfig();
             const verifyRes = await fetch('/api/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -849,7 +849,12 @@
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 email: email,
-                name: name
+                name: name,
+                tier: 'Pro Lifetime',
+                amount: activePrice.amount,
+                currency: selectedCurrency,
+                couponCode: appliedCoupon ? appliedCoupon.code : null,
+                country: isIndia ? 'IN' : currentCountry
               })
             });
 

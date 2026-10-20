@@ -37,7 +37,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'A valid email address is required to receive your license key.' });
     }
 
-    const isIndia = country === 'IN' || (!country && (body.currency || '').toUpperCase() === 'INR');
+    const isIndia = country === 'IN' || (body.currency || '').toUpperCase() === 'INR';
     const currency = isIndia ? 'INR' : 'USD';
     let basePricing = { INR: { subunits: 99900 }, USD: { subunits: 1900 } };
     try {

@@ -4,6 +4,8 @@
  * Validates, applies, and manages promotional discounts for DropDial Pro.
  */
 
+const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 
 // Default active promotional coupons
@@ -45,6 +47,30 @@ let couponsStore = [
     description: 'Community Welcome - 10% Off'
   }
 ];
+
+const PERSIST_FILE = path.join('/tmp', 'dropdial_coupons.json');
+
+function loadPersistedCoupons() {
+  try {
+    if (fs.existsSync(PERSIST_FILE)) {
+      const raw = fs.readFileSync(PERSIST_FILE, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        couponsStore = parsed;
+      }
+    }
+  } catch (e) {}
+  return couponsStore;
+}
+
+function savePersistedCoupons() {
+  try {
+    fs.writeFileSync(PERSIST_FILE, JSON.stringify(couponsStore, null, 2), 'utf8');
+  } catch (e) {}
+}
+
+// Initial load on cold start
+loadPersistedCoupons();
 
 function getAdminSecret() {
   return (
@@ -92,6 +118,7 @@ function evaluateCoupon(code, currency, baseSubunits) {
     return { valid: false, error: 'Coupon code is required.' };
   }
 
+  loadPersistedCoupons();
   const normalized = code.trim().toUpperCase();
   const coupon = couponsStore.find(c => c.code.toUpperCase() === normalized);
 
@@ -152,7 +179,18 @@ module.exports = async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const action = req.query.action || req.body?.action || (req.query.code ? 'validate' : 'list');
+  // Parse body safely whether sent as raw string, object or stream
+  let body = {};
+  if (typeof req.body === 'string') {
+    try {
+      body = JSON.parse(req.body);
+    } catch (_) {}
+  } else if (req.body && typeof req.body === 'object') {
+    body = req.body;
+  }
+  req.body = body;
+
+  const action = req.query.action || body.action || (req.query.code ? 'validate' : 'list');
 
   // PUBLIC: Validate a coupon code for checkout
   if (action === 'validate') {
@@ -177,11 +215,14 @@ module.exports = async function handler(req, res) {
 
   // 1. List all coupons
   if (action === 'list') {
+    loadPersistedCoupons();
     if (sql) {
       try {
         await ensureSchema();
         const rows = await sql`SELECT code, type, value, value_inr as "valueInr", value_usd as "valueUsd", active, uses, max_uses as "maxUses", TO_CHAR(expiry, 'YYYY-MM-DD') as expiry, description FROM coupons ORDER BY created_at DESC;`;
         if (rows && rows.length > 0) {
+          couponsStore = rows;
+          savePersistedCoupons();
           return res.status(200).json({ success: true, coupons: rows });
         }
       } catch (dbErr) {
@@ -194,26 +235,27 @@ module.exports = async function handler(req, res) {
   // 2. Create or Update Coupon
   if (action === 'save') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
-    const { code, type = 'percent', value = 20, valueInr = 200, valueUsd = 4, maxUses = 100, expiry = '2026-12-31', description = '' } = req.body || {};
+    const { code, type = 'percent', value = 20, valueInr = 200, valueUsd = 4, maxUses = 100, expiry = '2026-12-31', description = '' } = body || {};
 
     if (!code || typeof code !== 'string') {
       return res.status(400).json({ error: 'Coupon code is required.' });
     }
 
+    loadPersistedCoupons();
     const cleanCode = code.trim().toUpperCase();
     const existingIndex = couponsStore.findIndex(c => c.code.toUpperCase() === cleanCode);
 
     const couponObj = {
       code: cleanCode,
-      type,
+      type: type === 'flat' ? 'flat' : 'percent',
       value: Number(value) || 0,
-      valueInr: Number(valueInr) || 0,
-      valueUsd: Number(valueUsd) || 0,
+      valueInr: Number(valueInr) || 200,
+      valueUsd: Number(valueUsd) || 4,
       active: true,
-      uses: existingIndex >= 0 ? couponsStore[existingIndex].uses : 0,
+      uses: existingIndex >= 0 ? (couponsStore[existingIndex].uses || 0) : 0,
       maxUses: Number(maxUses) || 500,
-      expiry,
-      description: description.trim() || `${value}% Discount`
+      expiry: expiry || '2026-12-31',
+      description: (description || '').trim() || `${value}% Discount`
     };
 
     if (existingIndex >= 0) {
@@ -221,6 +263,8 @@ module.exports = async function handler(req, res) {
     } else {
       couponsStore.unshift(couponObj);
     }
+
+    savePersistedCoupons();
 
     if (sql) {
       try {
@@ -249,13 +293,16 @@ module.exports = async function handler(req, res) {
   // 3. Toggle Coupon Status (Active / Inactive)
   if (action === 'toggle') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
-    const { code } = req.body || {};
+    const { code } = body || {};
+    loadPersistedCoupons();
     const coupon = couponsStore.find(c => c.code.toUpperCase() === (code || '').toUpperCase());
     if (!coupon) {
       return res.status(404).json({ error: 'Coupon not found.' });
     }
 
     coupon.active = !coupon.active;
+    savePersistedCoupons();
+
     if (sql) {
       try {
         await ensureSchema();
@@ -270,12 +317,16 @@ module.exports = async function handler(req, res) {
   // 4. Delete Coupon
   if (action === 'delete') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
-    const { code } = req.body || {};
-    couponsStore = couponsStore.filter(c => c.code.toUpperCase() !== (code || '').toUpperCase());
+    const { code } = body || {};
+    loadPersistedCoupons();
+    const cleanCode = (code || '').trim().toUpperCase();
+    couponsStore = couponsStore.filter(c => c.code.toUpperCase() !== cleanCode);
+    savePersistedCoupons();
+
     if (sql) {
       try {
         await ensureSchema();
-        await sql`DELETE FROM coupons WHERE code = ${(code || '').trim().toUpperCase()};`;
+        await sql`DELETE FROM coupons WHERE code = ${cleanCode};`;
       } catch (dbErr) {
         console.warn('[Neon DB Coupon Delete Warning]:', dbErr.message);
       }

@@ -202,10 +202,23 @@
               purchases: statsData.metrics.purchases || state.stats.purchases || 0
             };
           }
-          if (Array.isArray(statsData.licenses)) {
+          if (Array.isArray(statsData.licenses) && statsData.licenses.length > 0) {
             state.licenses = statsData.licenses;
+          } else if (state.licenses.length > 0 && statsData.neonDb) {
+            // Neon DB is active but table has 0 rows -> sync existing licenses into Neon
+            fetch('/api/admin', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                action: 'sync-store',
+                token: state.adminToken,
+                licenses: state.licenses,
+                transactions: state.transactions
+              })
+            }).catch(() => {});
           }
-          if (Array.isArray(statsData.transactions)) {
+
+          if (Array.isArray(statsData.transactions) && statsData.transactions.length > 0) {
             state.transactions = statsData.transactions;
           }
           saveLocalStore();
@@ -906,10 +919,12 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.adminToken || ''}`
+          'Authorization': `Bearer ${state.adminToken || ''}`,
+          'x-admin-key': state.adminToken || ''
         },
         body: JSON.stringify({
-          action: 'generate-key',
+          action: 'issue-license',
+          token: state.adminToken,
           name,
           email,
           tier,
@@ -945,6 +960,7 @@
       document.getElementById('generated-key-result').style.display = 'block';
 
       showToast(`Pro License issued for ${name}.`, 'success');
+      syncRealTimeData(true);
     } catch (err) {
       alert(`Error issuing license: ${err.message}`);
     } finally {

@@ -70,11 +70,16 @@ module.exports = async function handler(req, res) {
           VALUES (${licId}, ${name}, ${email}, ${licenseKey}, ${tier || 'Pro Lifetime'}, 'active', NOW())
           ON CONFLICT (id) DO NOTHING;
         `;
+        const txAmount = Number(body.amount) || (body.currency === 'USD' ? 19 : 999);
+        const txCurrency = (body.currency || (txAmount > 100 ? 'INR' : 'USD')).toUpperCase();
+        const txCountry = body.country || (txCurrency === 'INR' ? 'IN' : 'US');
+        const txCoupon = body.couponCode || null;
+
         if (razorpay_payment_id) {
           const txId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
           await sql`
             INSERT INTO transactions (id, order_id, payment_id, amount, currency, customer_name, email, status, coupon_code, country, created_at)
-            VALUES (${txId}, ${razorpay_order_id || 'manual'}, ${razorpay_payment_id}, 999, 'INR', ${name}, ${email}, 'captured', ${body.couponCode || null}, ${body.country || 'IN'}, NOW())
+            VALUES (${txId}, ${razorpay_order_id || 'manual'}, ${razorpay_payment_id}, ${txAmount}, ${txCurrency}, ${name}, ${email}, 'captured', ${txCoupon}, ${txCountry}, NOW())
             ON CONFLICT (id) DO NOTHING;
           `;
         }

@@ -188,8 +188,8 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  // 2. ISSUE PRO LICENSE MANUALLY
-  if (action === 'issue-license') {
+  // 2. ISSUE PRO LICENSE MANUALLY (Accepts 'issue-license' or 'generate-key')
+  if (action === 'issue-license' || action === 'generate-key') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
     const { email, name, tier = 'pro', sendEmail = false } = req.body || {};
 
@@ -225,7 +225,15 @@ module.exports = async function handler(req, res) {
         const licId = `lic_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
         await sql`
           INSERT INTO licenses (id, customer_name, email, license_key, tier, status, created_at)
-          VALUES (${licId}, ${customerName}, ${email.trim().toLowerCase()}, ${licenseKey}, ${tier || 'pro'}, 'active', NOW())
+          VALUES (${licId}, ${customerName}, ${email.trim().toLowerCase()}, ${licenseKey}, ${tier === 'team' ? 'Studio / Commercial' : 'Pro Lifetime'}, 'active', NOW())
+          ON CONFLICT (id) DO NOTHING;
+        `;
+
+        // Also record administrative transaction in transactions table so Neon DB and financial ledger stay in sync
+        const txId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        await sql`
+          INSERT INTO transactions (id, order_id, payment_id, amount, currency, customer_name, email, status, coupon_code, country, created_at)
+          VALUES (${txId}, 'admin_manual_grant', ${licId}, 0, 'USD', ${customerName}, ${email.trim().toLowerCase()}, 'captured', 'ADMIN_GRANT', 'GLOBAL', NOW())
           ON CONFLICT (id) DO NOTHING;
         `;
       }
@@ -243,6 +251,68 @@ module.exports = async function handler(req, res) {
       emailSent,
       emailId
     });
+  }
+
+  // 2b. RECORD TRANSACTION DIRECTLY INTO NEON DB
+  if (action === 'record-tx') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
+    const { orderId, paymentId, amount, currency, customerName, email, status = 'captured', coupon, country } = req.body || {};
+    try {
+      const { getDb, ensureSchema } = require('./_db');
+      const sql = getDb();
+      if (sql) {
+        await ensureSchema();
+        const txId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        await sql`
+          INSERT INTO transactions (id, order_id, payment_id, amount, currency, customer_name, email, status, coupon_code, country, created_at)
+          VALUES (${txId}, ${orderId || 'manual'}, ${paymentId || `pay_${Date.now()}`}, ${Number(amount) || 0}, ${currency || 'USD'}, ${customerName || 'Customer'}, ${email || 'customer@dropdial.app'}, ${status}, ${coupon || null}, ${country || 'US'}, NOW())
+          ON CONFLICT (id) DO NOTHING;
+        `;
+        const dbTransactions = await sql`SELECT id, order_id as "orderId", payment_id as "paymentId", amount as "amountRaw", currency, customer_name as "customerName", email, status, coupon_code as "coupon", country, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') as "timestamp" FROM transactions ORDER BY created_at DESC LIMIT 100;`;
+        return res.status(200).json({ success: true, transactions: dbTransactions });
+      }
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  // 2c. BULK SYNC LOCALSTORE RECORDS INTO NEON DB
+  if (action === 'sync-store') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
+    try {
+      const { getDb, ensureSchema } = require('./_db');
+      const sql = getDb();
+      if (!sql) return res.status(200).json({ success: true, message: 'Neon DB not active' });
+      await ensureSchema();
+
+      const { licenses = [], transactions = [] } = req.body || {};
+      for (const lic of licenses) {
+        if (!lic.email || !lic.licenseKey) continue;
+        const licId = lic.id || `lic_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        await sql`
+          INSERT INTO licenses (id, customer_name, email, license_key, tier, status, created_at)
+          VALUES (${licId}, ${lic.name || 'DropDial Customer'}, ${lic.email.trim().toLowerCase()}, ${lic.licenseKey}, ${lic.tier || 'Pro Lifetime'}, 'active', NOW())
+          ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+
+      for (const tx of transactions) {
+        if (!tx.paymentId && !tx.orderId) continue;
+        const txId = tx.id || `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        await sql`
+          INSERT INTO transactions (id, order_id, payment_id, amount, currency, customer_name, email, status, coupon_code, country, created_at)
+          VALUES (${txId}, ${tx.orderId || 'manual'}, ${tx.paymentId || `pay_${Date.now()}`}, ${Number(tx.amountRaw) || 999}, ${tx.currency || 'INR'}, ${tx.customerName || 'Customer'}, ${tx.email || 'customer@dropdial.app'}, ${tx.status || 'captured'}, ${tx.coupon || null}, ${tx.country || 'IN'}, NOW())
+          ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+
+      const allLicenses = await sql`SELECT id, customer_name as "name", email, license_key as "licenseKey", tier, status, TO_CHAR(created_at, 'YYYY-MM-DD') as "date" FROM licenses ORDER BY created_at DESC;`;
+      const allTx = await sql`SELECT id, order_id as "orderId", payment_id as "paymentId", amount as "amountRaw", currency, customer_name as "customerName", email, status, coupon_code as "coupon", country, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') as "timestamp" FROM transactions ORDER BY created_at DESC;`;
+
+      return res.status(200).json({ success: true, licenses: allLicenses, transactions: allTx });
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
   }
 
   // 3. SEND TEST EMAIL VIA RESEND

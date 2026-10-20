@@ -18,10 +18,32 @@ module.exports = function handler(req, res) {
                         req.headers['x-country-code'] ||
                         '';
 
-  const country = countryHeader.trim().toUpperCase();
-  const isIndia = country === 'IN';
+  let country = countryHeader.trim().toUpperCase();
+  let isIndia = country === 'IN';
 
-  let currentPricing = { INR: { amount: 999, display: '₹999' }, USD: { amount: 19, display: '$19' } };
+  // Fallback heuristic if edge country header is unavailable or local
+  if (!isIndia && (!country || country === 'XX' || country === 'T1' || country === 'UNKNOWN' || country === 'US')) {
+    const tz = (req.query?.tz || '').toLowerCase();
+    const offset = req.query?.offset;
+    const acceptLang = (req.headers['accept-language'] || '').toLowerCase();
+
+    const tzIsIndia = tz.includes('kolkata') || tz.includes('calcutta') || offset === '-330' || offset === -330;
+    const langIsIndia = acceptLang.includes('en-in') || acceptLang.includes('hi-in') || acceptLang.includes('hi,');
+
+    // If client timezone or locale clearly denotes India, set isIndia to true
+    if (tzIsIndia || langIsIndia) {
+      isIndia = true;
+      country = 'IN';
+    }
+  }
+
+  let currentPricing = {
+    INR: { amount: 999, symbol: '₹', display: '₹999', strikeAmount: 1499, strikeDisplay: '₹1,499' },
+    USD: { amount: 19, symbol: '$', display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
+    strikethrough: { enabled: true, inrAmount: 1499, usdAmount: 29 },
+    countdown: { enabled: true, value: 24, unit: 'hours', label: 'Special Launch Discount Ends In:' }
+  };
+
   try {
     const { getActivePricing } = require('./pricing');
     if (typeof getActivePricing === 'function') {
@@ -32,11 +54,15 @@ module.exports = function handler(req, res) {
   const activeConf = isIndia ? currentPricing.INR : currentPricing.USD;
 
   return res.status(200).json({
-    country: country || null,
+    country: country || (isIndia ? 'IN' : 'US'),
     isIndia: isIndia,
     currency: isIndia ? 'INR' : 'USD',
     amount: activeConf.amount,
-    symbol: isIndia ? '₹' : '$',
-    displayPrice: activeConf.display
+    symbol: activeConf.symbol || (isIndia ? '₹' : '$'),
+    displayPrice: activeConf.display,
+    strikeAmount: activeConf.strikeAmount,
+    strikeDisplayPrice: activeConf.strikeDisplay,
+    strikethrough: currentPricing.strikethrough,
+    countdown: currentPricing.countdown
   });
 };

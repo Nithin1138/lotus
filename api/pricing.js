@@ -15,6 +15,8 @@ let currentPricing = {
     subunits: 99900,
     symbol: '₹',
     display: '₹999',
+    strikeAmount: 1499,
+    strikeDisplay: '₹1,499',
     label: 'India Standard'
   },
   USD: {
@@ -22,7 +24,21 @@ let currentPricing = {
     subunits: 1900,
     symbol: '$',
     display: '$19',
+    strikeAmount: 29,
+    strikeDisplay: '$29',
     label: 'Global Standard'
+  },
+  strikethrough: {
+    enabled: true,
+    inrAmount: 1499,
+    usdAmount: 29
+  },
+  countdown: {
+    enabled: true,
+    value: 24,
+    unit: 'hours',
+    label: 'Special Launch Discount Ends In:',
+    expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString()
   },
   lastUpdated: new Date().toISOString()
 };
@@ -34,7 +50,14 @@ try {
     const raw = fs.readFileSync(PERSIST_FILE, 'utf8');
     const parsed = JSON.parse(raw);
     if (parsed && parsed.INR && parsed.USD) {
-      currentPricing = { ...currentPricing, ...parsed };
+      currentPricing = {
+        ...currentPricing,
+        ...parsed,
+        INR: { ...currentPricing.INR, ...(parsed.INR || {}) },
+        USD: { ...currentPricing.USD, ...(parsed.USD || {}) },
+        strikethrough: { ...currentPricing.strikethrough, ...(parsed.strikethrough || {}) },
+        countdown: { ...currentPricing.countdown, ...(parsed.countdown || {}) }
+      };
     }
   }
 } catch (e) {}
@@ -125,6 +148,15 @@ module.exports = async function handler(req, res) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
       const inrAmount = Number(body.inrAmount);
       const usdAmount = Number(body.usdAmount);
+      const strikeEnabled = body.strikeEnabled !== undefined ? !!body.strikeEnabled : (currentPricing.strikethrough?.enabled ?? true);
+      const strikeInr = Number(body.strikeInr) > 0 ? Number(body.strikeInr) : (currentPricing.strikethrough?.inrAmount || 1499);
+      const strikeUsd = Number(body.strikeUsd) > 0 ? Number(body.strikeUsd) : (currentPricing.strikethrough?.usdAmount || 29);
+
+      const countdownEnabled = body.countdownEnabled !== undefined ? !!body.countdownEnabled : (currentPricing.countdown?.enabled ?? true);
+      const countdownValue = Number(body.countdownValue) > 0 ? Number(body.countdownValue) : (currentPricing.countdown?.value || 24);
+      const countdownUnit = (body.countdownUnit === 'days') ? 'days' : 'hours';
+      const countdownLabel = (body.countdownLabel || currentPricing.countdown?.label || 'Special Launch Discount Ends In:').trim();
+      const countdownReset = !!body.countdownReset;
 
       if (!inrAmount || inrAmount <= 0) {
         return res.status(400).json({ error: 'Valid positive INR price is required (e.g. 999).' });
@@ -133,12 +165,24 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'Valid positive USD price is required (e.g. 19).' });
       }
 
+      // Calculate countdown expiration
+      const durationHours = countdownUnit === 'days' ? (countdownValue * 24) : countdownValue;
+      const durationMs = durationHours * 3600 * 1000;
+      let expiresAt = currentPricing.countdown?.expiresAt;
+      const now = Date.now();
+
+      if (countdownReset || !expiresAt || new Date(expiresAt).getTime() <= now) {
+        expiresAt = new Date(now + durationMs).toISOString();
+      }
+
       currentPricing = {
         INR: {
           amount: inrAmount,
           subunits: Math.round(inrAmount * 100),
           symbol: '₹',
-          display: `₹${inrAmount}`,
+          display: `₹${inrAmount.toLocaleString('en-IN')}`,
+          strikeAmount: strikeInr,
+          strikeDisplay: `₹${strikeInr.toLocaleString('en-IN')}`,
           label: 'India Standard'
         },
         USD: {
@@ -146,7 +190,21 @@ module.exports = async function handler(req, res) {
           subunits: Math.round(usdAmount * 100),
           symbol: '$',
           display: `$${usdAmount}`,
+          strikeAmount: strikeUsd,
+          strikeDisplay: `$${strikeUsd}`,
           label: 'Global Standard'
+        },
+        strikethrough: {
+          enabled: strikeEnabled,
+          inrAmount: strikeInr,
+          usdAmount: strikeUsd
+        },
+        countdown: {
+          enabled: countdownEnabled,
+          value: countdownValue,
+          unit: countdownUnit,
+          label: countdownLabel,
+          expiresAt: expiresAt
         },
         lastUpdated: new Date().toISOString()
       };
@@ -170,7 +228,7 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        message: 'Live prices updated across checkout and landing page!',
+        message: 'Live prices, strikethrough, and countdown timer updated across checkout and landing page!',
         pricing: currentPricing
       });
     } catch (err) {
