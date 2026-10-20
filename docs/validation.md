@@ -2,7 +2,7 @@
 
 Date: 2026-10-04.
 
-- 188 conversion directions verified; 25 advanced tools covered with actual file processing.
+- 188 standalone offline conversion directions verified (expanding to 333+ with Microsoft Office); 25 advanced tools covered with actual file processing (out of 40+ total built-in tools).
 - 387 automated checks passed: 220 conversion/tool/original file integrity checks, 45 advanced branch and preview tests, 5 C# main application dispatch checks, 1 long-GOP video frame-by-frame regression check, 45 Office checks, 23 F9 image/media processing regressions, 30 parameter validation checks, and 18 progress reporting/reading/component lifecycle tests.
 - Added PPT/PPTX, Word, Excel document conversions. Main test suite covers PDF, page-by-page images, text, legacy formats, ODF, HTML, CSV/TSV/JSON, selected-page PDF, mixed Office merge, and metadata stripping; native Microsoft Office export functional.
 - Crop window dragging updates pixel coordinates dynamically; user confirm and save produces a new file with verified dimensions matching UI inputs.

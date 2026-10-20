@@ -22,7 +22,7 @@ The Features section has two stat cards and a tabbed showcase (`assets/js/showca
 The numbers are counted, not estimated, so recount them when the catalog changes:
 
 - **333 conversion options** = input-to-output format pairs across the app's 49 input formats, 145 of them Office conversions that need desktop Office. Non-Office pairs were checked against the app's own `--capabilities` output.
-- **27 advanced file tools** = the tool definitions in `Catalog.cs`.
+- **40+ advanced file tools** = the tool definitions in `Catalog.cs` and `Models.swift`.
 
 `tests/showcase-tests.js` (10 checks) covers this section; run it the same way as `tests/demo-tests.js`.
 

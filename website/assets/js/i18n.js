@@ -2,7 +2,7 @@
 // DropDial copy and demo strings.
 window.ZD_ZH = {
   "doc.title": "DropDial (Drop Dial) · Instant Drag-and-Drop Offline File Converter",
-  "doc.description": "DropDial (Drop Dial) is an instant drag-and-drop file converter, media suite, and universal actions dial for macOS and Windows. 188+ formats, 100% offline and private.",
+  "doc.description": "DropDial (Drop Dial) is an instant drag-and-drop file converter, media suite, and universal actions dial for macOS and Windows. 333+ conversion options, 40+ file tools, 100% offline and private.",
   "skip": "Skip to content",
   "nav.how": "How it works",
   "nav.features": "Features",
@@ -43,7 +43,7 @@ window.ZD_ZH = {
   "stat.conv.t": "Conversion options",
   "stat.conv.d": "Input-to-output format pairs across images, video, audio, documents, Office files and archives. 145 of them use your installed Microsoft Office.",
   "stat.tools.t": "Advanced file tools",
-  "stat.tools.d": "Compress, trim, crop, redact, join, split and more, many with a live preview.",
+  "stat.tools.d": "Compress, trim, crop, redact, join, split, OCR, organize and more, many with a live preview.",
   "stat.actions.t": "Universal file actions",
   "stat.actions.d": "AirDrop, Float to shelf, copy path, move, Terminal in folder, and strip privacy metadata at your cursor.",
   "shots.title": "Real tools when you need them",

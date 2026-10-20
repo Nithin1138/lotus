@@ -209,7 +209,7 @@
               </div>
               <div class="checkout-plan-details">
                 • Valid for up to 3 personal Macs &amp; PCs<br>
-                • All 188+ offline tools &amp; all future updates included<br>
+                • All 333+ conversion options, 40+ tools &amp; all future updates included<br>
                 • 100% private: local cryptographic activation
               </div>
             </div>

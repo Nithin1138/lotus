@@ -161,7 +161,7 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
 
     <div class="content">
       <p class="greeting">
-        Your lifetime license key has been generated and activated. You now have unrestricted access to all 188+ offline conversion and media tools across macOS and Windows.
+        Your lifetime license key has been generated and activated. You now have unrestricted access to all 333+ conversion options, 40+ advanced file tools, and universal actions across macOS and Windows.
       </p>
 
       <div class="key-box">

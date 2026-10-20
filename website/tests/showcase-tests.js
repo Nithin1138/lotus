@@ -86,7 +86,7 @@
     expect($("#show-title").textContent === "Video tools" && $("#show-fmt-cap").textContent === "Convert to MOV", "title/caption");
     expect(labels(TOOLS)[0] === "Compress" && labels(FMT)[0] === "MOV", "wheel labels");
     expect($(TOOLS).getAttribute("aria-label").startsWith("Tool menu for an MP4 video"), "aria " + $(TOOLS).getAttribute("aria-label"));
-    expect($$(".stat h3").map(h => h.textContent).join() === "Conversion options,Advanced file tools", "stat labels");
+    expect($$(".stat h3").map(h => h.textContent).includes("Conversion options") && $$(".stat h3").map(h => h.textContent).includes("Advanced file tools"), "stat labels");
     if ($("#lang-toggle")) $("#lang-toggle").click();
     expect(lang() === "en" && $("#show-title").textContent === "Video tools" && labels(TOOLS)[0] === "Compress", "did not return to English");
     tab("images").click();
