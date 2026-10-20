@@ -1169,12 +1169,178 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 }
 .faq-more { margin-top: 28px; color: var(--muted); }
 
-.footer { border-top: 1px solid var(--line); padding-block: 32px; font-size: .9rem; color: var(--muted); }
-.footer-row { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
-.footer-row p { flex: 1 1 300px; }
-.footer-links { display: flex; flex-wrap: wrap; gap: 8px 20px; }
-.footer-links a { color: var(--muted); }
-.footer-links a:hover { color: var(--ink); }
+/* ==========================================================================
+   Professional Multi-Column Structured Footer
+   ========================================================================== */
+.footer {
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+  padding-block: 64px 36px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.footer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.2fr 1.1fr;
+  gap: 44px;
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-col-brand {
+  gap: 16px;
+  padding-right: 20px;
+}
+
+.footer-col-brand .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 700 1.15rem var(--font-display);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.footer-desc {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 320px;
+  margin: 0;
+}
+
+.footer-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  padding: 4px 10px;
+  border-radius: 999px;
+  width: fit-content;
+}
+
+.footer-status-pill .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.footer-heading {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  margin: 0 0 16px 0;
+}
+
+.footer-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-nav-list a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.88rem;
+  transition: color 0.15s ease, transform 0.15s ease;
+  display: inline-block;
+}
+
+.footer-nav-list a:hover {
+  color: var(--ink);
+  text-decoration: none;
+  transform: translateX(2px);
+}
+
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.footer-copyright {
+  margin: 0;
+}
+
+.footer-bottom-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer-version-badge {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--muted);
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.footer-back-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 550;
+  transition: color 0.15s ease;
+}
+
+.footer-back-top:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+@media (max-width: 900px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+  .footer-col-brand {
+    grid-column: 1 / -1;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 540px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 
 
 /* Pricing Section */
