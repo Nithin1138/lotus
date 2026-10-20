@@ -69,7 +69,7 @@ def compose_jobs(path):
     return canvas.convert('RGB')
 
 
-for lang in ('en', 'zh'):
+for lang in ('en',):
     fmt = args.render_dir / f'wheel-formats-{lang}.png'
     tools = args.render_dir / f'wheel-tools-{lang}.png'
     tool = args.render_dir / f'tool-trim-{lang}.png'

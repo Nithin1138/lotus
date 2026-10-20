@@ -1125,9 +1125,6 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 .footer-links a { color: var(--muted); }
 .footer-links a:hover { color: var(--ink); }
 
-html[lang="zh-CN"] body { line-height: 1.7; }
-html[lang="zh-CN"] .hero h1 { letter-spacing: -.01em; }
-html[lang="zh-CN"] .hero h1 em { display: inline; }
 
 /* Pricing Section */
 .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 840px; margin: 40px auto 0; }

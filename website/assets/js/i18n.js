@@ -1,6 +1,5 @@
-// DropDial copy and demo strings.
-// DropDial copy and demo strings.
-window.ZD_ZH = {
+// DropDial copy and demo strings (English).
+window.ZD_EN = {
   "doc.title": "DropDial (Drop Dial) · Instant Drag-and-Drop Offline File Converter",
   "doc.description": "DropDial (Drop Dial) is an instant drag-and-drop file converter, media suite, and universal actions dial for macOS and Windows. 333+ conversion options, 40+ file tools, 100% offline and private.",
   "skip": "Skip to content",
@@ -214,37 +213,6 @@ window.ZD_DEMO = {
       TAR: "POSIX tarball archive preserving file permissions",
       GZ: "GZIP compressed single-file or tarball archive"
     }
-  },
-  zh: {
-    files: n => n === 1 ? "1 file" : n + " files",
-    release: "Release on an option",
-    none: "No actions",
-    escHint: "Esc to cancel",
-    converting: "Converting format",
-    processing: "Processing file",
-    elapsed: s => "Elapsed " + s + " s",
-    queued: n => n + " more queued",
-    done: "Done",
-    saved: name => "Saved " + name + " next to the original",
-    help: "Try it: drag a file and release it on a petal.",
-    helpDrag: "In the app, Shift picks formats and Ctrl+Shift picks tools.",
-    outside: "Released outside the wheel, so nothing happened. That's how the app works too.",
-    nothing: "No conversions for this file type, so nothing happened.",
-    toolInfo: label => label + " opens a tool window in the app, with a live preview and settings. See the screenshot below.",
-    desk: "Demo files",
-    wheel: "Format wheel",
-    mode: "Wheel mode",
-    pack: fmt => "Pack " + fmt,
-    tools: {
-      compress: "COMPRESS", removeMetadata: "METADATA", editImage: "ADJUST", frameImage: "FRAME", cropImage: "CROP", redactImage: "REDACT",
-      watermark: "WATERMARK", rotateImage: "ROTATE", resizeImage: "RESIZE", ocrImage: "OCR", makeIcon: "ICON",
-      muteVideo: "MUTE", trimVideo: "TRIM", cropVideo: "CROP", changeVideoSpeed: "SPEED", videoSnapshots: "SNAPSHOT", splitVideo: "SPLIT", redactVideo: "REDACT",
-      videoEffects: "EFFECTS", videoToGif: "TO GIF", rotateVideo: "ROTATE", subtitlesAudio: "SUBTITLES",
-      normalizeAudio: "NORMALIZE", audioToVideo: "VISUALIZE", trimAudio: "TRIM", audioChannels: "CHANNELS", redactAudio: "BLEEP",
-      ringtone: "RINGTONE", audioEffects: "EFFECTS",
-      splitPDF: "SPLIT", organizePDF: "ORGANIZE", mergePDF: "MERGE", ocrPDF: "OCR", pdfPassword: "PASSWORD", pdfNumbers: "NUMBERS", extractPdfImages: "EXTRACT",
-      extractArchive: "EXTRACT", packArchive: "PACK"
-    }
   }
 };
 
@@ -270,30 +238,9 @@ window.ZD_SHOW = {
     toolsAria: (src, list) => "Tool menu for " + src + ": " + list,
     sources: { images: "a JPG image", video: "an MP4 video", audio: "a WAV file", pdf: "a PDF document", documents: "a Word or Pages document", slides: "a presentation", spreadsheets: "a spreadsheet", epub: "an EPUB book", subtitles: "a subtitle file", archives: "a folder" },
     toolsSources: { archives: "a ZIP archive", pdf: "a PDF document" }
-  },
-  zh: {
-    cats: {
-      images: { tab: "Images", title: "Image tools", desc: "JPG, PNG, WebP, HEIC, TIFF, AVIF, BMP and SVG. Convert, compress, crop to any ratio, redact, adjust colour, add a background or strip metadata." },
-      video: { tab: "Video", title: "Video tools", desc: "MP4, MOV, MKV, WebM, AVI, WMV and GIF. Convert, extract audio, compress to a target size, trim, crop, change speed, split, save frames and redact." },
-      audio: { tab: "Audio", title: "Audio tools", desc: "MP3, M4A, WAV, FLAC, OGG, Opus, AIFF and WMA. Convert, compress, normalise loudness, trim, adjust channels, bleep out sections or make a waveform video." },
-      pdf: { tab: "PDF", title: "PDF tools", desc: "Extract text, split, merge, compress, or convert PDFs to editable Word, Excel, PowerPoint, Pages, e-books, and images." },
-      documents: { tab: "Documents", title: "Document conversions", desc: "Convert Microsoft Word, Apple Pages, RTF, Markdown, HTML, and rich text documents across all standard formats." },
-      slides: { tab: "Slides", title: "Presentation conversions", desc: "Export PowerPoint presentations and Keynote slides to portable formats, high-res images, and vector documents." },
-      spreadsheets: { tab: "Spreadsheets", title: "Spreadsheet conversions", desc: "Convert Excel workbooks, Apple Numbers exports, CSV data sets, and OpenDocument spreadsheets seamlessly." },
-      epub: { tab: "EPUB", title: "EPUB conversions", desc: "Convert electronic publications and digital books to printable documents, text manuscripts, and web formats." },
-      subtitles: { tab: "Subtitles", title: "Subtitle conversions", desc: "Convert subtitles between WebVTT, SubRip (SRT), plain transcript text, and Advanced SubStation Alpha." },
-      archives: { tab: "Archives", title: "Archive tools", desc: "ZIP, TAR, GZIP and 7-Zip. Pack files and folders, extract archives, or repack one format as another, with safety checks before anything is written." }
-    },
-    convert: "Convert formats", pack: "Pack files", tools: "Advanced tools",
-    convertTo: f => "Convert to " + f, packAs: f => "Pack as " + f,
-    file: "1 file",
-    fmtAria: (src, list) => "Format menu for " + src + ": " + list,
-    toolsAria: (src, list) => "Tool menu for " + src + ": " + list,
-    sources: { images: "a JPG image", video: "an MP4 video", audio: "a WAV file", pdf: "a PDF document", documents: "a Word or Pages document", slides: "a presentation", spreadsheets: "a spreadsheet", epub: "an EPUB book", subtitles: "a subtitle file", archives: "a folder" },
-    toolsSources: { archives: "a ZIP archive", pdf: "a PDF document" }
   }
 };
 
-window.DD_ZH = window.ZD_ZH;
+window.DD_EN = window.ZD_EN;
 window.DD_DEMO = window.ZD_DEMO;
 window.DD_SHOW = window.ZD_SHOW;

@@ -17,9 +17,8 @@
   EN["doc.description"] = metaDescription.content;
 
   const params = new URLSearchParams(location.search);
-  let lang = "en";
-  const text = key => (window.ZD_ZH ? window.ZD_ZH[key] : undefined) ?? EN[key];
-  const demoText = () => window.ZD_DEMO["en"] || window.ZD_DEMO[lang];
+  const text = key => (window.ZD_EN ? window.ZD_EN[key] : undefined) ?? EN[key];
+  const demoText = () => window.ZD_DEMO["en"];
   // Lets showcase.js re-render when the language changes.
   const languageListeners = [];
   window.ZD = { get lang() { return "en"; }, onLanguage(fn) { languageListeners.push(fn); fn(); } };
