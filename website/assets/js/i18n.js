@@ -85,7 +85,7 @@ window.ZD_EN = {
   "faq.7.q": "Do I need Microsoft Office?",
   "faq.7.a": "<p>Only for layout-exact exports of Word, Excel, and PowerPoint files into PDF or images. DropDial drives your installed Office suite for 100% pixel-perfect fidelity. Without Office, you can still extract raw text and data.</p>",
   "faq.8.q": "How do I update or uninstall it?",
-  "faq.8.a": "<p>Quit DropDial from the menu bar / system tray. To update, simply replace the application with the latest release. To uninstall, delete the application. DropDial leaves no registry clutter or startup hooks.</p>",
+  "faq.8.a": "<p>DropDial checks for updates automatically in the background. When a new version is released, a <strong>1-click update</strong> prompt appears in your menu bar (macOS) or system tray (Windows). Click it to download and relaunch in-place with zero downtime. All your preferences and lifetime licenses remain intact. To uninstall, simply quit the app and drag it to the Trash (macOS) or delete it from Windows.</p>",
   "faq.more": "Have a question or feature request? Contact our team at <a href=\"mailto:support@dropdial.app\">support@dropdial.app</a>.",
   "foot.license": "© 2026 DropDial. High-performance offline file conversion & desktop media tools.",
   "foot.releases": "macOS Version",
