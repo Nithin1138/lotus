@@ -63,20 +63,22 @@ if [ -z "$SOURCE_APP" ] || [ ! -d "$SOURCE_APP" ]; then
     TMP_DIR="$(mktemp -d /tmp/dropdial-install.XXXXXX)"
     trap 'rm -rf "$TMP_DIR"' EXIT
 
-    # Try downloading latest release asset if available
+    # Try downloading latest release asset from dropdial.app CDN or GitHub
     DOWNLOAD_SUCCESS=0
-    RELEASE_URL="https://github.com/Nithin1138/lotus/releases/latest/download/DropDial-macOS.zip"
-    echo -e "${GRAY}→ Checking for prebuilt release asset...${RESET}"
-    if curl -fsSL -I "$RELEASE_URL" >/dev/null 2>&1; then
-        echo -e "${CYAN}→ Downloading prebuilt DropDial...${RESET}"
-        if curl -fsSL "$RELEASE_URL" -o "$TMP_DIR/DropDial-macOS.zip" 2>/dev/null; then
-            ditto -x -k "$TMP_DIR/DropDial-macOS.zip" "$TMP_DIR/"
-            if [ -d "$TMP_DIR/DropDial.app" ]; then
-                SOURCE_APP="$TMP_DIR/DropDial.app"
-                DOWNLOAD_SUCCESS=1
+    for CANDIDATE_URL in "https://dropdial.app/downloads/DropDial-macOS.zip" "https://github.com/Nithin1138/lotus/releases/latest/download/DropDial-macOS.zip"; do
+        echo -e "${GRAY}→ Checking prebuilt release asset: ${CANDIDATE_URL}...${RESET}"
+        if curl -fsSL -I "$CANDIDATE_URL" >/dev/null 2>&1; then
+            echo -e "${CYAN}→ Downloading prebuilt DropDial...${RESET}"
+            if curl -fsSL "$CANDIDATE_URL" -o "$TMP_DIR/DropDial-macOS.zip" 2>/dev/null; then
+                ditto -x -k "$TMP_DIR/DropDial-macOS.zip" "$TMP_DIR/"
+                if [ -d "$TMP_DIR/DropDial.app" ]; then
+                    SOURCE_APP="$TMP_DIR/DropDial.app"
+                    DOWNLOAD_SUCCESS=1
+                    break
+                fi
             fi
         fi
-    fi
+    done
 
     # Fallback: clone shallowly & compile natively with swiftc (takes ~5s)
     if [ "$DOWNLOAD_SUCCESS" -eq 0 ]; then

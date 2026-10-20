@@ -169,8 +169,8 @@
   const tabWin = $("#cli-tab-win");
   const copyBtn = $("#copy-install-cmd");
 
-  const cmdMac = "curl -fsSL https://raw.githubusercontent.com/Nithin1138/lotus/main/install.sh | bash";
-  const cmdWin = 'powershell -c "irm https://raw.githubusercontent.com/Nithin1138/lotus/main/install.ps1 | iex"';
+  const cmdMac = "curl -fsSL https://dropdial.app/install.sh | bash";
+  const cmdWin = 'powershell -c "irm https://dropdial.app/install.ps1 | iex"';
 
   function setCliPlatform(platform) {
     const isM = platform === "mac";
