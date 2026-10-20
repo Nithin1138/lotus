@@ -494,7 +494,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 5. Licensing & Updates
         if let update = UpdateService.shared.latestRelease {
-            let updateItem = NSMenuItem(title: "Update Available (\(update.tagName))...", action: #selector(checkForUpdatesTapped(_:)), keyEquivalent: "")
+            let updateItem = NSMenuItem(title: "Update Available (\(UpdateService.formatVersion(update.tagName)))...", action: #selector(checkForUpdatesTapped(_:)), keyEquivalent: "")
             updateItem.target = self
             updateItem.isEnabled = true
             menu.addItem(updateItem)
@@ -640,7 +640,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func aboutTapped(_ sender: Any? = nil) {
         let alert = NSAlert()
-        alert.messageText = "DropDial 1.0.0 (macOS Native)"
+        let ver = UpdateService.shared.currentVersion
+        alert.messageText = "DropDial \(ver) (macOS Native)"
         alert.informativeText = "Drag. Drop. Convert.\nUniversal offline desktop file conversion, media tools, and file actions.\n\nCopyright © 2026 DropDial. All rights reserved.\nProprietary commercial software.\n\n3 Wheels:\n• ⇧ Shift / F8: Formats Wheel\n• ⌘ Command / F9: Tools Wheel\n• ⌃ Control / F10: Universal File Actions (AirDrop, Float Shelf, Copy, Move, Copy Path, Terminal)\n\nControls:\n• Tab: Cycle Wheels • Esc: Close Wheel • Numbers 1-8: Quick select slice"
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")

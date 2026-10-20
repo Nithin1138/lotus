@@ -25,10 +25,21 @@ internal static class UpdateManager
 {
     public const string ReleasesApiUrl = "https://dropdial.app/api/releases/latest";
 
+    public static string FormatVersion(string raw)
+    {
+        string clean = raw.Trim().TrimStart('v', 'V');
+        var parts = clean.Split('.');
+        if (parts.Length == 4 && parts[3] == "0")
+        {
+            clean = $"{parts[0]}.{parts[1]}.{parts[2]}";
+        }
+        return string.IsNullOrEmpty(clean) ? "v1.0.1" : "v" + clean;
+    }
+
     public static string CurrentVersion =>
-        typeof(UpdateManager).Assembly.GetName().Version is { } v
+        FormatVersion(typeof(UpdateManager).Assembly.GetName().Version is { } v
             ? $"{v.Major}.{v.Minor}.{v.Build}"
-            : "1.0.0";
+            : "1.0.1");
 
     public static ReleaseInfo? AvailableUpdate { get; private set; }
     public static event Action? UpdateStatusChanged;
@@ -171,8 +182,8 @@ internal static class UpdateManager
 
     private static void ShowUpdatePrompt(ReleaseInfo release)
     {
-        string current = CurrentVersion.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? CurrentVersion : "v" + CurrentVersion;
-        string available = release.TagName.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? release.TagName : "v" + release.TagName;
+        string current = FormatVersion(CurrentVersion);
+        string available = FormatVersion(release.TagName);
 
         string message = $"A new version of DropDial is available!\n\n" +
                          $"Current version: {current}\n" +
@@ -205,7 +216,7 @@ internal static class UpdateManager
     private static void ShowUpToDateDialog()
     {
         MessageBox.Show(
-            $"You are running DropDial v{CurrentVersion}, which is currently the newest version available.",
+            $"You are running DropDial {FormatVersion(CurrentVersion)}, which is currently the newest version available.",
             "DropDial is Up to Date",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information

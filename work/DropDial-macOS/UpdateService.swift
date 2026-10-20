@@ -16,8 +16,18 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
 
     private let releasesApiUrl = "https://dropdial.app/api/releases/latest"
 
+    static func formatVersion(_ raw: String) -> String {
+        var clean = raw.trimmingCharacters(in: CharacterSet(charactersIn: "vV \t\r\n"))
+        let parts = clean.split(separator: ".")
+        if parts.count == 4 && parts[3] == "0" {
+            clean = "\(parts[0]).\(parts[1]).\(parts[2])"
+        }
+        return clean.isEmpty ? "v1.0.1" : "v\(clean)"
+    }
+
     var currentVersion: String {
-        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        let raw = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.1"
+        return UpdateService.formatVersion(raw)
     }
 
     private(set) var latestRelease: ReleaseInfo?
@@ -169,8 +179,8 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
         let alert = NSAlert()
         alert.messageText = "A New Version of DropDial is Available!"
         
-        let current = currentVersion.hasPrefix("v") || currentVersion.hasPrefix("V") ? currentVersion : "v\(currentVersion)"
-        let available = release.tagName.hasPrefix("v") || release.tagName.hasPrefix("V") ? release.tagName : "v\(release.tagName)"
+        let current = UpdateService.formatVersion(currentVersion)
+        let available = UpdateService.formatVersion(release.tagName)
 
         alert.informativeText = "Current version: \(current)\nAvailable version: \(available)"
         alert.alertStyle = .informational
@@ -196,7 +206,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
     private func showUpToDateAlert() {
         let alert = NSAlert()
         alert.messageText = "DropDial is Up to Date"
-        alert.informativeText = "You are running DropDial v\(currentVersion), which is the latest version available."
+        alert.informativeText = "You are running DropDial \(UpdateService.formatVersion(currentVersion)), which is the latest version available."
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")
         alert.runModal()
