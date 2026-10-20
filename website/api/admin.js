@@ -285,7 +285,10 @@ module.exports = async function handler(req, res) {
       const published = releases.filter(r => !r.draft);
       const current = published[0] || null;
       const previous = published[1] || null;
-      const stagedDrafts = releases.filter(r => r.draft);
+      
+      // Only treat as staged draft if this tag is NOT already published as an active release
+      const publishedTags = new Set(published.map(p => p.tag_name.toLowerCase()));
+      const stagedDrafts = releases.filter(r => r.draft && !publishedTags.has(r.tag_name.toLowerCase()));
 
       return res.status(200).json({
         success: true,
