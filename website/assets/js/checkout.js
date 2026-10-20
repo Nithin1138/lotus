@@ -249,7 +249,20 @@
                 <div class="cko-price-display-wrap" id="checkout-price-display">
                   <span class="cko-price-standard">₹999</span>
                 </div>
-                <div class="cko-one-time-label">One-time · No subscription</div>
+                <div class="cko-price-perks">
+                  <div class="cko-perk-line">
+                    <span class="cko-perk-dot">●</span>
+                    <span>One-time payment · Zero recurring fees</span>
+                  </div>
+                  <div class="cko-perk-line">
+                    <span class="cko-perk-dot">●</span>
+                    <span>Instant license key delivery to email</span>
+                  </div>
+                  <div class="cko-perk-line">
+                    <span class="cko-perk-dot">●</span>
+                    <span>Full access to 333+ formats &amp; 40+ tools</span>
+                  </div>
+                </div>
               </div>
               <div class="cko-feature-pills">
                 <span class="cko-pill">
@@ -522,8 +535,10 @@
   function showCouponError(msg) {
     couponFeedback.className = 'cko-coupon-feedback error';
     couponFeedback.innerHTML = `
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <span>${msg}</span>
+      <div class="cko-coupon-error-inner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>${msg}</span>
+      </div>
     `;
     couponFeedback.style.display = 'flex';
   }
