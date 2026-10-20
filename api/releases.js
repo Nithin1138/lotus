@@ -166,9 +166,6 @@ module.exports = async function handler(req, res) {
   const host = req.headers['x-forwarded-host'] || req.headers.host || 'dropdial.app';
   const baseUrl = `${proto}://${host}`;
 
-  try {
-    const release = await fetchLatestRelease(token);
-
   // 1. Download Mode: prioritize dropdial.app direct hosted assets for 100% uptime
   if (downloadTarget) {
     const lower = downloadTarget.toLowerCase();
@@ -254,7 +251,7 @@ module.exports = async function handler(req, res) {
   }
 
   // Check if Neon DB has a latest_release saved by admin via 2-step verification
-  let activeTag = '1.0.0.0';
+  let activeTag = '1.0.1.0';
   try {
     const { getDb, ensureSchema } = require('./_db');
     const sql = getDb();

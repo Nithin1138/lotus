@@ -227,12 +227,12 @@
 
   // Native Releases for macOS and Windows
   const releaseWin = {
-    tag: "v1.0.0",
+    tag: "v1.0.1",
     size: "50 MB",
     url: "/api/releases?download=DropDial-Setup.exe"
   };
   const releaseMac = {
-    tag: "v1.0.0",
+    tag: "v1.0.1",
     size: "4.3 MB",
     url: "/api/releases?download=DropDial.dmg"
   };
@@ -264,9 +264,13 @@
       if (!data) return;
 
       const latestTag = data.tag_name || data.version || data.latest_version;
+      let displayTag = "v1.0.1";
       if (latestTag) {
-        const cleanTag = String(latestTag).trim();
-        const displayTag = cleanTag.toLowerCase().startsWith('v') ? cleanTag : `v${cleanTag}`;
+        let cleanTag = String(latestTag).trim();
+        displayTag = cleanTag.toLowerCase().startsWith('v') ? cleanTag : `v${cleanTag}`;
+        if (displayTag.endsWith('.0') && displayTag.split('.').length === 4) {
+          displayTag = displayTag.slice(0, -2);
+        }
 
         // Dynamically update the version badge above download section
         $$("[data-latest-version-badge], #dl-version-text").forEach(el => {
@@ -282,7 +286,7 @@
         if (schemaEl) {
           try {
             const schema = JSON.parse(schemaEl.textContent);
-            schema.softwareVersion = cleanTag.replace(/^v/i, '');
+            schema.softwareVersion = displayTag.replace(/^v/i, '');
             schemaEl.textContent = JSON.stringify(schema, null, 2);
           } catch (_) {}
         }
@@ -297,7 +301,7 @@
       const macZip = data.assets.find(a => a.name.toLowerCase().endsWith(".zip") && a.name.toLowerCase().includes("mac"));
       const macAsset = macDmg || macZip;
 
-      const activeTag = latestTag || data.tag_name || "v1.0.0";
+      const activeTag = displayTag || "v1.0.1";
 
       if (winAsset) {
         releaseWin.url = winAsset.browser_download_url;
