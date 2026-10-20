@@ -31,7 +31,7 @@ internal static class Checks
             var wheel=new DropWheel((_,_)=>{});
             try
             {
-                wheel.Preview([path],false,"convert:jpg");var actions=Catalog.Options([path],false);var hit=typeof(DropWheel).GetMethod("Hit",BindingFlags.NonPublic|BindingFlags.Static)!;var ring=typeof(DropWheel).GetField("first",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel);
+                wheel.Preview([path],false,"convert:jpg");var actions=(List<Operation>)typeof(DropWheel).GetField("operations",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel)!;var hit=typeof(DropWheel).GetMethod("Hit",BindingFlags.NonPublic|BindingFlags.Static)!;var ring=typeof(DropWheel).GetField("first",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel);
                 for(int i=0;i<actions.Count;i++){double angle=-Math.PI/2+i*2*Math.PI/actions.Count;Require((int)hit.Invoke(null,[ring!,new Point(190+119*Math.Cos(angle),190+119*Math.Sin(angle)),65d,172d])! == i);}
                 Require((int)hit.Invoke(null,[ring!,new Point(190,190),65d,172d])! == -1);Require((int)hit.Invoke(null,[ring!,new Point(190,130),65d,172d])! == -1);Require((int)hit.Invoke(null,[ring!,new Point(1,1),65d,172d])! == -1);
             }
