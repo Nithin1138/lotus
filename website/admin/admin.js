@@ -197,10 +197,10 @@
         if (statsData.success) {
           if (statsData.metrics) {
             state.stats = {
-              pageviews: statsData.metrics.pageviews || state.stats.pageviews || 0,
-              pricingViews: statsData.metrics.pricingViews || state.stats.pricingViews || 0,
-              checkouts: statsData.metrics.checkouts || state.stats.checkouts || 0,
-              purchases: statsData.metrics.purchases || state.stats.purchases || 0
+              pageviews: statsData.metrics.pageviews ?? 0,
+              pricingViews: statsData.metrics.pricingViews ?? 0,
+              checkouts: statsData.metrics.checkouts ?? 0,
+              purchases: statsData.metrics.purchases ?? 0
             };
           }
           if (Array.isArray(statsData.licenses)) {
@@ -1942,15 +1942,17 @@ ${escapeHtml(cleanBody)}
     submitBtn.innerHTML = `<span>Purging Test Data...</span>`;
 
     try {
-      const res = await fetch('/api/admin?action=reset-test-data', {
+      const res = await fetch(`/api/admin?action=reset-test-data&token=${encodeURIComponent(passcode)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${encodeURIComponent(passcode)}`
+          'Authorization': `Bearer ${passcode}`,
+          'x-admin-key': passcode
         },
         body: JSON.stringify({
           confirmWord,
-          passcode
+          passcode,
+          token: passcode
         })
       });
 

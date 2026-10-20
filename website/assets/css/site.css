@@ -945,6 +945,25 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   color: #38bdf8;
   background: rgba(0, 164, 239, 0.15);
 }
+.dl-cli-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.16);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  margin-left: 4px;
+}
+[data-theme="light"] .dl-cli-badge {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.3);
+}
 .dl-cli-platform-icon {
   display: inline-grid;
   place-items: center;

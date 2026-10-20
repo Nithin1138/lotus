@@ -15,7 +15,6 @@ function getAdminSecret() {
   return (
     process.env.ADMIN_KEY ||
     process.env.ADMIN_PASSWORD ||
-    process.env.LICENSE_SECRET ||
     DEFAULT_ADMIN_PASS
   ).trim();
 }
@@ -23,7 +22,7 @@ function getAdminSecret() {
 function verifyToken(req) {
   const authHeader = req.headers['authorization'] || '';
   const queryToken = req.query?.token || '';
-  const bodyToken = req.body?.token || '';
+  const bodyToken = req.body?.token || req.body?.passcode || '';
   const headerToken = req.headers['x-admin-key'] || '';
 
   let provided = '';
@@ -747,10 +746,10 @@ module.exports = async function handler(req, res) {
   // 7. RESET TEST DATA (2-STEP: PASSCODE + "RESET" WORD CONFIRMATION)
   if (action === 'reset-test-data' || action === 'reset-data') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
-    const { passcode, confirmWord } = req.body || {};
+    const { passcode, confirmWord, token } = req.body || {};
     const expectedPass = getAdminSecret();
 
-    let providedPass = (passcode || req.headers['x-admin-key'] || (req.headers['authorization'] || '').replace(/^Bearer\s+/i, '')).trim();
+    let providedPass = (passcode || token || req.query?.token || req.headers['x-admin-key'] || (req.headers['authorization'] || '').replace(/^Bearer\s+/i, '')).trim();
     try { providedPass = decodeURIComponent(providedPass); } catch (_) {}
 
     let passValid = false;
