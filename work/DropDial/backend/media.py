@@ -7,6 +7,7 @@ def _detect_ogg_codec():
         import subprocess
         out = subprocess.run([str(FFMPEG), '-encoders'], capture_output=True, text=True, errors='ignore').stdout
         if 'libvorbis' in out: return ['-c:a','libvorbis','-q:a','4']
+        if 'vorbis' in out: return ['-c:a','vorbis','-q:a','4','-strict','-2']
     except Exception: pass
     return ['-c:a','libopus','-b:a','128k']
 
@@ -37,6 +38,8 @@ def convert(path,fmt,params):
         elif fmt=='gif':
             graph=r'[0:v]fps=12,scale=min(640\,iw):-2:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse[out]'
             ffmpeg(['-i',path,'-filter_complex',graph,'-map','[out]','-an',state['temp']])
+        elif fmt in ('png','jpg','jpeg','webp','bmp'):
+            ffmpeg(['-i',path,'-vframes','1',state['temp']])
         else: ffmpeg(['-i',path,'-map','0:v:0','-map','0:a?','-vf','pad=ceil(iw/2)*2:ceil(ih/2)*2',*video_args(fmt),state['temp']])
     return state['output']
 

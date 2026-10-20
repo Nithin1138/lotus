@@ -13,9 +13,9 @@ def _find_binary(name):
 
 FFMPEG=_find_binary('ffmpeg')
 FFPROBE=_find_binary('ffprobe')
-IMAGE_EXT={'.jpg','.jpeg','.png','.webp','.heic','.heif','.tif','.tiff','.svg','.avif','.bmp'}
+IMAGE_EXT={'.jpg','.jpeg','.png','.webp','.heic','.heif','.tif','.tiff','.svg','.avif','.bmp','.ico'}
 VIDEO_EXT={'.mp4','.mov','.mkv','.webm','.avi','.wmv','.gif'}
-AUDIO_EXT={'.mp3','.m4a','.wav','.flac','.ogg','.opus','.aiff','.aif','.wma'}
+AUDIO_EXT={'.mp3','.m4a','.wav','.flac','.ogg','.opus','.aiff','.aif','.wma','.aac'}
 # Interface language for messages, chosen in the app and passed to each worker. Chinese strings double as keys.
 from translations import EN
 def T(text):
