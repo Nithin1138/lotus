@@ -28,9 +28,16 @@
   --wheel-muted: #5F656D;
   --disk: #E9ECE9;
   --disk-line: #DFE4E0;
-  --stage-a: #E8EAEB;
-  --stage-b: #CFD3D7;
-  --stage-c: rgba(30, 32, 35, .45);
+  --stage-bg: linear-gradient(180deg, #FFFFFF 0%, #F8F7F4 100%);
+  --stage-border: rgba(20, 22, 25, 0.08);
+  --stage-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 10px 28px -4px rgba(28, 24, 20, 0.07), 0 24px 56px -12px rgba(28, 24, 20, 0.04);
+  --stage-inner: inset 0 1px 0 #FFFFFF;
+  --stage-ring-border: rgba(20, 22, 25, 0.16);
+  --stage-ring-color: rgba(31, 34, 38, 0.52);
+  --stage-ring-bg: radial-gradient(circle, rgba(20, 22, 25, 0.02) 0%, transparent 72%);
+  --stage-file-color: #1F2226;
+  --stage-file-hover-bg: rgba(20, 22, 25, 0.04);
+  --stage-file-hover-border: rgba(20, 22, 25, 0.09);
   --shadow: 0 1px 3px rgba(40, 30, 20, .05), 0 16px 36px -12px rgba(40, 30, 20, .14);
   --radius: 18px;
   --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", sans-serif;
@@ -63,9 +70,16 @@
     --wheel-muted: #B4BEB7;
     --disk: #222A26;
     --disk-line: #303B34;
-    --stage-a: #2A2D31;
-    --stage-b: #1B1D20;
-    --stage-c: rgba(0, 0, 0, .55);
+    --stage-bg: linear-gradient(180deg, #1C1E23 0%, #141518 100%);
+    --stage-border: rgba(255, 255, 255, 0.08);
+    --stage-shadow: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 44px -8px rgba(0, 0, 0, 0.65);
+    --stage-inner: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    --stage-ring-border: rgba(255, 255, 255, 0.18);
+    --stage-ring-color: rgba(236, 237, 238, 0.45);
+    --stage-ring-bg: radial-gradient(circle, rgba(255, 255, 255, 0.02) 0%, transparent 72%);
+    --stage-file-color: #ECEDEE;
+    --stage-file-hover-bg: rgba(255, 255, 255, 0.06);
+    --stage-file-hover-border: rgba(255, 255, 255, 0.12);
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 16px 40px -16px rgba(0, 0, 0, .6);
     color-scheme: dark;
   }
@@ -94,9 +108,16 @@
   --wheel-muted: #B4BEB7;
   --disk: #222A26;
   --disk-line: #303B34;
-  --stage-a: #2A2D31;
-  --stage-b: #1B1D20;
-  --stage-c: rgba(0, 0, 0, .55);
+  --stage-bg: linear-gradient(180deg, #1C1E23 0%, #141518 100%);
+  --stage-border: rgba(255, 255, 255, 0.08);
+  --stage-shadow: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 44px -8px rgba(0, 0, 0, 0.65);
+  --stage-inner: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --stage-ring-border: rgba(255, 255, 255, 0.18);
+  --stage-ring-color: rgba(236, 237, 238, 0.45);
+  --stage-ring-bg: radial-gradient(circle, rgba(255, 255, 255, 0.02) 0%, transparent 72%);
+  --stage-file-color: #ECEDEE;
+  --stage-file-hover-bg: rgba(255, 255, 255, 0.06);
+  --stage-file-hover-border: rgba(255, 255, 255, 0.12);
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 16px 40px -16px rgba(0, 0, 0, .6);
   color-scheme: dark;
 }
@@ -249,30 +270,26 @@ code { font: .9em var(--mono); background: var(--bg-alt); border: 1px solid var(
 /* Interactive demo */
 .demo { min-width: 0; }
 .stage { position: relative; height: clamp(420px, 46vw, 500px); border-radius: 24px; overflow: hidden; user-select: none; -webkit-user-select: none;
-  background:
-    radial-gradient(120% 70% at 110% 120%, var(--stage-c) 0 38%, transparent 62%),
-    radial-gradient(90% 55% at -10% 105%, color-mix(in srgb, var(--stage-c) 60%, transparent) 0 30%, transparent 60%),
-    radial-gradient(80% 60% at 20% 0%, rgba(255, 255, 255, .55), transparent 70%),
-    linear-gradient(165deg, var(--stage-a), var(--stage-b));
-  box-shadow: var(--shadow), inset 0 0 0 1px rgba(255, 255, 255, .25); }
-.desk { list-style: none; margin: 0; padding: 18px; display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; position: relative; z-index: 1; }
-.file { width: 96px; padding: 8px 4px 6px; border-radius: 10px; border: 1px solid transparent; background: none; color: #1F2226; font: 500 .78rem/1.25 var(--font); display: grid; justify-items: center; gap: 6px; cursor: grab; touch-action: none; text-shadow: 0 1px 1px rgba(255, 255, 255, .6); }
-@media (prefers-color-scheme: dark) { .file { color: #F1F2F3; text-shadow: 0 1px 2px rgba(0, 0, 0, .7); } }
-@media (hover: hover) { .file:hover { background: rgba(255, 255, 255, .35); border-color: rgba(255, 255, 255, .55); } }
-.file:focus-visible { background: rgba(255, 255, 255, .35); border-color: rgba(255, 255, 255, .55); }
+  background: var(--stage-bg);
+  border: 1px solid var(--stage-border);
+  box-shadow: var(--stage-shadow), var(--stage-inner);
+  transition: background .25s ease, border-color .25s ease, box-shadow .25s ease; }
+.desk { list-style: none; margin: 0; padding: 20px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; position: relative; z-index: 1; }
+.file { width: 96px; padding: 8px 4px 6px; border-radius: 12px; border: 1px solid transparent; background: none; color: var(--stage-file-color); font: 500 .8rem/1.25 var(--font); display: grid; justify-items: center; gap: 6px; cursor: grab; touch-action: none; transition: background .15s ease, border-color .15s ease; }
+@media (hover: hover) { .file:hover { background: var(--stage-file-hover-bg); border-color: var(--stage-file-hover-border); } }
+.file:focus-visible { background: var(--stage-file-hover-bg); border-color: var(--stage-file-hover-border); }
 .stage.open .file:not(.dragging) { background: none; border-color: transparent; }
 .file.dragging { opacity: .45; }
 .file.fresh { animation: pop .5s cubic-bezier(.2, 1.4, .4, 1); }
 .file.fresh .file-name { color: var(--accent-text); font-weight: 650; }
-@media (prefers-color-scheme: dark) { .file.fresh .file-name { color: #FFB089; } }
+[data-theme="dark"] .file.fresh .file-name { color: #FF9B66; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .file.fresh .file-name { color: #FF9B66; } }
 .file-name { max-width: 92px; overflow-wrap: break-word; text-align: center; }
-@media (max-width: 480px) { .desk { gap: 2px; padding: 12px; } .file { width: 76px; } .file-name { max-width: 74px; } }
-.ring { position: absolute; left: 50%; top: 58%; width: min(56%, 230px); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 2px dashed rgba(255, 255, 255, .55); display: grid; place-items: center; text-align: center; color: rgba(31, 34, 38, .6); font-size: .86rem; font-weight: 600; padding: 24px; pointer-events: none; }
-@media (prefers-color-scheme: dark) { .ring { border-color: rgba(255, 255, 255, .16); color: rgba(255, 255, 255, .45); } }
+@media (max-width: 480px) { .desk { gap: 4px; padding: 12px; } .file { width: 76px; } .file-name { max-width: 74px; } }
+.ring { position: absolute; left: 50%; top: 58%; width: min(56%, 230px); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 1.5px dashed var(--stage-ring-border); background: var(--stage-ring-bg); display: grid; place-items: center; text-align: center; color: var(--stage-ring-color); font-size: .88rem; font-weight: 550; letter-spacing: -.01em; padding: 24px; pointer-events: none; transition: border-color .25s ease, color .25s ease, opacity .2s ease; }
 .stage.open .ring { opacity: 0; }
-.file-icon { width: 46px; height: 56px; position: relative; border-radius: 6px 14px 6px 6px; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .18); display: grid; place-items: end center; padding-bottom: 7px; }
-.file-icon::before { content: ""; position: absolute; top: 0; right: 0; width: 14px; height: 14px; background: linear-gradient(225deg, transparent 50%, rgba(0, 0, 0, .12) 50%); border-radius: 0 14px 0 4px; }
-.file-icon b { font: 700 .62rem/1 var(--font); color: #fff; padding: 3px 5px; border-radius: 4px; letter-spacing: .02em; background: var(--tag, #6B7280); }
+.file-icon { width: 46px; height: 56px; position: relative; border-radius: 6px 14px 6px 6px; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .14), 0 1px 2px rgba(0, 0, 0, .08); display: grid; place-items: end center; padding-bottom: 7px; transition: transform .15s ease, box-shadow .15s ease; }
+@media (hover: hover) { .file:hover .file-icon { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0, 0, 0, .18), 0 1px 3px rgba(0, 0, 0, .1); } }
 .t-image { --tag: #2F8F5B; } .t-video { --tag: #6D4FD1; } .t-audio { --tag: #C2417A; } .t-pdf { --tag: #D13F2F; } .t-office { --tag: #2B63C9; } .t-archive { --tag: #8A6A2F; } .t-folder { --tag: #B98410; }
 @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
 
