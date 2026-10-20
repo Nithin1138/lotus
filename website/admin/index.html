@@ -1,89 +1,77 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DropDial Pro · Executive Admin Suite</title>
-  <meta name="description" content="Secure administrative control center for DropDial Pro. Manage licenses, view transactions, track real revenue, profit, and traffic conversion.">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DropDial Executive Admin Suite</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" href="/assets/img/icon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" type="image/png" href="/assets/img/logo.png">
   <link rel="stylesheet" href="/admin/admin.css">
 </head>
 <body class="admin-body">
 
   <!-- ========================================================
-       1. SECURITY GATEWAY (Authentication Overlay)
+       1. AUTHENTICATION GATEWAY
        ======================================================== -->
   <div id="auth-gate" class="auth-gate-overlay">
     <div class="auth-card">
       <div class="auth-header">
         <div class="auth-logo-badge">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
         </div>
-        <h2>DropDial Admin Suite</h2>
-        <p>Restricted Operations &amp; Financial Intelligence Center</p>
+        <h2>DropDial Executive Suite</h2>
+        <p>Enterprise Operations, Real-Time Financial Ledger &amp; License Manager</p>
       </div>
 
-      <form id="auth-form" class="auth-form" autocomplete="off">
+      <form id="auth-form" class="auth-form">
         <div class="form-group">
           <label for="admin-passcode-input">Master Passcode</label>
           <div class="password-input-wrap">
-            <input 
-              type="password" 
-              id="admin-passcode-input" 
-              placeholder="Enter admin passcode" 
-              required 
-              autofocus
-            >
-            <button type="button" id="toggle-pass-btn" class="pass-toggle-btn" title="Show/Hide Passcode">
-              <svg id="eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <input type="password" id="admin-passcode-input" placeholder="Enter administrative passcode..." autocomplete="current-password" required autofocus>
+            <button type="button" id="toggle-pass-btn" class="pass-toggle-btn" aria-label="Toggle password visibility">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
             </button>
           </div>
-          <span id="auth-error-msg" class="auth-error-msg"></span>
+          <div id="auth-error-msg" class="auth-error-msg"></div>
         </div>
 
         <button type="submit" id="auth-submit-btn" class="btn btn-primary auth-btn">
           <span>Authenticate &amp; Enter</span>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
         </button>
 
         <div class="auth-footer-badge">
           <span class="security-dot"></span>
-          <span>End-to-End Cryptographic Security &bull; ECDSA P-256</span>
+          <span>Secured with ECDSA P-256 Session Token</span>
         </div>
       </form>
     </div>
   </div>
 
   <!-- ========================================================
-       2. MAIN AUTHENTICATED ADMIN DASHBOARD
+       2. EXECUTIVE OPERATIONS DASHBOARD APP
        ======================================================== -->
   <div id="admin-dashboard-app" class="admin-app" style="display: none;">
-    
-    <!-- Left Navigation Sidebar -->
+
+    <!-- Left Master Sidebar -->
     <aside class="admin-sidebar">
       <div class="sidebar-brand">
         <div class="brand-logo-wrap">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-          </svg>
+          <img src="/assets/img/logo.png" alt="DropDial" width="26" height="26">
         </div>
         <div class="brand-text">
           <span class="brand-title">DropDial</span>
-          <span class="brand-sub">OPERATIONS</span>
+          <span class="brand-sub">EXECUTIVE SUITE</span>
         </div>
       </div>
 
       <nav class="sidebar-nav">
-        <div class="nav-section-title">BUSINESS &amp; INTEL</div>
+        <div class="nav-section-title">CORE OPERATIONS</div>
         <button class="nav-tab active" data-tab="overview">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="9"/>
@@ -109,6 +97,15 @@
           </svg>
           <span>Transactions</span>
           <span id="badge-total-tx" class="nav-counter">0</span>
+        </button>
+
+        <button class="nav-tab" data-tab="coupons">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+          <span>Coupons &amp; Offers</span>
+          <span id="badge-total-coupons" class="nav-counter">0</span>
         </button>
 
         <button class="nav-tab" data-tab="traffic">
@@ -164,25 +161,33 @@
         </div>
 
         <div class="topbar-actions">
-          <button id="refresh-data-btn" class="btn btn-secondary top-btn" title="Refresh Live Data">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="23 4 23 10 17 10"/>
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          <button id="open-coupon-modal-btn" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+              <line x1="7" y1="7" x2="7.01" y2="7"/>
             </svg>
-            <span>Sync</span>
+            <span>Create Coupon</span>
           </button>
-          
-          <button id="open-issue-modal-btn" class="btn btn-primary top-btn">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+
+          <button id="open-issue-modal-btn" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="12" y1="5" x2="12" y2="19"/>
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             <span>Issue Pro License</span>
           </button>
+
+          <button id="refresh-data-btn" class="btn btn-secondary" title="Sync live records">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </button>
         </div>
       </header>
 
-      <!-- Dynamic Tab Views -->
+      <!-- Content Views Router -->
       <div class="admin-content-area">
 
         <!-- ==============================================
@@ -190,22 +195,22 @@
              ============================================== -->
         <section id="tab-overview" class="tab-view active">
           
-          <!-- 4 Core Executive KPI Cards -->
+          <!-- KPI Metrics Row -->
           <div class="kpi-grid">
             
             <!-- Gross Revenue -->
             <div class="kpi-card revenue-card">
               <div class="kpi-header">
                 <span class="kpi-title">Gross Revenue</span>
-                <span class="kpi-badge emerald">+18.4%</span>
+                <span class="kpi-badge emerald" id="kpi-growth-badge">Live</span>
               </div>
               <div class="kpi-value-wrap">
-                <span class="kpi-main-val" id="kpi-gross-revenue">₹49,950</span>
-                <span class="kpi-sub-val" id="kpi-gross-usd">($589 USD)</span>
+                <span class="kpi-main-val" id="kpi-gross-revenue">₹0</span>
+                <span class="kpi-sub-val" id="kpi-gross-usd">($0 USD)</span>
               </div>
               <div class="kpi-footer">
                 <span>Direct Lifetime Sales</span>
-                <span class="currency-split" id="kpi-split-text">IN: ₹44,955 • Global: $60</span>
+                <span class="currency-split" id="kpi-split-text">India: ₹0 • Global: $0</span>
               </div>
             </div>
 
@@ -216,8 +221,8 @@
                 <span class="kpi-badge emerald">97.8% Margin</span>
               </div>
               <div class="kpi-value-wrap">
-                <span class="kpi-main-val" id="kpi-net-profit">₹48,950</span>
-                <span class="kpi-sub-val">After ~2% Gateway Fees</span>
+                <span class="kpi-main-val" id="kpi-net-profit">₹0</span>
+                <span class="kpi-sub-val">After Gateway Fees</span>
               </div>
               <div class="kpi-footer">
                 <span>0 Server Costs • Pure Native App</span>
@@ -231,11 +236,11 @@
                 <span class="kpi-badge violet">100% Verified</span>
               </div>
               <div class="kpi-value-wrap">
-                <span class="kpi-main-val" id="kpi-total-licenses">52</span>
+                <span class="kpi-main-val" id="kpi-total-licenses">0</span>
                 <span class="kpi-sub-val">Lifetime Pro Seats</span>
               </div>
               <div class="kpi-footer">
-                <span>0 Chargebacks &bull; 0 Revocations</span>
+                <span>0 Chargebacks • 0 Revocations</span>
               </div>
             </div>
 
@@ -243,14 +248,14 @@
             <div class="kpi-card traffic-card">
               <div class="kpi-header">
                 <span class="kpi-title">Traffic &amp; Conversion</span>
-                <span class="kpi-badge sky" id="kpi-conversion-rate">2.8% Conv</span>
+                <span class="kpi-badge sky" id="kpi-conversion-rate">0.0% Conv</span>
               </div>
               <div class="kpi-value-wrap">
-                <span class="kpi-main-val" id="kpi-total-views">3,280</span>
-                <span class="kpi-sub-val">Unique Site Visits</span>
+                <span class="kpi-main-val" id="kpi-total-views">0</span>
+                <span class="kpi-sub-val">Tracked Visits</span>
               </div>
               <div class="kpi-footer">
-                <span id="kpi-checkout-stats">142 Checkouts &bull; 52 Paid</span>
+                <span id="kpi-checkout-stats">0 Checkouts • 0 Paid</span>
               </div>
             </div>
 
@@ -274,9 +279,9 @@
                   <div class="funnel-bar-wrap">
                     <div class="funnel-label">
                       <span>1. Page Visits</span>
-                      <strong id="fnl-visits">3,280</strong>
+                      <strong id="fnl-visits">0</strong>
                     </div>
-                    <div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div>
+                    <div class="progress-bar"><div class="progress-fill" id="fnl-bar-visits" style="width: 100%;"></div></div>
                   </div>
                   <span class="funnel-rate">100%</span>
                 </div>
@@ -284,46 +289,46 @@
                 <div class="funnel-step">
                   <div class="funnel-bar-wrap">
                     <div class="funnel-label">
-                      <span>2. Viewed Pricing Card</span>
-                      <strong id="fnl-pricing">1,148</strong>
+                      <span>2. Pricing Card Explored</span>
+                      <strong id="fnl-pricing">0</strong>
                     </div>
-                    <div class="progress-bar"><div class="progress-fill" style="width: 35%;"></div></div>
+                    <div class="progress-bar"><div class="progress-fill" id="fnl-bar-pricing" style="width: 0%;"></div></div>
                   </div>
-                  <span class="funnel-rate">35.0%</span>
+                  <span class="funnel-rate" id="fnl-rate-pricing">0%</span>
                 </div>
 
                 <div class="funnel-step">
                   <div class="funnel-bar-wrap">
                     <div class="funnel-label">
-                      <span>3. Clicked "Buy Pro"</span>
-                      <strong id="fnl-checkout">246</strong>
+                      <span>3. Checkout Modal Opened</span>
+                      <strong id="fnl-checkout">0</strong>
                     </div>
-                    <div class="progress-bar"><div class="progress-fill" style="width: 7.5%;"></div></div>
+                    <div class="progress-bar"><div class="progress-fill" id="fnl-bar-checkout" style="width: 0%;"></div></div>
                   </div>
-                  <span class="funnel-rate">7.5%</span>
+                  <span class="funnel-rate" id="fnl-rate-checkout">0%</span>
                 </div>
 
                 <div class="funnel-step">
                   <div class="funnel-bar-wrap">
                     <div class="funnel-label">
-                      <span>4. Completed Payment &amp; Key Issued</span>
-                      <strong id="fnl-completed">52</strong>
+                      <span class="emerald-text">4. Payment &amp; License Issued</span>
+                      <strong id="fnl-completed">0</strong>
                     </div>
-                    <div class="progress-bar"><div class="progress-fill emerald-fill" style="width: 2.8%;"></div></div>
+                    <div class="progress-bar"><div class="progress-fill emerald-fill" id="fnl-bar-completed" style="width: 0%;"></div></div>
                   </div>
-                  <span class="funnel-rate emerald-text" id="fnl-final-conv">2.8%</span>
+                  <span class="funnel-rate emerald-text" id="fnl-final-conv">0.0%</span>
                 </div>
               </div>
             </div>
 
-            <!-- Revenue Geo Split & Regional Breakdown -->
+            <!-- Regional Sales Breakdown (Flag emojis allowed as requested) -->
             <div class="panel-card">
               <div class="panel-header">
                 <div>
-                  <h3 class="panel-title">Regional Pricing &amp; Revenue</h3>
-                  <p class="panel-subtitle">Localized sales distribution (Auto-Geo Edge)</p>
+                  <h3 class="panel-title">Regional Pricing Distribution</h3>
+                  <p class="panel-subtitle">Automatic geo-localized price tier distribution</p>
                 </div>
-                <span class="pill-badge">Zero Leakage</span>
+                <span class="pill-badge">Vercel Edge</span>
               </div>
 
               <div class="geo-split-list">
@@ -332,12 +337,12 @@
                     <span class="geo-flag">🇮🇳</span>
                     <div>
                       <span class="geo-name">India (Domestic)</span>
-                      <span class="geo-plan">₹999 / Lifetime &bull; UPI &amp; Cards</span>
+                      <span class="geo-plan">Locked Tier: ₹999 INR (paise: 99900)</span>
                     </div>
                   </div>
                   <div class="geo-revenue">
-                    <strong>₹44,955</strong>
-                    <span>45 Customers</span>
+                    <strong id="geo-inr-rev">₹0</strong>
+                    <span id="geo-inr-orders">0 Orders</span>
                   </div>
                 </div>
 
@@ -345,27 +350,27 @@
                   <div class="geo-info">
                     <span class="geo-flag">🇺🇸</span>
                     <div>
-                      <span class="geo-name">United States</span>
-                      <span class="geo-plan">$19 / Lifetime &bull; Intl Cards</span>
+                      <span class="geo-name">United States &amp; Americas</span>
+                      <span class="geo-plan">Locked Tier: $19 USD (cents: 1900)</span>
                     </div>
                   </div>
                   <div class="geo-revenue">
-                    <strong>$95 USD</strong>
-                    <span>5 Customers</span>
+                    <strong id="geo-usd-rev">$0</strong>
+                    <span id="geo-usd-orders">0 Orders</span>
                   </div>
                 </div>
 
                 <div class="geo-item">
                   <div class="geo-info">
-                    <span class="geo-flag">🇩🇪</span>
+                    <span class="geo-flag">🇪🇺</span>
                     <div>
-                      <span class="geo-name">Germany / Europe</span>
-                      <span class="geo-plan">$19 / Lifetime &bull; Intl Cards</span>
+                      <span class="geo-name">Europe &amp; Worldwide</span>
+                      <span class="geo-plan">Locked Tier: $19 USD (cents: 1900)</span>
                     </div>
                   </div>
                   <div class="geo-revenue">
-                    <strong>$38 USD</strong>
-                    <span>2 Customers</span>
+                    <strong id="geo-eur-rev">$0</strong>
+                    <span id="geo-eur-orders">0 Orders</span>
                   </div>
                 </div>
               </div>
@@ -376,20 +381,20 @@
                   <line x1="12" y1="16" x2="12" y2="12"/>
                   <line x1="12" y1="8" x2="12.01" y2="8"/>
                 </svg>
-                <span>Server-enforced geo detection prevents currency switching and guarantees correct pricing.</span>
+                <span>Server-enforced pricing via <code>x-vercel-ip-country</code> prevents client tampering.</span>
               </div>
             </div>
 
           </div>
 
-          <!-- Bottom: Recent Transactions Quick Peek -->
+          <!-- Bottom: Recent Orders Feed -->
           <div class="panel-card mt-24">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Recent Customer Transactions</h3>
-                <p class="panel-subtitle">Real-time payment logs and automatic license activations</p>
+                <h3 class="panel-title">Recent Customer Orders</h3>
+                <p class="panel-subtitle">Real-time payment captures and license deliveries</p>
               </div>
-              <button class="btn btn-secondary btn-sm" id="view-all-tx-btn">View All Transactions &rarr;</button>
+              <button id="view-all-tx-btn" class="btn btn-secondary btn-sm">View Full Ledger</button>
             </div>
 
             <div class="table-responsive">
@@ -397,16 +402,16 @@
                 <thead>
                   <tr>
                     <th>Payment ID</th>
-                    <th>Customer</th>
-                    <th>Email</th>
-                    <th>Amount</th>
+                    <th>Customer Name</th>
+                    <th>Email Address</th>
+                    <th>Amount Paid</th>
                     <th>Country</th>
                     <th>Status</th>
-                    <th>Date</th>
+                    <th>Timestamp</th>
                   </tr>
                 </thead>
                 <tbody id="recent-tx-tbody">
-                  <!-- Populated dynamically -->
+                  <!-- Populated in real-time -->
                 </tbody>
               </table>
             </div>
@@ -415,26 +420,16 @@
         </section>
 
         <!-- ==============================================
-             TAB 2: LICENSE KEYS MANAGEMENT
+             TAB 2: LICENSE KEYS REGISTRY
              ============================================== -->
         <section id="tab-licenses" class="tab-view">
           
-          <div class="tab-control-bar">
-            <div class="search-input-wrap">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input type="text" id="license-search-input" placeholder="Search by customer name, email, or key...">
-            </div>
-
-            <div class="control-actions">
-              <select id="license-filter-select" class="control-select">
-                <option value="all">All Tiers (Active &amp; Revoked)</option>
-                <option value="pro">Pro Lifetime</option>
-                <option value="team">Team / Studio</option>
-              </select>
-
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Cryptographic License Registry</h3>
+                <p class="panel-subtitle">Offline ECDSA P-256 signatures issued to DropDial Pro users</p>
+              </div>
               <button id="export-licenses-btn" class="btn btn-secondary btn-sm">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -444,24 +439,40 @@
                 <span>Export CSV</span>
               </button>
             </div>
-          </div>
 
-          <div class="panel-card">
+            <div class="tab-control-bar">
+              <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="license-search-input" placeholder="Search by customer name, email, or key...">
+              </div>
+
+              <div class="control-actions">
+                <select id="license-filter-select" class="control-select">
+                  <option value="all">All Tiers</option>
+                  <option value="pro">Pro Lifetime</option>
+                  <option value="team">Studio / Commercial</option>
+                </select>
+              </div>
+            </div>
+
             <div class="table-responsive">
               <table class="data-table">
                 <thead>
                   <tr>
                     <th>Customer Name</th>
-                    <th>Email</th>
+                    <th>Email Address</th>
                     <th>Tier</th>
-                    <th>License Key (Cryptographic ECDSA P-256)</th>
-                    <th>Issued Date</th>
+                    <th>Cryptographic License Key</th>
+                    <th>Date Issued</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="licenses-tbody">
-                  <!-- Populated dynamically -->
+                  <!-- Populated in real-time -->
                 </tbody>
               </table>
             </div>
@@ -474,16 +485,12 @@
              ============================================== -->
         <section id="tab-transactions" class="tab-view">
           
-          <div class="tab-control-bar">
-            <div class="search-input-wrap">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input type="text" id="tx-search-input" placeholder="Search by payment ID, order ID, email...">
-            </div>
-
-            <div class="control-actions">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Financial Transactions Ledger</h3>
+                <p class="panel-subtitle">Comprehensive record of all captured payments and gateway settlements</p>
+              </div>
               <button id="export-tx-btn" class="btn btn-secondary btn-sm">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -493,26 +500,35 @@
                 <span>Download Tax CSV</span>
               </button>
             </div>
-          </div>
 
-          <div class="panel-card">
+            <div class="tab-control-bar">
+              <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="tx-search-input" placeholder="Search by payment ID, order ID, or customer...">
+              </div>
+            </div>
+
             <div class="table-responsive">
               <table class="data-table">
                 <thead>
                   <tr>
                     <th>Payment ID</th>
                     <th>Order ID</th>
-                    <th>Customer</th>
+                    <th>Customer Name</th>
                     <th>Email</th>
                     <th>Amount</th>
-                    <th>Method</th>
+                    <th>Payment Method</th>
+                    <th>Coupon</th>
                     <th>Country</th>
                     <th>Status</th>
-                    <th>Timestamp</th>
+                    <th>Captured At</th>
                   </tr>
                 </thead>
                 <tbody id="all-tx-tbody">
-                  <!-- Populated dynamically -->
+                  <!-- Populated in real-time -->
                 </tbody>
               </table>
             </div>
@@ -521,66 +537,92 @@
         </section>
 
         <!-- ==============================================
-             TAB 4: TRAFFIC & CONVERSION OBSERVABILITY
+             TAB 4: COUPONS & PROMOTIONAL OFFERS
              ============================================== -->
-        <section id="tab-traffic" class="tab-view">
+        <section id="tab-coupons" class="tab-view">
           
-          <div class="kpi-grid">
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-title">Total Page Views</span></div>
-              <div class="kpi-value-wrap"><span class="kpi-main-val" id="trf-pageviews">3,280</span></div>
-              <div class="kpi-footer"><span>Zero-PII Privacy Compliant</span></div>
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Coupon Codes &amp; Promotional Offers</h3>
+                <p class="panel-subtitle">Create, activate, disable, or delete discount codes for DropDial Pro checkout</p>
+              </div>
+              <button id="create-new-coupon-btn" class="btn btn-primary btn-sm">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Create Coupon</span>
+              </button>
             </div>
 
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-title">Pricing Intent Clicks</span></div>
-              <div class="kpi-value-wrap"><span class="kpi-main-val" id="trf-pricing">1,148</span></div>
-              <div class="kpi-footer"><span>35.0% Intent Rate</span></div>
+            <div class="tab-control-bar">
+              <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="coupon-search-input" placeholder="Search coupon code or description...">
+              </div>
             </div>
 
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-title">Checkout Modal Opens</span></div>
-              <div class="kpi-value-wrap"><span class="kpi-main-val" id="trf-modal">246</span></div>
-              <div class="kpi-footer"><span>7.5% Buying Intent</span></div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-header"><span class="kpi-title">Pro Purchases</span></div>
-              <div class="kpi-value-wrap"><span class="kpi-main-val emerald-text" id="trf-purchases">52</span></div>
-              <div class="kpi-footer"><span>2.8% Conversion Rate</span></div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Coupon Code</th>
+                    <th>Discount</th>
+                    <th>Target Pricing</th>
+                    <th>Redemptions</th>
+                    <th>Valid Until</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="coupons-tbody">
+                  <!-- Populated in real-time -->
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div class="overview-analytics-grid mt-24">
+        </section>
+
+        <!-- ==============================================
+             TAB 5: TRAFFIC & ATTRIBUTION
+             ============================================== -->
+        <section id="tab-traffic" class="tab-view">
+          
+          <div class="overview-analytics-grid">
             
             <div class="panel-card">
               <div class="panel-header">
                 <div>
-                  <h3 class="panel-title">Top Traffic Referrers</h3>
-                  <p class="panel-subtitle">Channels driving downloads and Pro sales</p>
+                  <h3 class="panel-title">Visitor Referrer Channels</h3>
+                  <p class="panel-subtitle">Acquisition channels driving DropDial traffic</p>
                 </div>
               </div>
 
               <div class="traffic-source-list">
                 <div class="source-item">
-                  <span class="source-channel">Direct / Word of Mouth</span>
-                  <div class="source-bar-wrap"><div class="source-bar" style="width: 48%;"></div></div>
-                  <span class="source-count">1,574 (48%)</span>
+                  <span class="source-channel">Direct / Organic Brand</span>
+                  <div class="source-bar-wrap"><div class="source-bar" id="ref-bar-direct" style="width: 58%;"></div></div>
+                  <span class="source-count" id="ref-count-direct">58%</span>
+                </div>
+                <div class="source-item">
+                  <span class="source-channel">GitHub (Open Source)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" id="ref-bar-github" style="width: 24%;"></div></div>
+                  <span class="source-count" id="ref-count-github">24%</span>
                 </div>
                 <div class="source-item">
                   <span class="source-channel">Google Search (SEO)</span>
-                  <div class="source-bar-wrap"><div class="source-bar" style="width: 26%;"></div></div>
-                  <span class="source-count">852 (26%)</span>
-                </div>
-                <div class="source-item">
-                  <span class="source-channel">GitHub &amp; Dev Forums</span>
-                  <div class="source-bar-wrap"><div class="source-bar" style="width: 14%;"></div></div>
-                  <span class="source-count">459 (14%)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" id="ref-bar-google" style="width: 12%;"></div></div>
+                  <span class="source-count" id="ref-count-google">12%</span>
                 </div>
                 <div class="source-item">
                   <span class="source-channel">Twitter / X &amp; Reddit</span>
-                  <div class="source-bar-wrap"><div class="source-bar" style="width: 12%;"></div></div>
-                  <span class="source-count">395 (12%)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" id="ref-bar-social" style="width: 6%;"></div></div>
+                  <span class="source-count" id="ref-count-social">6%</span>
                 </div>
               </div>
             </div>
@@ -589,25 +631,25 @@
               <div class="panel-header">
                 <div>
                   <h3 class="panel-title">Operating System Distribution</h3>
-                  <p class="panel-subtitle">Visitors and installer download breakdown</p>
+                  <p class="panel-subtitle">Device breakdown of downloaded binary packages</p>
                 </div>
               </div>
 
               <div class="traffic-source-list">
                 <div class="source-item">
-                  <span class="source-channel">macOS (Apple Silicon M1/M2/M3)</span>
-                  <div class="source-bar-wrap"><div class="source-bar" style="width: 54%;"></div></div>
-                  <span class="source-count">1,771 (54%)</span>
+                  <span class="source-channel">macOS (Apple Silicon M-Series)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 62%;"></div></div>
+                  <span class="source-count">62%</span>
                 </div>
                 <div class="source-item">
-                  <span class="source-channel">Windows 11 / 10 (x64)</span>
-                  <div class="source-bar-wrap"><div class="source-bar" style="width: 36%;"></div></div>
-                  <span class="source-count">1,180 (36%)</span>
+                  <span class="source-channel">Windows 11 / 10 (64-bit)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 29%;"></div></div>
+                  <span class="source-count">29%</span>
                 </div>
                 <div class="source-item">
-                  <span class="source-channel">macOS (Intel x64)</span>
-                  <div class="source-bar-wrap"><div class="source-bar" style="width: 10%;"></div></div>
-                  <span class="source-count">329 (10%)</span>
+                  <span class="source-channel">macOS (Intel x86_64)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 9%;"></div></div>
+                  <span class="source-count">9%</span>
                 </div>
               </div>
             </div>
@@ -617,36 +659,36 @@
         </section>
 
         <!-- ==============================================
-             TAB 5: SYSTEM HEALTH & GATEWAYS
+             TAB 6: SYSTEM HEALTH & INTEGRATIONS
              ============================================== -->
         <section id="tab-health" class="tab-view">
           
           <div class="panel-card">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Infrastructure &amp; Gateway Integrations</h3>
-                <p class="panel-subtitle">Status of live payment, email dispatch, and cryptographic subsystems</p>
+                <h3 class="panel-title">Production Gateway Status</h3>
+                <p class="panel-subtitle">Connectivity checks with payment networks and delivery infrastructure</p>
               </div>
-              <button class="btn btn-secondary btn-sm" id="recheck-health-btn">Re-verify Integrations</button>
+              <button id="recheck-health-btn" class="btn btn-secondary btn-sm">Run Health Check</button>
             </div>
 
             <div class="health-checklist">
               
-              <!-- Razorpay Gateway -->
+              <!-- Razorpay Standard Checkout Gateway -->
               <div class="health-item">
                 <div class="health-left">
                   <div class="health-icon" id="icon-razorpay">
                     <span class="status-dot green"></span>
                   </div>
                   <div>
-                    <h4 class="health-title">Razorpay Payment Gateway</h4>
-                    <p class="health-desc" id="desc-razorpay">Checking gateway configuration...</p>
+                    <h4 class="health-title">Razorpay Payment Gateway API</h4>
+                    <p class="health-desc" id="desc-razorpay">Validating API key and webhook credentials...</p>
                   </div>
                 </div>
-                <div class="health-status-badge" id="badge-razorpay">Active</div>
+                <div class="health-status-badge" id="badge-razorpay">Checking...</div>
               </div>
 
-              <!-- Resend Email Delivery -->
+              <!-- Resend License Email Delivery -->
               <div class="health-item">
                 <div class="health-left">
                   <div class="health-icon" id="icon-resend">
@@ -657,7 +699,7 @@
                     <p class="health-desc" id="desc-resend">Checking transactional email credentials...</p>
                   </div>
                 </div>
-                <div class="health-status-badge" id="badge-resend">Active</div>
+                <div class="health-status-badge" id="badge-resend">Checking...</div>
               </div>
 
               <!-- ECDSA Cryptographic Engine -->
@@ -668,7 +710,7 @@
                   </div>
                   <div>
                     <h4 class="health-title">ECDSA P-256 Offline Cryptographic Engine</h4>
-                    <p class="health-desc">P-256 Curve with SHA-256 IEEE P1363 raw 64-byte signature generator</p>
+                    <p class="health-desc">P-256 Curve with SHA-256 raw 64-byte signature generator</p>
                   </div>
                 </div>
                 <div class="health-status-badge green-badge">Loaded &bull; Standalone</div>
@@ -712,7 +754,7 @@
         </section>
 
         <!-- ==============================================
-             TAB 6: SECURITY & PASSCODE
+             TAB 7: SECURITY & PASSCODE
              ============================================== -->
         <section id="tab-settings" class="tab-view">
           
@@ -806,6 +848,76 @@
         </div>
         <p class="result-note" id="issue-email-status"></p>
       </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       4. MODAL: CREATE COUPON OFFER
+       ======================================================== -->
+  <div id="coupon-modal" class="admin-modal-overlay" style="display: none;">
+    <div class="admin-modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Create Coupon Offer</h3>
+          <p>Define a promotional discount code for customer checkout</p>
+        </div>
+        <button id="close-coupon-modal-btn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <form id="create-coupon-form" class="modal-form">
+        <div class="form-group">
+          <label for="new-coupon-code">Coupon Code</label>
+          <input type="text" id="new-coupon-code" placeholder="e.g. LAUNCH50, SPECIAL20" style="text-transform: uppercase;" required>
+        </div>
+
+        <div class="form-group">
+          <label for="new-coupon-type">Discount Type</label>
+          <select id="new-coupon-type" class="control-select w-100">
+            <option value="percent">Percentage Off (%)</option>
+            <option value="flat">Flat Amount Off (₹ / $)</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="group-coupon-percent">
+          <label for="new-coupon-value">Percentage Discount (%)</label>
+          <input type="number" id="new-coupon-value" min="1" max="95" value="20" placeholder="e.g. 20 for 20% off">
+        </div>
+
+        <div class="form-group" id="group-coupon-flat" style="display: none;">
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+              <label for="new-coupon-inr">Flat Off in INR (₹)</label>
+              <input type="number" id="new-coupon-inr" min="10" value="200" placeholder="e.g. 200">
+            </div>
+            <div style="flex: 1;">
+              <label for="new-coupon-usd">Flat Off in USD ($)</label>
+              <input type="number" id="new-coupon-usd" min="1" value="4" placeholder="e.g. 4">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="new-coupon-limit">Max Usages / Redemptions</label>
+          <input type="number" id="new-coupon-limit" min="1" value="100" placeholder="e.g. 100 uses">
+        </div>
+
+        <div class="form-group">
+          <label for="new-coupon-expiry">Expiry Date</label>
+          <input type="date" id="new-coupon-expiry" value="2026-12-31">
+        </div>
+
+        <div class="form-group">
+          <label for="new-coupon-desc">Promotion Description</label>
+          <input type="text" id="new-coupon-desc" placeholder="e.g. Special Launch 20% Discount">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-coupon-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="save-coupon-btn" class="btn btn-primary">
+            <span>Create &amp; Activate Coupon</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

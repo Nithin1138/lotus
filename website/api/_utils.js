@@ -180,7 +180,7 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
       </div>
 
       <p style="font-size: 13px; color: #8e95a2; line-height: 1.6; margin-top: 18px;">
-        🔒 <strong>100% Offline & Private:</strong> DropDial uses local ECDSA P-256 cryptographic verification. Your device never connects to the internet to validate your license.
+        <strong>100% Offline &amp; Private:</strong> DropDial uses local ECDSA P-256 cryptographic verification. Your device never connects to the internet to validate your license.
       </p>
     </div>
 
@@ -204,7 +204,7 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
       body: JSON.stringify({
         from: fromEmail,
         to: [to],
-        subject: 'Your DropDial Pro License Key 🚀',
+        subject: 'Your DropDial Pro License Key',
         html: htmlContent,
         text: `Welcome to DropDial Pro!\n\nHi ${customerName},\n\nThank you for purchasing DropDial Pro. Here is your lifetime license key:\n\n${licenseKey}\n\nTo activate:\n1. Open DropDial on your Mac or Windows PC.\n2. Click the DropDial icon in the menu bar / system tray.\n3. Click 'Activate DropDial Pro...'.\n4. Paste your key and click Activate.\n\nEnjoy lifetime offline conversion!\nDropDial Team`
       })
@@ -340,7 +340,7 @@ async function sendPaymentFailedEmail({ to, name, reason = 'Transaction was decl
       body: JSON.stringify({
         from: fromEmail,
         to: [to],
-        subject: 'Incomplete Order: DropDial Pro Lifetime License ⚠️',
+        subject: 'Incomplete Order: DropDial Pro Lifetime License',
         html: htmlContent,
         text: `Hi ${customerName},\n\nWe noticed your recent payment for DropDial Pro Lifetime License (${displayAmount}) was not completed (${reason}).\n\nDon't worry — no funds were captured.\n\nYou can complete your order anytime here:\nhttps://dropdial.app/#pricing\n\nIf you need any assistance, reply directly to this email.\n\nBest,\nDropDial Team`
       })

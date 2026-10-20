@@ -1185,6 +1185,89 @@ body.admin-body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Coupon Badges, Buttons & Empty States */
+.coupon-code-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 101, 0, 0.12);
+  color: #ff8533;
+  border: 1px solid rgba(255, 101, 0, 0.25);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+.copy-mini-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.copy-mini-btn:hover {
+  color: #ffffff;
+}
+
+.empty-state-row td {
+  text-align: center;
+  padding: 40px 20px !important;
+  color: var(--text-muted);
+}
+
+.empty-state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.empty-state-box svg {
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
+.empty-state-box strong {
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.empty-state-box p {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 0;
+  max-width: 380px;
+}
+
+.btn-danger-outline {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+.btn-danger-outline:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.btn-toggle-active {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.btn-toggle-active:hover {
+  background: var(--bg-hover);
+  color: #ffffff;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .admin-sidebar {

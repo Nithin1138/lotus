@@ -72,7 +72,7 @@
       try {
         await navigator.clipboard.writeText(activeCmd);
         const originalText = copyBtn.innerHTML;
-        copyBtn.innerHTML = "<span>✓ Copied!</span>";
+        copyBtn.innerHTML = "<svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.5' style='margin-right:4px;vertical-align:middle;'><polyline points='20 6 9 17 4 12'></polyline></svg><span>Copied!</span>";
         setTimeout(() => { copyBtn.innerHTML = originalText; }, 2000);
       } catch (err) {
         window.prompt("Copy install command:", activeCmd);

@@ -1,8 +1,10 @@
 /**
  * DropDial Checkout & Licensing Client Integration
  * Handles Automatic Country-Based Pricing (₹999 in India, $19 Worldwide),
- * Razorpay Checkout Modal, Order Creation, Payment Verification,
- * and Instant Delivery via Resend.
+ * Coupon Code Discounts, Razorpay Checkout Modal, Order Creation,
+ * Payment Verification, and Instant Delivery via Resend.
+ *
+ * NOTE: UI uses clean SVG icons ONLY (no emojis, except country flags).
  */
 
 (function () {
@@ -18,10 +20,12 @@
   let currentCountry = 'US';
   let isIndia = false;
   let selectedCurrency = 'USD';
+  let appliedCoupon = null;
 
   // Modal DOM Elements
   let overlay, formView, successView, errorBox, payBtn;
   let nameInput, emailInput, priceDisplay, copyBtn, licenseKeyDisplay, successEmailText;
+  let couponToggleBtn, couponInputWrap, couponCodeInput, couponApplyBtn, couponFeedback;
 
   /**
    * Fast, zero-latency client-side heuristic detection
@@ -46,47 +50,88 @@
   }
 
   /**
+   * Calculates the active price considering any applied coupon
+   */
+  function getActivePriceConfig() {
+    const base = PRICING[selectedCurrency];
+    if (!appliedCoupon) {
+      return {
+        amount: base.amount,
+        display: base.display,
+        oldPrice: null,
+        discountTag: null
+      };
+    }
+
+    let discountAmount = 0;
+    if (appliedCoupon.type === 'percent') {
+      discountAmount = Math.round(base.amount * (appliedCoupon.value / 100));
+    } else {
+      discountAmount = isIndia ? (appliedCoupon.valueInr || 200) : (appliedCoupon.valueUsd || 4);
+    }
+
+    const finalAmount = Math.max(1, base.amount - discountAmount);
+    const finalDisplay = `${base.symbol}${finalAmount}`;
+    const discountTag = appliedCoupon.type === 'percent'
+      ? `-${appliedCoupon.value}%`
+      : `-${base.symbol}${discountAmount}`;
+
+    return {
+      amount: finalAmount,
+      display: finalDisplay,
+      oldPrice: base.display,
+      discountTag: discountTag
+    };
+  }
+
+  /**
    * Applies localized pricing to the checkout modal and the landing page
    */
   function applyPricing(indiaFlag, countryCode) {
     isIndia = !!indiaFlag;
     selectedCurrency = isIndia ? 'INR' : 'USD';
     currentCountry = countryCode || (isIndia ? 'IN' : 'US');
-    const config = PRICING[selectedCurrency];
+    const priceConfig = getActivePriceConfig();
 
     // 1. Modal Elements
     if (priceDisplay) {
-      priceDisplay.textContent = config.display;
-    }
-    const payLabel = document.getElementById('checkout-pay-label');
-    if (payLabel) {
-      payLabel.textContent = `Proceed to Payment (${config.display})`;
+      if (priceConfig.oldPrice) {
+        priceDisplay.innerHTML = `<span class="checkout-old-price">${priceConfig.oldPrice}</span><span class="checkout-new-price">${priceConfig.display}</span><span class="checkout-discount-tag">${priceConfig.discountTag}</span>`;
+      } else {
+        priceDisplay.textContent = priceConfig.display;
+      }
     }
 
-    // 2. Landing Page Buttons & Pricing Card
+    const payLabel = document.getElementById('checkout-pay-label');
+    if (payLabel) {
+      payLabel.textContent = `Proceed to Payment (${priceConfig.display})`;
+    }
+
+    // 2. Landing Page Buttons & Pricing Card (base pricing)
+    const baseConfig = PRICING[selectedCurrency];
     const headerBuy = document.getElementById('nav-header-buy-btn');
     if (headerBuy) {
-      headerBuy.textContent = `Buy Pro (${config.display})`;
+      headerBuy.textContent = `Buy Pro (${baseConfig.display})`;
     }
 
     const navBuy = document.getElementById('nav-buy-btn');
     if (navBuy) {
-      navBuy.textContent = `Buy Pro (${config.display})`;
+      navBuy.textContent = `Buy Pro (${baseConfig.display})`;
     }
 
     const pricingCardPrice = document.getElementById('pro-pricing-price');
     if (pricingCardPrice) {
-      pricingCardPrice.innerHTML = `${config.display} <span>one-time</span>`;
+      pricingCardPrice.innerHTML = `${baseConfig.display} <span>one-time</span>`;
     }
 
     const trialPricingPrice = document.getElementById('trial-pricing-price');
     if (trialPricingPrice) {
-      trialPricingPrice.innerHTML = `${config.symbol}0 <span>/ 7 days</span>`;
+      trialPricingPrice.innerHTML = `${baseConfig.symbol}0 <span>/ 7 days</span>`;
     }
 
     const cardBuy = document.getElementById('card-buy-btn');
     if (cardBuy) {
-      cardBuy.textContent = `Buy DropDial Pro (${config.display})`;
+      cardBuy.textContent = `Buy DropDial Pro (${baseConfig.display})`;
     }
   }
 
@@ -95,7 +140,6 @@
    */
   async function fetchCountryPricing() {
     try {
-      // 1. Check primary Vercel edge endpoint
       const res = await fetch('/api/geo', { method: 'GET', cache: 'default' });
       if (res.ok) {
         const data = await res.json();
@@ -105,7 +149,6 @@
         }
       }
     } catch (err) {
-      // Fallback for local testing or static preview environments
       try {
         const fallbackRes = await fetch('https://api.country.is/', { cache: 'default' });
         if (fallbackRes.ok) {
@@ -115,17 +158,19 @@
           return;
         }
       } catch (e2) {
-        // Retain fast heuristic result
+        // Retain heuristic
       }
     }
   }
 
-  function initCheckout() {
-    // 1. Zero-latency instant detection
-    const fastGeo = detectFastLocation();
-    applyPricing(fastGeo.isIndia, fastGeo.country);
+  function init() {
+    // 1. Instant heuristic detection
+    const initial = detectFastLocation();
+    isIndia = initial.isIndia;
+    selectedCurrency = initial.currency;
+    currentCountry = initial.country;
 
-    // 2. Build DOM & bind events
+    // 2. Build Modal DOM & bind listeners
     createModalDOM();
     bindEvents();
 
@@ -169,6 +214,24 @@
               </div>
             </div>
 
+            <!-- Coupon Code Section -->
+            <div class="checkout-coupon-section" id="checkout-coupon-section">
+              <button type="button" class="checkout-coupon-toggle" id="coupon-toggle-btn">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                  <line x1="7" y1="7" x2="7.01" y2="7"/>
+                </svg>
+                <span>Have a coupon code?</span>
+              </button>
+              <div class="checkout-coupon-input-wrap" id="coupon-input-wrap" style="display: none;">
+                <div class="coupon-field-row">
+                  <input type="text" id="coupon-code-input" class="coupon-input" placeholder="e.g. LAUNCH20" autocomplete="off" autocapitalize="characters">
+                  <button type="button" id="coupon-apply-btn" class="coupon-apply-btn">Apply</button>
+                </div>
+                <div class="coupon-feedback" id="coupon-feedback" style="display: none;"></div>
+              </div>
+            </div>
+
             <!-- Error Banner -->
             <div class="checkout-error" id="checkout-error"></div>
 
@@ -189,14 +252,20 @@
               <span id="checkout-pay-label">Proceed to Payment (₹999)</span>
             </button>
 
-            <!-- Badges -->
+            <!-- Badges (SVG Icons ONLY) -->
             <div class="checkout-footer-badges">
-              <span>🔒 256-bit Secure via Razorpay</span>
-              <span>⚡ Instant Delivery via Resend</span>
+              <span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                256-bit Secure via Razorpay
+              </span>
+              <span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                Instant Delivery via Resend
+              </span>
             </div>
           </div>
 
-          <!-- Success View (Ultra-Compact Modern SaaS Design) -->
+          <!-- Success View -->
           <div class="checkout-success-view" id="checkout-success-view">
             <div class="success-celebration">
               <div class="success-icon-badge">
@@ -221,37 +290,23 @@
               </div>
             </div>
 
-            <!-- Clean 1-Line Delivery Status -->
-            <div class="email-delivery-pill">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-              <span>Key &amp; receipt sent to <strong id="success-email-notice">you@example.com</strong></span>
+            <!-- Offline Guarantee Callout -->
+            <div class="success-offline-notice">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span>100% Offline Cryptographic Key. Never phones home.</span>
             </div>
 
-            <!-- Sleek Horizontal 3-Step Activation Timeline -->
-            <div class="activation-timeline">
-              <div class="timeline-step">
-                <span class="step-badge">1</span>
-                <span class="step-text">Open DropDial</span>
-              </div>
-              <span class="timeline-sep">›</span>
-              <div class="timeline-step">
-                <span class="step-badge">2</span>
-                <span class="step-text">Right-click tray</span>
-              </div>
-              <span class="timeline-sep">›</span>
-              <div class="timeline-step">
-                <span class="step-badge">3</span>
-                <span class="step-text">Paste Key</span>
-              </div>
+            <div class="success-delivery-note">
+              We also sent a backup copy of this license and receipt to <strong id="success-email-text">your email</strong>.
             </div>
 
-            <!-- Modal Action Buttons -->
-            <div class="success-actions-row">
-              <a href="#download" class="success-btn-download" id="download-now-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>Download App</span>
+            <!-- Bottom Actions -->
+            <div class="success-actions">
+              <a href="/downloads/DropDial.dmg" class="btn btn-primary success-dl-btn" id="download-now-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Download DropDial App</span>
               </a>
-              <button type="button" class="success-btn-done" id="success-done-btn">Done</button>
+              <button type="button" class="btn btn-secondary success-close-btn" id="success-done-btn">Done</button>
             </div>
           </div>
         </div>
@@ -260,6 +315,7 @@
 
     document.body.appendChild(overlay);
 
+    // Cache elements
     formView = document.getElementById('checkout-form-view');
     successView = document.getElementById('checkout-success-view');
     errorBox = document.getElementById('checkout-error');
@@ -269,23 +325,17 @@
     priceDisplay = document.getElementById('checkout-price-display');
     copyBtn = document.getElementById('copy-license-btn');
     licenseKeyDisplay = document.getElementById('license-key-display');
-    successEmailText = document.getElementById('success-email-notice');
+    successEmailText = document.getElementById('success-email-text');
+
+    couponToggleBtn = document.getElementById('coupon-toggle-btn');
+    couponInputWrap = document.getElementById('coupon-input-wrap');
+    couponCodeInput = document.getElementById('coupon-code-input');
+    couponApplyBtn = document.getElementById('coupon-apply-btn');
+    couponFeedback = document.getElementById('coupon-feedback');
   }
 
   function bindEvents() {
-    // Open modal on click of any element with [data-open-checkout] or link matching pricing buy buttons
-    document.addEventListener('click', function (e) {
-      const target = e.target.closest('[data-open-checkout], a[href*="dropdial.app/buy"], a[href*="dropdial.com/buy"], .pricing-card.featured a.btn, a[href="#pricing"].btn');
-      if (target) {
-        // If clicking buy button, open checkout modal directly
-        if (target.getAttribute('href') === 'https://dropdial.app/buy' || target.getAttribute('href') === 'https://dropdial.com/buy' || target.hasAttribute('data-open-checkout') || target.textContent.includes('Buy')) {
-          e.preventDefault();
-          openModal();
-        }
-      }
-    });
-
-    // Close button & clicking overlay background
+    // Close modal
     document.getElementById('checkout-close').addEventListener('click', closeModal);
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay) {
@@ -305,6 +355,42 @@
       }
     });
 
+    // Coupon Toggle
+    couponToggleBtn?.addEventListener('click', function () {
+      const isHidden = couponInputWrap.style.display === 'none';
+      couponInputWrap.style.display = isHidden ? 'block' : 'none';
+      if (isHidden) {
+        couponCodeInput.focus();
+      }
+    });
+
+    // Coupon Apply
+    couponApplyBtn?.addEventListener('click', handleCouponApply);
+    couponCodeInput?.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleCouponApply();
+      }
+    });
+
+    // Triggers across the page
+    const triggers = [
+      '#nav-buy-btn',
+      '#nav-header-buy-btn',
+      '#card-buy-btn',
+      '#hero-buy-btn',
+      '[data-open-checkout]'
+    ];
+
+    triggers.forEach(function (sel) {
+      document.querySelectorAll(sel).forEach(function (el) {
+        el.addEventListener('click', function (e) {
+          e.preventDefault();
+          openModal();
+        });
+      });
+    });
+
     // Pay Button Click
     payBtn.addEventListener('click', handlePaymentInitiation);
 
@@ -314,30 +400,82 @@
       if (!key) return;
 
       const lbl = copyBtn.querySelector('.copy-lbl');
-      navigator.clipboard.writeText(key).then(function () {
+      const setCopied = () => {
         copyBtn.classList.add('copied');
-        if (lbl) lbl.textContent = 'Copied! ✓';
+        if (lbl) lbl.textContent = 'Copied!';
         setTimeout(function () {
           copyBtn.classList.remove('copied');
           if (lbl) lbl.textContent = 'Copy';
         }, 2500);
-      }).catch(function () {
-        // Fallback for older browsers
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(key).then(setCopied).catch(setCopied);
+      } else {
         licenseKeyDisplay.select();
         document.execCommand('copy');
-        copyBtn.classList.add('copied');
-        if (lbl) lbl.textContent = 'Copied! ✓';
-        setTimeout(function () {
-          copyBtn.classList.remove('copied');
-          if (lbl) lbl.textContent = 'Copy';
-        }, 2500);
-      });
+        setCopied();
+      }
     });
 
-    // Auto-select entire key on click
     licenseKeyDisplay.addEventListener('click', function () {
       this.select();
     });
+  }
+
+  async function handleCouponApply() {
+    const code = (couponCodeInput.value || '').trim().toUpperCase();
+    if (!code) {
+      couponFeedback.className = 'coupon-feedback error';
+      couponFeedback.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>Please enter a coupon code.</span>`;
+      couponFeedback.style.display = 'flex';
+      return;
+    }
+
+    couponApplyBtn.disabled = true;
+    couponApplyBtn.textContent = 'Checking...';
+
+    try {
+      const res = await fetch(`/api/coupons?code=${encodeURIComponent(code)}&currency=${selectedCurrency}`);
+      const data = await res.json();
+
+      if (res.ok && data.valid) {
+        appliedCoupon = data;
+        couponFeedback.className = 'coupon-feedback success';
+        couponFeedback.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span><strong>${data.code}</strong> applied (${data.discountDisplay} discount)!</span>
+        `;
+        couponFeedback.style.display = 'flex';
+        applyPricing(isIndia, currentCountry);
+      } else {
+        appliedCoupon = null;
+        couponFeedback.className = 'coupon-feedback error';
+        couponFeedback.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>${data.error || 'Invalid or expired coupon code.'}</span>
+        `;
+        couponFeedback.style.display = 'flex';
+        applyPricing(isIndia, currentCountry);
+      }
+    } catch (err) {
+      // Local fallback for test codes
+      if (code === 'LAUNCH20' || code === 'DROPDIAL50' || code === 'PRO10') {
+        const val = code === 'DROPDIAL50' ? 50 : (code === 'LAUNCH20' ? 20 : 10);
+        appliedCoupon = { code, type: 'percent', value: val, discountDisplay: `${val}%` };
+        couponFeedback.className = 'coupon-feedback success';
+        couponFeedback.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> <span><strong>${code}</strong> applied (${val}% discount)!</span>`;
+        couponFeedback.style.display = 'flex';
+        applyPricing(isIndia, currentCountry);
+      } else {
+        couponFeedback.className = 'coupon-feedback error';
+        couponFeedback.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>Invalid coupon code.</span>`;
+        couponFeedback.style.display = 'flex';
+      }
+    } finally {
+      couponApplyBtn.disabled = false;
+      couponApplyBtn.textContent = 'Apply';
+    }
   }
 
   function openModal() {
@@ -385,10 +523,10 @@
 
     payBtn.disabled = true;
     const originalBtnText = payBtn.innerHTML;
-    payBtn.innerHTML = `<span>Connecting to Razorpay…</span>`;
+    payBtn.innerHTML = `<span>Connecting to Secure Gateway…</span>`;
 
     try {
-      // 1. Create order on server with locked country & currency
+      // 1. Create order on server with locked country, currency, and optional coupon
       const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -397,7 +535,8 @@
           email: email,
           country: currentCountry,
           currency: selectedCurrency,
-          amount: PRICING[selectedCurrency].amount
+          amount: PRICING[selectedCurrency].amount,
+          couponCode: appliedCoupon ? appliedCoupon.code : ''
         })
       });
 
@@ -406,7 +545,6 @@
         throw new Error(orderData.error || 'Unable to initiate order with Razorpay.');
       }
 
-      // Check if Razorpay SDK script is loaded
       if (typeof Razorpay === 'undefined') {
         throw new Error('Razorpay SDK failed to load. Please check your internet connection or ad-blocker.');
       }
@@ -458,17 +596,19 @@
             // 4. Record transaction in local admin ledger & track purchase
             try {
               fetch('/api/admin?action=track&event=purchase', { method: 'POST', keepalive: true }).catch(() => {});
+              const activePrice = getActivePriceConfig();
               const txList = JSON.parse(localStorage.getItem('dd_admin_tx') || '[]');
               txList.unshift({
                 paymentId: response.razorpay_payment_id,
                 orderId: response.razorpay_order_id,
                 customer: name,
                 email: email,
-                amount: PRICING[selectedCurrency].display,
-                amountRaw: PRICING[selectedCurrency].amount,
+                amount: activePrice.display,
+                amountRaw: activePrice.amount,
                 currency: selectedCurrency,
                 method: 'Razorpay Gateway',
-                country: isIndia ? 'IN 🇮🇳' : `${currentCountry} 🌐`,
+                country: isIndia ? 'IN 🇮🇳' : `${currentCountry}`,
+                coupon: appliedCoupon ? appliedCoupon.code : 'None',
                 status: 'Captured',
                 timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19)
               });
@@ -506,7 +646,6 @@
         payBtn.disabled = false;
         payBtn.innerHTML = originalBtnText;
 
-        // Send payment failure recovery email to customer
         if (email) {
           fetch('/api/payment-failed', {
             method: 'POST',
@@ -515,7 +654,7 @@
               email: email,
               name: name,
               reason: errorDesc,
-              amount: PRICING[selectedCurrency] ? PRICING[selectedCurrency].displayPrice : '',
+              amount: getActivePriceConfig().display,
               currency: selectedCurrency,
               orderId: orderData.orderId
             })
@@ -536,24 +675,26 @@
   function showSuccess(licenseKey, email) {
     formView.style.display = 'none';
     successView.style.display = 'block';
-    licenseKeyDisplay.value = licenseKey;
-    licenseKeyDisplay.setAttribute('data-full-key', licenseKey);
+
+    if (licenseKeyDisplay) {
+      licenseKeyDisplay.value = licenseKey;
+      licenseKeyDisplay.setAttribute('data-full-key', licenseKey);
+    }
+
     if (successEmailText) {
       successEmailText.textContent = email;
     }
   }
 
-  // Self-initialize on DOM ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCheckout);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    initCheckout();
+    init();
   }
 
-  // Export to window for manual triggering
   window.DropDialCheckout = {
     open: openModal,
     close: closeModal,
-    setPricing: applyPricing
+    applyCoupon: handleCouponApply
   };
 })();

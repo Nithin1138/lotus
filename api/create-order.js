@@ -1,7 +1,10 @@
 /**
  * Vercel Serverless Function: Create Razorpay Order
  * POST /api/create-order
+ * Enforces server-side country pricing and coupon code discounts.
  */
+
+const { evaluateCoupon } = require('./coupons');
 
 module.exports = async function handler(req, res) {
   // CORS & Methods
@@ -21,6 +24,8 @@ module.exports = async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     const email = (body.email || '').trim().toLowerCase();
     const name = (body.name || 'DropDial Customer').trim();
+    const couponCode = (body.couponCode || '').trim();
+
     // Determine country & strictly lock price according to location:
     // India: ₹999 (99900 paise INR)
     // Any other country: $19 (1900 cents USD)
@@ -34,20 +39,39 @@ module.exports = async function handler(req, res) {
 
     const isIndia = country === 'IN' || (!country && (body.currency || '').toUpperCase() === 'INR');
     const currency = isIndia ? 'INR' : 'USD';
-    const amountInSubunits = isIndia ? 99900 : 1900;
+    let amountInSubunits = isIndia ? 99900 : 1900;
+    let appliedCoupon = null;
+
+    // Apply coupon discount if provided
+    if (couponCode) {
+      try {
+        const evalResult = evaluateCoupon(couponCode, currency, amountInSubunits);
+        if (evalResult.valid) {
+          amountInSubunits = evalResult.finalSubunits;
+          appliedCoupon = {
+            code: evalResult.code,
+            discountSubunits: evalResult.discountSubunits,
+            discountDisplay: evalResult.discountDisplay,
+            finalDisplay: evalResult.finalDisplay
+          };
+        }
+      } catch (couponErr) {
+        console.warn('[Coupon Evaluation Warning]', couponErr);
+      }
+    }
 
     const keyId = (process.env.RAZORPAY_KEY_ID || '').trim();
     const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
 
     if (!keyId || !keySecret) {
       console.warn('[Razorpay] RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is not configured. Running in sandbox test mode.');
-      // Return sandbox test order so developer can preview full UI before adding live keys
       return res.status(200).json({
         orderId: `order_mock_${Date.now()}`,
         amount: amountInSubunits,
         currency,
         keyId: keyId || 'rzp_test_placeholder',
         sandbox: true,
+        coupon: appliedCoupon,
         message: 'Running in sandbox mode. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Vercel to activate live payments.'
       });
     }
@@ -66,7 +90,9 @@ module.exports = async function handler(req, res) {
         notes: {
           email,
           name,
-          product: 'DropDial Pro Lifetime'
+          product: 'DropDial Pro Lifetime',
+          coupon: appliedCoupon ? appliedCoupon.code : 'none',
+          discount: appliedCoupon ? appliedCoupon.discountDisplay : 'none'
         }
       })
     });
@@ -82,7 +108,8 @@ module.exports = async function handler(req, res) {
       amount: data.amount,
       currency: data.currency,
       keyId,
-      notes: data.notes
+      notes: data.notes,
+      coupon: appliedCoupon
     });
   } catch (err) {
     console.error('[create-order Error]', err);
