@@ -4,8 +4,8 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://dropdial.app/</loc>
-    <lastmod>2026-10-19</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>2026-10-20</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://dropdial.app/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://dropdial.app/"/>
@@ -14,17 +14,18 @@
     <xhtml:link rel="alternate" hreflang="en-IN" href="https://dropdial.app/"/>
     <image:image>
       <image:loc>https://dropdial.app/assets/img/og-image.png</image:loc>
-      <image:title>DropDial Drag-and-Drop Offline File Converter UI</image:title>
-      <image:caption>Instant drag-and-drop offline file converter and native media suite for macOS and Windows</image:caption>
+      <image:title>DropDial (Drop Dial) Drag-and-Drop Offline File Converter UI</image:title>
+      <image:caption>DropDial (Drop Dial) - Instant drag-and-drop offline file converter and native media suite for macOS and Windows</image:caption>
     </image:image>
     <image:image>
       <image:loc>https://dropdial.app/assets/img/logo.png</image:loc>
       <image:title>DropDial Logo</image:title>
+      <image:caption>DropDial App Icon</image:caption>
     </image:image>
   </url>
   <url>
     <loc>https://dropdial.app/privacy</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-10-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://dropdial.app/privacy"/>
