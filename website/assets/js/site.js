@@ -163,18 +163,42 @@
   if (isMac && cardMac) cardMac.classList.add("is-detected");
   if (!isMac && cardWin) cardWin.classList.add("is-detected");
 
-  // Terminal Install Command (PowerShell / cmd on Windows, bash on macOS)
-  const defaultInstallCmd = isMac
-    ? "curl -fsSL https://raw.githubusercontent.com/Nithin1138/lotus/main/install.sh | bash"
-    : 'powershell -c "irm https://raw.githubusercontent.com/Nithin1138/lotus/main/install.ps1 | iex"';
-
+  // Terminal Install Command (PowerShell on Windows, bash on macOS)
   const cmdCode = $("#install-cmd-text");
-  if (cmdCode) cmdCode.textContent = defaultInstallCmd;
-
+  const tabMac = $("#cli-tab-mac");
+  const tabWin = $("#cli-tab-win");
   const copyBtn = $("#copy-install-cmd");
+
+  const cmdMac = "curl -fsSL https://raw.githubusercontent.com/Nithin1138/lotus/main/install.sh | bash";
+  const cmdWin = 'powershell -c "irm https://raw.githubusercontent.com/Nithin1138/lotus/main/install.ps1 | iex"';
+
+  function setCliPlatform(platform) {
+    const isM = platform === "mac";
+    if (cmdCode) cmdCode.textContent = isM ? cmdMac : cmdWin;
+    if (tabMac) {
+      tabMac.classList.toggle("active", isM);
+      tabMac.setAttribute("aria-selected", isM ? "true" : "false");
+    }
+    if (tabWin) {
+      tabWin.classList.toggle("active", !isM);
+      tabWin.setAttribute("aria-selected", !isM ? "true" : "false");
+    }
+  }
+
+  setCliPlatform(isMac ? "mac" : "win");
+
+  if (tabMac) tabMac.addEventListener("click", () => setCliPlatform("mac"));
+  if (tabWin) tabWin.addEventListener("click", () => setCliPlatform("win"));
+  if (cardMac) cardMac.addEventListener("click", (e) => {
+    if (!e.target.closest("a, button")) setCliPlatform("mac");
+  });
+  if (cardWin) cardWin.addEventListener("click", (e) => {
+    if (!e.target.closest("a, button")) setCliPlatform("win");
+  });
+
   if (copyBtn) {
     copyBtn.addEventListener("click", async () => {
-      const activeCmd = cmdCode ? cmdCode.textContent : defaultInstallCmd;
+      const activeCmd = cmdCode ? cmdCode.textContent : (isMac ? cmdMac : cmdWin);
       try {
         await navigator.clipboard.writeText(activeCmd);
         const originalText = copyBtn.innerHTML;
