@@ -346,7 +346,7 @@ module.exports = async function handler(req, res) {
     const repo = process.env.GITHUB_REPO || 'lotus';
 
     if (!ghToken) {
-      let currentVersion = '1.0.0.0';
+      let currentVersion = '1.0.1.0';
       try {
         const { getDb, ensureSchema } = require('./_db');
         const sql = getDb();
@@ -362,7 +362,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         success: true,
         currentVersion,
-        previousVersion: '0.0.0.0',
+        previousVersion: '1.0.0.0',
         availableReleases: [
           {
             tag_name: currentVersion,
@@ -371,10 +371,20 @@ module.exports = async function handler(req, res) {
             status: 'Active Production',
             assets: [
               { name: 'DropDial-Setup.exe', size: 208896 },
-              { name: 'DropDial.dmg', size: 4549640 },
-              { name: 'DropDial-macOS.zip', size: 4057336 },
+              { name: 'DropDial.dmg', size: 4588422 },
+              { name: 'DropDial-macOS.zip', size: 4094399 },
               { name: 'DropDial-Windows-x64.zip', size: 73415552 },
               { name: 'DropDial.exe', size: 208896 }
+            ]
+          },
+          {
+            tag_name: '1.0.0.0',
+            name: 'DropDial 1.0.0.0',
+            published_at: '2026-10-20T17:00:00Z',
+            status: 'Previous Release',
+            assets: [
+              { name: 'DropDial.dmg', size: 4549640 },
+              { name: 'DropDial-macOS.zip', size: 4057336 }
             ]
           }
         ],
