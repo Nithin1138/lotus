@@ -60,19 +60,23 @@
   function spin(rotator, fromAngle, toAngle, onComplete) {
     let current = fromAngle;
     let animId = null;
-    function step() {
+    let lastTime = performance.now();
+    function step(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.04);
+      lastTime = now;
       const diff = toAngle - current;
-      if (Math.abs(diff) < 0.1) {
+      if (Math.abs(diff) < 0.05) {
         current = toAngle;
         rotator.setAttribute("transform", `rotate(${current} ${CENTER} ${CENTER})`);
         if (onComplete) onComplete();
         return;
       }
-      current += diff * 0.18;
+      const factor = 1 - Math.pow(0.82, dt / 0.01667);
+      current += diff * factor;
       rotator.setAttribute("transform", `rotate(${current} ${CENTER} ${CENTER})`);
       animId = requestAnimationFrame(step);
     }
-    step();
+    animId = requestAnimationFrame(step);
     return () => { if (animId) cancelAnimationFrame(animId); };
   }
 

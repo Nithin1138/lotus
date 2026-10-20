@@ -265,18 +265,56 @@
     let currentSide = Math.floor(initialIdx / pageSize);
     let currentLocal = initialIdx % pageSize;
 
-    // Smooth interactive rotation & gesture lock state
+    // Smooth rotary physics state
     let isWheelLocked = false;
     let wheelTimeout = null;
     let scrollAccumulator = 0;
     let interactiveAngle = 0;
+    let lastScrollDir = 0;
+    let activeSpinCancel = null;
+
     let isDragging = false;
     let isPointerLocked = false;
     let startAngle = 0;
     let dragDelta = 0;
-    let activeSpinCancel = null;
+
+    function startRotatorSpin(rotator, fromAngle, toAngle, onComplete) {
+      let current = fromAngle;
+      let target = toAngle;
+      let animId = null;
+      let lastTime = performance.now();
+
+      function step(now) {
+        const dt = Math.min((now - lastTime) / 1000, 0.04);
+        lastTime = now;
+
+        const diff = target - current;
+        if (Math.abs(diff) < 0.05) {
+          current = target;
+          rotator.setAttribute("transform", `rotate(${current} ${C} ${C})`);
+          if (onComplete) onComplete();
+          return;
+        }
+
+        // Exact frame-rate independent spring-decay (calibrated to 0.18 at 60Hz)
+        const factor = 1 - Math.pow(0.82, dt / 0.01667);
+        current += diff * factor;
+        rotator.setAttribute("transform", `rotate(${current} ${C} ${C})`);
+        animId = requestAnimationFrame(step);
+      }
+
+      animId = requestAnimationFrame(step);
+      return () => {
+        if (animId) cancelAnimationFrame(animId);
+      };
+    }
 
     function renderCurrentSide(fromAngle = 0) {
+      if (activeSpinCancel) {
+        activeSpinCancel();
+        activeSpinCancel = null;
+      }
+
       const layers = wheelUI.base(svg);
       const start = currentSide * pageSize;
       const end = Math.min(start + pageSize, totalCount);
@@ -352,16 +390,6 @@
         }
       };
 
-      if (activeSpinCancel) {
-        activeSpinCancel();
-        activeSpinCancel = null;
-      }
-      if (fromAngle !== 0) {
-        activeSpinCancel = wheelUI.spin(layers.rotator, fromAngle, 0, () => {
-          activeSpinCancel = null;
-        });
-      }
-
       if (currentLocal >= n) currentLocal = 0;
       setItem(currentLocal);
 
@@ -384,28 +412,68 @@
         }
       }
 
-      // Wheel mouse & trackpad scroll listener: spins and rotates sides ONLY when full (> 8 items)
+      // Smooth rotary physics spin with frame-rate independent spring easing
+      if (fromAngle !== 0) {
+        activeSpinCancel = startRotatorSpin(layers.rotator, fromAngle, 0);
+      }
+
+      // High-precision smooth wheel scroll listener
       svg.onwheel = e => {
-        if (!isFull) return; // Only rotate when wheel is full (> 8 items)!
+        if (!isFull) return;
         e.preventDefault();
 
-        // Reset settle timeout on every wheel event (260ms of silence unlocks next gesture)
+        // 1. Normalize deltas across browsers and input hardware
+        let dy = e.deltaY;
+        if (e.deltaMode === 1) dy *= 20; // Firefox lines
+        else if (e.deltaMode === 2) dy *= 400; // Pages
+
+        const absX = Math.abs(e.deltaX);
+        const absY = Math.abs(dy);
+
+        // Filter dominant axis to eliminate subtle horizontal trackpad drift
+        let delta = 0;
+        if (absY >= absX) {
+          delta = dy; // Down is positive (forward: Side 1 -> Side 2)
+        } else if (absX > 1.5) {
+          delta = e.deltaX; // Right is positive (forward: Side 1 -> Side 2)
+        }
+
+        if (Math.abs(delta) < 0.2) return;
+
+        // Smooth out mouse wheel notches (which send 100+ at once)
+        const stepDelta = Math.abs(delta) > 35 ? Math.sign(delta) * 18 : delta;
+
+        // Instant unlock on scroll direction reversal
+        const curDir = Math.sign(delta);
+        if (isWheelLocked && curDir !== lastScrollDir && Math.abs(delta) > 4) {
+          isWheelLocked = false;
+          scrollAccumulator = 0;
+        }
+        lastScrollDir = curDir;
+
+        // Reset settle timeout: only prolong lock on active human scroll effort, not inertia tail
         clearTimeout(wheelTimeout);
         wheelTimeout = setTimeout(() => {
           isWheelLocked = false;
           scrollAccumulator = 0;
           if (interactiveAngle !== 0) {
             if (activeSpinCancel) activeSpinCancel();
-            activeSpinCancel = wheelUI.spin(layers.rotator, interactiveAngle, 0, () => {
+            activeSpinCancel = startRotatorSpin(layers.rotator, interactiveAngle, 0, () => {
               activeSpinCancel = null;
             });
             interactiveAngle = 0;
           }
-        }, 260);
+        }, 220);
 
-        // If locked during this scroll gesture/flick, stay firmly on the newly selected side!
-        // Absorb remaining momentum/scroll events so it never bounces back or cycles.
+        // If locked during momentum phase of the same swipe, absorb remaining inertia
         if (isWheelLocked) {
+          if (Math.abs(delta) > 10) {
+            clearTimeout(wheelTimeout);
+            wheelTimeout = setTimeout(() => {
+              isWheelLocked = false;
+              scrollAccumulator = 0;
+            }, 180);
+          }
           return;
         }
 
@@ -414,27 +482,27 @@
           activeSpinCancel = null;
         }
 
-        const delta = e.deltaX !== 0 ? e.deltaX : -e.deltaY;
-        if (Math.abs(delta) < 0.1) return;
+        scrollAccumulator += stepDelta;
 
-        scrollAccumulator += delta;
-        // Live interactive rotation following the user's scroll gesture
-        interactiveAngle = Math.max(-42, Math.min(42, interactiveAngle + delta * 0.9));
+        // Live interactive rotation following the physical gesture
+        // Natural response: scrolling down tilts clockwise (+), up tilts counter-clockwise (-)
+        interactiveAngle = Math.max(-36, Math.min(36, interactiveAngle + stepDelta * 0.8));
         layers.rotator.setAttribute("transform", `rotate(${interactiveAngle} ${C} ${C})`);
 
-        const step = 22;
-        if (Math.abs(scrollAccumulator) >= step || Math.abs(interactiveAngle) >= 28) {
+        // Threshold check to commit to next/prev side
+        const step = 28;
+        if (Math.abs(scrollAccumulator) >= step || Math.abs(interactiveAngle) >= 24) {
           const forward = scrollAccumulator > 0 || interactiveAngle > 0;
           scrollAccumulator = 0;
           interactiveAngle = 0;
-          isWheelLocked = true; // Lock: guarantees stopping at the other side (Side 2) without flipping back!
+          isWheelLocked = true; // Lock: single-side advance per gesture flick
           rotateSide(forward);
         }
       };
 
-      // Pointer drag rotation ONLY when full (> 8 items)
+      // Pointer drag rotation
       svg.onpointerdown = e => {
-        if (!isFull) return; // Only drag-rotate when wheel is full (> 8 items)!
+        if (!isFull) return;
         if (e.button !== 0) return;
         const rect = svg.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
@@ -465,12 +533,12 @@
         startAngle = curAngle;
 
         // Direct tactile visual rotation tracking
-        const deg = Math.max(-42, Math.min(42, dragDelta * 180 / Math.PI));
+        const deg = Math.max(-36, Math.min(36, dragDelta * 180 / Math.PI));
         layers.rotator.setAttribute("transform", `rotate(${deg} ${C} ${C})`);
 
-        if (Math.abs(dragDelta) >= 0.40) { // ~23 deg threshold
+        if (Math.abs(dragDelta) >= 0.38) { // ~22 deg threshold
           const forward = dragDelta > 0;
-          isPointerLocked = true; // Lock: single-side commit
+          isPointerLocked = true;
           dragDelta = 0;
           rotateSide(forward);
         }
@@ -482,7 +550,7 @@
           if (!isPointerLocked && dragDelta !== 0) {
             // Dragged slightly but didn't reach threshold: spring back to 0
             if (activeSpinCancel) activeSpinCancel();
-            activeSpinCancel = wheelUI.spin(layers.rotator, dragDelta * 180 / Math.PI, 0, () => {
+            activeSpinCancel = startRotatorSpin(layers.rotator, dragDelta * 180 / Math.PI, 0, () => {
               activeSpinCancel = null;
             });
           }
@@ -496,7 +564,12 @@
     function rotateSide(forward) {
       currentSide = forward ? (currentSide + 1) % totalSides : (currentSide - 1 + totalSides) % totalSides;
       currentLocal = 0;
-      renderCurrentSide(forward ? -75 : 75);
+      // In physical rotary mechanics:
+      // Scrolling forward (clockwise, positive angle):
+      // The new side arrives from -60° and smoothly spins forward into 0°!
+      // Scrolling backward (counter-clockwise, negative angle):
+      // The new side arrives from +60° and smoothly spins backward into 0°!
+      renderCurrentSide(forward ? -60 : 60);
     }
 
     renderCurrentSide(0);
