@@ -881,6 +881,56 @@
              ============================================== -->
         <section id="tab-settings" class="tab-view">
           
+          <!-- Live Dynamic Pricing Control -->
+          <div class="panel-card mb-24">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Live Product Pricing Control</h3>
+                <p class="panel-subtitle">Instantly update DropDial Pro Lifetime prices across landing pages, geo detection &amp; Razorpay checkout</p>
+              </div>
+              <span class="kpi-badge emerald" id="pricing-live-badge">Live Synchronized</span>
+            </div>
+
+            <div class="settings-content">
+              <p class="settings-desc">
+                Adjust baseline retail pricing without deploying code. Changes take effect immediately for new visitors and checkout sessions.
+              </p>
+
+              <form id="update-pricing-form" class="settings-form" style="max-width: 600px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                  <div class="form-group">
+                    <label for="price-inr-input">India Price (INR ₹)</label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                      <span style="position: absolute; left: 14px; font-weight: 700; color: var(--text-muted);">₹</span>
+                      <input type="number" id="price-inr-input" min="99" step="1" value="999" style="padding-left: 32px;" required>
+                    </div>
+                    <span class="field-hint">Default: ₹999 (Paise: 99900)</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="price-usd-input">Global Price (USD $)</label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                      <span style="position: absolute; left: 14px; font-weight: 700; color: var(--text-muted);">$</span>
+                      <input type="number" id="price-usd-input" min="1" step="1" value="19" style="padding-left: 32px;" required>
+                    </div>
+                    <span class="field-hint">Default: $19 (Cents: 1900)</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="pricing-admin-passcode">Confirm with Master Passcode</label>
+                  <input type="password" id="pricing-admin-passcode" placeholder="Enter admin master passcode to authorize price change" required>
+                </div>
+
+                <button type="submit" id="save-pricing-btn" class="btn btn-primary" style="margin-top: 8px;">
+                  <span>Update Live Pricing Everywhere</span>
+                </button>
+              </form>
+              <div id="pricing-update-msg" class="passcode-msg" style="margin-top: 12px;"></div>
+            </div>
+          </div>
+
+          <!-- Admin Passcode Card -->
           <div class="panel-card">
             <div class="panel-header">
               <div>

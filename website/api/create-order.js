@@ -39,7 +39,15 @@ module.exports = async function handler(req, res) {
 
     const isIndia = country === 'IN' || (!country && (body.currency || '').toUpperCase() === 'INR');
     const currency = isIndia ? 'INR' : 'USD';
-    let amountInSubunits = isIndia ? 99900 : 1900;
+    let basePricing = { INR: { subunits: 99900 }, USD: { subunits: 1900 } };
+    try {
+      const { getActivePricing } = require('./pricing');
+      if (typeof getActivePricing === 'function') {
+        basePricing = getActivePricing();
+      }
+    } catch (e) {}
+
+    let amountInSubunits = isIndia ? (basePricing.INR?.subunits || 99900) : (basePricing.USD?.subunits || 1900);
     let appliedCoupon = null;
 
     // Apply coupon discount if provided

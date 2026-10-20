@@ -136,9 +136,36 @@
   }
 
   /**
-   * Async server-edge geolocation detection
+   * Async server-edge geolocation detection & dynamic live pricing
    */
   async function fetchCountryPricing() {
+    // 1. Fetch live dynamic base pricing
+    try {
+      const pRes = await fetch('/api/pricing', { method: 'GET', cache: 'default' });
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        if (pData && pData.pricing) {
+          if (pData.pricing.INR && pData.pricing.INR.amount) {
+            PRICING.INR = {
+              code: 'INR',
+              symbol: pData.pricing.INR.symbol || '₹',
+              amount: pData.pricing.INR.amount,
+              display: pData.pricing.INR.display || `₹${pData.pricing.INR.amount}`
+            };
+          }
+          if (pData.pricing.USD && pData.pricing.USD.amount) {
+            PRICING.USD = {
+              code: 'USD',
+              symbol: pData.pricing.USD.symbol || '$',
+              amount: pData.pricing.USD.amount,
+              display: pData.pricing.USD.display || `$${pData.pricing.USD.amount}`
+            };
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch Geo detection
     try {
       const res = await fetch('/api/geo', { method: 'GET', cache: 'default' });
       if (res.ok) {
@@ -161,6 +188,7 @@
         // Retain heuristic
       }
     }
+    applyPricing(isIndia, currentCountry);
   }
 
   function init() {
@@ -443,16 +471,29 @@
         appliedCoupon = data;
         couponFeedback.className = 'coupon-feedback success';
         couponFeedback.innerHTML = `
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span><strong>${data.code}</strong> applied (${data.discountDisplay} discount)!</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span style="flex:1;"><strong>${data.code}</strong> applied (${data.discountDisplay} discount)!</span>
+          <button type="button" id="coupon-remove-btn" style="background:none; border:none; color:inherit; text-decoration:underline; cursor:pointer; font-size:11px; font-weight:700; padding:2px 4px;">Remove</button>
         `;
         couponFeedback.style.display = 'flex';
+        couponCodeInput.disabled = true;
+        couponApplyBtn.style.display = 'none';
+
+        document.getElementById('coupon-remove-btn')?.addEventListener('click', function() {
+          appliedCoupon = null;
+          couponCodeInput.disabled = false;
+          couponCodeInput.value = '';
+          couponApplyBtn.style.display = 'block';
+          couponFeedback.style.display = 'none';
+          applyPricing(isIndia, currentCountry);
+        });
+
         applyPricing(isIndia, currentCountry);
       } else {
         appliedCoupon = null;
         couponFeedback.className = 'coupon-feedback error';
         couponFeedback.innerHTML = `
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span>${data.error || 'Invalid or expired coupon code.'}</span>
         `;
         couponFeedback.style.display = 'flex';

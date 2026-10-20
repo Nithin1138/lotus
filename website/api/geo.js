@@ -21,12 +21,22 @@ module.exports = function handler(req, res) {
   const country = countryHeader.trim().toUpperCase();
   const isIndia = country === 'IN';
 
+  let currentPricing = { INR: { amount: 999, display: '₹999' }, USD: { amount: 19, display: '$19' } };
+  try {
+    const { getActivePricing } = require('./pricing');
+    if (typeof getActivePricing === 'function') {
+      currentPricing = getActivePricing();
+    }
+  } catch (e) {}
+
+  const activeConf = isIndia ? currentPricing.INR : currentPricing.USD;
+
   return res.status(200).json({
     country: country || null,
     isIndia: isIndia,
     currency: isIndia ? 'INR' : 'USD',
-    amount: isIndia ? 999 : 19,
+    amount: activeConf.amount,
     symbol: isIndia ? '₹' : '$',
-    displayPrice: isIndia ? '₹999' : '$19'
+    displayPrice: activeConf.display
   });
 };

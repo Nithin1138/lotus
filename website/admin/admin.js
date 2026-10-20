@@ -184,6 +184,9 @@
           saveLocalStore();
         }
       }
+
+      // 3. Fetch live active pricing
+      await fetchLivePricing();
     } catch (e) {
       // Offline safe fallback
     }
@@ -605,10 +608,11 @@
     document.getElementById('export-licenses-btn')?.addEventListener('click', exportLicensesCSV);
     document.getElementById('export-tx-btn')?.addEventListener('click', exportTransactionsCSV);
 
-    // 7. Health Check & Test Email
+    // 7. Health Check, Test Email & Live Pricing
     document.getElementById('recheck-health-btn')?.addEventListener('click', runGatewayHealthChecks);
     document.getElementById('test-email-form')?.addEventListener('submit', handleTestEmail);
     document.getElementById('change-passcode-form')?.addEventListener('submit', handleChangePasscode);
+    document.getElementById('update-pricing-form')?.addEventListener('submit', handleUpdatePricing);
 
     // 8. Releases Manager
     document.getElementById('refresh-releases-btn')?.addEventListener('click', () => {
@@ -936,6 +940,84 @@
     msg.style.color = '#10b981';
     msg.textContent = 'Master passcode updated for this browser session! Also update ADMIN_KEY in Vercel for permanent lock.';
     showToast('Passcode updated.', 'success');
+  }
+
+  /**
+   * Live Dynamic Pricing Update Flow
+   */
+  async function fetchLivePricing() {
+    try {
+      const res = await fetch('/api/pricing');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.pricing) {
+          const inrInput = document.getElementById('price-inr-input');
+          const usdInput = document.getElementById('price-usd-input');
+          if (inrInput && data.pricing.INR) inrInput.value = data.pricing.INR.amount;
+          if (usdInput && data.pricing.USD) usdInput.value = data.pricing.USD.amount;
+        }
+      }
+    } catch (e) {}
+  }
+
+  async function handleUpdatePricing(e) {
+    e.preventDefault();
+    const inrAmount = Number(document.getElementById('price-inr-input').value);
+    const usdAmount = Number(document.getElementById('price-usd-input').value);
+    const passcode = document.getElementById('pricing-admin-passcode').value.trim();
+    const msg = document.getElementById('pricing-update-msg');
+    const submitBtn = document.getElementById('save-pricing-btn');
+
+    if (!inrAmount || inrAmount <= 0) {
+      msg.style.color = '#ef4444';
+      msg.textContent = 'Please enter a valid positive price for India (INR).';
+      return;
+    }
+    if (!usdAmount || usdAmount <= 0) {
+      msg.style.color = '#ef4444';
+      msg.textContent = 'Please enter a valid positive price for Global (USD).';
+      return;
+    }
+    if (!passcode) {
+      msg.style.color = '#ef4444';
+      msg.textContent = 'Admin master passcode is required to authorize price updates.';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span>Updating live pricing...</span>`;
+    msg.textContent = '';
+
+    try {
+      const res = await fetch('/api/pricing', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${encodeURIComponent(passcode)}`
+        },
+        body: JSON.stringify({
+          inrAmount,
+          usdAmount
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to update live pricing');
+      }
+
+      msg.style.color = '#10b981';
+      msg.textContent = `Live pricing successfully changed to ₹${inrAmount} / $${usdAmount}! Updated across checkout and landing page.`;
+      showToast(`Live prices updated: ₹${inrAmount} & $${usdAmount}`, 'success');
+      document.getElementById('pricing-admin-passcode').value = '';
+    } catch (err) {
+      msg.style.color = '#ef4444';
+      msg.textContent = `Update failed: ${err.message}`;
+      showToast(`Price update error: ${err.message}`, 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<span>Update Live Pricing Everywhere</span>`;
+    }
   }
 
   function exportLicensesCSV() {
