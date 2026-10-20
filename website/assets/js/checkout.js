@@ -289,12 +289,12 @@
     // 4. Landing Page Buttons & Pricing Card (base pricing)
     const headerBuy = document.getElementById('nav-header-buy-btn');
     if (headerBuy) {
-      headerBuy.textContent = `Buy Pro (${baseConfig.display})`;
+      headerBuy.textContent = 'Buy';
     }
 
     const navBuy = document.getElementById('nav-buy-btn');
     if (navBuy) {
-      navBuy.textContent = `Buy Pro (${baseConfig.display})`;
+      navBuy.textContent = 'Buy';
     }
 
     const pricingCardPrice = document.getElementById('pro-pricing-price');
@@ -309,7 +309,7 @@
 
     const cardBuy = document.getElementById('card-buy-btn');
     if (cardBuy) {
-      cardBuy.textContent = `Buy DropDial Pro (${baseConfig.display})`;
+      cardBuy.textContent = 'Buy';
     }
 
     // 5. Dynamic License Devices per Key

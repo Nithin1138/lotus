@@ -15,7 +15,7 @@ window.ZD_EN = {
   "hero.title": "Drag. Drop. <em>Convert.</em>",
   "hero.lead": "DropDial is the instant drag-and-drop offline file converter for your Mac and PC. Hold <kbd>Shift</kbd> to convert formats or <kbd>⌃</kbd> for universal file actions at your cursor with zero cloud uploads.",
   "cta.download": "Download Free Trial",
-  "cta.buy": "Buy Pro ($19 / ₹999)",
+  "cta.buy": "Buy",
   "cta.fine": "macOS (Apple Silicon & Intel) & Windows · 100% Local & Private",
   "demo.help": "Try it: drag a file and release it on a petal.",
   "demo.ring": "Drag a file here",
