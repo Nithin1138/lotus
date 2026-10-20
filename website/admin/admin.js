@@ -623,11 +623,30 @@
     document.getElementById('update-pricing-form')?.addEventListener('submit', handleUpdatePricing);
 
     // Live preview listeners for pricing controls
-    ['price-inr-input', 'price-usd-input', 'price-strike-inr-input', 'price-strike-usd-input', 'pricing-countdown-val'].forEach(id => {
+    ['price-inr-input', 'price-usd-input', 'price-strike-inr-input', 'price-strike-usd-input', 'pricing-countdown-val', 'pricing-countdown-label'].forEach(id => {
       document.getElementById(id)?.addEventListener('input', updatePricingPreviews);
     });
     ['pricing-strike-enabled', 'pricing-countdown-enabled', 'pricing-countdown-unit'].forEach(id => {
       document.getElementById(id)?.addEventListener('change', updatePricingPreviews);
+    });
+
+    // Toggle card header click handlers
+    document.getElementById('strike-toggle-header')?.addEventListener('click', (e) => {
+      if (e.target.closest('.toggle-switch')) return;
+      const chk = document.getElementById('pricing-strike-enabled');
+      if (chk) {
+        chk.checked = !chk.checked;
+        updatePricingPreviews();
+      }
+    });
+
+    document.getElementById('countdown-toggle-header')?.addEventListener('click', (e) => {
+      if (e.target.closest('.toggle-switch')) return;
+      const chk = document.getElementById('pricing-countdown-enabled');
+      if (chk) {
+        chk.checked = !chk.checked;
+        updatePricingPreviews();
+      }
     });
 
     // 8. Releases Manager
@@ -961,9 +980,6 @@
   /**
    * Live Dynamic Pricing Update Flow
    */
-  /**
-   * Live Dynamic Pricing Update Flow
-   */
   function updatePricingPreviews() {
     const inr = Number(document.getElementById('price-inr-input')?.value || 999);
     const usd = Number(document.getElementById('price-usd-input')?.value || 19);
@@ -979,13 +995,25 @@
     const previewEl = document.getElementById('pricing-strike-preview');
     if (previewEl) {
       if (!strikeEnabled) {
-        previewEl.innerHTML = `<span style="color: var(--text-muted);">Strikethrough pricing is disabled (Standard prices only).</span>`;
+        previewEl.innerHTML = `<span style="color: var(--text-muted); font-size: 12.5px;">Strikethrough pricing disabled • Standard baseline pricing only.</span>`;
       } else {
         const inrPct = strikeInr > inr ? Math.round(((strikeInr - inr) / strikeInr) * 100) : 0;
         const usdPct = strikeUsd > usd ? Math.round(((strikeUsd - usd) / strikeUsd) * 100) : 0;
         previewEl.innerHTML = `
-          <span>India: <del>₹${strikeInr.toLocaleString('en-IN')}</del> ₹${inr.toLocaleString('en-IN')} (${inrPct}% OFF • Save ₹${(strikeInr - inr).toLocaleString('en-IN')})</span>
-          <span>Global: <del>$${strikeUsd}</del> $${usd} (${usdPct}% OFF • Save $${strikeUsd - usd})</span>
+          <div class="preview-pill-item">
+            <span>🇮🇳 India:</span>
+            <span class="preview-pill-strike">₹${strikeInr.toLocaleString('en-IN')}</span>
+            <span class="preview-pill-price">₹${inr.toLocaleString('en-IN')}</span>
+            <span class="preview-pill-badge">${inrPct}% OFF</span>
+            <span class="preview-pill-savings">Save ₹${(strikeInr - inr).toLocaleString('en-IN')}</span>
+          </div>
+          <div class="preview-pill-item">
+            <span>🌍 Global:</span>
+            <span class="preview-pill-strike">$${strikeUsd}</span>
+            <span class="preview-pill-price">$${usd}</span>
+            <span class="preview-pill-badge">${usdPct}% OFF</span>
+            <span class="preview-pill-savings">Save $${strikeUsd - usd}</span>
+          </div>
         `;
       }
     }
@@ -998,14 +1026,19 @@
 
     const cdVal = Number(document.getElementById('pricing-countdown-val')?.value || 24);
     const cdUnit = document.getElementById('pricing-countdown-unit')?.value || 'hours';
+    const cdLabel = document.getElementById('pricing-countdown-label')?.value || 'Special Launch Discount Ends In:';
     const cdPreview = document.getElementById('pricing-countdown-preview');
     if (cdPreview) {
       if (!countdownEnabled) {
-        cdPreview.style.color = 'var(--text-muted)';
-        cdPreview.textContent = 'Countdown urgency timer is disabled (Hidden on website).';
+        cdPreview.innerHTML = `<span style="color: var(--text-muted); font-size: 12.5px;">Countdown urgency banner is currently disabled and hidden on the landing page.</span>`;
       } else {
-        cdPreview.style.color = '#10b981';
-        cdPreview.textContent = `Website Countdown Active: ${cdVal} ${cdUnit.toUpperCase()} limit banner with ticking seconds.`;
+        cdPreview.innerHTML = `
+          <div class="countdown-sim-bar">
+            <span class="countdown-sim-badge">⚡️ ${cdLabel}</span>
+            <span class="countdown-sim-clock">01d : ${String(cdVal % 24).padStart(2, '0')}h : 42m : 18s</span>
+            <span style="font-size: 11.5px; color: var(--text-muted); margin-left: auto;">Duration: ${cdVal} ${cdUnit.toUpperCase()}</span>
+          </div>
+        `;
       }
     }
   }
