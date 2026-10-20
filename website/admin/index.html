@@ -769,34 +769,57 @@
              ============================================== -->
         <section id="tab-releases" class="tab-view">
           
-          <!-- Top summary cards: Current Active vs Previous Release -->
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <span class="metric-label">Current Active Release</span>
-              <div class="metric-value-row">
-                <span id="release-current-tag" class="metric-value" style="color:var(--emerald);">--</span>
-                <span id="release-current-badge" class="badge-status success">Active in Production</span>
+          <!-- Top summary cards: Current Active vs Previous Release vs Staged Drafts -->
+          <div class="kpi-grid">
+            
+            <!-- Current Active Release Card -->
+            <div class="kpi-card revenue-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Current Active Release</span>
+                <span id="release-current-badge" class="kpi-badge emerald">Live in Production</span>
               </div>
-              <span id="release-current-date" class="metric-change neutral">Serving downloads to users</span>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="release-current-tag" style="color:var(--emerald);">--</span>
+                <span class="kpi-sub-val">Global Canonical</span>
+              </div>
+              <div class="kpi-footer">
+                <span id="release-current-date">Serving all desktop app downloads</span>
+                <span class="status-dot" style="background:var(--emerald); box-shadow:0 0 8px var(--emerald);"></span>
+              </div>
             </div>
 
-            <div class="metric-card">
-              <span class="metric-label">Previous Production Release</span>
-              <div class="metric-value-row">
-                <span id="release-prev-tag" class="metric-value" style="color:var(--sky);">--</span>
-                <span class="badge-status info">Rollback Target</span>
+            <!-- Previous Production Release Card -->
+            <div class="kpi-card profit-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Previous Production Release</span>
+                <span class="kpi-badge sky">Rollback Target</span>
               </div>
-              <span id="release-prev-date" class="metric-change neutral">Available for 1-click verified revert</span>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="release-prev-tag" style="color:var(--sky);">--</span>
+                <span class="kpi-sub-val">Fallback Stable</span>
+              </div>
+              <div class="kpi-footer">
+                <span id="release-prev-date">Instant 2-Step Verified Revert Target</span>
+                <span class="status-dot" style="background:var(--sky); box-shadow:0 0 8px var(--sky);"></span>
+              </div>
             </div>
 
-            <div class="metric-card">
-              <span class="metric-label">Staged / Draft Releases</span>
-              <div class="metric-value-row">
-                <span id="release-staged-count" class="metric-value" style="color:var(--amber);">0</span>
-                <span class="badge-status warning">Awaiting Launch</span>
+            <!-- Staged / Draft Releases Card -->
+            <div class="kpi-card traffic-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Staged Releases</span>
+                <span class="kpi-badge amber">Awaiting Approval</span>
               </div>
-              <span class="metric-change neutral">Built by CI/CD · Pending 2-Step Approval</span>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="release-staged-count" style="color:var(--amber);">0</span>
+                <span class="kpi-sub-val">Built Drafts</span>
+              </div>
+              <div class="kpi-footer">
+                <span>Built by CI/CD · Pending 2-Step Approval</span>
+                <span class="status-dot" style="background:var(--amber); box-shadow:0 0 8px var(--amber);"></span>
+              </div>
             </div>
+
           </div>
 
           <!-- Staged Releases Ready to Launch -->

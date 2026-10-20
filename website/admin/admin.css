@@ -1268,6 +1268,190 @@ body.admin-body {
   color: #ffffff;
 }
 
+/* ==============================================================================
+   PRODUCTION RELEASE MANAGER & 2-STEP VERIFICATION UI
+   ============================================================================== */
+.releases-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.staged-release-card {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(20, 23, 32, 0.95) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.staged-release-card:hover {
+  border-color: rgba(245, 158, 11, 0.5);
+  transform: translateY(-1px);
+}
+
+.staged-release-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--amber), rgba(245, 158, 11, 0.2));
+}
+
+.release-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.release-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.release-card-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.release-version-pill {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--amber);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.release-assets-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.asset-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.asset-badge svg {
+  color: var(--text-faint);
+}
+
+.release-notes-box {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: #d1d5db;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.release-verify-box {
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 22px;
+  position: relative;
+}
+
+.btn-launch-glow {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-launch-glow:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+.btn-revert-pill {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: var(--rose) !important;
+  border: 1px solid rgba(239, 68, 68, 0.28) !important;
+  padding: 5px 12px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  transition: all 0.15s ease !important;
+}
+
+.btn-revert-pill:hover {
+  background: var(--rose) !important;
+  color: #ffffff !important;
+  border-color: var(--rose) !important;
+  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Badge Status Helpers */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 12px;
+  letter-spacing: 0.3px;
+}
+
+.badge-status.success {
+  background: var(--emerald-bg);
+  color: var(--emerald);
+  border: 1px solid var(--emerald-border);
+}
+
+.badge-status.warning {
+  background: var(--amber-bg);
+  color: var(--amber);
+  border: 1px solid var(--amber-border);
+}
+
+.badge-status.info {
+  background: var(--sky-bg);
+  color: var(--sky);
+  border: 1px solid var(--sky-border);
+}
+
+.badge-status.neutral {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .admin-sidebar {

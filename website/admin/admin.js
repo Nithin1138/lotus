@@ -1086,35 +1086,42 @@
       if (listContainer) {
         if (stagedList.length === 0) {
           listContainer.innerHTML = `
-            <div class="empty-state" style="padding: 32px 16px;">
-              <div class="empty-icon" style="color:var(--emerald);">${ICONS.check}</div>
-              <h4>All Releases Deployed</h4>
-              <p>No staged drafts waiting in CI/CD pipeline. Push a git tag (e.g. <code>v1.0.1.0</code>) to stage a new build.</p>
+            <div class="empty-state" style="padding: 44px 20px; text-align: center; background: rgba(255,255,255,0.015); border-radius: var(--radius-md); border: 1px dashed rgba(255,255,255,0.08);">
+              <div class="empty-icon" style="color:var(--emerald); width:48px; height:48px; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; background:var(--emerald-bg); border-radius:50%; border:1px solid var(--emerald-border);">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <h4 style="font-size:16px; font-weight:700; color:#ffffff; margin-bottom:6px;">All Releases Deployed &amp; Synced</h4>
+              <p style="font-size:13px; color:var(--text-muted); max-width:440px; margin:0 auto;">No staged drafts waiting in CI/CD pipeline. Push a git tag (e.g. <code>v1.0.1.0</code>) to trigger GitHub Actions and stage a new build here for 2-step verification.</p>
             </div>
           `;
         } else {
           listContainer.innerHTML = stagedList.map(r => {
             const assetCount = (r.assets || []).length;
-            const assetNames = (r.assets || []).map(a => a.name).join(', ') || 'No binary assets attached yet';
-            const cleanBody = (r.body || 'No release description provided.').slice(0, 300);
+            const assetBadges = (r.assets || []).map(a => {
+              const mb = (a.size / (1024 * 1024)).toFixed(1);
+              return `<span class="asset-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${escapeHtml(a.name)} <span style="color:var(--text-faint); margin-left:4px;">(${mb} MB)</span></span>`;
+            }).join('');
+            const cleanBody = (r.body || 'No release description provided.').slice(0, 450);
             return `
-              <div class="staged-release-card" style="background:var(--bg-card); border:1px solid rgba(245, 158, 11, 0.3); border-radius:var(--radius-lg); padding:20px; margin-bottom:16px; box-shadow:var(--shadow-sm);">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+              <div class="staged-release-card">
+                <div class="release-card-header">
                   <div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                      <h4 style="font-size:18px; font-weight:700; color:#ffffff; margin:0;">${escapeHtml(r.name || r.tag_name)}</h4>
+                    <div class="release-card-title-group">
+                      <h4 class="release-card-title">${escapeHtml(r.name || r.tag_name)}</h4>
                       <span class="badge-status warning">Staged Draft</span>
-                      <span style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted); background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:4px;">${escapeHtml(r.tag_name)}</span>
+                      <span class="release-version-pill">${escapeHtml(r.tag_name)}</span>
                     </div>
-                    <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">
-                      Built by CI/CD · ${assetCount} binary asset${assetCount === 1 ? '' : 's'} ready (${escapeHtml(assetNames)})
+                    <div style="font-size:13px; color:var(--text-muted); margin-top:8px;">
+                      Built by CI/CD · <strong>${assetCount} binary asset${assetCount === 1 ? '' : 's'} ready</strong> for global distribution
                     </div>
                   </div>
-                  <button type="button" class="btn btn-primary btn-launch-staged" data-tag="${escapeHtml(r.tag_name)}" style="background:var(--emerald); border-color:var(--emerald);">
+                  <button type="button" class="btn btn-primary btn-launch-glow btn-launch-staged" data-tag="${escapeHtml(r.tag_name)}">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     <span>2-Step Verify &amp; Launch</span>
                   </button>
                 </div>
-                <div style="margin-top:14px; padding:12px; background:rgba(0,0,0,0.3); border-radius:var(--radius-md); font-family:var(--font-mono); font-size:12px; color:var(--text-muted); max-height:100px; overflow-y:auto; white-space:pre-wrap;">
+                ${assetBadges ? `<div class="release-assets-strip">${assetBadges}</div>` : ''}
+                <div class="release-notes-box">
 ${escapeHtml(cleanBody)}
                 </div>
               </div>
@@ -1148,17 +1155,17 @@ ${escapeHtml(cleanBody)}
             const pubDate = r.published_at ? new Date(r.published_at).toLocaleDateString() : 'N/A';
             return `
               <tr>
-                <td><strong style="font-family:var(--font-mono);">${escapeHtml(r.tag_name)}</strong></td>
-                <td>${escapeHtml(r.name || r.tag_name)}</td>
-                <td>${escapeHtml(pubDate)}</td>
+                <td><strong style="font-family:var(--font-mono); font-size:13px; color:var(--text-main);">${escapeHtml(r.tag_name)}</strong></td>
+                <td><span style="font-weight:600; color:#ffffff;">${escapeHtml(r.name || r.tag_name)}</span></td>
+                <td><span style="color:var(--text-muted); font-size:12px;">${escapeHtml(pubDate)}</span></td>
                 <td><span class="badge-status info">${assetCount} Assets</span></td>
                 <td>
-                  ${isLatest ? '<span class="badge-status success">Active Production</span>' : '<span class="badge-status neutral">Previous Release</span>'}
+                  ${isLatest ? '<span class="badge-status success"><span class="status-dot" style="background:var(--emerald);"></span>Active Production</span>' : '<span class="badge-status neutral">Previous Release</span>'}
                 </td>
                 <td style="text-align: right;">
                   ${isLatest 
-                    ? '<span style="font-size:12px; color:var(--text-muted);">Current Active</span>' 
-                    : `<button type="button" class="btn btn-sm btn-revert-release" data-tag="${escapeHtml(r.tag_name)}" style="background:rgba(239, 68, 68, 0.15); color:var(--rose); border:1px solid rgba(239, 68, 68, 0.3);">
+                    ? '<span style="font-size:12px; font-weight:600; color:var(--emerald); background:var(--emerald-bg); padding:3px 8px; border-radius:6px; border:1px solid var(--emerald-border);">Live Now</span>' 
+                    : `<button type="button" class="btn btn-sm btn-revert-pill btn-revert-release" data-tag="${escapeHtml(r.tag_name)}">
                         <span>2-Step Revert</span>
                        </button>`
                   }
