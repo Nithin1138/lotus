@@ -5,8 +5,8 @@ Combined using tiffutil for razor-sharp HiDPI display on Mac Retina screens.
 
 Window Dimensions: 680x440 points
 - DropDial.app:                center at (160, 105)
-- Applications symlink:        center at (500, 105)
-- Open DropDial.command:       center at (120, 325)
+- Applications symlink:        center at (520, 105)
+- Bottom: Clean, unified First-Launch approval guide with 1-line terminal command
 """
 import os
 import subprocess
@@ -27,9 +27,22 @@ def draw_canvas(scale=1):
         b = int(22 + (42 - 22) * ratio)
         draw.line([(0, y), (width, y)], fill=(r, g, b))
 
-    # Helper font loader with 2x scaling
-    def get_font(size_pt, bold=False):
+    # Helper font loader with scaling
+    def get_font(size_pt, bold=False, mono=False):
         scaled_size = int(size_pt * scale)
+        if mono:
+            mono_paths = [
+                "/System/Library/Fonts/Menlo.ttc",
+                "/System/Library/Fonts/Courier.dfont",
+                "/Library/Fonts/Courier New.ttf"
+            ]
+            for p in mono_paths:
+                if os.path.exists(p):
+                    try:
+                        return ImageFont.truetype(p, scaled_size)
+                    except Exception:
+                        continue
+
         font_paths = [
             "/System/Library/Fonts/SFPro-Bold.ttf" if bold else "/System/Library/Fonts/SFPro-Regular.ttf",
             "/System/Library/Fonts/SFCompact-Bold.ttf" if bold else "/System/Library/Fonts/SFCompact-Regular.ttf",
@@ -44,35 +57,36 @@ def draw_canvas(scale=1):
                     continue
         return ImageFont.load_default()
 
-    font_pill = get_font(12, bold=True)
-    font_h1 = get_font(14.5, bold=True)
-    font_h2 = get_font(11.5, bold=False)
-    font_m_title = get_font(12, bold=True)
-    font_m_desc = get_font(11, bold=False)
-    font_badge = get_font(10.5, bold=True)
-    font_tip = get_font(10.5, bold=False)
-
     def S(val):
         return int(val * scale)
 
+    font_pill = get_font(12, bold=True)
+    font_badge = get_font(10, bold=True)
+    font_h1 = get_font(13.5, bold=True)
+    font_h2 = get_font(11, bold=False)
+    font_opt_title = get_font(11.5, bold=True)
+    font_opt_desc = get_font(11, bold=False)
+    font_cmd = get_font(11, mono=True)
+    font_tip = get_font(10, bold=False)
+
     # -------------------------------------------------------------
-    # TOP ZONE: Drag & Drop Area (y: 0 to 200)
+    # TOP ZONE: Drag & Drop Area (y: 0 to 195)
     # -------------------------------------------------------------
     arrow_y = S(105)
     arrow_color = (56, 189, 248) # Cyan #38bdf8
-    draw.line([(S(235), arrow_y), (S(410), arrow_y)], fill=arrow_color, width=max(2, S(3)))
+    draw.line([(S(245), arrow_y), (S(430), arrow_y)], fill=arrow_color, width=max(2, S(3)))
     # Arrowhead
     draw.polygon([
-        (S(425), arrow_y),
-        (S(410), arrow_y - S(8)),
-        (S(410), arrow_y + S(8))
+        (S(445), arrow_y),
+        (S(430), arrow_y - S(8)),
+        (S(430), arrow_y + S(8))
     ], fill=arrow_color)
 
     # Drag Instruction Pill Badge above the arrow
     pill_text = "Drag DropDial to Applications"
     pb = draw.textbbox((0, 0), pill_text, font=font_pill)
     pw = pb[2] - pb[0]
-    px = S(330) - (pw / 2)
+    px = S(340) - (pw / 2)
     py = S(66)
     draw.rounded_rectangle(
         [px - S(14), py - S(4), px + pw + S(14), py + S(22)],
@@ -84,90 +98,77 @@ def draw_canvas(scale=1):
     draw.text((px, py), pill_text, fill=(56, 189, 248), font=font_pill)
 
     # Frosted high-contrast label plates under DropDial.app and Applications icon labels
-    draw.rounded_rectangle([S(115), S(148), S(205), S(170)], radius=S(6), fill=(248, 250, 252), outline=(203, 213, 225), width=max(1, S(1)))
-    draw.rounded_rectangle([S(445), S(148), S(555), S(170)], radius=S(6), fill=(248, 250, 252), outline=(203, 213, 225), width=max(1, S(1)))
+    draw.rounded_rectangle([S(115), S(150), S(205), S(172)], radius=S(6), fill=(248, 250, 252), outline=(203, 213, 225), width=max(1, S(1)))
+    draw.rounded_rectangle([S(465), S(150), S(575), S(172)], radius=S(6), fill=(248, 250, 252), outline=(203, 213, 225), width=max(1, S(1)))
 
     # -------------------------------------------------------------
-    # DIVIDER LINE (y: 205)
+    # DIVIDER LINE (y: 195)
     # -------------------------------------------------------------
-    draw.line([(S(30), S(205)), (S(650), S(205))], fill=(30, 41, 59), width=max(1, S(1)))
+    draw.line([(S(30), S(195)), (S(650), S(195))], fill=(30, 41, 59), width=max(1, S(1)))
 
     # -------------------------------------------------------------
-    # BOTTOM ZONE: Left Launcher Card & Right Instructions Card
+    # BOTTOM ZONE: Unified Instructions Card (y: 205 to 424)
     # -------------------------------------------------------------
-    
-    # 1. Left Card: 1-Click Launcher Frame (x=30 to x=210, y=218 to y=422)
+    card_x1, card_y1 = S(30), S(205)
+    card_x2, card_y2 = S(650), S(424)
     draw.rounded_rectangle(
-        [S(30), S(218), S(210), S(422)],
+        [card_x1, card_y1, card_x2, card_y2],
         radius=S(12),
-        fill=(15, 23, 42),
-        outline=(249, 115, 22), # Orange border matching RECOMMENDED badge
+        fill=(11, 17, 32),
+        outline=(30, 41, 59),
         width=max(1, S(1.5))
     )
-    
-    # VIBRANT ORANGE RECOMMENDED BADGE requested by user
-    badge_text = "RECOMMENDED"
+
+    # 1. Card Header: Badge + Title
+    badge_text = "FIRST-TIME LAUNCH APPROVAL"
     bb = draw.textbbox((0, 0), badge_text, font=font_badge)
     bw = bb[2] - bb[0]
-    badge_x = S(120) - bw/2
+    bx = S(48)
+    by = S(217)
     draw.rounded_rectangle(
-        [badge_x - S(10), S(226), badge_x + bw + S(10), S(248)],
+        [bx, by, bx + bw + S(16), by + S(20)],
         radius=S(6),
-        fill=(234, 88, 12), # Vibrant Orange #ea580c
-        outline=(251, 146, 60), # Bright orange border #fb923c
+        fill=(2, 132, 199), # Sky Blue
+        outline=(56, 189, 248),
         width=max(1, S(1))
     )
-    draw.text((badge_x, S(230)), badge_text, fill=(255, 255, 255), font=font_badge)
+    draw.text((bx + S(8), by + S(3)), badge_text, fill=(255, 255, 255), font=font_badge)
 
-    # White title baked into background directly above the launcher icon
-    launcher_white_title = "Open DropDial"
-    lt_b = draw.textbbox((0, 0), launcher_white_title, font=font_pill)
-    lt_w = lt_b[2] - lt_b[0]
-    draw.text((S(120) - lt_w/2, S(256)), launcher_white_title, fill=(255, 255, 255), font=font_pill)
+    h1_text = "DropDial is 100% offline & safe. Gatekeeper needs a one-time launch approval:"
+    draw.text((bx + bw + S(28), by + S(3)), h1_text, fill=(226, 232, 240), font=font_h2)
 
-    # Frosted high-contrast pill plate under the Finder filename label (y=360 to y=398)
-    # This guarantees the forced black Finder label is 100% razor-sharp and legible
+    # 2. Option A: 1-Line Terminal Command (Recommended)
+    opt1_title = "Option A (Fastest · Instant Launch) — Run in Terminal:"
+    draw.text((S(48), S(248)), opt1_title, fill=(56, 189, 248), font=font_opt_title)
+
+    # Terminal box
+    cmd_box_y1 = S(268)
+    cmd_box_y2 = S(304)
     draw.rounded_rectangle(
-        [S(40), S(360), S(200), S(400)],
-        radius=S(8),
-        fill=(248, 250, 252), # Pure frosted white-silver #f8fafc
-        outline=(203, 213, 225), # #cbd5e1
-        width=max(1, S(1))
-    )
-
-    # 2. Right Card: Approval Guide (x=225 to x=650, y=218 to y=422)
-    draw.rounded_rectangle(
-        [S(225), S(218), S(650), S(422)],
-        radius=S(12),
-        fill=(15, 23, 42),
+        [S(48), cmd_box_y1, S(632), cmd_box_y2],
+        radius=S(7),
+        fill=(3, 7, 18),
         outline=(51, 65, 85),
         width=max(1, S(1))
     )
+    # Terminal prompt & command
+    draw.text((S(58), cmd_box_y1 + S(8)), "$", fill=(34, 197, 94), font=font_cmd) # Green $
+    cmd_text = "xattr -cr /Applications/DropDial.app && open /Applications/DropDial.app"
+    draw.text((S(76), cmd_box_y1 + S(8)), cmd_text, fill=(241, 245, 249), font=font_cmd)
 
-    # Text content on the right card (clean, crisp, zero corrupt unicode boxes)
-    tx = S(245)
-    # Header
-    h1 = "DropDial is 100% offline and safe."
-    draw.text((tx, S(228)), h1, fill=(255, 255, 255), font=font_h1)
+    # 3. Option B: Finder Right-Click (No Terminal)
+    opt2_title = "Option B (No Terminal) — Right-Click in Applications:"
+    draw.text((S(48), S(318)), opt2_title, fill=(251, 191, 36), font=font_opt_title)
 
-    h2 = "Because it's direct indie software, macOS asks for a one-time launch approval:"
-    draw.text((tx, S(252)), h2, fill=(148, 163, 184), font=font_h2)
+    opt2_desc = "1. Drag DropDial to Applications   2. Right-Click DropDial → click “Open” → click “Open”"
+    draw.text((S(48), S(338)), opt2_desc, fill=(203, 213, 225), font=font_opt_desc)
 
-    # Method 1
-    m1_title = "1. Open DropDial (First Time).command instantly"
-    draw.text((tx, S(282)), m1_title, fill=(56, 189, 248), font=font_m_title)
-    m1_desc = "   Double-click the launcher on the left to bypass Gatekeeper instantly."
-    draw.text((tx, S(302)), m1_desc, fill=(203, 213, 225), font=font_m_desc)
+    opt2_sub = "(Or in System Settings → Privacy & Security, scroll down and click “Open Anyway”)"
+    draw.text((S(48), S(358)), opt2_sub, fill=(148, 163, 184), font=font_tip)
 
-    # Method 2
-    m2_title = "2. In System Settings -> Privacy & Security, click “Open Anyway”"
-    draw.text((tx, S(330)), m2_title, fill=(251, 191, 36), font=font_m_title)
-    m2_desc = "   Or right-click DropDial in Applications and click Open."
-    draw.text((tx, S(350)), m2_desc, fill=(203, 213, 225), font=font_m_desc)
-
-    # Tip at bottom of card
-    tip = "• Once approved on first launch, DropDial opens normally anytime."
-    draw.text((tx, S(390)), tip, fill=(100, 116, 139), font=font_tip)
+    # 4. Footer Tip
+    tip_text = "✓ Required only once for direct indie apps. DropDial will launch normally forever after."
+    draw.text((S(48), S(394)), tip_text, fill=(100, 116, 139), font=font_tip)
 
     return im
 

@@ -118,7 +118,7 @@
           </ol>
 
           <div class="step-card-foot">
-            <span class="hint">v1.0.1.1 · 4.9 MB</span>
+            <span class="hint">v1.0.1.1 · 4.2 MB</span>
             <a class="btn-mini" href="/downloads/DropDial.dmg" download="DropDial.dmg">Download DMG</a>
           </div>
         </article>
@@ -169,16 +169,24 @@
 
           <ol>
             <li>
-              <strong>Open the DMG</strong>
-              <p>Double-click <code>DropDial.dmg</code> to open the installer window.</p>
+              <strong>Drag to Applications</strong>
+              <p>Drag <code>DropDial.app</code> into the <code>Applications</code> folder inside the DMG window.</p>
             </li>
             <li>
-              <strong>Option A (Fastest · 1-Click)</strong>
-              <p>Double-click <strong>"Open DropDial (First Time).command"</strong> in the DMG window. It copies the app to <code>/Applications</code>, clears Gatekeeper, and opens DropDial.</p>
+              <strong>Option A: 1-Line Terminal Command (Recommended)</strong>
+              <p>Open Terminal, paste this single command, and press Return to approve and launch instantly:</p>
+              <div class="cmd-box">
+                <code id="cmd-mac-approve">xattr -cr /Applications/DropDial.app &amp;&amp; open /Applications/DropDial.app</code>
+                <button type="button" class="copy-mini-btn" onclick="copySnippet('cmd-mac-approve', this)">Copy</button>
+              </div>
             </li>
             <li>
-              <strong>Option B (Manual)</strong>
-              <p>Drag <code>DropDial.app</code> to Applications. On first open, click <strong>Done</strong> on the alert, open <strong>System Settings → Privacy &amp; Security</strong>, scroll down, and click <strong>“Open Anyway”</strong>.</p>
+              <strong>Option B: Finder Right-Click (No Terminal)</strong>
+              <p>In your Applications folder, <strong>Right-Click (Control-Click)</strong> <code>DropDial.app</code>, select <strong>Open</strong>, and click <strong>Open</strong> on the confirmation alert.</p>
+            </li>
+            <li>
+              <strong>Option C: System Settings</strong>
+              <p>Or open <strong>System Settings → Privacy &amp; Security</strong>, scroll to Security, and click <strong>“Open Anyway”</strong>.</p>
             </li>
           </ol>
 
