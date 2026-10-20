@@ -117,29 +117,18 @@ rm -f "$ZIP_FILE"
 ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_FILE"
 
 DMG_FILE="$OUTPUT_DIR/DropDial.dmg"
-DMG_STAGE="$OUTPUT_DIR/dmg_staging"
-rm -rf "$DMG_STAGE" "$DMG_FILE"
-mkdir -p "$DMG_STAGE"
-cp -R "$APP_BUNDLE" "$DMG_STAGE/"
-ln -s /Applications "$DMG_STAGE/Applications"
-
-cat << 'EOF' > "$DMG_STAGE/Right-Click-To-Open.command"
-#!/usr/bin/env bash
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET="/Applications/DropDial.app"
-if [ ! -d "$TARGET" ]; then
-    TARGET="$DIR/DropDial.app"
+if [ -f "$ROOT_DIR/packaging/build-dmg.sh" ]; then
+    bash "$ROOT_DIR/packaging/build-dmg.sh"
+else
+    DMG_STAGE="$OUTPUT_DIR/dmg_staging"
+    rm -rf "$DMG_STAGE" "$DMG_FILE"
+    mkdir -p "$DMG_STAGE"
+    cp -R "$APP_BUNDLE" "$DMG_STAGE/"
+    ln -s /Applications "$DMG_STAGE/Applications"
+    echo "Creating DMG..."
+    hdiutil create -volname "DropDial" -srcfolder "$DMG_STAGE" -ov -format UDZO "$DMG_FILE" >/dev/null 2>&1 || true
+    rm -rf "$DMG_STAGE"
 fi
-echo "Clearing macOS Gatekeeper quarantine for DropDial..."
-xattr -cr "$TARGET" 2>/dev/null || true
-echo "Launching DropDial..."
-open "$TARGET"
-EOF
-chmod +x "$DMG_STAGE/Right-Click-To-Open.command"
-
-echo "Creating DMG..."
-hdiutil create -volname "DropDial" -srcfolder "$DMG_STAGE" -ov -format UDZO "$DMG_FILE" >/dev/null 2>&1 || true
-rm -rf "$DMG_STAGE"
 
 echo "=== Build Complete! ==="
 echo "Application created at: $APP_BUNDLE"
