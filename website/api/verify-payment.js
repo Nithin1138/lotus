@@ -58,7 +58,32 @@ module.exports = async function handler(req, res) {
     // 1. Generate Cryptographically Signed License Key (ECDSA P-256)
     const licenseKey = generateLicense(email, name, tier);
 
-    // 2. Send Delivery Email via Resend
+    // 2. Persist to Neon DB (if configured)
+    try {
+      const { getDb, ensureSchema } = require('./_db');
+      const sql = getDb();
+      if (sql) {
+        await ensureSchema();
+        const licId = `lic_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        await sql`
+          INSERT INTO licenses (id, customer_name, email, license_key, tier, status, created_at)
+          VALUES (${licId}, ${name}, ${email}, ${licenseKey}, ${tier || 'Pro Lifetime'}, 'active', NOW())
+          ON CONFLICT (id) DO NOTHING;
+        `;
+        if (razorpay_payment_id) {
+          const txId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+          await sql`
+            INSERT INTO transactions (id, order_id, payment_id, amount, currency, customer_name, email, status, coupon_code, country, created_at)
+            VALUES (${txId}, ${razorpay_order_id || 'manual'}, ${razorpay_payment_id}, 999, 'INR', ${name}, ${email}, 'captured', ${body.couponCode || null}, ${body.country || 'IN'}, NOW())
+            ON CONFLICT (id) DO NOTHING;
+          `;
+        }
+      }
+    } catch (dbErr) {
+      console.warn('[Verify Payment Neon DB Warning]:', dbErr.message);
+    }
+
+    // 3. Send Delivery Email via Resend
     let emailResult = { success: false };
     try {
       emailResult = await sendResendEmail({

@@ -172,8 +172,22 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized: Invalid admin credentials.' });
   }
 
+  const { getDb, ensureSchema } = require('./_db');
+  const sql = getDb();
+
   // 1. List all coupons
   if (action === 'list') {
+    if (sql) {
+      try {
+        await ensureSchema();
+        const rows = await sql`SELECT code, type, value, value_inr as "valueInr", value_usd as "valueUsd", active, uses, max_uses as "maxUses", TO_CHAR(expiry, 'YYYY-MM-DD') as expiry, description FROM coupons ORDER BY created_at DESC;`;
+        if (rows && rows.length > 0) {
+          return res.status(200).json({ success: true, coupons: rows });
+        }
+      } catch (dbErr) {
+        console.warn('[Neon DB Coupons List Warning]:', dbErr.message);
+      }
+    }
     return res.status(200).json({ success: true, coupons: couponsStore });
   }
 
@@ -208,6 +222,27 @@ module.exports = async function handler(req, res) {
       couponsStore.unshift(couponObj);
     }
 
+    if (sql) {
+      try {
+        await ensureSchema();
+        await sql`
+          INSERT INTO coupons (code, type, value, value_inr, value_usd, active, uses, max_uses, expiry, description, created_at)
+          VALUES (${couponObj.code}, ${couponObj.type}, ${couponObj.value}, ${couponObj.valueInr}, ${couponObj.valueUsd}, ${couponObj.active}, ${couponObj.uses}, ${couponObj.maxUses}, ${couponObj.expiry ? couponObj.expiry : null}, ${couponObj.description}, NOW())
+          ON CONFLICT (code) DO UPDATE SET
+            type = EXCLUDED.type,
+            value = EXCLUDED.value,
+            value_inr = EXCLUDED.value_inr,
+            value_usd = EXCLUDED.value_usd,
+            active = EXCLUDED.active,
+            max_uses = EXCLUDED.max_uses,
+            expiry = EXCLUDED.expiry,
+            description = EXCLUDED.description;
+        `;
+      } catch (dbErr) {
+        console.warn('[Neon DB Coupon Save Warning]:', dbErr.message);
+      }
+    }
+
     return res.status(200).json({ success: true, coupon: couponObj, coupons: couponsStore });
   }
 
@@ -221,6 +256,14 @@ module.exports = async function handler(req, res) {
     }
 
     coupon.active = !coupon.active;
+    if (sql) {
+      try {
+        await ensureSchema();
+        await sql`UPDATE coupons SET active = ${coupon.active} WHERE code = ${coupon.code};`;
+      } catch (dbErr) {
+        console.warn('[Neon DB Coupon Toggle Warning]:', dbErr.message);
+      }
+    }
     return res.status(200).json({ success: true, coupon, coupons: couponsStore });
   }
 
@@ -229,6 +272,14 @@ module.exports = async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
     const { code } = req.body || {};
     couponsStore = couponsStore.filter(c => c.code.toUpperCase() !== (code || '').toUpperCase());
+    if (sql) {
+      try {
+        await ensureSchema();
+        await sql`DELETE FROM coupons WHERE code = ${(code || '').trim().toUpperCase()};`;
+      } catch (dbErr) {
+        console.warn('[Neon DB Coupon Delete Warning]:', dbErr.message);
+      }
+    }
     return res.status(200).json({ success: true, coupons: couponsStore });
   }
 

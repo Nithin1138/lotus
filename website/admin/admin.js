@@ -160,17 +160,25 @@
    */
   async function syncRealTimeData() {
     try {
-      // 1. Fetch live telemetry stats
+      // 1. Fetch live telemetry stats, persistent licenses & transactions
       const statsRes = await fetch(`/api/admin?action=stats&token=${encodeURIComponent(state.adminToken || '')}`);
       if (statsRes.ok) {
         const statsData = await statsRes.json();
-        if (statsData.success && statsData.metrics) {
-          state.stats = {
-            pageviews: statsData.metrics.pageviews || state.stats.pageviews || 0,
-            pricingViews: statsData.metrics.pricingViews || state.stats.pricingViews || 0,
-            checkouts: statsData.metrics.checkouts || state.stats.checkouts || 0,
-            purchases: statsData.metrics.purchases || state.stats.purchases || 0
-          };
+        if (statsData.success) {
+          if (statsData.metrics) {
+            state.stats = {
+              pageviews: statsData.metrics.pageviews || state.stats.pageviews || 0,
+              pricingViews: statsData.metrics.pricingViews || state.stats.pricingViews || 0,
+              checkouts: statsData.metrics.checkouts || state.stats.checkouts || 0,
+              purchases: statsData.metrics.purchases || state.stats.purchases || 0
+            };
+          }
+          if (Array.isArray(statsData.licenses) && statsData.licenses.length > 0) {
+            state.licenses = statsData.licenses;
+          }
+          if (Array.isArray(statsData.transactions) && statsData.transactions.length > 0) {
+            state.transactions = statsData.transactions;
+          }
           saveLocalStore();
         }
       }

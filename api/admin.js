@@ -142,11 +142,37 @@ module.exports = async function handler(req, res) {
       }
     };
 
+    let dbLicenses = [];
+    let dbTransactions = [];
+    let dbConfigured = false;
+
+    try {
+      const { getDb, ensureSchema } = require('./_db');
+      const sql = getDb();
+      if (sql) {
+        dbConfigured = true;
+        await ensureSchema();
+        dbLicenses = await sql`SELECT id, customer_name as "name", email, license_key as "licenseKey", tier, status, TO_CHAR(created_at, 'YYYY-MM-DD') as "date" FROM licenses ORDER BY created_at DESC LIMIT 100;`;
+        dbTransactions = await sql`SELECT id, order_id as "orderId", payment_id as "paymentId", amount as "amountRaw", currency, customer_name as "customerName", email, status, coupon_code as "coupon", country, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') as "timestamp" FROM transactions ORDER BY created_at DESC LIMIT 100;`;
+      }
+    } catch (dbErr) {
+      console.warn('[Admin Stats Neon DB Warning]:', dbErr.message);
+    }
+
     return res.status(200).json({
       success: true,
       razorpay: Boolean(razorpayKey && razorpaySecret),
       resend: Boolean(resendKey),
-      health,
+      neonDb: dbConfigured,
+      health: {
+        ...health,
+        neonDb: {
+          configured: dbConfigured,
+          status: dbConfigured ? 'CONNECTED' : 'NOT_CONFIGURED'
+        }
+      },
+      licenses: dbLicenses,
+      transactions: dbTransactions,
       serverlessStats
     });
   }
@@ -178,6 +204,22 @@ module.exports = async function handler(req, res) {
       } catch (e) {
         console.error('[Admin Issue License] Email error:', e);
       }
+    }
+
+    try {
+      const { getDb, ensureSchema } = require('./_db');
+      const sql = getDb();
+      if (sql) {
+        await ensureSchema();
+        const licId = `lic_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        await sql`
+          INSERT INTO licenses (id, customer_name, email, license_key, tier, status, created_at)
+          VALUES (${licId}, ${customerName}, ${email.trim().toLowerCase()}, ${licenseKey}, ${tier || 'pro'}, 'active', NOW())
+          ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+    } catch (dbErr) {
+      console.warn('[Admin Issue License Neon DB Warning]:', dbErr.message);
     }
 
     return res.status(200).json({

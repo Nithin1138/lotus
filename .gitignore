@@ -9,6 +9,7 @@ outputs/
 .idea/
 .venv/
 venv/
+node_modules/
 
 # Generated test data, downloaded packages and development experiments
 work/*-fixtures/

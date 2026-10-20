@@ -91,6 +91,21 @@ module.exports = async function handler(req, res) {
     return res.status(200).end();
   }
 
+  const { getDb, ensureSchema } = require('./_db');
+  const sql = getDb();
+  if (sql) {
+    try {
+      await ensureSchema();
+      // Try to load latest pricing from Neon
+      const rows = await sql`SELECT value FROM app_settings WHERE key = 'pricing' LIMIT 1;`;
+      if (rows && rows.length > 0 && rows[0].value) {
+        currentPricing = { ...currentPricing, ...rows[0].value };
+      }
+    } catch (dbErr) {
+      console.warn('[Neon DB Pricing Read Warning]:', dbErr.message);
+    }
+  }
+
   // GET: Public fetch of active pricing
   if (req.method === 'GET') {
     res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=60');
@@ -135,6 +150,19 @@ module.exports = async function handler(req, res) {
         },
         lastUpdated: new Date().toISOString()
       };
+
+      if (sql) {
+        try {
+          await ensureSchema();
+          await sql`
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES ('pricing', ${JSON.stringify(currentPricing)}, NOW())
+            ON CONFLICT (key) DO UPDATE SET value = ${JSON.stringify(currentPricing)}, updated_at = NOW();
+          `;
+        } catch (dbErr) {
+          console.warn('[Neon DB Pricing Write Warning]:', dbErr.message);
+        }
+      }
 
       try {
         fs.writeFileSync(PERSIST_FILE, JSON.stringify(currentPricing), 'utf8');

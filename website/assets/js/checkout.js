@@ -385,11 +385,9 @@
 
     // Coupon Toggle
     couponToggleBtn?.addEventListener('click', function () {
-      const isHidden = couponInputWrap.style.display === 'none';
-      couponInputWrap.style.display = isHidden ? 'block' : 'none';
-      if (isHidden) {
-        couponCodeInput.focus();
-      }
+      couponToggleBtn.style.display = 'none';
+      couponInputWrap.style.display = 'block';
+      couponCodeInput.focus();
     });
 
     // Coupon Apply
@@ -485,6 +483,8 @@
           couponCodeInput.value = '';
           couponApplyBtn.style.display = 'block';
           couponFeedback.style.display = 'none';
+          couponInputWrap.style.display = 'none';
+          if (couponToggleBtn) couponToggleBtn.style.display = 'inline-flex';
           applyPricing(isIndia, currentCountry);
         });
 

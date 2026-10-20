@@ -16,5 +16,9 @@
     "licensing"
   ],
   "author": "DropDial",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "ws": "^8.22.0"
+  }
 }
