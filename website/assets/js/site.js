@@ -163,32 +163,48 @@
   if (isMac && cardMac) cardMac.classList.add("is-detected");
   if (!isMac && cardWin) cardWin.classList.add("is-detected");
 
-  // Terminal Install Command (PowerShell on Windows, bash on macOS)
+  // Terminal Install Command (Auto-Identified Device, Single Command)
   const cmdCode = $("#install-cmd-text");
-  const tabMac = $("#cli-tab-mac");
-  const tabWin = $("#cli-tab-win");
+  const deviceTag = $("#cli-device-tag");
+  const platformLabel = $("#cli-platform-label");
+  const platformIcon = $("#cli-platform-icon");
+  const switchBtn = $("#cli-switch-btn");
   const copyBtn = $("#copy-install-cmd");
 
   const cmdMac = "curl -fsSL https://dropdial.app/install.sh | bash";
   const cmdWin = 'powershell -c "irm https://dropdial.app/install.ps1 | iex"';
 
+  const macIconSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>';
+  const winIconSvg = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>';
+
+  let currentPlatform = isMac ? "mac" : "win";
+
   function setCliPlatform(platform) {
+    currentPlatform = platform;
     const isM = platform === "mac";
     if (cmdCode) cmdCode.textContent = isM ? cmdMac : cmdWin;
-    if (tabMac) {
-      tabMac.classList.toggle("active", isM);
-      tabMac.setAttribute("aria-selected", isM ? "true" : "false");
+    if (deviceTag) {
+      deviceTag.className = `dl-cli-device-tag ${isM ? "mac" : "win"}`;
     }
-    if (tabWin) {
-      tabWin.classList.toggle("active", !isM);
-      tabWin.setAttribute("aria-selected", !isM ? "true" : "false");
+    if (platformLabel) {
+      platformLabel.textContent = isM ? "macOS" : "Windows";
+    }
+    if (platformIcon) {
+      platformIcon.innerHTML = isM ? macIconSvg : winIconSvg;
+    }
+    if (switchBtn) {
+      switchBtn.textContent = isM ? "Switch to Windows" : "Switch to macOS";
     }
   }
 
   setCliPlatform(isMac ? "mac" : "win");
 
-  if (tabMac) tabMac.addEventListener("click", () => setCliPlatform("mac"));
-  if (tabWin) tabWin.addEventListener("click", () => setCliPlatform("win"));
+  if (switchBtn) {
+    switchBtn.addEventListener("click", () => {
+      setCliPlatform(currentPlatform === "mac" ? "win" : "mac");
+    });
+  }
+
   if (cardMac) cardMac.addEventListener("click", (e) => {
     if (!e.target.closest("a, button")) setCliPlatform("mac");
   });
@@ -233,16 +249,12 @@
   $$("[data-download-mac]").forEach(a => { a.href = releaseMac.url; });
   $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${releaseMac.tag} · ${releaseMac.size} · Universal Mach-O DMG`; });
 
-  // Update hero download button based on user OS
+  // Update hero download button based on user OS, routing via universal auto-detect endpoint
   $$("[data-download]").forEach(a => {
-    if (isMac) {
-      a.href = releaseMac.url;
-      const span = a.querySelector("span");
-      if (span) span.textContent = "Download for macOS";
-    } else {
-      a.href = releaseWin.url;
-      const span = a.querySelector("span");
-      if (span) span.textContent = "Download for Windows (.exe)";
+    a.href = "/download";
+    const span = a.querySelector("span");
+    if (span) {
+      span.textContent = isMac ? "Download for macOS" : "Download for Windows (.exe)";
     }
   });
 

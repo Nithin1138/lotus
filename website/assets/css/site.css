@@ -904,40 +904,58 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   flex-wrap: nowrap;
   box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.15);
 }
-.dl-cli-tabs {
+.dl-cli-device-tag {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 7px;
   background: var(--bg-alt);
-  padding: 3px;
+  padding: 6px 12px;
   border-radius: 9px;
   border: 1px solid var(--line);
+  font: 650 0.8rem var(--font);
+  color: var(--ink);
+  flex-shrink: 0;
+  user-select: none;
+}
+.dl-cli-device-tag.mac {
+  border-color: rgba(255, 101, 0, 0.3);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.dl-cli-device-tag.win {
+  border-color: rgba(0, 164, 239, 0.35);
+  background: rgba(0, 164, 239, 0.08);
+  color: #0078d4;
+}
+[data-theme="dark"] .dl-cli-device-tag.win {
+  color: #38bdf8;
+  background: rgba(0, 164, 239, 0.15);
+}
+.dl-cli-platform-icon {
+  display: inline-grid;
+  place-items: center;
   flex-shrink: 0;
 }
-.dl-cli-tab {
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  padding: 5px 11px;
-  font: 600 0.8rem var(--font);
-  color: var(--muted);
-  cursor: pointer;
+.dl-cli-actions {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-}
-.dl-cli-tab svg {
+  gap: 8px;
   flex-shrink: 0;
-  opacity: 0.85;
 }
-.dl-cli-tab.active {
-  background: var(--surface);
+.dl-cli-switch-btn {
+  background: transparent;
+  border: none;
+  font: 550 0.78rem var(--font);
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 4px 6px;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+.dl-cli-switch-btn:hover {
   color: var(--ink);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-.dl-cli-tab.active svg {
-  opacity: 1;
 }
 .dl-cli-content {
   display: flex;
