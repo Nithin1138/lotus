@@ -1,939 +1,339 @@
 /* ==========================================================================
-   DropDial Checkout Modal — Razorpay & Resend Integration
+   DropDial Checkout Modal — Complete Redesign (cko- namespace)
    ========================================================================== */
 
+/* ── Overlay ── */
 .checkout-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: rgba(10, 12, 16, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.25s ease, visibility 0.25s ease;
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(6, 8, 14, 0.82);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0.22s ease;
 }
+.checkout-modal-overlay.active { opacity: 1; visibility: visible; }
 
-.checkout-modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-
+/* ── Modal Card ── */
 .checkout-modal {
-  width: 100%;
-  max-width: 480px;
-  background: #14171f;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%; max-width: 440px;
+  background: #111318;
   border-radius: 20px;
-  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 101, 0, 0.15), 0 0 50px -10px rgba(255, 101, 0, 0.12);
+  border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,101,0,0.12), 0 0 60px -8px rgba(255,101,0,0.1);
   overflow: hidden;
-  transform: scale(0.96) translateY(12px);
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
-  color: #f1f3f5;
-  font-family: inherit;
+  transform: scale(0.95) translateY(14px);
+  transition: transform 0.28s cubic-bezier(0.16,1,0.3,1);
+  color: #e8ecf0; font-family: inherit;
+}
+.checkout-modal-overlay.active .checkout-modal { transform: scale(1) translateY(0); }
+
+/* ── Header ── */
+.cko-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 100%);
+}
+.cko-header-brand { display: flex; align-items: center; gap: 12px; }
+.cko-logo-wrap {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(255,101,0,0.12); border: 1px solid rgba(255,101,0,0.22);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+}
+.cko-logo-wrap img { width: 28px; height: 28px; border-radius: 4px; }
+.cko-header-text { display: flex; flex-direction: column; gap: 1px; }
+.cko-title { font-size: 1.05rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; line-height: 1.2; }
+.cko-subtitle { font-size: 0.76rem; color: #64748b; font-weight: 500; }
+.cko-close-btn {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: transparent; border: none; color: #64748b; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s ease; flex-shrink: 0;
+}
+.cko-close-btn:hover { background: rgba(255,255,255,0.07); color: #fff; }
+
+/* ── Body ── */
+.cko-body { padding: 20px; }
+
+/* ── Price Hero ── */
+.cko-price-hero {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 14px; margin-bottom: 4px;
+}
+.cko-price-left { display: flex; flex-direction: column; gap: 4px; }
+.cko-price-display-wrap { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+
+.cko-price-standard {
+  font-size: 2.1rem; font-weight: 900; color: #ff6500;
+  letter-spacing: -0.04em; line-height: 1;
+}
+.cko-price-group { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.cko-price-old {
+  font-size: 1.2rem; font-weight: 600; color: #64748b;
+  text-decoration: line-through; letter-spacing: -0.02em;
+}
+.cko-price-new {
+  font-size: 2.1rem; font-weight: 900; color: #10b981;
+  letter-spacing: -0.04em; line-height: 1;
+  text-shadow: 0 0 28px rgba(16,185,129,0.3);
+}
+.cko-price-badge {
+  display: inline-flex; align-items: center;
+  font-size: 0.7rem; font-weight: 800; letter-spacing: 0.5px;
+  padding: 3px 8px; border-radius: 6px;
+  background: rgba(16,185,129,0.15); color: #10b981;
+  border: 1px solid rgba(16,185,129,0.3);
+  text-transform: uppercase; white-space: nowrap;
+}
+.cko-one-time-label { font-size: 0.73rem; color: #475569; font-weight: 500; margin-top: 2px; }
+
+.cko-feature-pills { display: flex; flex-direction: column; gap: 5px; padding-top: 2px; flex-shrink: 0; }
+.cko-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.72rem; font-weight: 600; color: #94a3b8;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+  padding: 4px 9px; border-radius: 100px; white-space: nowrap;
+}
+.cko-pill svg { color: #10b981; flex-shrink: 0; }
+
+/* ── Divider ── */
+.cko-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 16px 0; }
+
+/* ── Coupon ── */
+.cko-coupon-wrap { margin-bottom: 14px; }
+.cko-coupon-toggle {
+  background: none; border: none; color: #ff6500;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 0; transition: color 0.15s ease;
+}
+.cko-coupon-toggle:hover { color: #ff8533; }
+
+.cko-coupon-input-row {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; padding: 6px 6px 6px 12px;
+}
+.cko-coupon-input {
+  flex: 1; background: transparent; border: none; color: #fff;
+  font-size: 0.85rem; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; font-family: "SF Mono", Menlo, Consolas, monospace;
+  outline: none; min-width: 0;
+}
+.cko-coupon-input::placeholder { color: #475569; font-weight: 500; letter-spacing: 0.5px; font-size: 0.78rem; text-transform: none; }
+.cko-coupon-apply-btn {
+  background: #ff6500; border: none; color: #fff;
+  padding: 7px 14px; border-radius: 7px;
+  font-size: 0.8rem; font-weight: 700; cursor: pointer;
+  transition: all 0.15s ease; white-space: nowrap; flex-shrink: 0;
+}
+.cko-coupon-apply-btn:hover { background: #e55a00; }
+.cko-coupon-apply-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.cko-coupon-cancel-btn {
+  background: transparent; border: none; color: #475569; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 5px; border-radius: 5px; flex-shrink: 0; transition: all 0.12s;
+}
+.cko-coupon-cancel-btn:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+/* Feedback lives OUTSIDE input-wrap — always accessible for Remove */
+.cko-coupon-feedback {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-top: 8px; padding: 8px 12px;
+  border-radius: 8px; font-size: 0.82rem; font-weight: 500;
+}
+.cko-coupon-feedback.success {
+  background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: #10b981;
+}
+.cko-coupon-feedback.error {
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171;
+}
+.cko-coupon-pill { display: flex; align-items: center; gap: 7px; flex: 1; }
+.cko-coupon-pill strong { font-weight: 800; letter-spacing: 0.5px; }
+.cko-coupon-remove {
+  background: transparent; border: none; color: #64748b;
+  font-size: 0.75rem; font-weight: 700;
+  text-decoration: underline; text-underline-offset: 2px;
+  cursor: pointer; padding: 3px 6px; border-radius: 4px;
+  white-space: nowrap; transition: all 0.15s ease; flex-shrink: 0;
+}
+.cko-coupon-remove:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
+
+/* ── Error Banner ── */
+.cko-error-banner {
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+  color: #fca5a5; padding: 10px 14px; border-radius: 10px;
+  font-size: 0.83rem; font-weight: 500; margin-bottom: 14px;
 }
 
-.checkout-modal-overlay.active .checkout-modal {
-  transform: scale(1) translateY(0);
+/* ── Input Fields ── */
+.cko-field { margin-bottom: 14px; }
+.cko-label {
+  display: block; font-size: 0.72rem; font-weight: 700; color: #94a3b8;
+  margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.6px;
 }
-
-.checkout-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
+.cko-label-note { font-weight: 500; text-transform: none; letter-spacing: 0; color: #475569; font-size: 0.68rem; }
+.cko-input {
+  width: 100%; box-sizing: border-box;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; padding: 12px 14px;
+  color: #f1f5f9; font-size: 0.93rem; font-weight: 500;
+  outline: none; transition: all 0.18s ease;
 }
-
-.checkout-modal-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 1.15rem;
-  font-weight: 700;
-  margin: 0;
-  color: #ffffff;
-  letter-spacing: -0.01em;
+.cko-input:focus {
+  border-color: #ff6500; background: rgba(255,101,0,0.05);
+  box-shadow: 0 0 0 3px rgba(255,101,0,0.18);
 }
+.cko-input::placeholder { color: #475569; font-size: 0.87rem; }
 
-.checkout-modal-title img {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-}
-
-.checkout-close-btn {
-  background: transparent;
-  border: none;
-  color: #8c95a5;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s, color 0.15s;
-}
-
-.checkout-close-btn:hover {
-  background: #252b36;
-  color: #ffffff;
-}
-
-.checkout-modal-body {
-  padding: 24px;
-}
-
-/* Plan Summary Box — Sleek Dark Glass with Accent Border */
-.checkout-plan-summary {
-  background: linear-gradient(145deg, #181d26 0%, #12151c 100%);
-  border-radius: 14px;
-  padding: 18px 20px;
-  margin-bottom: 20px;
-  border: 1px solid rgba(255, 101, 0, 0.22);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  position: relative;
-  overflow: hidden;
-}
-
-.checkout-plan-summary::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: linear-gradient(180deg, #ff6500 0%, #ff8533 100%);
-  border-radius: 4px 0 0 4px;
-}
-
-.checkout-plan-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.checkout-plan-name {
-  font-weight: 700;
-  font-size: 1.08rem;
-  color: #ffffff;
-  letter-spacing: -0.01em;
-}
-
-.checkout-plan-price {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.checkout-standard-price {
-  font-size: 1.45rem;
-  font-weight: 800;
-  color: #ff6500;
-  letter-spacing: -0.02em;
-}
-
-.checkout-price-group {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: nowrap;
-}
-
-.checkout-old-price {
-  color: #94a3b8 !important;
-  font-size: 1.05rem;
-  text-decoration: line-through;
-  font-weight: 600;
-  opacity: 0.75;
-  letter-spacing: -0.01em;
-}
-
-.checkout-new-price {
-  font-size: 1.55rem;
-  font-weight: 850;
-  color: #10b981;
-  letter-spacing: -0.03em;
-  text-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
-}
-
-.checkout-discount-badge {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  text-transform: uppercase;
-}
-
-.checkout-plan-details {
-  font-size: 0.82rem;
-  color: #9ea7b7;
-  line-height: 1.6;
-}
-
-/* Input Fields */
-.checkout-field {
-  margin-bottom: 16px;
-}
-
-.checkout-label {
-  display: block;
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: #94a3b8;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-.checkout-input {
+/* ── Pay Button ── */
+.cko-pay-btn {
   width: 100%;
-  box-sizing: border-box;
-  background: rgba(15, 17, 23, 0.7);
-  border: 1px solid #2d3340;
-  border-radius: 10px;
-  padding: 12px 14px;
-  color: #ffffff;
-  font-size: 0.94rem;
-  font-weight: 500;
-  outline: none;
-  transition: all 0.18s ease;
+  background: linear-gradient(180deg, #ff6500 0%, #e85c00 100%);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 15px 20px; font-size: 1rem; font-weight: 800; letter-spacing: -0.01em;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  gap: 10px; margin-top: 6px;
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 4px 18px rgba(255,101,0,0.4), inset 0 1px 0 rgba(255,255,255,0.22);
 }
-
-.checkout-input:focus {
-  border-color: #ff6500;
-  background: rgba(15, 17, 23, 0.95);
-  box-shadow: 0 0 0 3px rgba(255, 101, 0, 0.22);
-}
-
-.checkout-input::placeholder {
-  color: #64748b;
-  font-size: 0.88rem;
-}
-
-.checkout-error {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  color: #fca5a5;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 0.84rem;
-  margin-bottom: 16px;
-  display: none;
-  font-weight: 500;
-}
-
-.checkout-pay-btn {
-  width: 100%;
-  background: linear-gradient(180deg, #ff6500 0%, #eb5500 100%);
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  padding: 14px 20px;
-  font-size: 1.02rem;
-  font-weight: 750;
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 16px rgba(255, 101, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-.checkout-pay-btn:hover {
-  background: linear-gradient(180deg, #ff741a 0%, #f05c00 100%);
-  box-shadow: 0 6px 22px rgba(255, 101, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+.cko-pay-btn:hover {
+  background: linear-gradient(180deg, #ff7519 0%, #f06200 100%);
+  box-shadow: 0 6px 24px rgba(255,101,0,0.5), inset 0 1px 0 rgba(255,255,255,0.28);
   transform: translateY(-1px);
 }
+.cko-pay-btn:active { transform: translateY(0); box-shadow: 0 2px 10px rgba(255,101,0,0.3); }
+.cko-pay-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-.checkout-pay-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 10px rgba(255, 101, 0, 0.35);
+/* ── Trust Row ── */
+.cko-trust-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; margin-top: 14px; font-size: 0.72rem; color: #475569; flex-wrap: wrap;
 }
+.cko-trust-item { display: flex; align-items: center; gap: 4px; color: #64748b; font-weight: 500; }
+.cko-trust-sep { color: #334155; font-size: 0.65rem; }
 
-.checkout-pay-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+/* ── Success View ── */
+.cko-success-view { text-align: center; padding: 8px 0; }
+.cko-success-icon {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(16,185,129,0.2) 0%, rgba(16,185,129,0.06) 100%);
+  border: 2px solid rgba(16,185,129,0.5); color: #10b981;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px; box-shadow: 0 0 30px rgba(16,185,129,0.3);
 }
+.cko-success-title { font-size: 1.3rem; font-weight: 800; color: #fff; margin: 0 0 6px; letter-spacing: -0.02em; }
+.cko-success-sub { font-size: 0.83rem; color: #64748b; margin: 0 0 20px; }
 
-.checkout-footer-badges {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 14px;
-  font-size: 0.78rem;
-  color: #7b8493;
+.cko-license-box {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px; padding: 14px; margin-bottom: 14px; text-align: left;
 }
-
-.checkout-footer-badges span {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.cko-license-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cko-license-label { font-size: 0.67rem; font-weight: 800; color: #94a3b8; letter-spacing: 0.8px; text-transform: uppercase; }
+.cko-license-active { display: inline-flex; align-items: center; gap: 5px; font-size: 0.67rem; font-weight: 800; color: #10b981; letter-spacing: 0.5px; }
+.cko-active-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: #10b981;
+  box-shadow: 0 0 8px rgba(16,185,129,0.7);
+  animation: cko-pulse 2s ease infinite;
 }
-
-.checkout-footer-badges svg {
-  color: #9aa1ad;
+@keyframes cko-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
 }
-
-/* ==========================================================================
-   Coupon Code Section
-   ========================================================================== */
-
-.checkout-coupon-section {
-  margin: 14px 0 18px;
-  padding: 0;
+.cko-license-row { display: flex; align-items: center; gap: 8px; }
+.cko-license-input {
+  flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 7px; padding: 9px 12px; color: #e2e8f0;
+  font-size: 0.82rem; font-weight: 700; font-family: "SF Mono", Menlo, Consolas, monospace;
+  letter-spacing: 0.5px; outline: none; cursor: pointer; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-
-.checkout-coupon-toggle {
-  background: none;
-  border: none;
-  color: #ff6500;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 4px 0;
-  transition: color 0.15s ease, opacity 0.15s ease;
+.cko-copy-btn {
+  background: #ff6500; color: #fff; border: none; border-radius: 7px;
+  padding: 8px 14px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  transition: all 0.15s ease; box-shadow: 0 2px 8px rgba(255,101,0,0.3);
 }
+.cko-copy-btn:hover { background: #e55a00; }
+.cko-copy-btn.copied { background: #10b981; box-shadow: 0 2px 8px rgba(16,185,129,0.35); }
 
-.checkout-coupon-toggle:hover {
-  color: #ff8533;
+.cko-success-note {
+  display: flex; align-items: center; justify-content: center;
+  gap: 7px; font-size: 0.8rem; color: #64748b; margin-bottom: 18px;
 }
-
-.checkout-coupon-input-wrap {
-  margin-top: 10px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid #2d3340;
-  border-radius: 10px;
+.cko-success-note svg { color: #475569; flex-shrink: 0; }
+.cko-success-note strong { color: #94a3b8; font-weight: 600; }
+.cko-success-actions { display: flex; gap: 10px; }
+.cko-btn-download {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  color: #e2e8f0; text-decoration: none; padding: 11px 14px;
+  border-radius: 10px; font-size: 0.85rem; font-weight: 600; transition: all 0.15s ease;
 }
-
-[data-theme="light"] .checkout-coupon-input-wrap {
-  background: #f8fafc;
-  border-color: #e2e8f0;
+.cko-btn-download:hover { background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.18); color: #fff; }
+.cko-btn-done {
+  flex: 1; background: #ff6500; border: none; color: #fff;
+  padding: 11px 14px; border-radius: 10px; font-size: 0.85rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 10px rgba(255,101,0,0.3);
 }
+.cko-btn-done:hover { background: #e55a00; }
 
-.coupon-field-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.coupon-input {
-  flex: 1;
-  background: #101217;
-  border: 1px solid #2d3340;
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #ffffff;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-family: "SF Mono", Menlo, Consolas, monospace;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.coupon-input:focus {
-  border-color: #ff6500;
-  box-shadow: 0 0 0 2px rgba(255, 101, 0, 0.2);
-}
-
-.coupon-apply-btn {
-  background: #252a36;
-  border: 1px solid #373e4f;
-  color: #ffffff;
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 0.84rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.coupon-apply-btn:hover {
-  background: #ff6500;
-  border-color: #ff6500;
-  color: #ffffff;
-}
-
-.coupon-feedback {
-  margin-top: 10px;
-  font-size: 0.82rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 6px;
-}
-
-.coupon-feedback.success {
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  color: #10b981;
-}
-
-[data-theme="light"] .coupon-feedback.success {
-  background: #ecfdf5;
-  border-color: #a7f3d0;
-  color: #047857;
-}
-
-.coupon-feedback.error {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  color: #ef4444;
-}
-
-[data-theme="light"] .coupon-feedback.error {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #b91c1c;
-}
-
-/* Coupon Pill when applied */
-.coupon-success-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-
-.coupon-success-pill svg {
-  color: #10b981;
-  flex-shrink: 0;
-}
-
-.coupon-applied-text {
-  font-size: 0.85rem;
-  color: #10b981;
-  font-weight: 500;
-}
-
-.coupon-applied-text strong {
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  color: #34d399;
-}
-
-.coupon-remove-link {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.coupon-remove-link:hover {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
-}
-
-[data-theme="light"] .coupon-applied-text {
-  color: #065f46;
-}
-
-[data-theme="light"] .coupon-applied-text strong {
-  color: #047857;
-}
-
-[data-theme="light"] .coupon-remove-link {
-  color: #64748b;
-}
-
-[data-theme="light"] .coupon-remove-link:hover {
-  color: #dc2626;
-  background: #fef2f2;
-}
-
-/* ==========================================================================
-   Success State View — Ultra-Compact Modern SaaS Design
-   ========================================================================== */
-
-.checkout-success-view {
-  display: none;
-  text-align: center;
-}
-
-.success-celebration {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 18px;
-}
-
-.success-icon-badge {
-  width: 44px;
-  height: 44px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0.08) 100%);
-  border: 1.5px solid #10b981;
-  color: #10b981;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 10px;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.28);
-}
-
-.success-title {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #ffffff;
-  margin: 0 0 4px;
-  letter-spacing: -0.02em;
-}
-
-.success-sub {
-  font-size: 0.82rem;
-  color: #94a3b8;
-  margin: 0;
-}
-
-/* Single-Row Compact License Key Pill */
-.success-key-box {
-  background: #0b0d11;
-  border: 1px solid #28303e;
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin-bottom: 12px;
-  text-align: left;
-  transition: border-color 0.15s;
-}
-
-.success-key-box:focus-within {
-  border-color: #ff6500;
-}
-
-.key-box-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.key-box-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #ff6500;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-}
-
-.key-box-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #10b981;
-  letter-spacing: 0.6px;
-}
-
-.status-pulse {
-  width: 6px;
-  height: 6px;
-  background-color: #10b981;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 0 6px #10b981;
-}
-
-.key-input-wrapper {
-  display: flex;
-  align-items: center;
-  background: #141720;
-  border: 1px solid #1f2533;
-  border-radius: 7px;
-  padding: 3px 4px 3px 10px;
-  gap: 6px;
-}
-
-.key-display-input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #f1f5f9;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size: 0.82rem;
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.key-display-input:focus {
-  color: #ffffff;
-}
-
-.key-inline-copy-btn {
-  background: #ff6500;
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-  transition: all 0.15s ease;
-  box-shadow: 0 2px 6px rgba(255, 101, 0, 0.3);
-}
-
-.key-inline-copy-btn:hover {
-  background: #e55a00;
-}
-
-.key-inline-copy-btn.copied {
-  background: #10b981;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
-}
-
-/* Delivery Status Pill */
-.email-delivery-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  border-radius: 20px;
-  padding: 5px 12px;
-  font-size: 0.76rem;
-  color: #94a3b8;
-  margin-bottom: 14px;
-}
-
-.email-delivery-pill svg {
-  color: #ff6500;
-  flex-shrink: 0;
-}
-
-.email-delivery-pill strong {
-  color: #f1f5f9;
-  font-weight: 600;
-}
-
-/* Horizontal 3-Step Activation Timeline */
-.activation-timeline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #12151c;
-  border: 1px solid #202735;
-  border-radius: 9px;
-  padding: 9px 12px;
-  margin-bottom: 16px;
-}
-
-.timeline-step {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.76rem;
-  color: #cbd5e1;
-}
-
-.step-badge {
-  width: 17px;
-  height: 17px;
-  background: #252e3d;
-  color: #94a3b8;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-}
-
-.step-text {
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.timeline-sep {
-  color: #475569;
-  font-size: 0.85rem;
-  font-weight: 700;
-  user-select: none;
-}
-
-/* Modal Actions */
-.success-actions-row {
-  display: flex;
-  gap: 10px;
-}
-
-.success-btn-download {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: #1c212b;
-  border: 1px solid #2e3747;
-  color: #e2e8f0;
-  text-decoration: none;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 0.84rem;
-  font-weight: 600;
-  transition: all 0.15s ease;
-}
-
-.success-btn-download:hover {
-  background: #272f3d;
-  border-color: #475569;
-  color: #ffffff;
-}
-
-.success-btn-done {
-  flex: 1;
-  background: #ff6500;
-  border: 1px solid #ff6500;
-  color: #ffffff;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 0.84rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 2px 8px rgba(255, 101, 0, 0.25);
-}
-
-.success-btn-done:hover {
-  background: #e55a00;
-  border-color: #e55a00;
-}
-
+/* ── Responsive ── */
 @media (max-width: 480px) {
-  .checkout-modal {
-    max-width: 100%;
-    border-radius: 14px;
-  }
-  .checkout-modal-body {
-    padding: 18px 16px;
-  }
-  .activation-timeline {
-    padding: 8px 10px;
-  }
-  .timeline-step {
-    font-size: 0.7rem;
-    gap: 4px;
-  }
-  .timeline-sep {
-    font-size: 0.75rem;
-  }
-  .key-inline-copy-btn {
-    padding: 6px 9px;
-    font-size: 0.74rem;
-  }
+  .checkout-modal { border-radius: 16px; }
+  .cko-body { padding: 16px; }
+  .cko-price-hero { flex-direction: column; gap: 10px; }
+  .cko-feature-pills { flex-direction: row; flex-wrap: wrap; }
 }
 
 /* ==========================================================================
-   Light Theme Support for Checkout Modal
+   Light Theme
    ========================================================================== */
 [data-theme="light"] .checkout-modal {
-  background: #ffffff;
-  border-color: #e5e7eb;
-  color: #111827;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  background: #ffffff; border-color: #e5e7eb;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.04);
 }
-
-[data-theme="light"] .checkout-modal-header {
-  border-bottom-color: #f3f4f6;
-  background: #ffffff;
-}
-
-[data-theme="light"] .checkout-modal-title {
-  color: #111827;
-  font-weight: 700;
-}
-
-[data-theme="light"] .checkout-close-btn {
-  color: #6b7280;
-}
-
-[data-theme="light"] .checkout-close-btn:hover {
-  background: #f3f4f6;
-  color: #111827;
-}
-
-/* Light Plan Summary Box */
-[data-theme="light"] .checkout-plan-summary {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .checkout-plan-summary::before {
-  background: linear-gradient(180deg, #ea580c 0%, #f97316 100%);
-}
-
-[data-theme="light"] .checkout-plan-row {
-  border-bottom-color: #e2e8f0;
-}
-
-[data-theme="light"] .checkout-plan-name {
-  color: #0f172a !important;
-  font-weight: 700;
-}
-
-[data-theme="light"] .checkout-standard-price {
-  color: #ea580c !important;
-}
-
-[data-theme="light"] .checkout-plan-details {
-  color: #475569 !important;
-  font-weight: 450;
-  line-height: 1.55;
-}
-
-/* Light Inputs & Labels */
-[data-theme="light"] .checkout-label {
-  color: #475569;
-  font-weight: 700;
-}
-
-[data-theme="light"] .checkout-input {
-  background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #0f172a !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .checkout-input::placeholder {
-  color: #94a3b8 !important;
-}
-
-[data-theme="light"] .checkout-input:focus {
-  border-color: #ea580c !important;
-  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15) !important;
-}
-
-/* Light Coupon UX */
-[data-theme="light"] .checkout-coupon-toggle {
-  color: #ea580c;
-}
-
-[data-theme="light"] .checkout-coupon-toggle:hover {
-  color: #c2410c;
-}
-
-[data-theme="light"] .coupon-input {
-  background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #0f172a !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .coupon-input::placeholder {
-  color: #94a3b8 !important;
-}
-
-[data-theme="light"] .coupon-input:focus {
-  border-color: #ea580c !important;
-  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.15) !important;
-}
-
-[data-theme="light"] .coupon-apply-btn {
-  background: #0f172a !important;
-  border-color: #0f172a !important;
-  color: #ffffff !important;
-}
-
-[data-theme="light"] .coupon-apply-btn:hover {
-  background: #ea580c !important;
-  border-color: #ea580c !important;
-}
-
-[data-theme="light"] .checkout-old-price {
-  color: #94a3b8 !important;
-  text-decoration: line-through;
-  opacity: 0.9;
-}
-
-[data-theme="light"] .checkout-new-price {
-  color: #059669 !important;
-  text-shadow: none;
-}
-
-[data-theme="light"] .checkout-discount-badge {
-  background: #dcfce7 !important;
-  color: #15803d !important;
-  border: 1px solid #bbf7d0 !important;
-}
-
-[data-theme="light"] .checkout-footer-badges {
-  color: #64748b !important;
-  border-top-color: #f1f5f9;
-}
-
-[data-theme="light"] .checkout-footer-badges span {
-  color: #64748b !important;
-}
-
-[data-theme="light"] .success-license-box {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-}
-
-[data-theme="light"] .success-license-title {
-  color: #64748b;
-}
-
-[data-theme="light"] .success-license-key {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #0f172a;
-}
-
-[data-theme="light"] .activation-timeline {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-}
-
-[data-theme="light"] .timeline-step-title {
-  color: #0f172a;
-}
-
-[data-theme="light"] .timeline-step-desc {
-  color: #64748b;
-}
-
-
+[data-theme="light"] .cko-header { border-bottom-color: #f1f5f9; background: #fff; }
+[data-theme="light"] .cko-logo-wrap { background: rgba(255,101,0,0.08); border-color: rgba(255,101,0,0.18); }
+[data-theme="light"] .cko-title { color: #0f172a; }
+[data-theme="light"] .cko-subtitle { color: #94a3b8; }
+[data-theme="light"] .cko-close-btn { color: #94a3b8; }
+[data-theme="light"] .cko-close-btn:hover { background: #f3f4f6; color: #111827; }
+[data-theme="light"] .cko-price-standard { color: #ea580c; }
+[data-theme="light"] .cko-price-old { color: #94a3b8; }
+[data-theme="light"] .cko-price-new { color: #059669; text-shadow: none; }
+[data-theme="light"] .cko-price-badge { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+[data-theme="light"] .cko-one-time-label { color: #94a3b8; }
+[data-theme="light"] .cko-pill { background: #f8fafc; border-color: #e2e8f0; color: #475569; }
+[data-theme="light"] .cko-divider { background: #f1f5f9; }
+[data-theme="light"] .cko-coupon-toggle { color: #ea580c; }
+[data-theme="light"] .cko-coupon-toggle:hover { color: #c2410c; }
+[data-theme="light"] .cko-coupon-input-row { background: #f8fafc; border-color: #e2e8f0; }
+[data-theme="light"] .cko-coupon-input { color: #0f172a; }
+[data-theme="light"] .cko-coupon-input::placeholder { color: #94a3b8; }
+[data-theme="light"] .cko-coupon-apply-btn { background: #0f172a; }
+[data-theme="light"] .cko-coupon-apply-btn:hover { background: #ea580c; }
+[data-theme="light"] .cko-coupon-cancel-btn { color: #94a3b8; }
+[data-theme="light"] .cko-coupon-feedback.success { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+[data-theme="light"] .cko-coupon-feedback.error { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+[data-theme="light"] .cko-coupon-remove { color: #94a3b8; }
+[data-theme="light"] .cko-coupon-remove:hover { color: #dc2626; background: #fef2f2; }
+[data-theme="light"] .cko-error-banner { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+[data-theme="light"] .cko-label { color: #64748b; }
+[data-theme="light"] .cko-label-note { color: #94a3b8; }
+[data-theme="light"] .cko-input { background: #fff; border-color: #e2e8f0; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+[data-theme="light"] .cko-input::placeholder { color: #94a3b8; }
+[data-theme="light"] .cko-input:focus { border-color: #ea580c; background: #fff; box-shadow: 0 0 0 3px rgba(234,88,12,0.12); }
+[data-theme="light"] .cko-trust-item { color: #94a3b8; }
+[data-theme="light"] .cko-trust-sep { color: #e2e8f0; }
+[data-theme="light"] .cko-success-title { color: #0f172a; }
+[data-theme="light"] .cko-success-sub { color: #64748b; }
+[data-theme="light"] .cko-license-box { background: #f8fafc; border-color: #e2e8f0; }
+[data-theme="light"] .cko-license-label { color: #64748b; }
+[data-theme="light"] .cko-license-input { background: #fff; border-color: #e2e8f0; color: #0f172a; }
+[data-theme="light"] .cko-success-note { color: #94a3b8; }
+[data-theme="light"] .cko-success-note strong { color: #475569; }
+[data-theme="light"] .cko-btn-download { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
+[data-theme="light"] .cko-btn-download:hover { background: #f1f5f9; color: #0f172a; }

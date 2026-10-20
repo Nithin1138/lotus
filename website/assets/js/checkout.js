@@ -97,14 +97,14 @@
     if (priceDisplay) {
       if (priceConfig.oldPrice) {
         priceDisplay.innerHTML = `
-          <div class="checkout-price-group">
-            <span class="checkout-old-price">${priceConfig.oldPrice}</span>
-            <span class="checkout-new-price">${priceConfig.display}</span>
-            <span class="checkout-discount-badge">${priceConfig.discountTag} OFF</span>
+          <div class="cko-price-group">
+            <span class="cko-price-old">${priceConfig.oldPrice}</span>
+            <span class="cko-price-new">${priceConfig.display}</span>
+            <span class="cko-price-badge">${priceConfig.discountTag} OFF</span>
           </div>
         `;
       } else {
-        priceDisplay.innerHTML = `<span class="checkout-standard-price">${priceConfig.display}</span>`;
+        priceDisplay.innerHTML = `<span class="cko-price-standard">${priceConfig.display}</span>`;
       }
     }
 
@@ -222,127 +222,155 @@
 
     overlay.innerHTML = `
       <div class="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-modal-heading">
-        <div class="checkout-modal-header">
-          <h3 class="checkout-modal-title" id="checkout-modal-heading">
-            <img src="/assets/img/logo.png" alt="DropDial" width="28" height="28">
-            DropDial Pro Lifetime
-          </h3>
-          <button type="button" class="checkout-close-btn" id="checkout-close" aria-label="Close">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+
+        <!-- ── Header ── -->
+        <div class="cko-header">
+          <div class="cko-header-brand">
+            <div class="cko-logo-wrap">
+              <img src="/assets/img/logo.png" alt="DropDial" width="32" height="32">
+            </div>
+            <div class="cko-header-text">
+              <span class="cko-title" id="checkout-modal-heading">DropDial Pro</span>
+              <span class="cko-subtitle">Lifetime License</span>
+            </div>
+          </div>
+          <button type="button" class="cko-close-btn" id="checkout-close" aria-label="Close checkout">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
-        <div class="checkout-modal-body">
+        <!-- ── Body ── -->
+        <div class="cko-body">
+
           <!-- Form View -->
           <div id="checkout-form-view">
-            <!-- Plan Summary -->
-            <div class="checkout-plan-summary">
-              <div class="checkout-plan-row">
-                <span class="checkout-plan-name">Lifetime License</span>
-                <span class="checkout-plan-price" id="checkout-price-display">₹999</span>
+
+            <!-- Price Hero -->
+            <div class="cko-price-hero">
+              <div class="cko-price-left">
+                <div class="cko-price-display-wrap" id="checkout-price-display">
+                  <span class="cko-price-standard">₹999</span>
+                </div>
+                <div class="cko-one-time-label">One-time · No subscription</div>
               </div>
-              <div class="checkout-plan-details">
-                • Valid for up to 3 personal Macs &amp; PCs<br>
-                • All 333+ conversion options, 40+ tools &amp; all future updates included<br>
-                • 100% private: local cryptographic activation
+              <div class="cko-feature-pills">
+                <span class="cko-pill">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  3 Devices
+                </span>
+                <span class="cko-pill">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  All Updates
+                </span>
+                <span class="cko-pill">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Offline
+                </span>
               </div>
             </div>
 
-            <!-- Coupon Code Section -->
-            <div class="checkout-coupon-section" id="checkout-coupon-section">
-              <button type="button" class="checkout-coupon-toggle" id="coupon-toggle-btn">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <!-- Divider -->
+            <div class="cko-divider"></div>
+
+            <!-- Coupon Section — feedback is OUTSIDE input-wrap so Remove always works -->
+            <div class="cko-coupon-wrap" id="checkout-coupon-section">
+              <!-- State 0: Toggle link -->
+              <button type="button" class="cko-coupon-toggle" id="coupon-toggle-btn">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
                   <line x1="7" y1="7" x2="7.01" y2="7"/>
                 </svg>
-                <span>Have a coupon code?</span>
+                Have a coupon?
               </button>
-              <div class="checkout-coupon-input-wrap" id="coupon-input-wrap" style="display: none;">
-                <div class="coupon-field-row">
-                  <input type="text" id="coupon-code-input" class="coupon-input" placeholder="e.g. LAUNCH20" autocomplete="off" autocapitalize="characters">
-                  <button type="button" id="coupon-apply-btn" class="coupon-apply-btn">Apply</button>
-                </div>
-                <div class="coupon-feedback" id="coupon-feedback" style="display: none;"></div>
+
+              <!-- State 1: Input row (hidden until toggle clicked) -->
+              <div class="cko-coupon-input-row" id="coupon-input-wrap" style="display:none;">
+                <input type="text" id="coupon-code-input" class="cko-coupon-input" placeholder="COUPON CODE" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                <button type="button" id="coupon-apply-btn" class="cko-coupon-apply-btn">Apply</button>
+                <button type="button" class="cko-coupon-cancel-btn" id="coupon-cancel-btn" title="Cancel">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
               </div>
+
+              <!-- State 2: Error / Success feedback — OUTSIDE input-wrap, always accessible -->
+              <div class="cko-coupon-feedback" id="coupon-feedback" style="display:none;"></div>
             </div>
 
             <!-- Error Banner -->
-            <div class="checkout-error" id="checkout-error"></div>
+            <div class="cko-error-banner" id="checkout-error" style="display:none;"></div>
 
             <!-- Fields -->
-            <div class="checkout-field">
-              <label class="checkout-label" for="checkout-name">Your Full Name</label>
-              <input type="text" id="checkout-name" class="checkout-input" placeholder="e.g. Alex Smith" required autocomplete="name">
+            <div class="cko-field">
+              <label class="cko-label" for="checkout-name">Full Name</label>
+              <input type="text" id="checkout-name" class="cko-input" placeholder="e.g. Alex Smith" required autocomplete="name">
             </div>
 
-            <div class="checkout-field">
-              <label class="checkout-label" for="checkout-email">Email Address (for License Key Delivery)</label>
-              <input type="email" id="checkout-email" class="checkout-input" placeholder="e.g. alex@example.com" required autocomplete="email">
+            <div class="cko-field">
+              <label class="cko-label" for="checkout-email">Email <span class="cko-label-note">(License key delivered here)</span></label>
+              <input type="email" id="checkout-email" class="cko-input" placeholder="e.g. alex@example.com" required autocomplete="email">
             </div>
 
             <!-- Pay Button -->
-            <button type="button" class="checkout-pay-btn" id="checkout-pay-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <button type="button" class="cko-pay-btn" id="checkout-pay-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               <span id="checkout-pay-label">Proceed to Payment (₹999)</span>
             </button>
 
-            <!-- Badges (SVG Icons ONLY) -->
-            <div class="checkout-footer-badges">
-              <span>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                256-bit Secure via Razorpay
+            <!-- Trust Row -->
+            <div class="cko-trust-row">
+              <span class="cko-trust-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                256-bit Secure
               </span>
-              <span>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                Instant Delivery via Resend
+              <span class="cko-trust-sep">·</span>
+              <span class="cko-trust-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Instant Delivery
+              </span>
+              <span class="cko-trust-sep">·</span>
+              <span class="cko-trust-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Lifetime Guarantee
               </span>
             </div>
           </div>
 
-          <!-- Success View -->
-          <div class="checkout-success-view" id="checkout-success-view">
-            <div class="success-celebration">
-              <div class="success-icon-badge">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </div>
-              <h3 class="success-title">Payment Successful!</h3>
-              <p class="success-sub">DropDial Pro lifetime license activated</p>
+          <!-- ── Success View ── -->
+          <div class="cko-success-view" id="checkout-success-view" style="display:none;">
+            <div class="cko-success-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
+            <h3 class="cko-success-title">Payment Successful!</h3>
+            <p class="cko-success-sub">DropDial Pro lifetime license activated</p>
 
-            <!-- Single-Row Compact License Key Pill -->
-            <div class="success-key-box">
-              <div class="key-box-top">
-                <span class="key-box-label">LIFETIME LICENSE KEY</span>
-                <span class="key-box-status"><span class="status-pulse"></span>ACTIVE</span>
+            <div class="cko-license-box">
+              <div class="cko-license-header">
+                <span class="cko-license-label">LIFETIME LICENSE KEY</span>
+                <span class="cko-license-active"><span class="cko-active-dot"></span>ACTIVE</span>
               </div>
-              <div class="key-input-wrapper">
-                <input type="text" id="license-key-display" class="key-display-input" readonly value="DD-..." spellcheck="false" title="Click to select full key">
-                <button type="button" class="key-inline-copy-btn" id="copy-license-btn" aria-label="Copy License Key">
-                  <svg class="copy-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <div class="cko-license-row">
+                <input type="text" id="license-key-display" class="cko-license-input" readonly value="DD-..." spellcheck="false" title="Click to select">
+                <button type="button" class="cko-copy-btn" id="copy-license-btn" aria-label="Copy License Key">
+                  <svg class="copy-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                   <span class="copy-lbl">Copy</span>
                 </button>
               </div>
             </div>
 
-            <!-- Offline Guarantee Callout -->
-            <div class="success-offline-notice">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-              <span>100% Offline Cryptographic Key. Never phones home.</span>
+            <div class="cko-success-note">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Backup copy sent to <strong id="success-email-text">your email</strong>
             </div>
 
-            <div class="success-delivery-note">
-              We also sent a backup copy of this license and receipt to <strong id="success-email-text">your email</strong>.
-            </div>
-
-            <!-- Bottom Actions -->
-            <div class="success-actions">
-              <a href="/downloads/DropDial.dmg" class="btn btn-primary success-dl-btn" id="download-now-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                <span>Download DropDial App</span>
+            <div class="cko-success-actions">
+              <a href="/downloads/DropDial.dmg" class="cko-btn-download" id="download-now-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download App
               </a>
-              <button type="button" class="btn btn-secondary success-close-btn" id="success-done-btn">Done</button>
+              <button type="button" class="cko-btn-done" id="success-done-btn">Done</button>
             </div>
           </div>
+
         </div>
       </div>
     `;
@@ -368,6 +396,7 @@
     couponFeedback = document.getElementById('coupon-feedback');
   }
 
+
   function bindEvents() {
     // Close modal
     document.getElementById('checkout-close').addEventListener('click', closeModal);
@@ -392,8 +421,16 @@
     // Coupon Toggle
     couponToggleBtn?.addEventListener('click', function () {
       couponToggleBtn.style.display = 'none';
-      couponInputWrap.style.display = 'block';
+      couponInputWrap.style.display = 'flex';
       couponCodeInput.focus();
+    });
+
+    // Coupon Cancel (X button in input row)
+    document.getElementById('coupon-cancel-btn')?.addEventListener('click', function () {
+      couponInputWrap.style.display = 'none';
+      couponCodeInput.value = '';
+      couponFeedback.style.display = 'none';
+      couponToggleBtn.style.display = 'inline-flex';
     });
 
     // Coupon Apply
@@ -455,17 +492,53 @@
     });
   }
 
+  function resetCouponUI() {
+    appliedCoupon = null;
+    couponCodeInput.disabled = false;
+    couponCodeInput.value = '';
+    couponFeedback.style.display = 'none';
+    couponFeedback.innerHTML = '';
+    couponInputWrap.style.display = 'none';
+    couponApplyBtn.disabled = false;
+    couponApplyBtn.textContent = 'Apply';
+    if (couponToggleBtn) couponToggleBtn.style.display = 'inline-flex';
+    applyPricing(isIndia, currentCountry);
+  }
+
+  function showCouponSuccess(code, discountDisplay) {
+    couponFeedback.className = 'cko-coupon-feedback success';
+    couponFeedback.innerHTML = `
+      <div class="cko-coupon-pill">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <span><strong>${code}</strong> — ${discountDisplay} off applied</span>
+      </div>
+      <button type="button" class="cko-coupon-remove" id="coupon-remove-btn">Remove</button>
+    `;
+    couponFeedback.style.display = 'flex';
+    couponInputWrap.style.display = 'none';
+    if (couponToggleBtn) couponToggleBtn.style.display = 'none';
+
+    document.getElementById('coupon-remove-btn')?.addEventListener('click', resetCouponUI);
+  }
+
+  function showCouponError(msg) {
+    couponFeedback.className = 'cko-coupon-feedback error';
+    couponFeedback.innerHTML = `
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>${msg}</span>
+    `;
+    couponFeedback.style.display = 'flex';
+  }
+
   async function handleCouponApply() {
     const code = (couponCodeInput.value || '').trim().toUpperCase();
     if (!code) {
-      couponFeedback.className = 'coupon-feedback error';
-      couponFeedback.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>Please enter a coupon code.</span>`;
-      couponFeedback.style.display = 'flex';
+      showCouponError('Please enter a coupon code.');
       return;
     }
 
     couponApplyBtn.disabled = true;
-    couponApplyBtn.textContent = 'Checking...';
+    couponApplyBtn.textContent = '…';
 
     try {
       const res = await fetch(`/api/coupons?code=${encodeURIComponent(code)}&currency=${selectedCurrency}`);
@@ -473,71 +546,22 @@
 
       if (res.ok && data.valid) {
         appliedCoupon = data;
-        couponFeedback.className = 'coupon-feedback success';
-        couponFeedback.innerHTML = `
-          <div class="coupon-success-pill">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            <span class="coupon-applied-text">Coupon <strong>${data.code}</strong> applied (${data.discountDisplay} off)</span>
-          </div>
-          <button type="button" id="coupon-remove-btn" class="coupon-remove-link" title="Remove coupon">Remove</button>
-        `;
-        couponFeedback.style.display = 'flex';
-        couponInputWrap.style.display = 'none';
-
-        document.getElementById('coupon-remove-btn')?.addEventListener('click', function() {
-          appliedCoupon = null;
-          couponCodeInput.disabled = false;
-          couponCodeInput.value = '';
-          couponApplyBtn.style.display = 'block';
-          couponFeedback.style.display = 'none';
-          couponInputWrap.style.display = 'none';
-          if (couponToggleBtn) couponToggleBtn.style.display = 'inline-flex';
-          applyPricing(isIndia, currentCountry);
-        });
-
+        showCouponSuccess(data.code, data.discountDisplay);
         applyPricing(isIndia, currentCountry);
       } else {
         appliedCoupon = null;
-        couponFeedback.className = 'coupon-feedback error';
-        couponFeedback.innerHTML = `
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span>${data.error || 'Invalid or expired coupon code.'}</span>
-        `;
-        couponFeedback.style.display = 'flex';
+        showCouponError(data.error || 'Invalid or expired coupon code.');
         applyPricing(isIndia, currentCountry);
       }
     } catch (err) {
-      // Local fallback for test codes
+      // Local offline fallback for known test codes
       if (code === 'LAUNCH20' || code === 'DROPDIAL50' || code === 'PRO10') {
         const val = code === 'DROPDIAL50' ? 50 : (code === 'LAUNCH20' ? 20 : 10);
         appliedCoupon = { code, type: 'percent', value: val, discountDisplay: `${val}%` };
-        couponFeedback.className = 'coupon-feedback success';
-        couponFeedback.innerHTML = `
-          <div class="coupon-success-pill">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            <span class="coupon-applied-text">Coupon <strong>${code}</strong> applied (${val}% off)</span>
-          </div>
-          <button type="button" id="coupon-remove-btn" class="coupon-remove-link" title="Remove coupon">Remove</button>
-        `;
-        couponFeedback.style.display = 'flex';
-        couponInputWrap.style.display = 'none';
-
-        document.getElementById('coupon-remove-btn')?.addEventListener('click', function() {
-          appliedCoupon = null;
-          couponCodeInput.disabled = false;
-          couponCodeInput.value = '';
-          couponApplyBtn.style.display = 'block';
-          couponFeedback.style.display = 'none';
-          couponInputWrap.style.display = 'none';
-          if (couponToggleBtn) couponToggleBtn.style.display = 'inline-flex';
-          applyPricing(isIndia, currentCountry);
-        });
-
+        showCouponSuccess(code, `${val}%`);
         applyPricing(isIndia, currentCountry);
       } else {
-        couponFeedback.className = 'coupon-feedback error';
-        couponFeedback.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>Invalid coupon code.</span>`;
-        couponFeedback.style.display = 'flex';
+        showCouponError('Invalid coupon code.');
       }
     } finally {
       couponApplyBtn.disabled = false;
