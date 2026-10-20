@@ -126,11 +126,13 @@
     }
 
     const banner = document.getElementById('offer-countdown-banner');
+    const headerEl = document.getElementById('ocb-header');
     const heroTag = document.getElementById('hero-urgency-tag');
     const cardTag = document.getElementById('card-urgency-tag');
 
     if (!countdownConfig || countdownConfig.enabled === false) {
       if (banner) banner.style.display = 'none';
+      if (headerEl) headerEl.style.display = 'none';
       if (heroTag) heroTag.style.display = 'none';
       if (cardTag) cardTag.style.display = 'none';
       return;
@@ -152,6 +154,7 @@
 
     // Ensure elements are displayed
     if (banner) banner.style.display = 'flex';
+    if (headerEl) headerEl.style.display = 'flex';
     if (heroTag) heroTag.style.display = 'inline-flex';
     if (cardTag) cardTag.style.display = 'inline-flex';
 

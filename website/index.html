@@ -796,13 +796,25 @@
       
       <p class="eyebrow" style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">Simple, Transparent Pricing</p>
       <h2>Pay Once. Own It Forever.</h2>
-      <p class="section-lead" style="max-width: 580px; margin: 0 auto 32px;">No subscriptions, no cloud accounts, and no monthly fees. Try everything free for 7 days, then unlock lifetime access.</p>
+      <p class="section-lead" style="max-width: 580px; margin: 0 auto 16px;">No subscriptions, no cloud accounts, and no monthly fees. Try everything free for 7 days, then unlock lifetime access.</p>
 
-      <!-- Prominent Special Offer Countdown: D:H at left, Title in center, M:S at right -->
-      <div class="offer-countdown-section" id="offer-countdown-banner">
-        <div class="ocs-container">
-          <!-- Left: Days & Hours -->
-          <div class="ocs-group ocs-left">
+      <div class="pricing-urgency-header" id="ocb-header">
+        <span class="ocs-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <span>Limited Time Launch Deal</span>
+        </span>
+        <h3 class="ocs-title" id="ocb-label">Special Launch Discount Ends In:</h3>
+      </div>
+
+      <!-- Pricing Showcase: D:H Left, Middle 2 Cards, M:S Right -->
+      <div class="pricing-showcase" id="offer-countdown-banner">
+        
+        <!-- Left Side of Middle 2 Cards: Days & Hours (D : H) -->
+        <aside class="pricing-side-timer left-side" id="ocs-left-wing" aria-label="Days and Hours remaining">
+          <div class="pst-header">
+            <span class="pst-tag">Launch Deal</span>
+          </div>
+          <div class="pst-digits">
             <div class="ocs-digit-card">
               <div class="ocs-num-wrap">
                 <span class="ocs-digit-val" id="ocb-days">00</span>
@@ -817,37 +829,10 @@
               <span class="ocs-unit-label">Hours</span>
             </div>
           </div>
+          <span class="pst-caption">Days &amp; Hours</span>
+        </aside>
 
-          <!-- Center: Special Offer Title & Subtitle -->
-          <div class="ocs-center">
-            <div class="ocs-badge">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              <span>Limited Time Launch Deal</span>
-            </div>
-            <h3 class="ocs-title" id="ocb-label">Special Offer Ends In</h3>
-            <p class="ocs-sub">Lock in lifetime access before price increases</p>
-          </div>
-
-          <!-- Right: Minutes & Seconds -->
-          <div class="ocs-group ocs-right">
-            <div class="ocs-digit-card">
-              <div class="ocs-num-wrap">
-                <span class="ocs-digit-val" id="ocb-mins">00</span>
-              </div>
-              <span class="ocs-unit-label">Mins</span>
-            </div>
-            <span class="ocs-colon">:</span>
-            <div class="ocs-digit-card">
-              <div class="ocs-num-wrap">
-                <span class="ocs-digit-val" id="ocb-secs">00</span>
-              </div>
-              <span class="ocs-unit-label">Secs</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="pricing-grid">
+        <div class="pricing-grid">
         <!-- Card 1: Free Trial -->
         <div class="pricing-card">
           <h3 class="pricing-title">7-Day Free Trial</h3>
@@ -923,8 +908,33 @@
           </div>
         </div>
       </div>
+
+      <!-- Right Side of Middle 2 Cards: Minutes & Seconds (M : S) -->
+      <aside class="pricing-side-timer right-side" id="ocs-right-wing" aria-label="Minutes and Seconds remaining">
+        <div class="pst-header">
+          <span class="pst-tag"><span class="pst-live-dot"></span> Live Deal</span>
+        </div>
+        <div class="pst-digits">
+          <div class="ocs-digit-card">
+            <div class="ocs-num-wrap">
+              <span class="ocs-digit-val" id="ocb-mins">00</span>
+            </div>
+            <span class="ocs-unit-label">Mins</span>
+          </div>
+          <span class="ocs-colon">:</span>
+          <div class="ocs-digit-card">
+            <div class="ocs-num-wrap">
+              <span class="ocs-digit-val" id="ocb-secs">00</span>
+            </div>
+            <span class="ocs-unit-label">Secs</span>
+          </div>
+        </div>
+        <span class="pst-caption">Mins &amp; Secs</span>
+      </aside>
+
     </div>
-  </section>
+  </div>
+</section>
 
   <!-- Download Section -->
   <section class="section section-alt" id="download">
