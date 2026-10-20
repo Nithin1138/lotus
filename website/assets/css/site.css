@@ -1187,19 +1187,18 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   box-shadow: 0 2px 6px rgba(255, 101, 0, 0.35);
 }
 .mac-step-text {
-  font-size: 0.79rem;
+  font-size: 0.81rem;
   color: var(--ink);
-  line-height: 1.35;
+  line-height: 1.4;
 }
 .mac-step-text strong {
   color: #fff;
 }
-.mac-step-text em {
-  color: var(--muted);
-  font-style: normal;
+.mac-step-sub {
   display: block;
-  font-size: 0.73rem;
-  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  margin-top: 3px;
 }
 
 .mac-guide-footer {
