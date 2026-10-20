@@ -6,7 +6,7 @@ Combined using tiffutil for razor-sharp HiDPI display on Mac Retina screens.
 Window Dimensions: 680x440 points
 - DropDial.app:                center at (160, 105)
 - Applications symlink:        center at (520, 105)
-- Bottom: Clean, unified First-Launch approval guide with 1-line terminal command
+- Bottom: Gentle First-Launch tips for standard macOS Gatekeeper approval (System Settings & Right-Click)
 """
 import os
 import subprocess
@@ -28,25 +28,11 @@ def draw_canvas(scale=1):
         draw.line([(0, y), (width, y)], fill=(r, g, b))
 
     # Helper font loader with scaling
-    def get_font(size_pt, bold=False, mono=False):
+    def get_font(size_pt):
         scaled_size = int(size_pt * scale)
-        if mono:
-            mono_paths = [
-                "/System/Library/Fonts/Menlo.ttc",
-                "/System/Library/Fonts/Courier.dfont",
-                "/Library/Fonts/Courier New.ttf"
-            ]
-            for p in mono_paths:
-                if os.path.exists(p):
-                    try:
-                        return ImageFont.truetype(p, scaled_size)
-                    except Exception:
-                        continue
-
         font_paths = [
-            "/System/Library/Fonts/SFPro-Bold.ttf" if bold else "/System/Library/Fonts/SFPro-Regular.ttf",
-            "/System/Library/Fonts/SFCompact-Bold.ttf" if bold else "/System/Library/Fonts/SFCompact-Regular.ttf",
             "/System/Library/Fonts/Helvetica.ttc",
+            "/System/Library/Fonts/SFPro-Regular.ttf",
             "/Library/Fonts/Arial.ttf"
         ]
         for p in font_paths:
@@ -60,14 +46,12 @@ def draw_canvas(scale=1):
     def S(val):
         return int(val * scale)
 
-    font_pill = get_font(12, bold=True)
-    font_badge = get_font(10, bold=True)
-    font_h1 = get_font(13.5, bold=True)
-    font_h2 = get_font(11, bold=False)
-    font_opt_title = get_font(11.5, bold=True)
-    font_opt_desc = get_font(11, bold=False)
-    font_cmd = get_font(11, mono=True)
-    font_tip = get_font(10, bold=False)
+    font_pill = get_font(12)
+    font_badge = get_font(10)
+    font_h2 = get_font(11.5)
+    font_w_title = get_font(12)
+    font_w_desc = get_font(11)
+    font_tip = get_font(10.5)
 
     # -------------------------------------------------------------
     # TOP ZONE: Drag & Drop Area (y: 0 to 195)
@@ -107,7 +91,7 @@ def draw_canvas(scale=1):
     draw.line([(S(30), S(195)), (S(650), S(195))], fill=(30, 41, 59), width=max(1, S(1)))
 
     # -------------------------------------------------------------
-    # BOTTOM ZONE: Unified Instructions Card (y: 205 to 424)
+    # BOTTOM ZONE: Gentle First-Launch Guidance Card (y: 205 to 424)
     # -------------------------------------------------------------
     card_x1, card_y1 = S(30), S(205)
     card_x2, card_y2 = S(650), S(424)
@@ -119,56 +103,50 @@ def draw_canvas(scale=1):
         width=max(1, S(1.5))
     )
 
-    # 1. Card Header: Badge + Title
-    badge_text = "FIRST-TIME LAUNCH APPROVAL"
+    # 1. Card Header: Gentle Badge + Subtitle (Not mandatory)
+    badge_text = "FIRST LAUNCH TIP"
     bb = draw.textbbox((0, 0), badge_text, font=font_badge)
     bw = bb[2] - bb[0]
-    bx = S(48)
-    by = S(217)
+    bx, by = S(48), S(219)
     draw.rounded_rectangle(
-        [bx, by, bx + bw + S(16), by + S(20)],
+        [bx, by, bx + bw + S(16), by + S(22)],
         radius=S(6),
-        fill=(2, 132, 199), # Sky Blue
-        outline=(56, 189, 248),
+        fill=(30, 58, 138), # Subtle deep blue
+        outline=(96, 165, 250), # Soft sky blue
         width=max(1, S(1))
     )
-    draw.text((bx + S(8), by + S(3)), badge_text, fill=(255, 255, 255), font=font_badge)
+    draw.text((bx + S(8), by + S(4)), badge_text, fill=(255, 255, 255), font=font_badge)
 
-    h1_text = "DropDial is 100% offline & safe. Gatekeeper needs a one-time launch approval:"
-    draw.text((bx + bw + S(28), by + S(3)), h1_text, fill=(226, 232, 240), font=font_h2)
+    h1_text = "If macOS displays a verification alert on first open:"
+    draw.text((bx + bw + S(26), by + S(4)), h1_text, fill=(226, 232, 240), font=font_h2)
 
-    # 2. Option A: 1-Line Terminal Command (Recommended)
-    opt1_title = "Option A (Fastest · Instant Launch) — Run in Terminal:"
-    draw.text((S(48), S(248)), opt1_title, fill=(56, 189, 248), font=font_opt_title)
-
-    # Terminal box
-    cmd_box_y1 = S(268)
-    cmd_box_y2 = S(304)
+    # 2. Way 1: System Settings Box
+    box1_y1, box1_y2 = S(252), S(314)
     draw.rounded_rectangle(
-        [S(48), cmd_box_y1, S(632), cmd_box_y2],
-        radius=S(7),
-        fill=(3, 7, 18),
+        [S(48), box1_y1, S(632), box1_y2],
+        radius=S(8),
+        fill=(15, 23, 42),
         outline=(51, 65, 85),
         width=max(1, S(1))
     )
-    # Terminal prompt & command
-    draw.text((S(58), cmd_box_y1 + S(8)), "$", fill=(34, 197, 94), font=font_cmd) # Green $
-    cmd_text = "xattr -cr /Applications/DropDial.app && open /Applications/DropDial.app"
-    draw.text((S(76), cmd_box_y1 + S(8)), cmd_text, fill=(241, 245, 249), font=font_cmd)
+    draw.text((S(62), box1_y1 + S(8)), "1. In System Settings → Privacy & Security:", fill=(56, 189, 248), font=font_w_title)
+    draw.text((S(62), box1_y1 + S(32)), "Scroll down to the Security section and click “Open Anyway”.", fill=(203, 213, 225), font=font_w_desc)
 
-    # 3. Option B: Finder Right-Click (No Terminal)
-    opt2_title = "Option B (No Terminal) — Right-Click in Applications:"
-    draw.text((S(48), S(318)), opt2_title, fill=(251, 191, 36), font=font_opt_title)
+    # 3. Way 2: Applications Right-Click Box
+    box2_y1, box2_y2 = S(324), S(386)
+    draw.rounded_rectangle(
+        [S(48), box2_y1, S(632), box2_y2],
+        radius=S(8),
+        fill=(15, 23, 42),
+        outline=(51, 65, 85),
+        width=max(1, S(1))
+    )
+    draw.text((S(62), box2_y1 + S(8)), "2. Or Right-Click DropDial in Applications:", fill=(251, 191, 36), font=font_w_title)
+    draw.text((S(62), box2_y1 + S(32)), "Hold Control (or Right-Click) DropDial in Applications and click “Open” → “Open”.", fill=(203, 213, 225), font=font_w_desc)
 
-    opt2_desc = "1. Drag DropDial to Applications   2. Right-Click DropDial → click “Open” → click “Open”"
-    draw.text((S(48), S(338)), opt2_desc, fill=(203, 213, 225), font=font_opt_desc)
-
-    opt2_sub = "(Or in System Settings → Privacy & Security, scroll down and click “Open Anyway”)"
-    draw.text((S(48), S(358)), opt2_sub, fill=(148, 163, 184), font=font_tip)
-
-    # 4. Footer Tip
-    tip_text = "✓ Required only once for direct indie apps. DropDial will launch normally forever after."
-    draw.text((S(48), S(394)), tip_text, fill=(100, 116, 139), font=font_tip)
+    # 4. Footer Note
+    tip_text = "• DropDial is 100% offline & safe. This is only needed if prompted on first launch."
+    draw.text((S(52), S(398)), tip_text, fill=(148, 163, 184), font=font_tip)
 
     return im
 
