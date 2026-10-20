@@ -1237,121 +1237,129 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 
 .pst-digits {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: 2px;
+  gap: 12px;
 }
 
-.pst-caption {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-}
-
-[data-theme="light"] .pst-caption {
-  color: rgba(0, 0, 0, 0.5);
-}
-
-/* Digit Cards & Animations (Floating, Borderless, Big Numbers) */
-.ocs-digit-card {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  border-radius: 0;
-  padding: 0;
-  min-width: 0;
+.ocs-digit-unit {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+}
+
+/* ==============================================================================
+   Mechanical Split-Flap Flip Clock Card
+   ============================================================================== */
+.ocs-digit-card {
+  width: 72px;
+  height: 86px;
+  border-radius: 14px;
   position: relative;
-  overflow: visible;
-}
-
-[data-theme="light"] .ocs-digit-card {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.ocs-digit-card::before {
-  display: none !important;
-}
-
-.ocs-num-wrap {
   overflow: hidden;
-  height: 62px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(180deg, #272a31 0%, #1e2026 49.5%, #15161a 50%, #1c1e24 51%, #22252c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 
+    0 10px 24px -4px rgba(0, 0, 0, 0.65), 
+    0 4px 8px -2px rgba(0, 0, 0, 0.45), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.16), 
+    inset 0 -1px 0 rgba(0, 0, 0, 0.6);
+  user-select: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.ocs-digit-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 14px 28px -4px rgba(0, 0, 0, 0.75), 
+    0 6px 10px -2px rgba(0, 0, 0, 0.5), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Center Horizontal Split Slit Cut */
+.ocs-digit-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: #0b0c0f;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.13), 0 -1px 0 rgba(0, 0, 0, 0.6);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Center Edge Pin Hinge Notches */
+.ocs-digit-card::before {
+  content: '';
+  position: absolute;
+  top: calc(50% - 4px);
+  left: -1px;
+  right: -1px;
+  height: 8px;
+  z-index: 6;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at left center, #101114 3px, transparent 4px),
+    radial-gradient(circle at right center, #101114 3px, transparent 4px);
+  background-repeat: no-repeat;
+  background-position: left center, right center;
+  background-size: 5px 8px, 5px 8px;
+}
+
+/* Tabular Bold Display Digit */
 .ocs-digit-val {
   display: block;
-  font-size: 3.5rem;
+  font-size: 3rem;
   font-weight: 850;
-  font-family: var(--font-mono, "SF Mono", "SF Pro Display", -apple-system, monospace);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  color: #ffffff;
-  letter-spacing: -0.03em;
-  text-shadow: 0 4px 24px rgba(255, 101, 0, 0.25);
+  color: #f2f4f8;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  z-index: 2;
   will-change: transform, opacity;
 }
 
-[data-theme="light"] .ocs-digit-val {
-  color: #0d1117;
-  text-shadow: none;
-}
-
-/* Number Change Animation (Flip / Pop) */
+/* 3D Mechanical Flap Flip Animation */
 .ocs-digit-val.digit-flip {
-  animation: ocsFlip 0.36s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: flapFlip 0.38s cubic-bezier(0.2, 0.8, 0.25, 1);
 }
 
-@keyframes ocsFlip {
+@keyframes flapFlip {
   0% {
-    transform: translateY(-40%) scale(0.92);
-    opacity: 0.15;
-    filter: blur(1.5px);
+    transform: perspective(250px) rotateX(-28deg) scale(0.96);
+    opacity: 0.45;
+    filter: blur(0.5px);
   }
-  60% {
-    transform: translateY(3%) scale(1.03);
-    opacity: 1;
+  50% {
+    transform: perspective(250px) rotateX(8deg) scale(1.02);
+    opacity: 0.95;
     filter: blur(0);
   }
   100% {
-    transform: translateY(0) scale(1);
+    transform: perspective(250px) rotateX(0deg) scale(1);
     opacity: 1;
   }
 }
 
+/* Amber/Orange Unit Labels directly under each tile */
 .ocs-unit-label {
-  display: none;
-}
-
-.ocs-colon {
-  font-size: 2.8rem;
+  display: block !important;
+  font-size: 0.68rem;
   font-weight: 800;
-  color: var(--accent);
+  color: #ff9e00;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  text-align: center;
   line-height: 1;
-  height: 62px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 4px;
-  padding-bottom: 6px;
-  opacity: 0.85;
-  user-select: none;
-  animation: colon-pulse 2s infinite ease-in-out;
-}
-
-@keyframes colon-pulse {
-  0%, 100% { opacity: 0.9; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.94); }
 }
 
 .ocs-badge {
@@ -1409,6 +1417,14 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   .pricing-side-timer {
     width: 100% !important;
     max-width: 100% !important;
+  }
+  .ocs-digit-card {
+    width: 64px;
+    height: 78px;
+    border-radius: 12px;
+  }
+  .ocs-digit-val {
+    font-size: 2.5rem;
   }
 }
 
