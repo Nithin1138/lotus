@@ -4,6 +4,7 @@
  */
 
 const { generateLicense, sendResendEmail, verifyRazorpayPaymentSignature } = require('./_utils');
+const { incrementCouponUses } = require('./coupons');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -82,10 +83,28 @@ module.exports = async function handler(req, res) {
             VALUES (${txId}, ${razorpay_order_id || 'manual'}, ${razorpay_payment_id}, ${txAmount}, ${txCurrency}, ${name}, ${email}, 'captured', ${txCoupon}, ${txCountry}, NOW())
             ON CONFLICT (id) DO NOTHING;
           `;
+
+          if (txCoupon) {
+            try {
+              await sql`
+                UPDATE coupons
+                SET uses = COALESCE(uses, 0) + 1
+                WHERE UPPER(code) = UPPER(${txCoupon});
+              `;
+            } catch (cErr) {
+              console.warn('[Coupon DB Increment Warning]:', cErr.message);
+            }
+          }
         }
       }
     } catch (dbErr) {
       console.warn('[Verify Payment Neon DB Warning]:', dbErr.message);
+    }
+
+    if (body.couponCode && typeof incrementCouponUses === 'function') {
+      try {
+        incrementCouponUses(body.couponCode);
+      } catch (_) {}
     }
 
     // 3. Send Delivery Email via Resend

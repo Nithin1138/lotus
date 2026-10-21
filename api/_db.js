@@ -82,20 +82,18 @@ async function ensureSchema() {
       );
     `;
 
-    // Automatically seed initial promotional coupons into Neon if table has no rows
+    // Automatically seed promotional coupons into Neon if not already present
     try {
-      const existing = await sql`SELECT COUNT(*)::int as count FROM coupons;`;
-      if (!existing || existing[0]?.count === 0) {
-        await sql`
-          INSERT INTO coupons (code, type, value, value_inr, value_usd, active, uses, max_uses, expiry, description, created_at)
-          VALUES 
-            ('LAUNCH20', 'percent', 20, 200, 4, true, 0, 500, '2026-12-31', 'Launch Special - 20% Off DropDial Pro', NOW()),
-            ('DROPDIAL50', 'percent', 50, 500, 10, true, 0, 100, '2026-12-31', 'VIP Partner Special - 50% Off', NOW()),
-            ('PRO10', 'percent', 10, 100, 2, true, 0, 1000, '2027-12-31', 'Community Welcome - 10% Off', NOW())
-          ON CONFLICT (code) DO NOTHING;
-        `;
-        console.log('[Neon DB] Default promotional coupons successfully seeded.');
-      }
+      await sql`
+        INSERT INTO coupons (code, type, value, value_inr, value_usd, active, uses, max_uses, expiry, description, created_at)
+        VALUES 
+          ('LAUNCH20', 'percent', 20, 200, 4, true, 0, 500, '2026-12-31', 'Launch Special - 20% Off DropDial Pro', NOW()),
+          ('DROPDIAL50', 'percent', 50, 500, 10, true, 0, 100, '2026-12-31', 'VIP Partner Special - 50% Off', NOW()),
+          ('PRO10', 'percent', 10, 100, 2, true, 0, 1000, '2027-12-31', 'Community Welcome - 10% Off', NOW()),
+          ('FIRST24', 'percent', 10, 100, 2, true, 0, 100000, '2028-12-31', 'First 24-Hours Early Bird - 10% Off', NOW()),
+          ('EARLY24', 'percent', 10, 100, 2, true, 0, 100000, '2028-12-31', 'First 24-Hours Early Bird - 10% Off', NOW())
+        ON CONFLICT (code) DO NOTHING;
+      `;
     } catch (seedErr) {
       console.warn('[Neon DB Seed Warning]:', seedErr.message);
     }

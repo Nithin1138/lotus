@@ -4,7 +4,7 @@
  * Enforces server-side country pricing and coupon code discounts.
  */
 
-const { evaluateCoupon } = require('./coupons');
+const { evaluateCoupon, evaluateCouponAsync } = require('./coupons');
 
 module.exports = async function handler(req, res) {
   // CORS & Methods
@@ -60,18 +60,21 @@ module.exports = async function handler(req, res) {
     // Apply coupon discount if provided
     if (couponCode) {
       try {
-        const evalResult = evaluateCoupon(couponCode, currency, amountInSubunits);
-        if (evalResult.valid) {
-          amountInSubunits = evalResult.finalSubunits;
-          appliedCoupon = {
-            code: evalResult.code,
-            discountSubunits: evalResult.discountSubunits,
-            discountDisplay: evalResult.discountDisplay,
-            finalDisplay: evalResult.finalDisplay
-          };
+        const evalFn = evaluateCouponAsync || evaluateCoupon;
+        const evalResult = await evalFn(couponCode, currency, amountInSubunits, email);
+        if (!evalResult.valid) {
+          return res.status(400).json({ error: evalResult.error || 'The coupon code is invalid or has expired.' });
         }
+        amountInSubunits = evalResult.finalSubunits;
+        appliedCoupon = {
+          code: evalResult.code,
+          discountSubunits: evalResult.discountSubunits,
+          discountDisplay: evalResult.discountDisplay,
+          finalDisplay: evalResult.finalDisplay
+        };
       } catch (couponErr) {
         console.warn('[Coupon Evaluation Warning]', couponErr);
+        return res.status(400).json({ error: 'Failed to validate coupon code. Please verify and try again.' });
       }
     }
 

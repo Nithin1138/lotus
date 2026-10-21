@@ -135,7 +135,7 @@ function verifyAdminToken(req) {
 }
 
 /**
- * Validates a coupon code and calculates discounted prices in subunits
+ * Validates a coupon code and calculates discounted prices in subunits (sync version)
  */
 function evaluateCoupon(code, currency, baseSubunits) {
   if (!code || typeof code !== 'string') {
@@ -161,18 +161,23 @@ function evaluateCoupon(code, currency, baseSubunits) {
     }
   }
 
-  if (coupon.maxUses && coupon.uses >= coupon.maxUses) {
-    return { valid: false, error: 'Coupon usage limit has been reached.' };
+  const currentUses = Number(coupon.uses) || 0;
+  const maxUses = Number(coupon.maxUses || coupon.max_uses) || 0;
+  if (maxUses > 0 && currentUses >= maxUses) {
+    return { valid: false, error: 'This coupon has reached its maximum redemption limit.' };
   }
 
   let discountSubunits = 0;
   if (coupon.type === 'percent') {
-    discountSubunits = Math.round(baseSubunits * (coupon.value / 100));
+    discountSubunits = Math.round(baseSubunits * (Number(coupon.value) / 100));
+    if (currency === 'INR') {
+      discountSubunits = Math.round(discountSubunits / 100) * 100;
+    }
   } else if (coupon.type === 'flat') {
     if (currency === 'INR') {
-      discountSubunits = (coupon.valueInr || 200) * 100;
+      discountSubunits = (Number(coupon.valueInr || coupon.value_inr) || 200) * 100;
     } else {
-      discountSubunits = (coupon.valueUsd || 4) * 100;
+      discountSubunits = (Number(coupon.valueUsd || coupon.value_usd) || 4) * 100;
     }
   }
 
@@ -185,13 +190,131 @@ function evaluateCoupon(code, currency, baseSubunits) {
     valid: true,
     code: coupon.code,
     type: coupon.type,
-    value: coupon.value,
+    value: Number(coupon.value),
     discountSubunits,
     finalSubunits,
     discountDisplay,
     finalDisplay,
     description: coupon.description || `${coupon.value}% discount applied`
   };
+}
+
+/**
+ * Asynchronously validates a coupon code against Neon DB,
+ * checking active status, expiry, max_uses limits, and prior redemption by user email.
+ */
+async function evaluateCouponAsync(code, currency, baseSubunits, userEmail = '') {
+  if (!code || typeof code !== 'string') {
+    return { valid: false, error: 'Coupon code is required.' };
+  }
+
+  const cleanCode = code.trim().toUpperCase();
+  const cleanEmail = (userEmail || '').trim().toLowerCase();
+
+  let coupon = null;
+
+  // 1. Query Neon DB if configured
+  try {
+    const { getDb, ensureSchema } = require('./_db');
+    const sql = getDb();
+    if (sql) {
+      await ensureSchema();
+      const rows = await sql`
+        SELECT code, type, value, value_inr as "valueInr", value_usd as "valueUsd", active, uses, max_uses as "maxUses", TO_CHAR(expiry, 'YYYY-MM-DD') as expiry, description
+        FROM coupons
+        WHERE UPPER(code) = UPPER(${cleanCode})
+        LIMIT 1;
+      `;
+      if (rows && rows.length > 0) {
+        coupon = rows[0];
+      }
+
+      // Check if user has already redeemed this coupon in prior transaction
+      if (coupon && cleanEmail && cleanEmail.includes('@')) {
+        const txCheck = await sql`
+          SELECT COUNT(*)::int as count
+          FROM transactions
+          WHERE LOWER(email) = LOWER(${cleanEmail})
+            AND UPPER(coupon_code) = UPPER(${cleanCode})
+            AND status = 'captured';
+        `;
+        if (txCheck && txCheck[0]?.count > 0) {
+          return { valid: false, error: 'This coupon code has already been redeemed with your email address.' };
+        }
+      }
+    }
+  } catch (dbErr) {
+    console.warn('[Coupons DB Lookup Warning]:', dbErr.message);
+  }
+
+  // 2. Fallback to persisted couponsStore if not in DB
+  if (!coupon) {
+    loadPersistedCoupons();
+    coupon = couponsStore.find(c => c.code.toUpperCase() === cleanCode);
+  }
+
+  if (!coupon) {
+    return { valid: false, error: 'Invalid coupon code.' };
+  }
+
+  if (!coupon.active) {
+    return { valid: false, error: 'This coupon code is no longer active.' };
+  }
+
+  if (coupon.expiry) {
+    const expDate = new Date(`${coupon.expiry}T23:59:59Z`);
+    if (new Date() > expDate) {
+      return { valid: false, error: 'This coupon code has expired.' };
+    }
+  }
+
+  const currentUses = Number(coupon.uses) || 0;
+  const maxUses = Number(coupon.maxUses || coupon.max_uses) || 0;
+  if (maxUses > 0 && currentUses >= maxUses) {
+    return { valid: false, error: 'This coupon has reached its maximum redemption limit.' };
+  }
+
+  let discountSubunits = 0;
+  if (coupon.type === 'percent') {
+    discountSubunits = Math.round(baseSubunits * (Number(coupon.value) / 100));
+    // Round to whole rupees for INR so Razorpay displays ₹899 cleanly
+    if (currency === 'INR') {
+      discountSubunits = Math.round(discountSubunits / 100) * 100;
+    }
+  } else if (coupon.type === 'flat') {
+    if (currency === 'INR') {
+      discountSubunits = (Number(coupon.valueInr || coupon.value_inr) || 200) * 100;
+    } else {
+      discountSubunits = (Number(coupon.valueUsd || coupon.value_usd) || 4) * 100;
+    }
+  }
+
+  const finalSubunits = Math.max(100, baseSubunits - discountSubunits);
+  const finalDisplay = currency === 'INR' ? `₹${Math.round(finalSubunits / 100)}` : `$${Math.round(finalSubunits / 100)}`;
+  const discountDisplay = currency === 'INR' ? `₹${Math.round(discountSubunits / 100)}` : `$${Math.round(discountSubunits / 100)}`;
+
+  return {
+    valid: true,
+    code: coupon.code,
+    type: coupon.type,
+    value: Number(coupon.value),
+    discountSubunits,
+    finalSubunits,
+    discountDisplay,
+    finalDisplay,
+    description: coupon.description || `${coupon.value}% discount applied`
+  };
+}
+
+function incrementCouponUses(code) {
+  if (!code) return;
+  loadPersistedCoupons();
+  const normalized = code.trim().toUpperCase();
+  const c = couponsStore.find(x => x.code.toUpperCase() === normalized);
+  if (c) {
+    c.uses = (Number(c.uses) || 0) + 1;
+    savePersistedCoupons();
+  }
 }
 
 module.exports = async function handler(req, res) {
@@ -220,9 +343,10 @@ module.exports = async function handler(req, res) {
   if (action === 'validate') {
     const code = req.query.code || req.body?.code;
     const currency = (req.query.currency || req.body?.currency || 'USD').toUpperCase();
+    const email = (req.query.email || req.body?.email || '').trim().toLowerCase();
     const baseSubunits = currency === 'INR' ? 99900 : 1900;
 
-    const result = evaluateCoupon(code, currency, baseSubunits);
+    const result = await evaluateCouponAsync(code, currency, baseSubunits, email);
     if (!result.valid) {
       return res.status(400).json(result);
     }
@@ -363,3 +487,5 @@ module.exports = async function handler(req, res) {
 
 // Export evaluation logic for internal server routes
 module.exports.evaluateCoupon = evaluateCoupon;
+module.exports.evaluateCouponAsync = evaluateCouponAsync;
+module.exports.incrementCouponUses = incrementCouponUses;

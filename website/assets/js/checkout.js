@@ -964,7 +964,9 @@
     couponApplyBtn.textContent = '…';
 
     try {
-      const res = await fetch(`/api/coupons?code=${encodeURIComponent(code)}&currency=${selectedCurrency}`);
+      const emailVal = (emailInput?.value || '').trim();
+      const emailQuery = emailVal ? `&email=${encodeURIComponent(emailVal)}` : '';
+      const res = await fetch(`/api/coupons?code=${encodeURIComponent(code)}&currency=${selectedCurrency}${emailQuery}`);
       const data = await res.json();
 
       if (res.ok && data.valid) {
@@ -977,15 +979,7 @@
         applyPricing(isIndia, currentCountry);
       }
     } catch (err) {
-      // Local offline fallback for known test codes
-      if (code === 'LAUNCH20' || code === 'DROPDIAL50' || code === 'PRO10') {
-        const val = code === 'DROPDIAL50' ? 50 : (code === 'LAUNCH20' ? 20 : 10);
-        appliedCoupon = { code, type: 'percent', value: val, discountDisplay: `${val}%` };
-        showCouponSuccess(code, `${val}%`);
-        applyPricing(isIndia, currentCountry);
-      } else {
-        showCouponError('Invalid coupon code.');
-      }
+      showCouponError('Network error while validating coupon. Please try again.');
     } finally {
       couponApplyBtn.disabled = false;
       couponApplyBtn.textContent = 'Apply';
@@ -1081,7 +1075,7 @@
           currency: selectedCurrency,
           tier: selectedTier,
           amount: getActivePriceConfig().amount,
-          couponCode: appliedCoupon ? appliedCoupon.code : ''
+          couponCode: appliedCoupon ? appliedCoupon.code : (couponCodeInput ? couponCodeInput.value.trim() : '')
         })
       });
 
