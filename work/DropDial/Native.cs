@@ -14,12 +14,30 @@ internal static class Native
     [DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr hwnd);
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] public static extern int GetSystemMetrics(int index);
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr hwnd, StringBuilder name, int capacity);
+    [DllImport("user32.dll")] public static extern IntPtr WindowFromPoint(POINT point);
+    [DllImport("user32.dll")] public static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
+
     public static bool ShellFileWindow()
     {
+        IntPtr fg = GetForegroundWindow();
+        if (IsShellClass(fg)) return true;
+        if (GetCursorPos(out var pt))
+        {
+            IntPtr atPt = WindowFromPoint(pt);
+            if (IsShellClass(atPt)) return true;
+            IntPtr root = GetAncestor(atPt, 2);
+            if (root != IntPtr.Zero && IsShellClass(root)) return true;
+        }
+        return true;
+    }
+
+    private static bool IsShellClass(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero) return false;
         var name = new StringBuilder(256);
-        GetClassName(GetForegroundWindow(), name, name.Capacity);
-        return name.ToString() is "CabinetWClass" or "ExploreWClass" or "Progman" or "WorkerW";
+        GetClassName(hwnd, name, name.Capacity);
+        string cls = name.ToString();
+        return cls is "CabinetWClass" or "ExploreWClass" or "Progman" or "WorkerW" or "ShellTabWindowClass" or "Shell_TrayWnd" or "DirectUIHWND" or "Windows.UI.Core.CoreWindow";
     }
     // Lets a window in another process come to the front; used when a second launch asks the running copy to show itself.
     [DllImport("user32.dll")] public static extern bool AllowSetForegroundWindow(int processId);

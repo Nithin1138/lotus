@@ -34,10 +34,11 @@ internal sealed class DropWheel : Window
 
     // Top Floating Pill Bar & Close Button
     private const double TopBarHeight = 44;
-    private readonly StackPanel topBarContainer = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 6) };
+    private readonly Grid topBarContainer = new() { Height = TopBarHeight, HorizontalAlignment = HorizontalAlignment.Stretch, Background = Brushes.Transparent };
     private readonly Border floatBar = new() { Height = 32, CornerRadius = new CornerRadius(16), Padding = new Thickness(3, 2, 3, 2) };
-    private readonly Border closeButton = new() { Width = 32, Height = 32, CornerRadius = new CornerRadius(16), Margin = new Thickness(8, 0, 0, 0), Cursor = Cursors.Hand };
+    private readonly Border closeButton = new() { Width = 32, Height = 32, CornerRadius = new CornerRadius(16), Cursor = Cursors.Hand };
     private readonly TextBlock closeIcon = new() { Text = "✕", FontSize = 12, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+    private Point mouseDownPos;
 
     // Tabs inside floatBar
     private readonly Border convertTab = new() { Height = 26, CornerRadius = new CornerRadius(13), Margin = new Thickness(1, 0, 1, 0), Cursor = Cursors.Hand };
@@ -181,9 +182,14 @@ internal sealed class DropWheel : Window
         floatStack.Children.Add(actionsTab);
 
         floatBar.Child = floatStack;
+        floatBar.HorizontalAlignment = HorizontalAlignment.Center;
+        floatBar.VerticalAlignment = VerticalAlignment.Center;
         topBarContainer.Children.Add(floatBar);
 
         closeButton.Child = closeIcon;
+        closeButton.HorizontalAlignment = HorizontalAlignment.Right;
+        closeButton.VerticalAlignment = VerticalAlignment.Center;
+        closeButton.Margin = new Thickness(0, 0, 16, 0);
         topBarContainer.Children.Add(closeButton);
 
         WireTabHover(convertTab, WheelMode.Convert);
@@ -550,6 +556,7 @@ internal sealed class DropWheel : Window
             Height = size + TopBarHeight;
             canvas.Width = size;
             canvas.Height = size > SingleSize ? size : (SingleSize + 10);
+            topBarContainer.Width = size;
             return;
         }
         Native.GetWindowRect(hwnd, out var current);
@@ -566,6 +573,7 @@ internal sealed class DropWheel : Window
         Height = size + TopBarHeight;
         canvas.Width = size;
         canvas.Height = size > SingleSize ? size : (SingleSize + 10);
+        topBarContainer.Width = size;
         Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, pixelsW, pixelsH, 0x0010 | 0x0040);
         UpdateLayout();
     }
@@ -1001,33 +1009,49 @@ internal sealed class DropWheel : Window
     protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnPreviewMouseLeftButtonDown(e);
+        mouseDownPos = e.GetPosition(this);
         var ptInCanvas = e.GetPosition(canvas);
         double distFromCenter = (ptInCanvas - new Point(Center, Center)).Length;
         var ptInTopBar = e.GetPosition(topBarContainer);
         bool overTopBar = ptInTopBar.Y >= 0 && ptInTopBar.Y <= topBarContainer.ActualHeight &&
             ptInTopBar.X >= 0 && ptInTopBar.X <= topBarContainer.ActualWidth;
-        bool overTopBarBackground = overTopBar &&
-            !closeButton.IsMouseOver && !convertTab.IsMouseOver && !toolsTab.IsMouseOver && !actionsTab.IsMouseOver;
+        bool overInteractiveButtons = closeButton.IsMouseOver || convertTab.IsMouseOver || toolsTab.IsMouseOver || actionsTab.IsMouseOver;
 
-        if (overTopBarBackground)
+        if (overTopBar && !overInteractiveButtons)
         {
-            DragMove();
+            try { DragMove(); } catch { }
             return;
         }
 
-        // Tap/click at the side of the wheel (outside the interactive wheel disk)
+        // Tap/click at the side of the wheel (outside the interactive wheel disk) allows dragging to move window
         double maxRadius = (groups != null && openGroup >= 0) ? (OuterRingOuter + 10) : Outer;
         if (distFromCenter > maxRadius && !overTopBar)
         {
-            e.Handled = true;
-            Dismiss("SideTap");
+            try { DragMove(); } catch { }
+            return;
         }
     }
 
     private void OnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        var upPos = e.GetPosition(this);
+        bool movedWindow = (upPos - mouseDownPos).Length > 6;
+
         var point = e.GetPosition(canvas);
         double dist = (point - new Point(Center, Center)).Length;
+        double maxRadius = (groups != null && openGroup >= 0) ? (OuterRingOuter + 10) : Outer;
+        var ptInTopBar = e.GetPosition(topBarContainer);
+        bool overTopBar = ptInTopBar.Y >= 0 && ptInTopBar.Y <= topBarContainer.ActualHeight &&
+            ptInTopBar.X >= 0 && ptInTopBar.X <= topBarContainer.ActualWidth;
+
+        // If user clicked outside the wheel disk and did not drag the window, dismiss it as a side-tap
+        if (!movedWindow && dist > maxRadius && !overTopBar)
+        {
+            e.Handled = true;
+            Dismiss("SideTap");
+            return;
+        }
+
         if (dist <= HubRadius)
         {
             e.Handled = true;
@@ -1053,22 +1077,17 @@ internal sealed class DropWheel : Window
             e.Handled = true;
             TriggerOperation(selected);
         }
-        else
+        else if (!movedWindow && !overTopBar)
         {
-            var ptInTopBar = e.GetPosition(topBarContainer);
-            bool overTopBar = ptInTopBar.Y >= 0 && ptInTopBar.Y <= topBarContainer.ActualHeight &&
-                ptInTopBar.X >= 0 && ptInTopBar.X <= topBarContainer.ActualWidth;
-            if (!overTopBar)
-            {
-                e.Handled = true;
-                Dismiss("SideTap");
-            }
+            e.Handled = true;
+            Dismiss("SideTap");
         }
     }
 
     private void OnMouseMove(object sender, MouseEventArgs e)
     {
         if (HasFileDrag) return;
+        if (rotationTimer.IsEnabled || Math.Abs(wheelAngle) > 0.05) return;
         var point = e.GetPosition(canvas);
         int tool = openGroup >= 0 ? Hit(second, point, OuterRingInner, OuterRingOuter + 10) : -1;
         int category = tool >= 0 ? -1 : Hit(first, point, Inner, Outer);
@@ -1378,6 +1397,7 @@ internal sealed class DropWheel : Window
 
     private void Render(List<Operation> actions, double rotationDeg = 0)
     {
+        int prevHighlight = first.Highlighted;
         Clear(first);
         double rotRad = rotationDeg * Math.PI / 180.0;
         for (int i = 0; i < actions.Count; i++)
@@ -1386,8 +1406,11 @@ internal sealed class DropWheel : Window
             double midRadius = (Inner + Outer) / 2;
             double labelWidth = Math.Clamp(2 * midRadius * Math.Sin(half) - 14, 60, groups != null ? 82 : 100);
             string? preview = groups != null ? Preview(groups[i]) : null;
-            AddPetal(first, angle - half + .016, angle + half - .016, Inner, Outer, midRadius, labelWidth, (actions[i].Recent ? "↻ " : "") + actions[i].Label, preview, groups != null ? 12 : actions.Count > 7 ? 11 : 12.5, RestingFace, 1, -rotationDeg, actions[i].Id);
+            bool isHighlighted = i == prevHighlight && Math.Abs(rotationDeg) < 0.05;
+            Brush face = isHighlighted ? SelectedFace : RestingFace;
+            AddPetal(first, angle - half + .016, angle + half - .016, Inner, Outer, midRadius, labelWidth, (actions[i].Recent ? "↻ " : "") + actions[i].Label, preview, groups != null ? 12 : actions.Count > 7 ? 11 : 12.5, face, 1, -rotationDeg, actions[i].Id);
         }
+        first.Highlighted = Math.Abs(rotationDeg) < 0.05 ? prevHighlight : -1;
         UpdateLayout();
     }
 
@@ -1454,7 +1477,7 @@ internal sealed class DropWheel : Window
     {
         if (index == ring.Highlighted)
             return;
-        if (index >= 0)
+        if (index >= 0 && !rotationTimer.IsEnabled && Math.Abs(wheelAngle) < 0.05)
             SoundManager.PlayTick();
         ring.Highlighted = index;
         for (int i = 0; i < ring.Petals.Count; i++)
