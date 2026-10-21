@@ -535,7 +535,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 licTitle = "DropDial \(plan) Plan (\(userIdentifier))"
             }
         case .trial(let days):
-            if days <= 0 {
+            if LicenseManager.shared.isWithinFirst24Hours {
+                let sec = LicenseManager.shared.first24HoursRemainingSeconds
+                let h = sec / 3600
+                let m = (sec % 3600) / 60
+                licTitle = "⚡ 10% Off Early Bird (\(h)h \(m)m left) • Activate..."
+            } else if days <= 0 {
                 licTitle = "🔑 Activate Pro (Last day of trial)..."
             } else if days == 1 {
                 licTitle = "🔑 Activate Pro (1 day left)..."

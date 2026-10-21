@@ -63,7 +63,7 @@ internal sealed class WelcomeWindow : Window
         var licRow = new DockPanel();
         var licBtn = new Button
         {
-            Content = licStatus.IsPro ? L.T("Manage License…") : L.T("Enter License Key…"),
+            Content = licStatus.IsPro ? L.T("Manage License…") : (LicenseManager.IsWithinFirst24Hours ? "⚡ Claim 10% Off" : L.T("Enter License Key…")),
             Padding = new Thickness(14, 6, 14, 6),
             Margin = new Thickness(12, 0, 0, 0),
             FontWeight = FontWeights.SemiBold,
@@ -72,7 +72,17 @@ internal sealed class WelcomeWindow : Window
             BorderBrush = licStatus.IsPro ? UiTheme.Line : UiTheme.Accent,
             VerticalAlignment = VerticalAlignment.Center
         };
-        licBtn.Click += (_, _) => LicenseWindow.ShowDialogOrActivate();
+        licBtn.Click += (_, _) =>
+        {
+            if (!licStatus.IsPro && LicenseManager.IsWithinFirst24Hours)
+            {
+                try { Process.Start(new ProcessStartInfo(LicenseManager.EarlyBirdBuyUrl) { UseShellExecute = true }); } catch { }
+            }
+            else
+            {
+                LicenseWindow.ShowDialogOrActivate();
+            }
+        };
         DockPanel.SetDock(licBtn, Dock.Right);
         licRow.Children.Add(licBtn);
 
@@ -80,11 +90,15 @@ internal sealed class WelcomeWindow : Window
         string licTitleText = licStatus.IsPro
             ? $"DropDial {licStatus.Info?.PlanDisplayName ?? "Pro"} Plan ✓"
             : (licStatus.Kind == LicenseStatusKind.Trial
-                ? $"Free Trial ({licStatus.DaysRemaining} days left)"
+                ? (LicenseManager.IsWithinFirst24Hours
+                    ? $"Free Trial ({licStatus.DaysRemaining}d) · ⚡ 10% Off Early Bird"
+                    : $"Free Trial ({licStatus.DaysRemaining} days left)")
                 : "Free Tier (Trial Expired)");
         string licSubText = licStatus.IsPro
             ? $"Licensed to {(string.IsNullOrEmpty(licStatus.Info?.Name) ? licStatus.Info?.Email : licStatus.Info?.Name)}"
-            : L.T("Activate your license key to unlock unlimited conversions.");
+            : (LicenseManager.IsWithinFirst24Hours
+                ? L.T("First 24 Hours Offer: Save 10% on Lifetime Pro with coupon FIRST24.")
+                : L.T("Activate your license key to unlock unlimited conversions."));
         licTextPanel.Children.Add(new TextBlock { Text = licTitleText, FontWeight = FontWeights.SemiBold, FontSize = 14, Foreground = UiTheme.Ink });
         licTextPanel.Children.Add(new TextBlock { Text = licSubText, Foreground = UiTheme.Muted, FontSize = 12, Margin = new Thickness(0, 2, 0, 0) });
         licRow.Children.Add(licTextPanel);

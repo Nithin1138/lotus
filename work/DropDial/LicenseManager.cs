@@ -61,6 +61,8 @@ internal sealed class LicenseStatus
                 _ => $"DropDial {Info.PlanDisplayName} ({Info.SecondsRemaining / 3600}h left)"
             }
             : $"DropDial {Info?.PlanDisplayName ?? "Pro"} Plan ✓ ({(string.IsNullOrEmpty(Info?.Name) ? Info?.Email : Info?.Name)})",
+        LicenseStatusKind.Trial when LicenseManager.IsWithinFirst24Hours =>
+            $"Trial: {DaysRemaining}d · ⚡ 10% Off Early Bird ({LicenseManager.First24HoursRemainingSeconds / 3600}h {(LicenseManager.First24HoursRemainingSeconds % 3600) / 60}m left)...",
         LicenseStatusKind.Trial => DaysRemaining switch
         {
             <= 0 => "🔑 Enter License Key (Trial: Last day)...",
@@ -77,7 +79,32 @@ internal static class LicenseManager
     public const string PublicKeyBase64 = "BGM3oGnG82GbsMcWAlnuMk2nF+c8lDJs37dTnffkzNFvjwVzgC0PwyyHUIe7LgZOPPOmWEyJeRTEGiCOCGcGdyQ=";
 
     public const string DefaultBuyUrl = "https://dropdial.app/#pricing";
-    public const int TrialDurationDays = 7;
+    public const string EarlyBirdBuyUrl = "https://dropdial.app/#pricing?coupon=FIRST24&buy=1";
+    public const int TrialDurationDays = 3;
+
+    public static bool IsWithinFirst24Hours
+    {
+        get
+        {
+            if (CurrentStatus.IsPro) return false;
+            var state = LoadState();
+            if (state.TrialStartTime <= 0) return true;
+            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            return (now - state.TrialStartTime) < 86400;
+        }
+    }
+
+    public static int First24HoursRemainingSeconds
+    {
+        get
+        {
+            var state = LoadState();
+            if (state.TrialStartTime <= 0) return 86400;
+            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            long rem = 86400 - (now - state.TrialStartTime);
+            return (int)Math.Max(0, rem);
+        }
+    }
 
     public static LicenseStatus CurrentStatus { get; private set; } = LicenseStatus.Trial(TrialDurationDays);
     public static event Action? StatusChanged;

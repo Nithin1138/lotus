@@ -78,12 +78,18 @@ enum LicenseStatus: Equatable {
             }
             return "DropDial \(plan) Plan ✓ (\(displayName))"
         case .trial(let days):
+            if LicenseManager.shared.isWithinFirst24Hours {
+                let sec = LicenseManager.shared.first24HoursRemainingSeconds
+                let h = sec / 3600
+                let m = (sec % 3600) / 60
+                return "Trial: \(days)d · ⚡ 10% Off (\(h)h \(m)m left)"
+            }
             if days <= 0 {
-                return "Trial: Last day"
+                return "Trial: Last day — Activate Pro"
             } else if days == 1 {
-                return "Trial: 1 day left"
+                return "Trial: 1 day left — Activate Pro"
             } else {
-                return "Trial: \(days) days left"
+                return "Trial: \(days) days left — Activate Pro"
             }
         case .trialExpired:
             let rem = LicenseManager.shared.getDailyConversionsRemaining()
@@ -99,15 +105,34 @@ final class LicenseManager {
     // Embedded ECDSA P-256 public key (X9.62 uncompressed 65-byte point in Base64)
     static let publicKeyBase64 = "BGM3oGnG82GbsMcWAlnuMk2nF+c8lDJs37dTnffkzNFvjwVzgC0PwyyHUIe7LgZOPPOmWEyJeRTEGiCOCGcGdyQ="
 
-    // Configurable purchase URL
+    // Configurable purchase URLs
     static let defaultBuyUrl = "https://dropdial.app/#pricing"
+    static let earlyBirdBuyUrl = "https://dropdial.app/#pricing?coupon=FIRST24&buy=1"
 
     // UserDefaults Keys
     private let licenseKeyStoreKey = "DROPDIAL_LICENSE_KEY"
     private let trialStartDateKey = "DROPDIAL_TRIAL_START_TIME"
-    private let trialDurationDays = 7
+    private let trialDurationDays = 3
 
-    private(set) var status: LicenseStatus = .trial(daysRemaining: 7)
+    var isWithinFirst24Hours: Bool {
+        if status.isPro { return false }
+        let defaults = UserDefaults.standard
+        let trialStart = defaults.double(forKey: trialStartDateKey)
+        guard trialStart > 0 else { return true }
+        let now = Date().timeIntervalSince1970
+        return (now - trialStart) < 86400
+    }
+
+    var first24HoursRemainingSeconds: Int {
+        let defaults = UserDefaults.standard
+        let trialStart = defaults.double(forKey: trialStartDateKey)
+        guard trialStart > 0 else { return 86400 }
+        let now = Date().timeIntervalSince1970
+        let remaining = Int(86400 - (now - trialStart))
+        return max(0, remaining)
+    }
+
+    private(set) var status: LicenseStatus = .trial(daysRemaining: 3)
     var onStatusChanged: (() -> Void)?
 
     private init() {
@@ -123,6 +148,8 @@ final class LicenseManager {
             guard let self = self else { return }
             if case .pro(let info) = self.status, info.expiresAt != nil {
                 self.refreshStatus()
+            } else if case .trial = self.status, self.isWithinFirst24Hours {
+                self.onStatusChanged?()
             }
         }
     }
@@ -572,10 +599,14 @@ final class LicenseWindowController: NSWindowController {
             }
             statusLabel.textColor = .secondaryLabelColor
 
-            keyTextField.isEnabled = true
-            pasteButton.isEnabled = true
-
-            secondaryButton.title = "Buy License…"
+            if LicenseManager.shared.isWithinFirst24Hours {
+                let sec = LicenseManager.shared.first24HoursRemainingSeconds
+                let h = sec / 3600
+                let m = (sec % 3600) / 60
+                secondaryButton.title = "⚡ Buy (10% Off • \(h)h \(m)m left)"
+            } else {
+                secondaryButton.title = "Buy License…"
+            }
             secondaryButton.action = #selector(buyTapped)
             secondaryButton.isHidden = false
 
@@ -676,7 +707,8 @@ final class LicenseWindowController: NSWindowController {
     }
 
     @objc private func buyTapped() {
-        if let url = URL(string: LicenseManager.defaultBuyUrl) {
+        let urlStr = LicenseManager.shared.isWithinFirst24Hours ? LicenseManager.earlyBirdBuyUrl : LicenseManager.defaultBuyUrl
+        if let url = URL(string: urlStr) {
             NSWorkspace.shared.open(url)
         }
     }

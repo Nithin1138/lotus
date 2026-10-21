@@ -278,7 +278,15 @@ internal sealed class LicenseWindow : Window
             keyInput.IsEnabled = true;
             pasteBtn.IsEnabled = true;
 
-            secondaryBtn.Content = "Buy License…";
+            if (LicenseManager.IsWithinFirst24Hours)
+            {
+                int sec = LicenseManager.First24HoursRemainingSeconds;
+                secondaryBtn.Content = $"⚡ Buy (10% Off • {sec / 3600}h {(sec % 3600) / 60}m left)";
+            }
+            else
+            {
+                secondaryBtn.Content = "Buy License…";
+            }
             secondaryBtn.Click -= OnBuyClick;
             secondaryBtn.Click -= OnDeactivateClick;
             secondaryBtn.Click += OnBuyClick;
@@ -304,7 +312,8 @@ internal sealed class LicenseWindow : Window
 
     private void OnBuyClick(object? sender, RoutedEventArgs e)
     {
-        try { Process.Start(new ProcessStartInfo(LicenseManager.DefaultBuyUrl) { UseShellExecute = true }); } catch { }
+        string url = LicenseManager.IsWithinFirst24Hours ? LicenseManager.EarlyBirdBuyUrl : LicenseManager.DefaultBuyUrl;
+        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); } catch { }
     }
 
     private void OnPrimaryClick()

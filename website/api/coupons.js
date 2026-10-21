@@ -45,6 +45,30 @@ let couponsStore = [
     maxUses: 1000,
     expiry: '2027-12-31',
     description: 'Community Welcome - 10% Off'
+  },
+  {
+    code: 'FIRST24',
+    type: 'percent',
+    value: 10,
+    valueInr: 100,
+    valueUsd: 2,
+    active: true,
+    uses: 0,
+    maxUses: 100000,
+    expiry: '2028-12-31',
+    description: 'First 24-Hours Early Bird - 10% Off'
+  },
+  {
+    code: 'EARLY24',
+    type: 'percent',
+    value: 10,
+    valueInr: 100,
+    valueUsd: 2,
+    active: true,
+    uses: 0,
+    maxUses: 100000,
+    expiry: '2028-12-31',
+    description: 'First 24-Hours Early Bird - 10% Off'
   }
 ];
 

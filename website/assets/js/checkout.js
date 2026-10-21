@@ -576,6 +576,23 @@
 
     // 5. Edge geo refinement in background
     fetchCountryPricing();
+
+    // 6. Check URL query parameters for pre-applied coupon or direct checkout trigger
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const couponParam = urlParams.get('coupon') || urlParams.get('code');
+      const tierParam = urlParams.get('tier');
+      if (tierParam && TIERS[tierParam]) {
+        selectedTier = tierParam;
+      }
+      if (couponParam) {
+        if (couponCodeInput) couponCodeInput.value = couponParam.trim();
+        handleCouponApply();
+        if (urlParams.get('buy') === '1' || window.location.hash.includes('pricing') || window.location.hash.includes('buy')) {
+          setTimeout(() => openModal(selectedTier), 350);
+        }
+      }
+    } catch (_) {}
   }
 
   function createModalDOM() {
