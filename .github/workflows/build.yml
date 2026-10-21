@@ -74,8 +74,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: DropDial-macOS
-          path: outputs/DropDial-macOS.zip
-          if-no-files-found: error
+          path: |
+            outputs/DropDial-macOS/DropDial-macOS.zip
+            outputs/DropDial-macOS/DropDial.dmg
+          if-no-files-found: warn
 
   windows:
     name: Windows Build & Checks
@@ -177,7 +179,7 @@ jobs:
           name: DropDial-Windows-x64
           path: release_assets/win
 
-      - name: Publish Staged GitHub Release (Draft for Admin 2-Step Approval)
+      - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -191,10 +193,22 @@ jobs:
             NOTES_FILE="docs/releases/${CLEAN_TAG}.md"
           fi
 
-          CMD="gh release create \"$TAG\" release_assets/win/DropDial-Windows-x64.zip release_assets/win/DropDial.exe release_assets/mac/DropDial-macOS.zip --title \"DropDial $TAG\" --draft"
-          if [ -n "$NOTES_FILE" ]; then
-            CMD="$CMD --notes-file \"$NOTES_FILE\""
+          # Collect all available assets from mac and windows jobs
+          ASSETS=$(find release_assets/ -type f)
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists. Uploading assets..."
+            if [ -n "$NOTES_FILE" ]; then
+              gh release edit "$TAG" --notes-file "$NOTES_FILE" --title "DropDial $TAG" || true
+            fi
+            gh release upload "$TAG" $ASSETS --clobber
           else
-            CMD="$CMD --generate-notes"
+            echo "Creating release $TAG..."
+            CMD="gh release create \"$TAG\" $ASSETS --title \"DropDial $TAG\""
+            if [ -n "$NOTES_FILE" ]; then
+              CMD="$CMD --notes-file \"$NOTES_FILE\""
+            else
+              CMD="$CMD --generate-notes"
+            fi
+            eval "$CMD"
           fi
-          eval "$CMD"
