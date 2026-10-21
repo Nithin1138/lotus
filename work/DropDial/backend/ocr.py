@@ -32,7 +32,7 @@ def page_text(page): return '\n'.join(line['text'] for line in page['lines'])
 
 def create_text_pdf(pages,target,keep_background=False,source_images=None):
     """Creates a PDF. By default: pure white background with visible, crisp vector text."""
-    import pymupdf as fitz
+    fitz = get_fitz()
     doc=fitz.open()
     font_name='DocFont' if FONT and FONT.exists() else 'helv'
     for idx,p in enumerate(pages):

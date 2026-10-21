@@ -36,6 +36,7 @@ EN = {
     'Cannot delete the only page': 'Cannot delete the only page',
     'SVG rendering failed on this system': 'SVG rendering failed on this system',
     'SVG rendering requires resvg_py or cairosvg': 'SVG rendering requires resvg_py or cairosvg',
+    'PyMuPDF is required for document and PDF operations. Run: pip install pymupdf': 'PyMuPDF is required for document and PDF operations. Run: pip install pymupdf',
     # images
     'Pixel block size must be 2–100 px': 'Pixel block size must be 2–100 px',
     'The canvas size is invalid or too large': 'The canvas size is invalid or too large',

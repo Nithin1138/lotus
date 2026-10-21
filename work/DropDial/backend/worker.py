@@ -3,6 +3,35 @@ import sys,json,os
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from common import *
 
+def ensure_dependencies():
+    missing = []
+    try:
+        import pymupdf
+    except ImportError:
+        try:
+            import fitz
+        except ImportError:
+            missing.append('pymupdf')
+    try:
+        import PIL
+    except ImportError:
+        missing.append('pillow')
+    try:
+        import pypdf
+    except ImportError:
+        missing.append('pypdf')
+    try:
+        import pypdfium2
+    except ImportError:
+        missing.append('pypdfium2')
+    if missing:
+        try:
+            subprocess.run([sys.executable, '-m', 'pip', 'install', '--disable-pip-version-check', *missing], capture_output=True, timeout=120)
+        except Exception:
+            pass
+
+ensure_dependencies()
+
 def one(path,action,params):
     kind=category(path)
     if action.startswith('pack:'):
@@ -142,19 +171,33 @@ def inspect(path,folder,frame=None):
         import office
         return office.inspect(path,folder)
     elif Path(path).suffix.lower()=='.pdf':
-        import pypdfium2 as pdfium, documents
-        doc=pdfium.PdfDocument(path); total_pages=len(doc); result['Pages']=total_pages; result['Metadata']=documents.metadata(path)
-        preview=folder/'preview.png'; doc[0].render(scale=1.3).to_pil().save(preview); result['Preview']=str(preview)
-        thumbs = []
-        for pi in range(min(total_pages, 80)):
-            tpath = folder / f'page_thumb_{pi+1}.png'
+        try:
+            import pypdfium2 as pdfium, documents
+            doc=pdfium.PdfDocument(path); total_pages=len(doc); result['Pages']=total_pages; result['Metadata']=documents.metadata(path)
+            preview=folder/'preview.png'; doc[0].render(scale=1.3).to_pil().save(preview); result['Preview']=str(preview)
+            thumbs = []
+            for pi in range(min(total_pages, 80)):
+                tpath = folder / f'page_thumb_{pi+1}.png'
+                try:
+                    doc[pi].render(scale=0.35).to_pil().save(tpath)
+                    thumbs.append(str(tpath))
+                except Exception:
+                    break
+            result['Thumbnails'] = thumbs
+            doc.close()
+        except Exception:
             try:
-                doc[pi].render(scale=0.35).to_pil().save(tpath)
-                thumbs.append(str(tpath))
+                fitz = get_fitz()
+                fdoc = fitz.open(path)
+                result['Pages'] = len(fdoc)
+                preview = folder / 'preview.png'
+                if len(fdoc) > 0:
+                    pix = fdoc[0].get_pixmap(dpi=150)
+                    pix.save(str(preview))
+                    result['Preview'] = str(preview)
+                fdoc.close()
             except Exception:
-                break
-        result['Thumbnails'] = thumbs
-        doc.close()
+                pass
     if result.get('Preview') is None or not Path(str(result.get('Preview'))).exists():
         result['Preview'] = make_card_preview(path, folder, kind)
     return result

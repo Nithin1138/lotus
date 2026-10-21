@@ -96,7 +96,7 @@ jobs:
 
       - name: Install Python dependencies
         shell: pwsh
-        run: python -m pip install pillow
+        run: python -m pip install -r requirements-runtime.txt
 
       - name: Verify Python backend syntax
         shell: pwsh
@@ -104,18 +104,30 @@ jobs:
           python -m py_compile (Get-ChildItem work/DropDial/backend/*.py).FullName
           python work/test-i18n.py
 
+      - name: Prepare Windows runtime binaries
+        shell: pwsh
+        run: python work/prepare-runtime.py
+
       - name: Build Windows application
         shell: pwsh
-        run: ./build.ps1 -SkipRuntimeCheck
+        run: ./build.ps1
 
-      - name: Verify Windows executable
+      - name: Verify Windows executable & runtime
         shell: pwsh
         run: |
           $exePath = "outputs/DropDial/DropDial.exe"
           if (-not (Test-Path $exePath)) {
             throw "Error: $exePath was not generated."
           }
-          Write-Host "Verified Windows binary: $exePath"
+          $pyPath = "outputs/DropDial/runtime/python/python.exe"
+          if (-not (Test-Path $pyPath)) {
+            throw "Error: $pyPath was not generated."
+          }
+          $ffmpegPath = "outputs/DropDial/runtime/ffmpeg/ffmpeg.exe"
+          if (-not (Test-Path $ffmpegPath)) {
+            throw "Error: $ffmpegPath was not generated."
+          }
+          Write-Host "Verified Windows binary and runtime: $exePath"
 
       - name: Run Windows UI & parameter checks
         shell: pwsh

@@ -9,12 +9,61 @@ namespace DropDial;
 
 internal static class Backend
 {
+    private static bool _envChecked;
+    private static readonly object _envLock = new();
+
+    public static void EnsureEnvironment()
+    {
+        if (_envChecked) return;
+        lock (_envLock)
+        {
+            if (_envChecked) return;
+            _envChecked = true;
+            try
+            {
+                string baseDir = AppContext.BaseDirectory;
+                string bundledPython = Path.Combine(baseDir, "runtime", "python", "python.exe");
+                if (File.Exists(bundledPython)) return;
+
+                string pythonExe = FindPythonExecutable();
+                var check = new ProcessStartInfo(pythonExe, "-c \"import pymupdf, pypdfium2\"")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true
+                };
+                using var p = Process.Start(check);
+                p?.WaitForExit(3500);
+                if (p == null || p.ExitCode != 0)
+                {
+                    string reqFile = Path.Combine(baseDir, "requirements-runtime.txt");
+                    string args = File.Exists(reqFile)
+                        ? $"-m pip install --disable-pip-version-check -r \"{reqFile}\""
+                        : "-m pip install --disable-pip-version-check pymupdf pillow pypdf pypdfium2 pdf2docx python-docx python-pptx openpyxl";
+
+                    var install = new ProcessStartInfo(pythonExe, args)
+                    {
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true
+                    };
+                    using var ip = Process.Start(install);
+                    ip?.WaitForExit(90000);
+                }
+            }
+            catch { }
+        }
+    }
+
     public static string FindPythonExecutable()
     {
         string baseDir = AppContext.BaseDirectory;
         string[] candidates = [
             Path.Combine(baseDir, "runtime", "python", "python.exe"),
             Path.Combine(baseDir, "runtime", "python.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python313", "python.exe"),
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python312", "python.exe"),
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python311", "python.exe"),
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python310", "python.exe"),
@@ -33,6 +82,22 @@ internal static class Backend
         string pythonExe = FindPythonExecutable();
         var info = new ProcessStartInfo(pythonExe) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true, WorkingDirectory = baseDir };
         info.ArgumentList.Add(Path.Combine(baseDir, "backend", "worker.py"));
+
+        string sitePackages = Path.Combine(baseDir, "runtime", "python", "Lib", "site-packages");
+        if (Directory.Exists(sitePackages))
+        {
+            string existingPpath = Environment.GetEnvironmentVariable("PYTHONPATH") ?? "";
+            info.Environment["PYTHONPATH"] = string.IsNullOrEmpty(existingPpath) ? sitePackages : sitePackages + Path.PathSeparator + existingPpath;
+        }
+
+        string ffmpegDir = Path.Combine(baseDir, "runtime", "ffmpeg");
+        string sevenZipDir = Path.Combine(baseDir, "runtime", "7zip");
+        string existingPath = Environment.GetEnvironmentVariable("PATH") ?? "";
+        string newPath = existingPath;
+        if (Directory.Exists(ffmpegDir)) newPath = ffmpegDir + Path.PathSeparator + newPath;
+        if (Directory.Exists(sevenZipDir)) newPath = sevenZipDir + Path.PathSeparator + newPath;
+        info.Environment["PATH"] = newPath;
+
         // Messages from the engine (errors, page headings in text exports) follow the app's language.
         info.Environment["DROPDIAL_LANG"] = L.Language;
         // The Store installs the app into a read-only folder, so Python must not write bytecode caches next to its libraries.
@@ -49,6 +114,7 @@ internal static class Backend
     // jobToken tags the worker's staging files, so cleaning up after a cancel touches only this job's files.
     public static async Task Run(string[] arguments, CancellationToken cancellation = default, Action<Process>? onStart = null, IProgress<JobProgress>? progress = null, string? jobToken = null)
     {
+        EnsureEnvironment();
         using var watch = arguments.Length >= 3 && arguments[0] == "--job" ? WatchProgress(arguments[2], progress) : null;
         var start = StartInfo(arguments);
         if (jobToken != null)

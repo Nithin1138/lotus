@@ -5,7 +5,7 @@ import io, json, os, re, shutil, subprocess, sys, tempfile, time, uuid
 BASE=Path(__file__).resolve().parent.parent
 
 def _find_binary(name):
-    for cand in [BASE/f'runtime/ffmpeg/{name}.exe', BASE/f'runtime/ffmpeg/{name}']:
+    for cand in [BASE/f'runtime/ffmpeg/{name}.exe', BASE/f'runtime/ffmpeg/bin/{name}.exe', BASE/f'runtime/ffmpeg/{name}']:
         if cand.is_file(): return cand
     found = shutil.which(name)
     if found: return Path(found)
@@ -13,6 +13,30 @@ def _find_binary(name):
 
 FFMPEG=_find_binary('ffmpeg')
 FFPROBE=_find_binary('ffprobe')
+
+def get_fitz():
+    try:
+        import pymupdf as fitz
+        return fitz
+    except ImportError:
+        pass
+    try:
+        import fitz
+        return fitz
+    except ImportError:
+        pass
+    try:
+        subprocess.run([sys.executable, '-m', 'pip', 'install', '--disable-pip-version-check', 'pymupdf'], capture_output=True, timeout=120)
+        try:
+            import pymupdf as fitz
+            return fitz
+        except ImportError:
+            import fitz
+            return fitz
+    except Exception:
+        pass
+    raise ImportError(T('PyMuPDF is required for document and PDF operations. Run: pip install pymupdf'))
+
 IMAGE_EXT={'.jpg','.jpeg','.png','.webp','.heic','.heif','.tif','.tiff','.svg','.avif','.bmp','.ico'}
 VIDEO_EXT={'.mp4','.mov','.mkv','.webm','.avi','.wmv','.gif'}
 AUDIO_EXT={'.mp3','.m4a','.wav','.flac','.ogg','.opus','.aiff','.aif','.wma','.aac'}

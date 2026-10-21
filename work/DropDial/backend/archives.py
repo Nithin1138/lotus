@@ -3,11 +3,14 @@ import gzip,tarfile,zipfile,shutil,stat,tempfile,struct,zlib
 from common import *
 
 def _find_7z():
-    for cand in [BASE/'runtime/7zip/7z.exe', BASE/'runtime/7zip/7zz', BASE/'runtime/7zip/7z']:
+    for cand in [BASE/'runtime/7zip/7z.exe', BASE/'runtime/7zip/7zr.exe', BASE/'runtime/7zip/7zz', BASE/'runtime/7zip/7z']:
         if cand.is_file(): return cand
-    for name in ('7zz', '7z', '7za'):
+    for name in ('7zz', '7z', '7za', '7zr'):
         found = shutil.which(name)
         if found: return Path(found)
+    for pf in (os.environ.get('ProgramFiles', 'C:/Program Files'), os.environ.get('ProgramFiles(x86)', 'C:/Program Files (x86)')):
+        cand = Path(pf) / '7-Zip' / '7z.exe'
+        if cand.is_file(): return cand
     return BASE/'runtime/7zip/7z.exe' if os.name=='nt' else BASE/'runtime/7zip/7zz'
 
 SEVEN=_find_7z()

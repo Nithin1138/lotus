@@ -4,7 +4,7 @@ $taskRoot = $PSScriptRoot
 $taskOutput = Join-Path $taskRoot 'outputs/DropDial'
 
 if (-not $SkipRuntimeCheck) {
-    foreach ($taskFile in @('runtime/python/python.exe', 'runtime/ffmpeg/ffmpeg.exe', 'runtime/ffmpeg/ffprobe.exe', 'runtime/7zip/7z.exe', 'runtime/7zip/7z.dll')) {
+    foreach ($taskFile in @('runtime/python/python.exe', 'runtime/ffmpeg/ffmpeg.exe', 'runtime/ffmpeg/ffprobe.exe', 'runtime/7zip/7z.exe')) {
         if (-not (Test-Path -LiteralPath (Join-Path $taskOutput $taskFile))) {
             throw "Missing $taskFile. Run python work/prepare-runtime.py first, or copy runtime from a complete build."
         }

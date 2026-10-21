@@ -3,13 +3,13 @@ import io,json
 from common import *
 
 def open_pdf(path,params):
-    import pymupdf as fitz
+    fitz = get_fitz()
     doc=fitz.open(path)
     if doc.needs_pass and not doc.authenticate(params.get('password','')): raise ValueError(T('Wrong PDF password'))
     return doc
 
 def password(path,params):
-    import pymupdf as fitz
+    fitz = get_fitz()
     locked=fitz.open(path).needs_pass; doc=open_pdf(path,params); mode=params.get('mode','add'); new=params.get('newPassword','')
     if mode=='add':
         if not new: raise ValueError(T('Enter the new password'))
@@ -21,7 +21,7 @@ def password(path,params):
     doc.close(); return state['output']
 
 def numbers(path,params):
-    import pymupdf as fitz
+    fitz = get_fitz()
     doc=open_pdf(path,params); size=number(params,'fontSize',10); start=int(number(params,'startAt',1)); header=params.get('header','').strip(); footer=params.get('footer','').strip()
     pattern=params.get('numberFormat','{n} / {total}').strip(); position=params.get('position','bottomRight')
     if not 6<=size<=48: raise ValueError(T('The font size must be between 6 and 48'))
@@ -66,7 +66,7 @@ def watermark(path,params):
 def redaction_marks(page,params):
     """Marks what to black out on one page: the boxes drawn on it (in the coordinates of the page as shown) and
     every place the given text appears. Returns how many were marked."""
-    import pymupdf as fitz
+    fitz = get_fitz()
     count=0
     for r in json.loads(params.get('regions','') or '[]'):
         if int(r.get('page',1))!=page.number+1: continue
@@ -80,7 +80,7 @@ def redaction_marks(page,params):
 
 def redact(path,params):
     """Removes the marked text, pictures and drawings from the PDF (not just covers them) and puts black boxes there."""
-    import pymupdf as fitz
+    fitz = get_fitz()
     doc=open_pdf(path,params); total=0
     for page in doc:
         if redaction_marks(page,params):
@@ -91,7 +91,7 @@ def redact(path,params):
 
 def redaction_preview(path,params,folder):
     """One page as it is now and as it will look, plus its size in points (as shown) for placing boxes."""
-    import pymupdf as fitz
+    fitz = get_fitz()
     doc=open_pdf(path,params); index=max(0,min(len(doc)-1,int(number(params,'pageNumber',1))-1)); page=doc[index]; zoom=fitz.Matrix(1.3,1.3)
     source=Path(folder)/'source-page.png'; target=Path(folder)/'live-preview.png'
     page.get_pixmap(matrix=zoom).save(source)
@@ -102,7 +102,7 @@ def redaction_preview(path,params,folder):
 
 def organize(path, params):
     """Reorders, rotates, or extracts pages from a PDF."""
-    import pymupdf as fitz
+    fitz = get_fitz()
     doc = open_pdf(path, params)
     action = params.get('action', 'Reverse All Pages')
     total = len(doc)

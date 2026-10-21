@@ -51,7 +51,7 @@ def render_pdf(path,fmt,params):
     doc.close(); return state['output']
 
 def pdf_word(path,params):
-    import pymupdf as fitz
+    fitz = get_fitz()
     from pdftools import open_pdf
     doc=open_pdf(path,params)
     with output_file(path,'converted','.docx') as state:
@@ -115,7 +115,7 @@ def text_image(text,width=1200):
     return image
 
 def text_pdf(path,text,params):
-    import pymupdf as fitz
+    fitz = get_fitz()
     doc=fitz.open(); font=fitz.Font(fontfile=str(FONT))
     margin=48; lines=[]
     for paragraph in text.splitlines() or ['']:
@@ -390,7 +390,7 @@ def create_epub(title, pages_text, target_path):
         z.writestr('OEBPS/toc.ncx', toc_ncx, compress_type=zipfile.ZIP_DEFLATED)
 
 def pdf_to_pptx(path, params):
-    import pymupdf as fitz
+    fitz = get_fitz()
     import pptx
     from pptx.util import Pt
     doc = fitz.open(path)
@@ -412,7 +412,7 @@ def pdf_to_pptx(path, params):
     return state['output']
 
 def pdf_to_excel(path, fmt, params):
-    import pymupdf as fitz
+    fitz = get_fitz()
     import openpyxl, csv
     doc = fitz.open(path)
     if len(doc) == 0:
@@ -451,7 +451,7 @@ def pdf_to_excel(path, fmt, params):
     return state['output']
 
 def pdf_to_epub(path, params):
-    import pymupdf as fitz
+    fitz = get_fitz()
     doc = fitz.open(path)
     if len(doc) == 0:
         doc.close()
@@ -493,7 +493,7 @@ end tell
     return state['output']
 
 def convert_epub(path, fmt, params):
-    import pymupdf as fitz
+    fitz = get_fitz()
     doc = fitz.open(path)
     if fmt == 'txt':
         text = "\n\n".join(page.get_text() for page in doc)
@@ -557,7 +557,7 @@ def convert(path,fmt,params):
             with output_file(path,'converted','.txt') as state: state['temp'].write_text(text,encoding='utf8')
             return state['output']
         if fmt=='md':
-            import pymupdf as fitz
+            fitz = get_fitz()
             doc=fitz.open(path)
             text='\n\n'.join(page.get_text() for page in doc)
             doc.close()
@@ -565,7 +565,7 @@ def convert(path,fmt,params):
             with output_file(path,'converted','.md') as state: state['temp'].write_text(text,encoding='utf8')
             return state['output']
         if fmt=='html':
-            import pymupdf as fitz
+            fitz = get_fitz()
             doc=fitz.open(path)
             text='\n\n'.join(page.get_text() for page in doc)
             doc.close()
