@@ -674,7 +674,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
 
         let isVideoStudio = (tool.id == "trimVideo" || tool.id == "cropVideo" || tool.id == "splitVideo" || tool.id == "editVideo")
         let isOrganizePDF = (tool.id == "organizePDF")
-        let winW: CGFloat = isOrganizePDF ? 640 : 480
+        let winW: CGFloat = isOrganizePDF ? 640 : (isVideoStudio ? 560 : 520)
         let winH: CGFloat
         if isOrganizePDF {
             winH = 620
@@ -849,7 +849,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         }
 
         // Bottom Action Bar
-        let cancelButton = NSButton(frame: NSRect(x: 20, y: 16, width: 110, height: 32))
+        let cancelButton = NSButton(frame: NSRect(x: 20, y: 16, width: 90, height: 32))
         cancelButton.title = "Cancel"
         cancelButton.bezelStyle = .rounded
         cancelButton.keyEquivalent = "\u{1b}" // Escape
@@ -857,7 +857,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         cancelButton.action = #selector(cancelClicked)
         container.addSubview(cancelButton)
 
-        let saveW: CGFloat = 160
+        let saveW: CGFloat = isOrganizePDF ? 160 : (isVideoStudio ? 135 : 140)
         let saveX = winContentW - 20 - saveW
         let saveButton = NSButton(frame: NSRect(x: saveX, y: 16, width: saveW, height: 32))
         saveButton.title = isOrganizePDF ? "Save Organized PDF" : (isVideoStudio ? "Save Video" : "Save New File")
@@ -870,7 +870,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         container.addSubview(saveButton)
         self.actionSaveButton = saveButton
 
-        let replaceW: CGFloat = 180
+        let replaceW: CGFloat = 165
         let replaceX = saveX - 12 - replaceW
         let replaceButton = NSButton(frame: NSRect(x: replaceX, y: 16, width: replaceW, height: 32))
         replaceButton.title = "Replace in DropDial"
