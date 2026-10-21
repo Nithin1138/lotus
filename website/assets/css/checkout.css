@@ -15,7 +15,7 @@
 
 /* ── Modal Card ── */
 .checkout-modal {
-  width: 100%; max-width: 440px;
+  width: 100%; max-width: 520px;
   background: #111318;
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.09);
@@ -30,7 +30,7 @@
 /* ── Header ── */
 .cko-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 20px 16px;
+  padding: 18px 24px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
   background: linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 100%);
 }
@@ -60,12 +60,173 @@
 .cko-close-btn:hover { background: rgba(255,255,255,0.07); color: #fff; }
 
 /* ── Body ── */
-.cko-body { padding: 20px; }
+.cko-body { padding: 22px 24px; }
+
+/* ── Tier Selector ── */
+.cko-tier-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 6px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+  position: relative;
+}
+
+.cko-tier-btn {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 13px 6px 11px;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  position: relative;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.2s ease,
+              border-color 0.2s ease,
+              box-shadow 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  min-height: 74px;
+  outline: none;
+}
+
+.cko-tier-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.cko-tier-btn:active {
+  transform: scale(0.975);
+}
+
+.cko-tier-btn.active {
+  background: linear-gradient(180deg, rgba(255, 101, 0, 0.16) 0%, rgba(255, 101, 0, 0.06) 100%);
+  border-color: #ff6500;
+  box-shadow: 0 4px 18px rgba(255, 101, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.cko-tier-btn .cko-tb-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  transition: color 0.18s ease;
+}
+
+.cko-tier-btn.active .cko-tb-title {
+  color: #ffffff;
+}
+
+.cko-tier-btn .cko-tb-price {
+  font-size: 1.1rem;
+  font-weight: 850;
+  color: #f1f5f9;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  transition: color 0.18s ease, text-shadow 0.18s ease;
+}
+
+.cko-tier-btn.active .cko-tb-price {
+  color: #ff6500;
+  text-shadow: 0 0 16px rgba(255, 101, 0, 0.35);
+}
+
+.cko-tier-btn .cko-tb-sub {
+  font-size: 0.67rem;
+  font-weight: 550;
+  color: #64748b;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  line-height: 1.2;
+  transition: color 0.18s ease;
+}
+
+.cko-tier-btn.active .cko-tb-sub {
+  color: #fdba74;
+}
+
+/* Floating POPULAR badge */
+.cko-tier-btn .cko-tb-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.58rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff6500 0%, #ff8533 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(255, 101, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 3;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cko-tier-btn:not(.active) .cko-tb-badge {
+  background: rgba(255, 101, 0, 0.22);
+  color: #ff8533;
+  border-color: rgba(255, 101, 0, 0.4);
+  box-shadow: none;
+}
+
+/* ── Impressive Plan Change Micro-Animations ── */
+@keyframes ckoPlanAnim {
+  0% {
+    opacity: 0.35;
+    transform: translateY(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cko-plan-anim {
+  animation: ckoPlanAnim 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.cko-feature-lines.cko-plan-anim .cko-feature-line:nth-child(1) {
+  animation: ckoPlanAnim 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.cko-feature-lines.cko-plan-anim .cko-feature-line:nth-child(2) {
+  animation: ckoPlanAnim 0.22s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both;
+}
+.cko-feature-lines.cko-plan-anim .cko-feature-line:nth-child(3) {
+  animation: ckoPlanAnim 0.26s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+}
+
+@keyframes ckoBtnPulse {
+  0% { transform: scale(0.985); }
+  50% { transform: scale(1.015); box-shadow: 0 6px 26px rgba(255,101,0,0.55); }
+  100% { transform: scale(1); }
+}
+
+.cko-btn-pulse {
+  animation: ckoBtnPulse 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
 
 /* ── Price Hero ── */
 .cko-price-hero {
   display: flex; align-items: flex-start; justify-content: space-between;
-  gap: 14px; margin-bottom: 4px;
+  gap: 16px; margin-bottom: 4px;
 }
 .cko-price-left { display: flex; flex-direction: column; gap: 4px; }
 .cko-price-display-wrap { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
@@ -296,11 +457,17 @@
 .cko-btn-done:hover { background: #e55a00; }
 
 /* ── Responsive ── */
-@media (max-width: 480px) {
-  .checkout-modal { border-radius: 16px; }
+@media (max-width: 540px) {
+  .checkout-modal { border-radius: 16px; max-width: calc(100vw - 20px); }
   .cko-body { padding: 16px; }
+  .cko-header { padding: 14px 16px; }
   .cko-price-hero { flex-direction: column; gap: 10px; }
-  .cko-feature-pills { flex-direction: row; flex-wrap: wrap; }
+  .cko-feature-pills,
+  .cko-feature-lines { flex-direction: row; flex-wrap: wrap; gap: 8px 14px; }
+  .cko-tier-btn { padding: 10px 4px 8px; min-height: 68px; }
+  .cko-tier-btn .cko-tb-title { font-size: 0.76rem; }
+  .cko-tier-btn .cko-tb-price { font-size: 0.98rem; }
+  .cko-tier-btn .cko-tb-sub { font-size: 0.62rem; }
 }
 
 /* ==========================================================================
@@ -317,6 +484,22 @@
 [data-theme="light"] .cko-subtitle { color: #94a3b8; }
 [data-theme="light"] .cko-close-btn { color: #94a3b8; }
 [data-theme="light"] .cko-close-btn:hover { background: #f3f4f6; color: #111827; }
+[data-theme="light"] .cko-tier-selector {
+  background: #f1f5f9; border-color: #e2e8f0;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+[data-theme="light"] .cko-tier-btn { background: transparent; }
+[data-theme="light"] .cko-tier-btn:hover { background: rgba(0,0,0,0.04); border-color: #cbd5e1; }
+[data-theme="light"] .cko-tier-btn.active {
+  background: #ffffff; border-color: #ff6500;
+  box-shadow: 0 4px 14px rgba(255,101,0,0.18), 0 2px 6px rgba(0,0,0,0.06);
+}
+[data-theme="light"] .cko-tier-btn .cko-tb-title { color: #64748b; }
+[data-theme="light"] .cko-tier-btn.active .cko-tb-title { color: #0f172a; }
+[data-theme="light"] .cko-tier-btn .cko-tb-price { color: #1e293b; }
+[data-theme="light"] .cko-tier-btn.active .cko-tb-price { color: #ff6500; }
+[data-theme="light"] .cko-tier-btn .cko-tb-sub { color: #94a3b8; }
+[data-theme="light"] .cko-tier-btn.active .cko-tb-sub { color: #ea580c; }
 [data-theme="light"] .cko-price-standard { color: #ea580c; }
 [data-theme="light"] .cko-price-old { color: #94a3b8; }
 [data-theme="light"] .cko-price-new { color: #059669; text-shadow: none; }

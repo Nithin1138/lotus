@@ -1655,72 +1655,7 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   margin: 0;
 }
 
-/* Modal Tier Selector */
-.cko-tier-selector {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 18px;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 4px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.cko-tier-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  padding: 8px 6px;
-  text-align: center;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.cko-tier-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.cko-tier-btn.active {
-  background: rgba(213, 84, 24, 0.15);
-  border-color: var(--accent);
-}
-
-.cko-tier-btn .cko-tb-title {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #94a3b8;
-}
-
-.cko-tier-btn.active .cko-tb-title {
-  color: var(--ink);
-}
-
-.cko-tier-btn .cko-tb-price {
-  font-size: 0.88rem;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.cko-tier-btn.active .cko-tb-price {
-  color: var(--accent);
-}
-
-.cko-tier-btn .cko-tb-badge {
-  font-size: 0.62rem;
-  font-weight: 700;
-  background: var(--accent);
-  color: #fff;
-  padding: 1px 5px;
-  border-radius: 4px;
-  display: inline-block;
-  align-self: center;
-  margin-bottom: 2px;
-}
+/* Modal Tier Selector (see checkout.css for comprehensive styles) */
 
 /* ==============================================================================
    Modernized Urgency Offer Countdown Banner & Hero Buy Urgency Tag

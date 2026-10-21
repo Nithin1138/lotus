@@ -33,7 +33,7 @@
   const TIERS = {
     single: {
       id: "single",
-      name: "Single Platform",
+      name: "Single Pro Lifetime",
       badge: "ENTRY FLOOR",
       devices: "1 Device (Mac or Windows PC)",
       INR: { amount: 799, display: "₹799", strikeAmount: 1199, strikeDisplay: "₹1,199" },
@@ -51,7 +51,7 @@
     },
     team: {
       id: "team",
-      name: "Commercial / Team License",
+      name: "Team Pro License",
       badge: "COMMERCIAL",
       devices: "Up to 10 Seats / Machines",
       INR: { amount: 3499, display: "₹3,499", strikeAmount: 4999, strikeDisplay: "₹4,999" },
@@ -451,6 +451,10 @@
     document.querySelectorAll('[data-license-devices]').forEach(el => {
       el.textContent = devices;
     });
+    const univSub = document.querySelector('[data-tier-choice="universal"] .cko-tb-sub');
+    if (univSub) {
+      univSub.textContent = `${devices} Devices`;
+    }
   }
 
   /**
@@ -607,15 +611,18 @@
               <button type="button" class="cko-tier-btn" data-tier-choice="single">
                 <span class="cko-tb-title">Single</span>
                 <span class="cko-tb-price" id="cko-tb-single-price">$15</span>
+                <span class="cko-tb-sub">1 Mac or PC</span>
               </button>
               <button type="button" class="cko-tier-btn active" data-tier-choice="universal">
                 <span class="cko-tb-badge">POPULAR</span>
                 <span class="cko-tb-title">Universal</span>
                 <span class="cko-tb-price" id="cko-tb-universal-price">$19</span>
+                <span class="cko-tb-sub">3 Devices</span>
               </button>
               <button type="button" class="cko-tier-btn" data-tier-choice="team">
                 <span class="cko-tb-title">Team</span>
                 <span class="cko-tb-price" id="cko-tb-team-price">$69</span>
+                <span class="cko-tb-sub">10 Seats</span>
               </button>
             </div>
 
@@ -835,6 +842,7 @@
           document.querySelectorAll('[data-tier-choice]').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           applyPricing(isIndia, currentCountry);
+          triggerPlanChangeAnimation();
         }
       });
     });
@@ -967,6 +975,27 @@
     }
   }
 
+  function triggerPlanChangeAnimation() {
+    const priceEl = document.getElementById('checkout-price-display');
+    const featEl = document.getElementById('checkout-feature-lines');
+    const headingEl = document.getElementById('checkout-modal-heading');
+    const payBtnEl = document.getElementById('checkout-pay-btn') || document.querySelector('.cko-pay-btn');
+
+    [priceEl, featEl, headingEl].forEach(el => {
+      if (el) {
+        el.classList.remove('cko-plan-anim');
+        void el.offsetWidth;
+        el.classList.add('cko-plan-anim');
+      }
+    });
+
+    if (payBtnEl) {
+      payBtnEl.classList.remove('cko-btn-pulse');
+      void payBtnEl.offsetWidth;
+      payBtnEl.classList.add('cko-btn-pulse');
+    }
+  }
+
   function openModal(tier) {
     if (tier && TIERS[tier]) {
       selectedTier = tier;
@@ -975,6 +1004,7 @@
       btn.classList.toggle('active', btn.getAttribute('data-tier-choice') === selectedTier);
     });
     applyPricing(isIndia, currentCountry);
+    triggerPlanChangeAnimation();
 
     hideError();
     formView.style.display = 'block';
