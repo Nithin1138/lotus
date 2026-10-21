@@ -143,8 +143,10 @@ final class BackendBridge {
             return "File could not be found or was moved."
         }
 
-        if message.contains("PermissionError") || message.contains("Permission denied") {
-            return "Permission denied when accessing or saving file."
+        if message.contains("PermissionError") || message.contains("Permission denied") ||
+           message.contains("Operation not permitted") || message.contains("[Errno 1]") ||
+           message.contains("[Errno 13]") {
+            return "Permission restricted by system. Output saved to Downloads."
         }
 
         if message.contains("MemoryError") {
@@ -163,9 +165,9 @@ final class BackendBridge {
             return "Cannot reach target size; try adjusting compression settings."
         }
 
-        // Filter out any raw path tracebacks starting with /Library or /usr or /opt
-        if message.hasPrefix("/") || message.contains("/Library/Frameworks") || message.contains(".framework/") {
-            return "Conversion failed for this file format."
+        // Filter out any raw path tracebacks or Errno strings starting with /Library or /usr or /opt
+        if message.hasPrefix("/") || message.contains("/Library/Frameworks") || message.contains(".framework/") || message.contains("[Errno") {
+            return "File access was restricted by system permissions."
         }
 
         if message.count > 100 {
@@ -215,9 +217,52 @@ final class BackendBridge {
         let resultFile = tempDir.appendingPathComponent("result.json")
         let progressFile = resultFile.appendingPathExtension("progress")
 
+        var preparedPaths: [String] = []
+        var hadRestrictedSource = false
+
+        for p in job.Paths {
+            let url = URL(fileURLWithPath: p)
+            let isRestricted = p.contains("/Library/Messages") ||
+                               p.contains("/Library/Containers") ||
+                               p.contains("/Library/Mail") ||
+                               p.contains("/Library/Group Containers") ||
+                               !FileManager.default.isReadableFile(atPath: p)
+            
+            if isRestricted {
+                hadRestrictedSource = true
+                let didAccess = url.startAccessingSecurityScopedResource()
+                let stageDir = tempDir.appendingPathComponent("staged-inputs")
+                try? FileManager.default.createDirectory(at: stageDir, withIntermediateDirectories: true)
+                let dest = stageDir.appendingPathComponent(url.lastPathComponent)
+                
+                var copied = false
+                if (try? FileManager.default.copyItem(at: url, to: dest)) != nil {
+                    copied = true
+                } else if let data = try? Data(contentsOf: url), (try? data.write(to: dest)) != nil {
+                    copied = true
+                }
+                
+                if didAccess {
+                    url.stopAccessingSecurityScopedResource()
+                }
+                
+                if copied {
+                    preparedPaths.append(dest.path)
+                    continue
+                }
+            }
+            preparedPaths.append(p)
+        }
+
+        let effectiveJob = ConversionJob(
+            Paths: preparedPaths,
+            Action: job.Action,
+            Parameters: job.Parameters
+        )
+
         do {
             let encoder = JSONEncoder()
-            let jobData = try encoder.encode(job)
+            let jobData = try encoder.encode(effectiveJob)
             try jobData.write(to: requestFile)
         } catch {
             completion(.failure(error))
@@ -252,6 +297,9 @@ final class BackendBridge {
 
         if let customOutput = UserDefaults.standard.string(forKey: "DROPDIAL_OUTPUT_DIR"), !customOutput.isEmpty {
             env["DROPDIAL_OUTPUT_DIR"] = customOutput
+        } else if hadRestrictedSource {
+            let dl = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path ?? (NSHomeDirectory() + "/Downloads")
+            env["DROPDIAL_OUTPUT_DIR"] = dl
         }
         process.environment = env
 
@@ -316,12 +364,34 @@ final class BackendBridge {
         try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
         let resultFile = tempDir.appendingPathComponent("inspect.json")
 
+        var targetPath = path
+        let url = URL(fileURLWithPath: path)
+        let isRestricted = path.contains("/Library/Messages") ||
+                           path.contains("/Library/Containers") ||
+                           path.contains("/Library/Mail") ||
+                           path.contains("/Library/Group Containers") ||
+                           !FileManager.default.isReadableFile(atPath: path)
+        if isRestricted {
+            let didAccess = url.startAccessingSecurityScopedResource()
+            let stageDir = tempDir.appendingPathComponent("staged-inspect")
+            try? FileManager.default.createDirectory(at: stageDir, withIntermediateDirectories: true)
+            let dest = stageDir.appendingPathComponent(url.lastPathComponent)
+            if (try? FileManager.default.copyItem(at: url, to: dest)) != nil {
+                targetPath = dest.path
+            } else if let data = try? Data(contentsOf: url), (try? data.write(to: dest)) != nil {
+                targetPath = dest.path
+            }
+            if didAccess {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
         let python = findPython()
         let worker = findWorkerScript()
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: python)
-        process.arguments = [worker, "--inspect", path, resultFile.path, tempDir.path, "-1"]
+        process.arguments = [worker, "--inspect", targetPath, resultFile.path, tempDir.path, "-1"]
 
         var env = ProcessInfo.processInfo.environment
         env["DROPDIAL_LANG"] = "en"

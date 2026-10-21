@@ -114,7 +114,14 @@ final class StatusBarDropView: NSView {
         guard let items = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] else {
             return false
         }
-        let paths = items.filter { $0.isFileURL }.map { $0.path }
+        var paths: [String] = []
+        for u in items where u.isFileURL {
+            let didAccess = u.startAccessingSecurityScopedResource()
+            paths.append(u.path)
+            if didAccess {
+                u.stopAccessingSecurityScopedResource()
+            }
+        }
         guard !paths.isEmpty else { return false }
         onDrop?(paths)
         return true

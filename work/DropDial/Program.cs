@@ -1013,7 +1013,7 @@ internal sealed class Resident : IDisposable
             string? folder = OutputFolder.For(queued.Job);
             string? lastSuccessOutput = success.Length > 0 ? success[^1].Output : null;
             string detail = failures > 0 && success.Length == 0
-                ? (result.Files.FirstOrDefault(x => x.Error != null)?.Error ?? L.T("The conversion failed."))
+                ? CleanErrorMessage(result.Files.FirstOrDefault(x => x.Error != null)?.Error ?? L.T("The conversion failed."))
                 : folder == null
                     ? L.T("New files were saved next to the originals.")
                     : L.F("New files were saved to {0}.", Path.GetFileName(folder.TrimEnd('\\')));
@@ -1169,5 +1169,33 @@ internal sealed class Resident : IDisposable
         wheel.Close();
         taskIndicator.Close();
         Journal.Write("Stopped");
+    }
+
+    private static string CleanErrorMessage(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return L.T("The conversion failed.");
+        string trimmed = raw.Trim();
+        if (trimmed.Contains("PermissionError", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Contains("Permission denied", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Contains("Operation not permitted", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Contains("[Errno 1]", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Contains("[Errno 13]", StringComparison.OrdinalIgnoreCase))
+        {
+            return L.T("Permission restricted by system. Output saved to Downloads.");
+        }
+        if (trimmed.Contains("FileNotFoundError", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Contains("No such file or directory", StringComparison.OrdinalIgnoreCase))
+        {
+            return L.T("File could not be found or was moved.");
+        }
+        if (trimmed.Contains("MemoryError", StringComparison.OrdinalIgnoreCase))
+        {
+            return L.T("File is too large to process in memory.");
+        }
+        if (trimmed.StartsWith("[Errno") || trimmed.Contains("Traceback (most recent call last)"))
+        {
+            return L.T("Operation restricted by file permissions or read-only directory.");
+        }
+        return trimmed.Length > 90 ? trimmed[..87] + "..." : trimmed;
     }
 }

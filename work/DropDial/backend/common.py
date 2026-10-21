@@ -110,45 +110,119 @@ SUFFIX={'rotateImage':'rotated','rotateVideo':'rotated','cropImage':'cropped','c
     'extractPdfImages':'images','packArchive':'packed','createAnimation':'animation','joinAudio':'joined','joinVideos':'joined','splitVideo':'clips',
     'videoSnapshots':'frames','extractArchive':'extracted','createCollage':'collage','createPDF':'combined','organizePDF':'organized'}
 
-def work_dir(path):
-    """Where results are written: the folder chosen in the app, or next to the source file."""
-    chosen=os.environ.get('DROPDIAL_OUTPUT_DIR', os.environ.get('DROPDIAL_OUTPUT_DIR','')).strip()
-    if chosen and Path(chosen).is_dir(): return Path(chosen).resolve()
-    return Path(path).resolve().parent
+def is_dir_writable(dir_path):
+    """Checks if a directory exists and can safely be written to by this process."""
+    if not dir_path: return False
+    try:
+        p = Path(dir_path).resolve()
+        if not p.is_dir(): return False
+        p_str = str(p)
+        # Avoid macOS sandboxed/system/TCC-restricted Library paths
+        if sys.platform == 'darwin':
+            home = str(Path.home().resolve())
+            if p_str.startswith(os.path.join(home, 'Library')) and not p_str.startswith(os.path.join(home, 'Library', 'Application Support', 'DropDial')):
+                return False
+            if p_str.startswith(('/System', '/Library', '/usr', '/bin', '/sbin')):
+                return False
+        elif sys.platform == 'win32':
+            prog_files = os.environ.get('ProgramFiles', 'C:\\Program Files')
+            prog_files_x86 = os.environ.get('ProgramFiles(x86)', 'C:\\Program Files (x86)')
+            win_dir = os.environ.get('SystemRoot', 'C:\\Windows')
+            for pf in (prog_files, prog_files_x86, win_dir):
+                if pf and p_str.lower().startswith(pf.lower()):
+                    return False
 
-def commit(temp,path,suffix,extension):
-    parent=work_dir(path); stem=output_stem(path,SUFFIX.get(suffix,suffix))
-    for i in range(10000):
-        target=parent/(stem+(f'-{i}' if i else '')+extension)
+        # Attempt to create and delete a tiny test file to verify real write permission
+        test = p / f".dd_write_test_{uuid.uuid4().hex}"
         try:
-            # On Windows rename fails if the target exists; never replace user files.
-            if target.exists(): continue
-            os.rename(temp,target)
-            return str(target)
-        except FileExistsError: continue
-    raise OSError(T('Could not choose a name for the output file'))
+            test.touch()
+            test.unlink()
+            return True
+        except (PermissionError, OSError):
+            return False
+    except Exception:
+        return False
+
+def get_safe_fallback_dir():
+    """Returns a user-accessible directory guaranteed to have write permission."""
+    for candidate in [Path.home() / 'Downloads', Path.home() / 'Desktop', Path(tempfile.gettempdir())]:
+        try:
+            if candidate.is_dir() and is_dir_writable(candidate):
+                return candidate.resolve()
+        except Exception:
+            continue
+    return Path(tempfile.gettempdir()).resolve()
+
+def work_dir(path):
+    """Where results are written: the folder chosen in the app, or next to the source file (with safe fallback)."""
+    chosen = os.environ.get('DROPDIAL_OUTPUT_DIR', '').strip()
+    if chosen and is_dir_writable(chosen):
+        return Path(chosen).resolve()
+    
+    try:
+        parent = Path(path).resolve().parent
+        if is_dir_writable(parent):
+            return parent
+    except Exception:
+        pass
+    
+    return get_safe_fallback_dir()
+
+def commit(temp, path, suffix, extension):
+    parent = work_dir(path)
+    stem = output_stem(path, SUFFIX.get(suffix, suffix))
+    
+    # Try committing to parent folder; if PermissionError/OSError occurs, fallback to Downloads/Desktop
+    candidate_dirs = [parent]
+    fallback = get_safe_fallback_dir()
+    if fallback != parent and fallback not in candidate_dirs:
+        candidate_dirs.append(fallback)
+        
+    for target_dir in candidate_dirs:
+        for i in range(10000):
+            target = target_dir / (stem + (f'-{i}' if i else '') + extension)
+            try:
+                if target.exists(): continue
+                # Use shutil.move for safe cross-filesystem and permission-resilient operations
+                shutil.move(str(temp), str(target))
+                return str(target)
+            except FileExistsError:
+                continue
+            except (PermissionError, OSError):
+                # Permission restricted in this directory; try next candidate directory
+                break
+    raise OSError(T('Could not save output file due to permission restrictions'))
 
 @contextmanager
-def output_file(path,suffix,extension):
-    temp=work_dir(path)/(TEMP_PREFIX+uuid.uuid4().hex+extension)
-    state={'temp':temp,'output':None}
+def output_file(path, suffix, extension):
+    # Staging temp file is ALWAYS created in guaranteed-writable temp dir to avoid permission errors
+    temp_dir = Path(tempfile.gettempdir())
+    temp = temp_dir / (TEMP_PREFIX + uuid.uuid4().hex + extension)
+    state = {'temp': temp, 'output': None}
     try:
         yield state
-        if not temp.is_file() or temp.stat().st_size==0: raise RuntimeError(T('The engine did not produce a valid output'))
-        state['output']=commit(temp,path,suffix,extension)
+        if not temp.is_file() or temp.stat().st_size == 0:
+            raise RuntimeError(T('The engine did not produce a valid output'))
+        state['output'] = commit(temp, path, suffix, extension)
     finally:
-        if temp.exists(): temp.unlink()
+        if temp.exists():
+            try: temp.unlink()
+            except Exception: pass
 
 @contextmanager
-def output_folder(path,suffix,allow_empty=False):
-    temp=Path(tempfile.mkdtemp(prefix=TEMP_PREFIX,dir=work_dir(path)))
-    state={'temp':temp,'output':None}
+def output_folder(path, suffix, allow_empty=False):
+    # Staging folder is ALWAYS created in guaranteed-writable temp dir
+    temp = Path(tempfile.mkdtemp(prefix=TEMP_PREFIX))
+    state = {'temp': temp, 'output': None}
     try:
         yield state
-        if not allow_empty and not any(temp.iterdir()): raise RuntimeError(T('Nothing was produced'))
-        state['output']=commit(temp,path,suffix,'')
+        if not allow_empty and not any(temp.iterdir()):
+            raise RuntimeError(T('Nothing was produced'))
+        state['output'] = commit(temp, path, suffix, '')
     finally:
-        if temp.exists(): shutil.rmtree(temp)
+        if temp.exists():
+            try: shutil.rmtree(temp)
+            except Exception: pass
 
 def open_image(path,frame=None):
     from PIL import Image,ImageOps,ImageCms
