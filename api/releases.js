@@ -196,28 +196,28 @@ module.exports = async function handler(req, res) {
     {
       id: 1,
       name: 'DropDial-Setup.exe',
-      size: 51614294,
+      size: 69235884,
       content_type: 'application/x-msdownload',
       browser_download_url: `${baseUrl}/downloads/DropDial-Setup.exe`
     },
     {
       id: 2,
       name: 'DropDial.dmg',
-      size: 4583800,
+      size: 14711357,
       content_type: 'application/x-apple-diskimage',
       browser_download_url: `${baseUrl}/downloads/DropDial.dmg`
     },
     {
       id: 3,
       name: 'DropDial-macOS.zip',
-      size: 4091042,
+      size: 14708316,
       content_type: 'application/zip',
       browser_download_url: `${baseUrl}/downloads/DropDial-macOS.zip`
     },
     {
       id: 4,
       name: 'DropDial-Windows-x64.zip',
-      size: 73415552,
+      size: 96326809,
       content_type: 'application/zip',
       browser_download_url: `${baseUrl}/downloads/DropDial-Windows-x64.zip`
     },

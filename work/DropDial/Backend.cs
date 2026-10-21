@@ -9,10 +9,29 @@ namespace DropDial;
 
 internal static class Backend
 {
+    public static string FindPythonExecutable()
+    {
+        string baseDir = AppContext.BaseDirectory;
+        string[] candidates = [
+            Path.Combine(baseDir, "runtime", "python", "python.exe"),
+            Path.Combine(baseDir, "runtime", "python.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python312", "python.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python311", "python.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python310", "python.exe"),
+            "python.exe"
+        ];
+        foreach (var c in candidates)
+        {
+            if (File.Exists(c)) return c;
+        }
+        return "python.exe";
+    }
+
     public static ProcessStartInfo StartInfo(params string[] arguments)
     {
         string baseDir = AppContext.BaseDirectory;
-        var info = new ProcessStartInfo(Path.Combine(baseDir, "runtime", "python", "python.exe")) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true, WorkingDirectory = baseDir };
+        string pythonExe = FindPythonExecutable();
+        var info = new ProcessStartInfo(pythonExe) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true, WorkingDirectory = baseDir };
         info.ArgumentList.Add(Path.Combine(baseDir, "backend", "worker.py"));
         // Messages from the engine (errors, page headings in text exports) follow the app's language.
         info.Environment["DROPDIAL_LANG"] = L.Language;
