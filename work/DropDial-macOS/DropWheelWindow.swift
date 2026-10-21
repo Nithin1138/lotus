@@ -247,18 +247,18 @@ final class RadialWheelView: NSView {
         scrollVelocity = 0
     }
 
-    let wheelCenter = CGPoint(x: 170, y: 155)
-    let innerRadius: CGFloat = 42
-    let outerRadius: CGFloat = 118
-    let backdropRadius: CGFloat = 124
-    let hubRadius: CGFloat = 36
-    let topBarRect = NSRect(x: 170 - 110, y: 300, width: 220, height: 32)
-    let closeButtonRect = NSRect(x: 170 - 110 + 220 + 8, y: 300, width: 32, height: 32)
+    let wheelCenter = CGPoint(x: 170, y: 160)
+    let innerRadius: CGFloat = 48
+    let outerRadius: CGFloat = 130
+    let backdropRadius: CGFloat = 136
+    let hubRadius: CGFloat = 42
+    let topBarRect = NSRect(x: 170 - 110, y: 316, width: 220, height: 32)
+    let closeButtonRect = NSRect(x: 170 - 110 + 220 + 8, y: 316, width: 32, height: 32)
 
     var hubClearButtonRect: NSRect {
         // Small into (x) button centered inside top of middle circle, just above the file
-        let size: CGFloat = 15
-        return NSRect(x: wheelCenter.x - size / 2, y: wheelCenter.y + 20, width: size, height: size)
+        let size: CGFloat = 16
+        return NSRect(x: wheelCenter.x - size / 2, y: wheelCenter.y + 24, width: size, height: size)
     }
 
     var isDarkMode: Bool {
@@ -522,7 +522,7 @@ final class RadialWheelView: NSView {
 
         // 1.8 Check bottom pagination dots
         if hasMoreItems {
-            let dotY = wheelCenter.y - outerRadius - 13.0
+            let dotY = wheelCenter.y - outerRadius - 12.0
             if abs(point.y - dotY) <= 8.0 {
                 let dotSpacing: CGFloat = 9.0
                 let totalDotWidth = CGFloat(totalSides - 1) * dotSpacing
@@ -1013,7 +1013,7 @@ final class RadialWheelView: NSView {
             let dotSpacing: CGFloat = 9.0
             let totalDotWidth = CGFloat(dotCount - 1) * dotSpacing
             let startX = wheelCenter.x - totalDotWidth / 2.0
-            let dotY = wheelCenter.y - outerRadius - 13.0
+            let dotY = wheelCenter.y - outerRadius - 12.0
 
             context.saveGState()
             for di in 0..<dotCount {
@@ -1039,7 +1039,7 @@ final class RadialWheelView: NSView {
                 let hintAttrs: [NSAttributedString.Key: Any] = [.font: hintFont, .foregroundColor: hintColor]
                 let hintStr = NSAttributedString(string: "Side \(currentSideIndex + 1) of \(totalSides) · scroll to rotate", attributes: hintAttrs)
                 let hSz = hintStr.size()
-                hintStr.draw(at: NSPoint(x: wheelCenter.x - hSz.width / 2, y: dotY - 14.0))
+                hintStr.draw(at: NSPoint(x: wheelCenter.x - hSz.width / 2, y: dotY - 13.0))
             }
         }
 
