@@ -2250,6 +2250,7 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
    FIRST 24-HOURS ANNOUNCEMENT BAR & COUPON PROMO
    ============================================================================== */
 .early-bird-bar {
+  display: none;
   background: linear-gradient(90deg, rgba(255, 101, 0, 0.14) 0%, rgba(255, 140, 56, 0.08) 50%, rgba(255, 101, 0, 0.14) 100%);
   border-bottom: 1px solid rgba(255, 101, 0, 0.28);
   color: var(--text, #f4f4f5);

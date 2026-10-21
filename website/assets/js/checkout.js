@@ -12,11 +12,18 @@
 
   // Currency configuration
   const PRICING = {
-    INR: { code: 'INR', symbol: '₹', amount: 999, display: '₹999', strikeAmount: 1499, strikeDisplay: '₹1,499' },
+    INR: { code: 'INR', symbol: '₹', amount: 1499, display: '₹1,499', strikeAmount: 1499, strikeDisplay: '₹1,499' },
     USD: { code: 'USD', symbol: '$', amount: 19, display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
-    strikethrough: { enabled: true, inrAmount: 1499, usdAmount: 29 },
+    strikethrough: {
+      enabled: false,
+      inrAmount: 1499,
+      usdAmount: 29,
+      single: { enabled: false, inrAmount: 1199, usdAmount: 24 },
+      universal: { enabled: false, inrAmount: 1499, usdAmount: 29 },
+      team: { enabled: false, inrAmount: 4999, usdAmount: 99 }
+    },
     countdown: {
-      enabled: true,
+      enabled: false,
       value: 24,
       unit: 'hours',
       discountPercent: 10,
@@ -37,6 +44,7 @@
       name: "Single Pro Lifetime",
       badge: "ENTRY FLOOR",
       devices: "1 Device (Mac or Windows PC)",
+      strikeEnabled: false,
       INR: { amount: 799, display: "₹799", strikeAmount: 1199, strikeDisplay: "₹1,199" },
       USD: { amount: 15, display: "$15", strikeAmount: 22, strikeDisplay: "$22" },
       features: ["1 Device (Mac or Windows)", "Pay Once, Own Forever", "100% Offline & Private"]
@@ -46,7 +54,8 @@
       name: "Universal Pro Lifetime",
       badge: "RECOMMENDED",
       devices: "Up to 3 Devices (Mac & PC)",
-      INR: { amount: 999, display: "₹999", strikeAmount: 1499, strikeDisplay: "₹1,499" },
+      strikeEnabled: false,
+      INR: { amount: 1499, display: "₹1,499", strikeAmount: 1499, strikeDisplay: "₹1,499" },
       USD: { amount: 19, display: "$19", strikeAmount: 29, strikeDisplay: "$29" },
       features: ["3 Devices (Mac & Windows)", "Unlimited Batch & Pro Tools", "Lifetime Free Updates"]
     },
@@ -55,6 +64,7 @@
       name: "Team Pro License",
       badge: "COMMERCIAL",
       devices: "Up to 10 Seats / Machines",
+      strikeEnabled: false,
       INR: { amount: 3499, display: "₹3,499", strikeAmount: 4999, strikeDisplay: "₹4,999" },
       USD: { amount: 69, display: "$69", strikeAmount: 99, strikeDisplay: "$99" },
       features: ["Up to 10 Seats / Machines", "Commercial & Client Rights", "Priority Developer Support"]
@@ -464,6 +474,76 @@
     }
   }
 
+  const PRICING_CACHE_KEY = 'dropdial_pricing_cache_v2';
+
+  function applyPricingPayload(pricing) {
+    if (!pricing || typeof pricing !== 'object') return;
+    if (pricing.INR && pricing.INR.amount) {
+      PRICING.INR = {
+        code: 'INR',
+        symbol: pricing.INR.symbol || '₹',
+        amount: pricing.INR.amount,
+        display: pricing.INR.display || `₹${pricing.INR.amount.toLocaleString('en-IN')}`,
+        strikeAmount: pricing.INR.strikeAmount || 1499,
+        strikeDisplay: pricing.INR.strikeDisplay || '₹1,499'
+      };
+    }
+    if (pricing.USD && pricing.USD.amount) {
+      PRICING.USD = {
+        code: 'USD',
+        symbol: pricing.USD.symbol || '$',
+        amount: pricing.USD.amount,
+        display: pricing.USD.display || `$${pricing.USD.amount}`,
+        strikeAmount: pricing.USD.strikeAmount || 29,
+        strikeDisplay: pricing.USD.strikeDisplay || '$29'
+      };
+    }
+    if (pricing.strikethrough) {
+      PRICING.strikethrough = pricing.strikethrough;
+    }
+    if (pricing.countdown) {
+      PRICING.countdown = {
+        ...PRICING.countdown,
+        ...pricing.countdown,
+        enabled: pricing.countdown.enabled === true
+      };
+    }
+    if (pricing.devicesPerLicense) {
+      PRICING.devicesPerLicense = Number(pricing.devicesPerLicense) || 3;
+      document.querySelectorAll('[data-license-devices]').forEach(el => {
+        el.textContent = PRICING.devicesPerLicense;
+      });
+    }
+    if (pricing.tiers) {
+      const t = pricing.tiers;
+      if (t.single) {
+        if (t.single.INR) { TIERS.single.INR.amount = t.single.INR.amount; TIERS.single.INR.display = t.single.INR.display || `₹${t.single.INR.amount.toLocaleString('en-IN')}`; }
+        if (t.single.USD) { TIERS.single.USD.amount = t.single.USD.amount; TIERS.single.USD.display = t.single.USD.display || `$${t.single.USD.amount}`; }
+        if (t.single.strikeEnabled !== undefined) TIERS.single.strikeEnabled = t.single.strikeEnabled;
+      }
+      if (t.universal) {
+        if (t.universal.INR) { TIERS.universal.INR.amount = t.universal.INR.amount; TIERS.universal.INR.display = t.universal.INR.display || `₹${t.universal.INR.amount.toLocaleString('en-IN')}`; }
+        if (t.universal.USD) { TIERS.universal.USD.amount = t.universal.USD.amount; TIERS.universal.USD.display = t.universal.USD.display || `$${t.universal.USD.amount}`; }
+        if (t.universal.strikeEnabled !== undefined) TIERS.universal.strikeEnabled = t.universal.strikeEnabled;
+      }
+      if (t.team) {
+        if (t.team.INR) { TIERS.team.INR.amount = t.team.INR.amount; TIERS.team.INR.display = t.team.INR.display || `₹${t.team.INR.amount.toLocaleString('en-IN')}`; }
+        if (t.team.USD) { TIERS.team.USD.amount = t.team.USD.amount; TIERS.team.USD.display = t.team.USD.display || `$${t.team.USD.amount}`; }
+        if (t.team.strikeEnabled !== undefined) TIERS.team.strikeEnabled = t.team.strikeEnabled;
+      }
+    }
+  }
+
+  function loadCachedPricing() {
+    try {
+      const raw = localStorage.getItem(PRICING_CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        applyPricingPayload(parsed);
+      }
+    } catch (_) {}
+  }
+
   /**
    * Async server-edge geolocation detection & dynamic live pricing
    */
@@ -474,58 +554,12 @@
       if (pRes.ok) {
         const pData = await pRes.json();
         if (pData && pData.pricing) {
-          if (pData.pricing.INR && pData.pricing.INR.amount) {
-            PRICING.INR = {
-              code: 'INR',
-              symbol: pData.pricing.INR.symbol || '₹',
-              amount: pData.pricing.INR.amount,
-              display: pData.pricing.INR.display || `₹${pData.pricing.INR.amount.toLocaleString('en-IN')}`,
-              strikeAmount: pData.pricing.INR.strikeAmount || 1499,
-              strikeDisplay: pData.pricing.INR.strikeDisplay || '₹1,499'
-            };
-          }
-          if (pData.pricing.USD && pData.pricing.USD.amount) {
-            PRICING.USD = {
-              code: 'USD',
-              symbol: pData.pricing.USD.symbol || '$',
-              amount: pData.pricing.USD.amount,
-              display: pData.pricing.USD.display || `$${pData.pricing.USD.amount}`,
-              strikeAmount: pData.pricing.USD.strikeAmount || 29,
-              strikeDisplay: pData.pricing.USD.strikeDisplay || '$29'
-            };
-          }
-          if (pData.pricing.strikethrough) {
-            PRICING.strikethrough = pData.pricing.strikethrough;
-          }
-          if (pData.pricing.countdown) {
-            PRICING.countdown = {
-              ...PRICING.countdown,
-              ...pData.pricing.countdown,
-              enabled: pData.pricing.countdown.enabled !== false
-            };
-            initCountdownTimer(PRICING.countdown);
-          }
-          if (pData.pricing.devicesPerLicense) {
-            PRICING.devicesPerLicense = Number(pData.pricing.devicesPerLicense) || 3;
-            document.querySelectorAll('[data-license-devices]').forEach(el => {
-              el.textContent = PRICING.devicesPerLicense;
-            });
-          }
-          if (pData.pricing.tiers) {
-            const t = pData.pricing.tiers;
-            if (t.single) {
-              if (t.single.INR) { TIERS.single.INR.amount = t.single.INR.amount; TIERS.single.INR.display = t.single.INR.display || `₹${t.single.INR.amount.toLocaleString('en-IN')}`; }
-              if (t.single.USD) { TIERS.single.USD.amount = t.single.USD.amount; TIERS.single.USD.display = t.single.USD.display || `$${t.single.USD.amount}`; }
-            }
-            if (t.universal) {
-              if (t.universal.INR) { TIERS.universal.INR.amount = t.universal.INR.amount; TIERS.universal.INR.display = t.universal.INR.display || `₹${t.universal.INR.amount.toLocaleString('en-IN')}`; }
-              if (t.universal.USD) { TIERS.universal.USD.amount = t.universal.USD.amount; TIERS.universal.USD.display = t.universal.USD.display || `$${t.universal.USD.amount}`; }
-            }
-            if (t.team) {
-              if (t.team.INR) { TIERS.team.INR.amount = t.team.INR.amount; TIERS.team.INR.display = t.team.INR.display || `₹${t.team.INR.amount.toLocaleString('en-IN')}`; }
-              if (t.team.USD) { TIERS.team.USD.amount = t.team.USD.amount; TIERS.team.USD.display = t.team.USD.display || `$${t.team.USD.amount}`; }
-            }
-          }
+          applyPricingPayload(pData.pricing);
+          initCountdownTimer(PRICING.countdown);
+          applyPricing(isIndia, currentCountry);
+          try {
+            localStorage.setItem(PRICING_CACHE_KEY, JSON.stringify(pData.pricing));
+          } catch (_) {}
         }
       }
     } catch (e) {}
@@ -569,6 +603,9 @@
   }
 
   function init() {
+    // 0. Synchronously restore cached pricing settings to eliminate any page-load blink
+    loadCachedPricing();
+
     // 1. Instant heuristic detection
     const initial = detectFastLocation();
     isIndia = initial.isIndia;
@@ -582,7 +619,7 @@
     // 3. Sync pricing with modal DOM
     applyPricing(isIndia, currentCountry);
 
-    // 4. Start urgency countdown timer immediately
+    // 4. Start urgency countdown timer immediately (stays hidden unless enabled)
     initCountdownTimer(PRICING.countdown);
 
     // 5. Edge geo refinement in background
