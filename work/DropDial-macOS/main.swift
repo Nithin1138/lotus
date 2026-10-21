@@ -440,7 +440,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
 
         // 4. Preferences (Theme, Sounds, Output)
-        let currentTheme = UserDefaults.standard.string(forKey: "DROPDIAL_THEME") ?? "system"
+        let currentTheme = UserDefaults.standard.string(forKey: "DROPDIAL_THEME") ?? "light"
         let themeMenu = NSMenu()
         themeMenu.autoenablesItems = false
 

@@ -262,7 +262,7 @@ final class RadialWheelView: NSView {
     }
 
     var isDarkMode: Bool {
-        let t = UserDefaults.standard.string(forKey: "DROPDIAL_THEME") ?? "system"
+        let t = UserDefaults.standard.string(forKey: "DROPDIAL_THEME") ?? "light"
         if t == "dark" { return true }
         if t == "light" { return false }
         return NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua

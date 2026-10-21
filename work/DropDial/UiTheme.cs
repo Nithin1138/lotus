@@ -23,7 +23,7 @@ internal static class UiTheme
     private static readonly Palette DarkPalette = new("#1C1E22", "#26292E", "#E6E8EB", "#9EA4AC", "#3A3F46", "#5E656F", "#30343A", "#4A2D1D", "#454B53", "#2B2E33", "#202327");
     private static Palette palette = LightPalette;
     public static bool Dark { get; private set; }
-    public static string Choice => Settings.GetString(ThemeKey) is "light" or "dark" ? Settings.GetString(ThemeKey)! : "system";
+    public static string Choice => Settings.GetString(ThemeKey) is "dark" or "system" ? Settings.GetString(ThemeKey)! : "light";
     public static Brush Ink { get; private set; } = Brushes.Black;
     public static Brush Muted { get; private set; } = Brushes.Gray;
     public static readonly Brush Accent = Frozen("#D55418");
