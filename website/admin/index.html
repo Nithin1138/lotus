@@ -938,74 +938,83 @@
 
               <form id="update-pricing-form" class="settings-form">
                 
-                <!-- SECTION 1: 3-Tier Psychological Architecture Retail Pricing -->
-                <div class="pricing-tier-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                <!-- SECTION 1: 3-Tier Retail Pricing Architecture -->
+                <div class="pricing-tier-grid">
                   <!-- Tier 1: Single Platform -->
                   <div class="currency-card">
                     <div class="currency-card-head">
-                      <span class="currency-region-badge">Single Platform (1 Device)</span>
-                      <span class="currency-type-tag">Tier 1 Floor</span>
+                      <div class="currency-tier-info">
+                        <span class="currency-tier-name">Single Platform</span>
+                        <span class="currency-tier-sub">1 Mac or Windows PC</span>
+                      </div>
+                      <span class="currency-type-tag">SOLO LICENSE</span>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
-                      <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">India (₹)</label>
+                    <div class="currency-inputs-row">
+                      <div class="currency-input-field">
+                        <label for="price-single-inr-input">India (INR)</label>
                         <div class="currency-input-wrap">
                           <span class="currency-symbol-addon">₹</span>
                           <input type="number" id="price-single-inr-input" min="99" step="1" value="799" placeholder="799" required>
                         </div>
                       </div>
-                      <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Global ($)</label>
+                      <div class="currency-input-field">
+                        <label for="price-single-usd-input">Global (USD)</label>
                         <div class="currency-input-wrap">
                           <span class="currency-symbol-addon">$</span>
                           <input type="number" id="price-single-usd-input" min="1" step="1" value="15" placeholder="15" required>
                         </div>
                       </div>
                     </div>
-                    <span class="field-hint">Entry floor retail pricing (Default: ₹799 / $15)</span>
+                    <span class="field-hint">Entry single-device retail price (Default: ₹799 / $15)</span>
                   </div>
 
                   <!-- Tier 2: Universal Pro Lifetime (Hero) -->
-                  <div class="currency-card" style="border: 1px solid var(--accent, #ff6500); background: rgba(255, 101, 0, 0.04);">
+                  <div class="currency-card featured-tier-card">
                     <div class="currency-card-head">
-                      <span class="currency-region-badge" style="color: var(--accent, #ff6500); font-weight: 700;">Universal Pro (Mac + PC) ★</span>
-                      <span class="currency-type-tag" style="background: var(--accent, #ff6500); color: #fff;">Hero 80%+</span>
+                      <div class="currency-tier-info">
+                        <span class="currency-tier-name" style="color: var(--accent, #ff6500);">Universal Pro Lifetime ★</span>
+                        <span class="currency-tier-sub">Mac &amp; PC (Up to 3 Devices)</span>
+                      </div>
+                      <span class="currency-type-tag featured-tag">RECOMMENDED • HERO</span>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
-                      <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">India (₹)</label>
+                    <div class="currency-inputs-row">
+                      <div class="currency-input-field">
+                        <label for="price-inr-input">India (INR)</label>
                         <div class="currency-input-wrap">
                           <span class="currency-symbol-addon">₹</span>
                           <input type="number" id="price-inr-input" min="99" step="1" value="999" placeholder="999" required>
                         </div>
                       </div>
-                      <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Global ($)</label>
+                      <div class="currency-input-field">
+                        <label for="price-usd-input">Global (USD)</label>
                         <div class="currency-input-wrap">
                           <span class="currency-symbol-addon">$</span>
                           <input type="number" id="price-usd-input" min="1" step="1" value="19" placeholder="19" required>
                         </div>
                       </div>
                     </div>
-                    <span class="field-hint">Universal hero retail offer (Default: ₹999 / $19)</span>
+                    <span class="field-hint">Primary hero retail offer (Default: ₹999 / $19)</span>
                   </div>
 
                   <!-- Tier 3: Commercial / Team License -->
                   <div class="currency-card">
                     <div class="currency-card-head">
-                      <span class="currency-region-badge">Team License (10 Seats)</span>
-                      <span class="currency-type-tag">Tier 3 Anchor</span>
+                      <div class="currency-tier-info">
+                        <span class="currency-tier-name">Team License</span>
+                        <span class="currency-tier-sub">Up to 10 Seats / Machines</span>
+                      </div>
+                      <span class="currency-type-tag team-tag">TEAMS &amp; STUDIOS</span>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
-                      <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">India (₹)</label>
+                    <div class="currency-inputs-row">
+                      <div class="currency-input-field">
+                        <label for="price-team-inr-input">India (INR)</label>
                         <div class="currency-input-wrap">
                           <span class="currency-symbol-addon">₹</span>
                           <input type="number" id="price-team-inr-input" min="99" step="1" value="3499" placeholder="3499" required>
                         </div>
                       </div>
-                      <div>
-                        <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Global ($)</label>
+                      <div class="currency-input-field">
+                        <label for="price-team-usd-input">Global (USD)</label>
                         <div class="currency-input-wrap">
                           <span class="currency-symbol-addon">$</span>
                           <input type="number" id="price-team-usd-input" min="1" step="1" value="69" placeholder="69" required>
@@ -1016,29 +1025,27 @@
                   </div>
                 </div>
 
-                <!-- SECTION: Devices Limit per License Key -->
-                <div class="feature-toggle-card" style="margin-bottom: 20px;">
-                  <div class="feature-toggle-header" style="border-bottom: none; padding-bottom: 0;">
-                    <div class="feature-toggle-info">
-                      <div class="feature-toggle-title">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                        <span>Devices Valid Per License Key</span>
+                <!-- SECTION 2: Devices Limit per License Key -->
+                <div class="feature-toggle-card devices-setting-card" style="margin-bottom: 22px;">
+                  <div class="feature-toggle-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: none; padding-bottom: 0;">
+                    <div class="feature-toggle-info" style="display: flex; align-items: center; gap: 14px;">
+                      <div class="device-setting-icon" style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                       </div>
-                      <p class="feature-toggle-desc">
-                        Control how many personal Macs and Windows PCs can be activated with a single DropDial Pro lifetime license key. Updates dynamically in real-time across the website pricing card, feature lists, and FAQ.
-                      </p>
+                      <div>
+                        <div class="feature-toggle-title" style="font-size: 13.5px; font-weight: 700; color: #fff; margin-bottom: 2px;">
+                          Devices Valid Per License Key
+                        </div>
+                        <p class="feature-toggle-desc" style="font-size: 12px; color: var(--text-muted); margin: 0;">
+                          Max personal Mac &amp; Windows machines per universal key. Updates dynamically in real-time across the website pricing card, feature lists, and FAQ.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div class="feature-toggle-body" style="padding-top: 14px;">
-                    <div style="max-width: 320px;">
-                      <label for="pricing-devices-input" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
-                        Max Device Activations Per Key
-                      </label>
-                      <div class="currency-input-wrap">
-                        <span class="currency-symbol-addon" style="font-size: 13px; font-weight: 700;">💻</span>
-                        <input type="number" id="pricing-devices-input" min="1" max="50" step="1" value="3" placeholder="3" required>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                      <label for="pricing-devices-input" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Max Activations:</label>
+                      <div class="currency-input-wrap" style="width: 80px;">
+                        <input type="number" id="pricing-devices-input" min="1" max="50" step="1" value="3" placeholder="3" required style="text-align: center; font-size: 15px; font-weight: 800;">
                       </div>
-                      <span class="field-hint">Default: <strong>3</strong> personal devices (e.g. 1 Mac + 2 PCs). Displayed on website as: <em>"Valid for up to <strong>N</strong> personal Macs and PCs"</em></span>
                     </div>
                   </div>
                 </div>
@@ -1287,23 +1294,27 @@
 
                 <!-- SECTION 4: Master Passcode Authorization -->
                 <div class="passcode-authorization-card">
+                  <div class="pac-header" style="margin-bottom: 14px;">
+                    <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 3px;">Deploy Changes to Edge &amp; Database</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Saves retail prices, promotional discount anchors, and countdown timers across all platforms.</div>
+                  </div>
+
                   <div class="form-group" style="margin-bottom: 16px;">
-                    <label for="pricing-admin-passcode" style="color: var(--text-main); font-size: 12px; font-weight: 700;">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                      Authorize with Master Passcode
+                    <label for="pricing-admin-passcode" style="color: var(--text-main); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      Admin Master Passcode
                     </label>
-                    <input type="password" id="pricing-admin-passcode" placeholder="Enter admin master passcode to authorize changes" required>
+                    <input type="password" id="pricing-admin-passcode" placeholder="Enter master passcode (or uses active authenticated session)" autocomplete="current-password">
                     <span class="field-hint">Required to verify administrative authenticity before committing live price changes.</span>
                   </div>
 
-                  <button type="submit" id="save-pricing-btn" class="save-pricing-action-btn">
+                  <button type="button" id="save-pricing-btn" class="save-pricing-action-btn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                     <span>Save &amp; Deploy Live Pricing Everywhere</span>
                   </button>
+                  <div id="pricing-update-msg" class="passcode-msg" style="margin-top: 14px;"></div>
                 </div>
-
               </form>
-              <div id="pricing-update-msg" class="passcode-msg" style="margin-top: 14px;"></div>
             </div>
           </div>
 
@@ -1314,79 +1325,40 @@
              ============================================== -->
         <section id="tab-settings" class="tab-view">
           
-          <!-- Security Posture Command Banner -->
-          <div class="security-banner-card mb-24">
-            <div class="sbc-left">
-              <div class="sbc-badge">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <span>Zero-Trust Cryptographic Access</span>
+          <!-- Security Posture Status Strip -->
+          <div class="security-status-strip mb-24">
+            <div class="sss-item">
+              <span class="sss-dot green"></span>
+              <div class="sss-text">
+                <span class="sss-label">Session Gate</span>
+                <strong class="sss-val">TLS 1.3 Strict &bull; Active</strong>
               </div>
-              <h2 class="sbc-title">Security &amp; Passcode Fortress</h2>
-              <p class="sbc-desc">
-                Centralized cryptographic authentication control, master passcode rotation, and active session defense. All access verification operations use constant-time equality checks (<code style="font-family:var(--font-mono); color:var(--emerald);">crypto.timingSafeEqual</code>) to prevent side-channel timing attacks.
-              </p>
-            </div>
-            <div class="sbc-right">
-              <div class="security-health-indicator">
-                <span class="status-dot green"></span>
-                <span class="shi-label">Session Status: <strong style="color:#ffffff;">Armored</strong></span>
-              </div>
-              <div class="shi-meta">ECDSA P-256 &amp; Neon DB Synced</div>
-            </div>
-          </div>
-
-          <!-- Security Posture KPI Cards (4 Cards Grid) -->
-          <div class="security-kpi-grid mb-24">
-            
-            <div class="sec-kpi-card">
-              <div class="sk-head">
-                <span class="sk-title">Session Protection</span>
-                <div class="sk-icon-wrap emerald">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-                </div>
-              </div>
-              <div class="sk-value">Active &amp; Guarded</div>
-              <div class="sk-sub">Session Token in SessionStorage • TLS 1.3 Transport</div>
             </div>
 
-            <div class="sec-kpi-card">
-              <div class="sk-head">
-                <span class="sk-title">Passcode Entropy</span>
-                <div class="sk-icon-wrap amber">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                </div>
+            <div class="sss-item">
+              <span class="sss-dot amber"></span>
+              <div class="sss-text">
+                <span class="sss-label">Verification Cipher</span>
+                <strong class="sss-val">crypto.timingSafeEqual (Constant Time)</strong>
               </div>
-              <div class="sk-value">Timing-Safe</div>
-              <div class="sk-sub">Constant-time execution defends against timing probing</div>
             </div>
 
-            <div class="sec-kpi-card">
-              <div class="sk-head">
-                <span class="sk-title">Gateway Persistence</span>
-                <div class="sk-icon-wrap cyan">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-                </div>
+            <div class="sss-item">
+              <span class="sss-dot cyan"></span>
+              <div class="sss-text">
+                <span class="sss-label">Persistence</span>
+                <strong class="sss-val">Neon PostgreSQL + Edge /tmp</strong>
               </div>
-              <div class="sk-value">PostgreSQL + Cache</div>
-              <div class="sk-sub">Neon DB app_settings + Edge /tmp synchronization</div>
             </div>
 
-            <div class="sec-kpi-card">
-              <div class="sk-head">
-                <span class="sk-title">Session Lockout</span>
-                <div class="sk-icon-wrap red">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                </div>
-              </div>
+            <div class="sss-action">
               <button type="button" id="btn-emergency-lock-session" class="btn-lock-action">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                <span>Lock Session Now</span>
+                <span>Lock Session</span>
               </button>
-              <div class="sk-sub" style="margin-top:6px;">Instant flush of credentials &amp; return to gate</div>
             </div>
-
           </div>
-
+          
           <!-- Main Master Passcode Rotation Fortress Card -->
           <div class="panel-card mb-24">
             <div class="panel-header">

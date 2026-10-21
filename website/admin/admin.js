@@ -763,6 +763,7 @@
     document.getElementById('test-email-form')?.addEventListener('submit', handleTestEmail);
     document.getElementById('change-passcode-form')?.addEventListener('submit', handleChangePasscode);
     document.getElementById('update-pricing-form')?.addEventListener('submit', handleUpdatePricing);
+    document.getElementById('save-pricing-btn')?.addEventListener('click', handleUpdatePricing);
 
     // Revenue & Profit Period Filter
     document.querySelectorAll('#revenue-period-filters .rf-pill-btn').forEach(btn => {
@@ -1791,6 +1792,148 @@
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = originalText;
+      }
+    }
+  }
+
+  /**
+   * Live Dynamic Pricing Update Flow (All 3 Tiers, Strikethroughs & Countdown)
+   */
+  async function handleUpdatePricing(e) {
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+
+    const singleInr = Number(document.getElementById('price-single-inr-input')?.value || 799);
+    const singleUsd = Number(document.getElementById('price-single-usd-input')?.value || 15);
+    const inrAmount = Number(document.getElementById('price-inr-input')?.value || 999);
+    const usdAmount = Number(document.getElementById('price-usd-input')?.value || 19);
+    const teamInr = Number(document.getElementById('price-team-inr-input')?.value || 3499);
+    const teamUsd = Number(document.getElementById('price-team-usd-input')?.value || 69);
+
+    const strikeSingleEnabled = document.getElementById('pricing-strike-single-enabled')?.checked ?? true;
+    const strikeSingleInr = Number(document.getElementById('price-strike-single-inr-input')?.value || 1199);
+    const strikeSingleUsd = Number(document.getElementById('price-strike-single-usd-input')?.value || 24);
+
+    const strikeEnabled = document.getElementById('pricing-strike-enabled')?.checked ?? true;
+    const strikeInr = Number(document.getElementById('price-strike-inr-input')?.value || 1499);
+    const strikeUsd = Number(document.getElementById('price-strike-usd-input')?.value || 29);
+
+    const strikeTeamEnabled = document.getElementById('pricing-strike-team-enabled')?.checked ?? true;
+    const strikeTeamInr = Number(document.getElementById('price-strike-team-inr-input')?.value || 4999);
+    const strikeTeamUsd = Number(document.getElementById('price-strike-team-usd-input')?.value || 99);
+
+    const countdownEnabled = document.getElementById('pricing-countdown-enabled')?.checked ?? false;
+    const countdownValue = Number(document.getElementById('pricing-countdown-val')?.value || 24);
+    const countdownUnit = document.getElementById('pricing-countdown-unit')?.value || 'hours';
+    const countdownLabel = (document.getElementById('pricing-countdown-label')?.value || 'Special Launch Discount Ends In:').trim();
+    const countdownReset = document.getElementById('pricing-countdown-reset')?.checked || false;
+    const devicesPerLicense = Math.max(1, Math.min(50, Number(document.getElementById('pricing-devices-input')?.value) || 3));
+
+    const enteredPasscode = document.getElementById('pricing-admin-passcode')?.value.trim();
+    const passcode = enteredPasscode ||
+                     state.adminToken ||
+                     sessionStorage.getItem('dd_admin_token') ||
+                     localStorage.getItem('dd_admin_token') ||
+                     'dropdial2026';
+
+    const msg = document.getElementById('pricing-update-msg');
+    const submitBtn = document.getElementById('save-pricing-btn');
+
+    if (!inrAmount || inrAmount <= 0) {
+      if (msg) {
+        msg.style.color = '#ef4444';
+        msg.textContent = 'Please enter a valid positive price for Universal Pro (INR).';
+      }
+      showToast('Please enter a valid positive price for India (INR)', 'error');
+      return;
+    }
+    if (!usdAmount || usdAmount <= 0) {
+      if (msg) {
+        msg.style.color = '#ef4444';
+        msg.textContent = 'Please enter a valid positive price for Universal Pro (USD).';
+      }
+      showToast('Please enter a valid positive price for Global (USD)', 'error');
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-sm"></span> <span>Saving & Deploying Live Pricing...</span>';
+    }
+    if (msg) {
+      msg.textContent = '';
+      msg.className = 'passcode-msg';
+    }
+
+    try {
+      const res = await fetch('/api/pricing', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${encodeURIComponent(passcode)}`
+        },
+        body: JSON.stringify({
+          singleInr,
+          singleUsd,
+          inrAmount,
+          usdAmount,
+          teamInr,
+          teamUsd,
+          strikeSingleEnabled,
+          strikeSingleInr,
+          strikeSingleUsd,
+          strikeEnabled,
+          strikeInr,
+          strikeUsd,
+          strikeTeamEnabled,
+          strikeTeamInr,
+          strikeTeamUsd,
+          countdownEnabled,
+          countdownValue,
+          countdownUnit,
+          countdownLabel,
+          countdownReset,
+          devicesPerLicense
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to update live pricing');
+      }
+
+      if (msg) {
+        msg.style.color = '#10b981';
+        let statusText = `✓ Live pricing saved & deployed: Single ₹${singleInr}/$${singleUsd} • Universal ₹${inrAmount}/$${usdAmount} • Team ₹${teamInr}/$${teamUsd} (${devicesPerLicense} devices per key)!`;
+        msg.textContent = statusText;
+      }
+      showToast('Pricing & offers successfully saved & deployed everywhere!', 'success');
+      logSecurityEvent('Pricing & Offers Updated', '3-Tier Retail Matrix', 'Master Passcode Authenticated', 'Success');
+
+      const passInput = document.getElementById('pricing-admin-passcode');
+      if (passInput) passInput.value = '';
+
+      const cdResetInput = document.getElementById('pricing-countdown-reset');
+      if (cdResetInput) cdResetInput.checked = false;
+
+      pricingFormLoaded = true;
+      if (data.pricing?.countdown) {
+        currentCountdownExpiresAt = data.pricing.countdown.expiresAt;
+      }
+      updatePricingPreviews();
+      updateCountdownExpiryDisplay();
+    } catch (err) {
+      if (msg) {
+        msg.style.color = '#ef4444';
+        msg.textContent = `Update failed: ${err.message}`;
+      }
+      showToast(`Price update error: ${err.message}`, 'error');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> <span>Save & Deploy Live Pricing Everywhere</span>';
       }
     }
   }
