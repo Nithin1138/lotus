@@ -203,25 +203,18 @@
     const heroTag = document.getElementById('hero-urgency-tag');
     const ebbBar = document.getElementById('early-bird-bar');
 
+    // Keep pricing section and hero button clean and normal at all times
+    if (leftWing) leftWing.style.display = 'none';
+    if (rightWing) rightWing.style.display = 'none';
+    if (headerEl) headerEl.style.display = 'none';
+    if (heroTag) heroTag.style.display = 'none';
+
     if (!countdownConfig || countdownConfig.enabled === false) {
-      if (leftWing) leftWing.style.display = 'none';
-      if (rightWing) rightWing.style.display = 'none';
-      if (headerEl) headerEl.style.display = 'none';
-      if (heroTag) heroTag.style.display = 'none';
       if (ebbBar) ebbBar.style.display = 'none';
       return;
     }
 
     const discountPct = Math.max(1, Math.min(90, Number(countdownConfig.discountPercent || PRICING.countdown?.discountPercent || 10)));
-
-    const labelEl = document.getElementById('ocb-label');
-    if (labelEl) {
-      if (countdownConfig.label && !countdownConfig.label.includes('10% Off') && countdownConfig.label.trim()) {
-        labelEl.textContent = countdownConfig.label;
-      } else {
-        labelEl.textContent = `First 24-Hours Deal: ${discountPct}% Off All Plans with code FIRST24`;
-      }
-    }
 
     // Top announcement early bird bar text
     const ebbMsg = document.querySelector('.ebb-message');
@@ -238,28 +231,8 @@
 
     let targetTime = getFirst24Expiry();
 
-    // Ensure elements are displayed
-    if (leftWing) leftWing.style.display = 'flex';
-    if (rightWing) rightWing.style.display = 'flex';
-    if (headerEl) headerEl.style.display = 'flex';
-    if (heroTag) heroTag.style.display = 'inline-flex';
+    // Show only the top announcement bar
     if (ebbBar) ebbBar.style.display = 'block';
-
-    function updateDigit(el, val) {
-      if (!el) return;
-      if (el.textContent !== val) {
-        el.textContent = val;
-        el.classList.remove('digit-flip');
-        const card = el.closest('.ocs-digit-card');
-        if (card) {
-          card.classList.remove('flip-active');
-          void card.offsetWidth;
-          card.classList.add('flip-active');
-        }
-        void el.offsetWidth; // Force reflow to re-trigger CSS keyframe
-        el.classList.add('digit-flip');
-      }
-    }
 
     function updateTick() {
       const currentTime = Date.now();
@@ -271,33 +244,16 @@
       }
 
       const totalSeconds = Math.max(0, Math.floor(remaining / 1000));
-      const days = Math.floor(totalSeconds / 86400);
       const hours = Math.floor((totalSeconds % 86400) / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
       const seconds = totalSeconds % 60;
 
       const pad = n => String(n).padStart(2, '0');
 
-      const daysEl = document.getElementById('ocb-days');
-      const hoursEl = document.getElementById('ocb-hours');
-      const minsEl = document.getElementById('ocb-mins');
-      const secsEl = document.getElementById('ocb-secs');
-
-      updateDigit(daysEl, pad(days));
-      updateDigit(hoursEl, pad(hours));
-      updateDigit(minsEl, pad(minutes));
-      updateDigit(secsEl, pad(seconds));
-
       // Top announcement bar timer
       const ebbTimer = document.getElementById('ebb-timer');
       if (ebbTimer) {
         ebbTimer.textContent = `${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
-      }
-
-      // Micro countdown tags on "Buy" buttons
-      const heroTimerEl = document.getElementById('hero-urgency-timer');
-      if (heroTimerEl) {
-        heroTimerEl.textContent = `${discountPct}% Off with FIRST24 · ${hours}h ${pad(minutes)}m left`;
       }
     }
 
