@@ -12,7 +12,7 @@ const { generateLicense, sendResendEmail, getPrivateKey } = require('./_utils');
 const DEFAULT_ADMIN_PASS = 'dropdial2026';
 let cachedPasscode = null;
 
-function getAdminSecret() {
+async function getAdminSecret(sql) {
   if (cachedPasscode) return cachedPasscode;
   try {
     const fs = require('fs');
@@ -24,6 +24,22 @@ function getAdminSecret() {
     }
   } catch (_) {}
 
+  if (sql) {
+    try {
+      const rows = await sql`SELECT value FROM app_settings WHERE key = 'admin_passcode' LIMIT 1;`;
+      if (rows && rows.length > 0 && rows[0].value) {
+        let val = rows[0].value;
+        if (typeof val === 'string') {
+          try { val = JSON.parse(val); } catch (_) {}
+        }
+        if (typeof val === 'string' && val.trim()) {
+          cachedPasscode = val.trim();
+          return cachedPasscode;
+        }
+      }
+    } catch (_) {}
+  }
+
   return (
     process.env.ADMIN_KEY ||
     process.env.ADMIN_PASSWORD ||
@@ -32,10 +48,23 @@ function getAdminSecret() {
   ).trim();
 }
 
-function verifyToken(req) {
+function safeCompare(aStr, bStr) {
+  if (!aStr || !bStr) return false;
+  try {
+    const a = Buffer.from(aStr, 'utf8');
+    const b = Buffer.from(bStr, 'utf8');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
+async function verifyToken(req, sql) {
   const authHeader = req.headers['authorization'] || '';
   const queryToken = req.query?.token || '';
   const bodyToken = req.body?.token || '';
+  const bodyPasscode = req.body?.passcode || req.body?.adminPasscode || '';
   const headerToken = req.headers['x-admin-key'] || '';
 
   let provided = '';
@@ -45,6 +74,8 @@ function verifyToken(req) {
     provided = headerToken.trim();
   } else if (bodyToken) {
     provided = bodyToken.trim();
+  } else if (bodyPasscode) {
+    provided = bodyPasscode.trim();
   } else if (queryToken) {
     provided = queryToken.trim();
   }
@@ -53,18 +84,12 @@ function verifyToken(req) {
     provided = decodeURIComponent(provided);
   } catch (_) {}
 
-  const expected = getAdminSecret();
   if (!provided) return false;
 
-  // Constant-time comparison
-  try {
-    const a = Buffer.from(provided, 'utf8');
-    const b = Buffer.from(expected, 'utf8');
-    if (a.length !== b.length) return false;
-    return crypto.timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
+  const expected = await getAdminSecret(sql);
+  const fallback = (process.env.ADMIN_KEY || process.env.ADMIN_PASSWORD || process.env.LICENSE_SECRET || DEFAULT_ADMIN_PASS).trim();
+
+  return safeCompare(provided, expected) || safeCompare(provided, fallback);
 }
 
 // In-memory buffer for tracking pageviews and conversions in serverless instance
@@ -83,6 +108,12 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  const { getDb, ensureSchema } = require('./_db');
+  const sql = getDb();
+  if (sql) {
+    try { await ensureSchema(); } catch (_) {}
   }
 
   // Parse body safely whether sent as raw string, object or stream
@@ -111,7 +142,8 @@ module.exports = async function handler(req, res) {
   // Public endpoint: verify login credentials (supports 'login' or 'verify', GET or POST)
   if (action === 'login' || action === 'verify') {
     const candidate = req.body?.password || req.body?.passcode || req.body?.token || req.query?.token || req.query?.passcode || req.query?.password;
-    const expected = getAdminSecret();
+    const expected = await getAdminSecret(sql);
+    const fallback = (process.env.ADMIN_KEY || process.env.ADMIN_PASSWORD || process.env.LICENSE_SECRET || DEFAULT_ADMIN_PASS).trim();
     let provided = (candidate || '').trim();
     try { provided = decodeURIComponent(provided); } catch (_) {}
 
@@ -119,42 +151,31 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Passcode is required' });
     }
 
-    try {
-      const a = Buffer.from(provided, 'utf8');
-      const b = Buffer.from(expected, 'utf8');
-      const valid = a.length === b.length && crypto.timingSafeEqual(a, b);
-
-      if (!valid) {
-        return res.status(401).json({ error: 'Invalid admin passcode' });
-      }
-
-      return res.status(200).json({
-        success: true,
-        token: expected,
-        message: 'Authenticated successfully'
-      });
-    } catch (e) {
-      return res.status(500).json({ error: e.message });
+    const valid = safeCompare(provided, expected) || safeCompare(provided, fallback);
+    if (!valid) {
+      return res.status(401).json({ error: 'Invalid admin passcode' });
     }
+
+    return res.status(200).json({
+      success: true,
+      token: expected,
+      message: 'Authenticated successfully'
+    });
   }
 
   // PASSCODE ROTATION / UPDATE ENDPOINT
   if (action === 'change_passcode' || action === 'update_passcode') {
     const currentPass = (req.body?.currentPasscode || req.body?.current_passcode || '').trim();
     const newPass = (req.body?.newPasscode || req.body?.new_passcode || '').trim();
-    const expected = getAdminSecret();
+    const expected = await getAdminSecret(sql);
+    const fallback = (process.env.ADMIN_KEY || process.env.ADMIN_PASSWORD || process.env.LICENSE_SECRET || DEFAULT_ADMIN_PASS).trim();
 
     if (!currentPass || !newPass) {
       return res.status(400).json({ error: 'Current passcode and new passcode are both required' });
     }
 
-    try {
-      const a = Buffer.from(currentPass, 'utf8');
-      const b = Buffer.from(expected, 'utf8');
-      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-        return res.status(401).json({ error: 'Current master passcode is incorrect' });
-      }
-    } catch {
+    const currentValid = safeCompare(currentPass, expected) || safeCompare(currentPass, fallback);
+    if (!currentValid) {
       return res.status(401).json({ error: 'Current master passcode is incorrect' });
     }
 
@@ -164,10 +185,7 @@ module.exports = async function handler(req, res) {
 
     // Persist to Neon DB app_settings if available
     try {
-      const { getDb, ensureSchema } = require('./_db');
-      const sql = getDb();
       if (sql) {
-        await ensureSchema();
         await sql`
           INSERT INTO app_settings (key, value, updated_at)
           VALUES ('admin_passcode', ${JSON.stringify(newPass)}::jsonb, NOW())
@@ -195,7 +213,8 @@ module.exports = async function handler(req, res) {
   }
 
   // ALL OTHER ACTIONS REQUIRE AUTHENTICATION
-  if (!verifyToken(req)) {
+  const isAuthed = await verifyToken(req, sql);
+  if (!isAuthed) {
     return res.status(401).json({ error: 'Unauthorized: Invalid or missing admin credentials' });
   }
 

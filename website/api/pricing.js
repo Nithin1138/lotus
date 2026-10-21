@@ -1,14 +1,14 @@
 /**
  * DropDial Dynamic Pricing Gateway
  * GET /api/pricing - Returns active pricing for India and Worldwide
- * POST /api/pricing - Updates live pricing in memory & local storage (Admin authenticated)
+ * POST /api/pricing - Updates live pricing in memory & Neon DB (Admin authenticated)
  */
 
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-// Default Base Pricing
+// Default Base Pricing with 3-tier individual strikethroughs
 let currentPricing = {
   INR: {
     amount: 999,
@@ -91,9 +91,22 @@ try {
         strikethrough: {
           ...currentPricing.strikethrough,
           ...(parsed.strikethrough || {}),
-          single: { ...currentPricing.strikethrough.single, ...(parsed.strikethrough?.single || {}) },
-          universal: { ...currentPricing.strikethrough.universal, ...(parsed.strikethrough?.universal || {}) },
-          team: { ...currentPricing.strikethrough.team, ...(parsed.strikethrough?.team || {}) }
+          enabled: parsed.strikethrough?.enabled !== undefined ? !!parsed.strikethrough.enabled : currentPricing.strikethrough.enabled,
+          single: {
+            ...currentPricing.strikethrough.single,
+            ...(parsed.strikethrough?.single || {}),
+            enabled: parsed.strikethrough?.single?.enabled !== undefined ? !!parsed.strikethrough.single.enabled : currentPricing.strikethrough.single.enabled
+          },
+          universal: {
+            ...currentPricing.strikethrough.universal,
+            ...(parsed.strikethrough?.universal || {}),
+            enabled: parsed.strikethrough?.universal?.enabled !== undefined ? !!parsed.strikethrough.universal.enabled : currentPricing.strikethrough.universal.enabled
+          },
+          team: {
+            ...currentPricing.strikethrough.team,
+            ...(parsed.strikethrough?.team || {}),
+            enabled: parsed.strikethrough?.team?.enabled !== undefined ? !!parsed.strikethrough.team.enabled : currentPricing.strikethrough.team.enabled
+          }
         },
         countdown: { ...currentPricing.countdown, ...(parsed.countdown || {}) },
         devicesPerLicense: Number(parsed.devicesPerLicense || parsed.devices || currentPricing.devicesPerLicense || 3)
@@ -104,7 +117,7 @@ try {
 
 let cachedPasscode = null;
 
-function getAdminSecret() {
+async function getAdminSecret(sql) {
   if (cachedPasscode) return cachedPasscode;
   try {
     const tmpPass = path.join('/tmp', 'dropdial_admin_pass.txt');
@@ -114,6 +127,22 @@ function getAdminSecret() {
     }
   } catch (_) {}
 
+  if (sql) {
+    try {
+      const rows = await sql`SELECT value FROM app_settings WHERE key = 'admin_passcode' LIMIT 1;`;
+      if (rows && rows.length > 0 && rows[0].value) {
+        let val = rows[0].value;
+        if (typeof val === 'string') {
+          try { val = JSON.parse(val); } catch (_) {}
+        }
+        if (typeof val === 'string' && val.trim()) {
+          cachedPasscode = val.trim();
+          return cachedPasscode;
+        }
+      }
+    } catch (e) {}
+  }
+
   return (
     process.env.ADMIN_KEY ||
     process.env.ADMIN_PASSWORD ||
@@ -122,10 +151,23 @@ function getAdminSecret() {
   ).trim();
 }
 
-function verifyAdminToken(req) {
+function safeCompare(aStr, bStr) {
+  if (!aStr || !bStr) return false;
+  try {
+    const a = Buffer.from(aStr, 'utf8');
+    const b = Buffer.from(bStr, 'utf8');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
+async function verifyAdminToken(req, sql) {
   const authHeader = req.headers['authorization'] || '';
   const queryToken = req.query?.token || '';
   const bodyToken = req.body?.token || '';
+  const bodyPasscode = req.body?.passcode || req.body?.adminPasscode || '';
   const headerToken = req.headers['x-admin-key'] || '';
 
   let provided = '';
@@ -135,21 +177,23 @@ function verifyAdminToken(req) {
     provided = headerToken.trim();
   } else if (bodyToken) {
     provided = bodyToken.trim();
+  } else if (bodyPasscode) {
+    provided = bodyPasscode.trim();
   } else if (queryToken) {
     provided = queryToken.trim();
   }
 
-  const expected = getAdminSecret();
+  try {
+    provided = decodeURIComponent(provided);
+  } catch (_) {}
+
   if (!provided) return false;
 
-  try {
-    const a = Buffer.from(provided, 'utf8');
-    const b = Buffer.from(expected, 'utf8');
-    if (a.length !== b.length) return false;
-    return crypto.timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
+  const expected = await getAdminSecret(sql);
+  const fallback = (process.env.ADMIN_KEY || process.env.ADMIN_PASSWORD || process.env.LICENSE_SECRET || 'dropdial2026').trim();
+
+  // Accept if it matches active dynamic passcode OR default environment fallback
+  return safeCompare(provided, expected) || safeCompare(provided, fallback);
 }
 
 function getActivePricing() {
@@ -159,7 +203,7 @@ function getActivePricing() {
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-key');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -178,12 +222,71 @@ module.exports = async function handler(req, res) {
           try { val = JSON.parse(val); } catch (e) {}
         }
         if (val && typeof val === 'object') {
+          const rawStrike = val.strikethrough || {};
+          const rawTiers = val.tiers || {};
+
+          const singleStrikeOn = rawStrike.single?.enabled !== undefined
+            ? (rawStrike.single.enabled === true)
+            : (rawTiers.single?.strikeEnabled !== undefined ? (rawTiers.single.strikeEnabled === true) : currentPricing.strikethrough.single.enabled);
+
+          const universalStrikeOn = rawStrike.universal?.enabled !== undefined
+            ? (rawStrike.universal.enabled === true)
+            : (rawStrike.enabled !== undefined ? (rawStrike.enabled === true) : currentPricing.strikethrough.universal.enabled);
+
+          const teamStrikeOn = rawStrike.team?.enabled !== undefined
+            ? (rawStrike.team.enabled === true)
+            : (rawTiers.team?.strikeEnabled !== undefined ? (rawTiers.team.strikeEnabled === true) : currentPricing.strikethrough.team.enabled);
+
           currentPricing = {
             ...currentPricing,
             ...val,
             INR: { ...currentPricing.INR, ...(val.INR || {}) },
             USD: { ...currentPricing.USD, ...(val.USD || {}) },
-            strikethrough: { ...currentPricing.strikethrough, ...(val.strikethrough || {}) },
+            strikethrough: {
+              ...currentPricing.strikethrough,
+              ...rawStrike,
+              enabled: universalStrikeOn,
+              inrAmount: Number(rawStrike.inrAmount || rawStrike.universal?.inrAmount || currentPricing.strikethrough.inrAmount),
+              usdAmount: Number(rawStrike.usdAmount || rawStrike.universal?.usdAmount || currentPricing.strikethrough.usdAmount),
+              single: {
+                ...currentPricing.strikethrough.single,
+                ...(rawStrike.single || {}),
+                enabled: singleStrikeOn,
+                inrAmount: Number(rawStrike.single?.inrAmount || rawTiers.single?.INR?.strikeAmount || currentPricing.strikethrough.single.inrAmount),
+                usdAmount: Number(rawStrike.single?.usdAmount || rawTiers.single?.USD?.strikeAmount || currentPricing.strikethrough.single.usdAmount)
+              },
+              universal: {
+                ...currentPricing.strikethrough.universal,
+                ...(rawStrike.universal || {}),
+                enabled: universalStrikeOn,
+                inrAmount: Number(rawStrike.universal?.inrAmount || rawStrike.inrAmount || currentPricing.strikethrough.universal.inrAmount),
+                usdAmount: Number(rawStrike.universal?.usdAmount || rawStrike.usdAmount || currentPricing.strikethrough.universal.usdAmount)
+              },
+              team: {
+                ...currentPricing.strikethrough.team,
+                ...(rawStrike.team || {}),
+                enabled: teamStrikeOn,
+                inrAmount: Number(rawStrike.team?.inrAmount || rawTiers.team?.INR?.strikeAmount || currentPricing.strikethrough.team.inrAmount),
+                usdAmount: Number(rawStrike.team?.usdAmount || rawTiers.team?.USD?.strikeAmount || currentPricing.strikethrough.team.usdAmount)
+              }
+            },
+            tiers: {
+              single: {
+                ...currentPricing.tiers.single,
+                ...(rawTiers.single || {}),
+                strikeEnabled: singleStrikeOn
+              },
+              universal: {
+                ...currentPricing.tiers.universal,
+                ...(rawTiers.universal || {}),
+                strikeEnabled: universalStrikeOn
+              },
+              team: {
+                ...currentPricing.tiers.team,
+                ...(rawTiers.team || {}),
+                strikeEnabled: teamStrikeOn
+              }
+            },
             countdown: {
               ...currentPricing.countdown,
               ...(val.countdown || {}),
@@ -211,7 +314,8 @@ module.exports = async function handler(req, res) {
 
   // POST: Admin update live pricing
   if (req.method === 'POST') {
-    if (!verifyAdminToken(req)) {
+    const isAuthed = await verifyAdminToken(req, sql);
+    if (!isAuthed) {
       return res.status(401).json({ error: 'Unauthorized: Invalid admin credentials' });
     }
 
@@ -219,15 +323,22 @@ module.exports = async function handler(req, res) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
       const inrAmount = Number(body.inrAmount);
       const usdAmount = Number(body.usdAmount);
-      const strikeEnabled = body.strikeEnabled !== undefined ? !!body.strikeEnabled : (currentPricing.strikethrough?.enabled ?? true);
+
+      const strikeEnabled = body.strikeEnabled !== undefined
+        ? (body.strikeEnabled === true || body.strikeEnabled === 'true')
+        : (currentPricing.strikethrough?.enabled ?? true);
       const strikeInr = Number(body.strikeInr) > 0 ? Number(body.strikeInr) : (currentPricing.strikethrough?.inrAmount || 1499);
       const strikeUsd = Number(body.strikeUsd) > 0 ? Number(body.strikeUsd) : (currentPricing.strikethrough?.usdAmount || 29);
 
-      const strikeSingleEnabled = body.strikeSingleEnabled !== undefined ? !!body.strikeSingleEnabled : (currentPricing.strikethrough?.single?.enabled ?? true);
+      const strikeSingleEnabled = body.strikeSingleEnabled !== undefined
+        ? (body.strikeSingleEnabled === true || body.strikeSingleEnabled === 'true')
+        : (currentPricing.strikethrough?.single?.enabled ?? true);
       const strikeSingleInr = Number(body.strikeSingleInr) > 0 ? Number(body.strikeSingleInr) : (currentPricing.strikethrough?.single?.inrAmount || 1199);
       const strikeSingleUsd = Number(body.strikeSingleUsd) > 0 ? Number(body.strikeSingleUsd) : (currentPricing.strikethrough?.single?.usdAmount || 24);
 
-      const strikeTeamEnabled = body.strikeTeamEnabled !== undefined ? !!body.strikeTeamEnabled : (currentPricing.strikethrough?.team?.enabled ?? true);
+      const strikeTeamEnabled = body.strikeTeamEnabled !== undefined
+        ? (body.strikeTeamEnabled === true || body.strikeTeamEnabled === 'true')
+        : (currentPricing.strikethrough?.team?.enabled ?? true);
       const strikeTeamInr = Number(body.strikeTeamInr) > 0 ? Number(body.strikeTeamInr) : (currentPricing.strikethrough?.team?.inrAmount || 4999);
       const strikeTeamUsd = Number(body.strikeTeamUsd) > 0 ? Number(body.strikeTeamUsd) : (currentPricing.strikethrough?.team?.usdAmount || 99);
 
@@ -382,7 +493,7 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        message: `Live prices, device limit (${devicesPerLicense} devices), strikethrough, and countdown timer updated across checkout and landing page!`,
+        message: `Live pricing updated! Strikethroughs: Single ${strikeSingleEnabled ? 'ON' : 'OFF'} • Universal ${strikeEnabled ? 'ON' : 'OFF'} • Team ${strikeTeamEnabled ? 'ON' : 'OFF'} (${devicesPerLicense} devices per key).`,
         pricing: currentPricing
       });
     } catch (err) {

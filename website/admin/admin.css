@@ -1777,12 +1777,17 @@ input[type="number"] {
   width: 44px;
   height: 24px;
   flex-shrink: 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .toggle-switch input {
+  position: absolute;
   opacity: 0;
-  width: 0;
-  height: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
 }
 
 .toggle-slider {
@@ -1806,6 +1811,7 @@ input[type="number"] {
   transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
 }
 
 .toggle-switch input:checked + .toggle-slider {
@@ -2198,7 +2204,18 @@ input[type="number"] {
 }
 
 .tier-strike-subcard-body {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.25s ease, filter 0.25s ease;
+}
+
+.tier-strike-subcard.tier-strike-disabled {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  background: rgba(0, 0, 0, 0.22) !important;
+}
+
+.tier-strike-subcard.tier-strike-disabled .tier-strike-subcard-body {
+  opacity: 0.42;
+  pointer-events: none;
+  filter: grayscale(40%);
 }
 
 /* ==============================================================================
