@@ -2238,3 +2238,205 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 [data-theme="light"] .showcase-card:hover {
   box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.09);
 }
+
+/* ==============================================================================
+   FIRST 24-HOURS ANNOUNCEMENT BAR & COUPON PROMO
+   ============================================================================== */
+.early-bird-bar {
+  background: linear-gradient(90deg, rgba(255, 101, 0, 0.14) 0%, rgba(255, 140, 56, 0.08) 50%, rgba(255, 101, 0, 0.14) 100%);
+  border-bottom: 1px solid rgba(255, 101, 0, 0.28);
+  color: var(--text, #f4f4f5);
+  position: relative;
+  z-index: 55;
+  transition: all 0.25s ease;
+}
+
+[data-theme="light"] .early-bird-bar {
+  background: linear-gradient(90deg, #fff7ed 0%, #ffedd5 50%, #fff7ed 100%);
+  border-bottom: 1px solid #fed7aa;
+  color: #18181b;
+}
+
+.ebb-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 42px;
+  padding: 8px 16px;
+  font-size: 0.86rem;
+  flex-wrap: wrap;
+}
+
+.ebb-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ebb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent, #ff6500);
+  background: rgba(255, 101, 0, 0.16);
+  border: 1px solid rgba(255, 101, 0, 0.32);
+  padding: 3px 9px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.ebb-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, #ff6500);
+  box-shadow: 0 0 6px var(--accent, #ff6500);
+  animation: ebb-pulse 1.6s infinite ease-in-out;
+}
+
+@keyframes ebb-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.3); }
+}
+
+.ebb-message {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.86rem;
+}
+
+.ebb-code {
+  background: rgba(255, 101, 0, 0.16);
+  color: var(--accent, #ff6500);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px dashed rgba(255, 101, 0, 0.45);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ebb-code:hover {
+  background: rgba(255, 101, 0, 0.26);
+  border-color: var(--accent, #ff6500);
+  transform: translateY(-1px);
+}
+
+.ebb-code.copied {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+}
+
+.ebb-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted, #a1a1aa);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+[data-theme="light"] .ebb-countdown {
+  color: #71717a;
+}
+
+.ebb-countdown strong {
+  color: var(--text, #f4f4f5);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3px;
+}
+
+[data-theme="light"] .ebb-countdown strong {
+  color: #09090b;
+}
+
+.ebb-actions {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ebb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #ffffff !important;
+  background: var(--accent, #ff6500);
+  border: 1px solid var(--accent, #ff6500);
+  border-radius: 9999px;
+  padding: 4px 13px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 101, 0, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ebb-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(255, 101, 0, 0.5);
+  filter: brightness(1.08);
+}
+
+.hero-urgency-tag {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.hero-urgency-tag:hover {
+  transform: scale(1.04) translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.pricing-coupon-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--accent, #ff6500);
+  background: rgba(255, 101, 0, 0.08);
+  border: 1px solid rgba(255, 101, 0, 0.2);
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.pricing-coupon-hint .pch-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 800;
+  background: rgba(255, 101, 0, 0.16);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .ebb-wrap {
+    padding: 6px 12px;
+    gap: 8px;
+    font-size: 0.78rem;
+  }
+  .ebb-content {
+    gap: 8px;
+  }
+  .ebb-message {
+    font-size: 0.78rem;
+  }
+}
+

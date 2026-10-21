@@ -89,7 +89,7 @@
 <meta name="twitter:image" content="https://dropdial.app/assets/img/og-image.png?v=4">
 <meta name="twitter:image:alt" content="DropDial (Drop Dial) File Converter &amp; Media Suite">
 
-<link rel="stylesheet" href="/assets/css/site.css?v=15">
+<link rel="stylesheet" href="/assets/css/site.css?v=16">
 <link rel="stylesheet" href="/assets/css/checkout.css">
 
 <!-- Google Rich Results: Structured Data (Schema.org / JSON-LD) -->
@@ -395,6 +395,35 @@
 <body>
 <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
 
+<!-- First 24-Hours Early Bird Deal Bar -->
+<aside class="early-bird-bar" id="early-bird-bar" aria-label="First 24 hours promotional discount">
+  <div class="wrap ebb-wrap">
+    <div class="ebb-content">
+      <span class="ebb-pill">
+        <span class="ebb-pulse-dot"></span>
+        <span>FIRST 24 HOURS</span>
+      </span>
+      <span class="ebb-message">
+        <span>Get <strong>10% Off Lifetime Pro</strong> with code</span>
+        <button type="button" class="ebb-code" id="ebb-copy-code" title="Click to copy coupon code">FIRST24</button>
+      </span>
+      <span class="ebb-countdown" id="ebb-countdown">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span>Ends in <strong id="ebb-timer">23h 59m 59s</strong></span>
+      </span>
+    </div>
+    <div class="ebb-actions">
+      <button type="button" class="ebb-btn" data-open-checkout data-coupon="FIRST24">
+        <span>Claim 10% Off</span>
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
 <header class="nav" id="top">
   <div class="wrap nav-row">
     <a class="brand" href="#top" aria-label="DropDial home">
@@ -427,7 +456,7 @@
           <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
         </svg>
       </button>
-      <a class="btn btn-small" href="#buy" data-open-checkout id="nav-header-buy-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;">Buy</a>
+      <a class="btn btn-small" href="#buy" data-open-checkout data-coupon="FIRST24" id="nav-header-buy-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;">Buy</a>
       <a class="btn btn-small btn-ghost" href="#download" data-i18n="nav.download">Free Download</a>
     </div>
   </div>
@@ -447,11 +476,11 @@
             <span>Download Free Trial</span>
           </a>
           <div class="hero-buy-wrap">
-            <span class="hero-urgency-tag" id="hero-urgency-tag" style="display:none;">
+            <span class="hero-urgency-tag" id="hero-urgency-tag" data-open-checkout data-coupon="FIRST24" style="display:none;" title="Click to claim 10% off">
               <span class="hut-dot"></span>
-              <span id="hero-urgency-timer">Sale Ending Soon</span>
+              <span id="hero-urgency-timer">10% Off with FIRST24</span>
             </span>
-            <a class="btn" href="#buy" data-open-checkout id="nav-buy-btn" style="background:var(--accent);color:#fff;border:1px solid var(--accent);font-weight:700;">Buy</a>
+            <a class="btn" href="#buy" data-open-checkout data-coupon="FIRST24" id="nav-buy-btn" style="background:var(--accent);color:#fff;border:1px solid var(--accent);font-weight:700;">Buy</a>
           </div>
         </div>
         <p class="fineprint"><span data-release-meta>macOS (Apple Silicon &amp; Intel) &amp; Windows</span> · <span>3-day free trial · 100% private</span></p>
@@ -804,10 +833,10 @@
 
       <div class="pricing-urgency-header" id="ocb-header" style="display: none;">
         <span class="ocs-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          <span>Limited Time Launch Deal</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>First 24-Hours Deal</span>
         </span>
-        <h3 class="ocs-title" id="ocb-label">Special Launch Discount Ends In:</h3>
+        <h3 class="ocs-title" id="ocb-label">First 24-Hours Deal: 10% Off with code FIRST24</h3>
       </div>
 
       <!-- Pricing Showcase: D:H Left, Middle 2 Cards, M:S Right -->
@@ -816,7 +845,7 @@
         <!-- Left Side of Middle 2 Cards: Days & Hours (D : H) -->
         <aside class="pricing-side-timer left-side" id="ocs-left-wing" aria-label="Days and Hours remaining" style="display: none;">
           <div class="pst-header">
-            <span class="pst-tag">Launch Deal</span>
+            <span class="pst-tag">24h Deal</span>
           </div>
           <div class="pst-digits">
             <div class="ocs-digit-unit">
@@ -847,6 +876,7 @@
                 <span class="pricing-discount-badge" id="single-pricing-discount-badge">33% OFF</span>
               </div>
               <div class="pricing-price" id="tier-single-price"> <span>one-time</span></div>
+              <div class="pricing-coupon-hint"><span class="pch-code">FIRST24</span> 10% off for first 24h</div>
             </div>
 
             <ul class="pricing-features">
@@ -883,7 +913,7 @@
             </ul>
 
             <div class="pricing-cta-wrap">
-              <a class="btn btn-secondary pricing-btn" href="#buy" data-open-checkout data-tier="single">Buy Single</a>
+              <a class="btn btn-secondary pricing-btn" href="#buy" data-open-checkout data-tier="single" data-coupon="FIRST24">Buy Single</a>
               <span class="pricing-card-subtext">Or start with <a href="#download">3-day free trial</a></span>
             </div>
           </div>
@@ -900,6 +930,7 @@
                 <span class="pricing-discount-badge" id="pro-pricing-discount-badge">33% OFF</span>
               </div>
               <div class="pricing-price" id="pro-pricing-price"> <span>one-time</span></div>
+              <div class="pricing-coupon-hint"><span class="pch-code">FIRST24</span> 10% off for first 24h</div>
             </div>
 
             <ul class="pricing-features">
@@ -936,7 +967,7 @@
             </ul>
 
             <div class="pricing-cta-wrap">
-              <a class="btn btn-primary pricing-btn" href="#buy" data-open-checkout data-tier="universal" id="card-buy-btn">Buy Universal Pro</a>
+              <a class="btn btn-primary pricing-btn" href="#buy" data-open-checkout data-tier="universal" data-coupon="FIRST24" id="card-buy-btn">Buy Universal Pro</a>
               <span class="pricing-card-subtext highlight-subtext">Most chosen by developers &amp; creators</span>
             </div>
           </div>
@@ -953,6 +984,7 @@
                 <span class="pricing-discount-badge" id="team-pricing-discount-badge">30% OFF</span>
               </div>
               <div class="pricing-price" id="tier-team-price"> <span>one-time</span></div>
+              <div class="pricing-coupon-hint"><span class="pch-code">FIRST24</span> 10% off for first 24h</div>
             </div>
 
             <ul class="pricing-features">
@@ -989,7 +1021,7 @@
             </ul>
 
             <div class="pricing-cta-wrap">
-              <a class="btn btn-secondary pricing-btn" href="#buy" data-open-checkout data-tier="team">Buy Team Pack</a>
+              <a class="btn btn-secondary pricing-btn" href="#buy" data-open-checkout data-tier="team" data-coupon="FIRST24">Buy Team Pack</a>
               <span class="pricing-card-subtext">Easily expensed for company setups</span>
             </div>
           </div>
@@ -1339,6 +1371,6 @@
 <script src="/assets/js/site.js?v=14"></script>
 <script src="/assets/js/showcase.js?v=4"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script src="/assets/js/checkout.js?v=2"></script>
+<script src="/assets/js/checkout.js?v=3"></script>
 </body>
 </html>

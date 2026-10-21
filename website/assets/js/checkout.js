@@ -16,11 +16,11 @@
     USD: { code: 'USD', symbol: '$', amount: 19, display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
     strikethrough: { enabled: true, inrAmount: 1499, usdAmount: 29 },
     countdown: {
-      enabled: false,
+      enabled: true,
       value: 24,
       unit: 'hours',
-      label: 'Special Launch Discount Ends In:',
-      expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString()
+      label: 'First 24-Hours Deal: 10% Off with code FIRST24',
+      expiresAt: null
     },
     devicesPerLicense: 3
   };
@@ -155,6 +155,38 @@
     };
   }
 
+  const FIRST24_STORAGE_KEY = 'dropdial_first_visit_24h';
+
+  function getFirst24Expiry() {
+    let firstVisit = null;
+    try {
+      firstVisit = parseInt(localStorage.getItem(FIRST24_STORAGE_KEY), 10);
+    } catch (_) {}
+    const now = Date.now();
+    const durationMs = 24 * 3600 * 1000;
+
+    if (!firstVisit || isNaN(firstVisit)) {
+      firstVisit = now;
+      try {
+        localStorage.setItem(FIRST24_STORAGE_KEY, firstVisit.toString());
+      } catch (_) {}
+    }
+
+    let expiry = firstVisit + durationMs;
+    if (now >= expiry) {
+      firstVisit = now;
+      try {
+        localStorage.setItem(FIRST24_STORAGE_KEY, firstVisit.toString());
+      } catch (_) {}
+      expiry = firstVisit + durationMs;
+    }
+    return expiry;
+  }
+
+  function isFirst24Active() {
+    return true;
+  }
+
   /**
    * Initializes and maintains the ticking limited-time offer countdown timer
    */
@@ -168,34 +200,30 @@
     const rightWing = document.getElementById('ocs-right-wing');
     const headerEl = document.getElementById('ocb-header');
     const heroTag = document.getElementById('hero-urgency-tag');
+    const ebbBar = document.getElementById('early-bird-bar');
 
     if (!countdownConfig || countdownConfig.enabled === false) {
       if (leftWing) leftWing.style.display = 'none';
       if (rightWing) rightWing.style.display = 'none';
       if (headerEl) headerEl.style.display = 'none';
       if (heroTag) heroTag.style.display = 'none';
+      if (ebbBar) ebbBar.style.display = 'none';
       return;
     }
 
     const labelEl = document.getElementById('ocb-label');
-    if (labelEl && countdownConfig.label) {
-      labelEl.textContent = countdownConfig.label;
+    if (labelEl) {
+      labelEl.textContent = countdownConfig.label || 'First 24-Hours Deal: 10% Off with code FIRST24';
     }
 
-    let targetTime = countdownConfig.expiresAt ? new Date(countdownConfig.expiresAt).getTime() : 0;
-    const now = Date.now();
-    // If expiresAt is in the past or missing, roll forward automatically so urgency offer is always live
-    if (!targetTime || targetTime <= now) {
-      const durationHours = countdownConfig.unit === 'days' ? ((countdownConfig.value || 1) * 24) : (countdownConfig.value || 24);
-      targetTime = now + (durationHours * 3600 * 1000);
-      countdownConfig.expiresAt = new Date(targetTime).toISOString();
-    }
+    let targetTime = getFirst24Expiry();
 
     // Ensure elements are displayed
     if (leftWing) leftWing.style.display = 'flex';
     if (rightWing) rightWing.style.display = 'flex';
     if (headerEl) headerEl.style.display = 'flex';
     if (heroTag) heroTag.style.display = 'inline-flex';
+    if (ebbBar) ebbBar.style.display = 'block';
 
     function updateDigit(el, val) {
       if (!el) return;
@@ -218,9 +246,7 @@
       let remaining = targetTime - currentTime;
 
       if (remaining <= 0) {
-        // Roll over for next cycle so countdown banner stays active
-        const durationHours = countdownConfig.unit === 'days' ? ((countdownConfig.value || 1) * 24) : (countdownConfig.value || 24);
-        targetTime = Date.now() + (durationHours * 3600 * 1000);
+        targetTime = getFirst24Expiry();
         remaining = targetTime - Date.now();
       }
 
@@ -242,12 +268,17 @@
       updateDigit(minsEl, pad(minutes));
       updateDigit(secsEl, pad(seconds));
 
-      // Micro countdown tags on "Buy" buttons
-      const shortTime = days > 0 ? `${days}d ${hours}h left` : `${hours}h ${pad(minutes)}m left`;
-      const fullTime = days > 0 ? `${days}d ${hours}h ${pad(minutes)}m ${pad(seconds)}s` : `${hours}h ${pad(minutes)}m ${pad(seconds)}s`;
+      // Top announcement bar timer
+      const ebbTimer = document.getElementById('ebb-timer');
+      if (ebbTimer) {
+        ebbTimer.textContent = `${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+      }
 
+      // Micro countdown tags on "Buy" buttons
       const heroTimerEl = document.getElementById('hero-urgency-timer');
-      if (heroTimerEl) heroTimerEl.textContent = `Offer: ${shortTime}`;
+      if (heroTimerEl) {
+        heroTimerEl.textContent = `10% Off with FIRST24 · ${hours}h ${pad(minutes)}m left`;
+      }
     }
 
     updateTick();
@@ -491,8 +522,12 @@
             PRICING.strikethrough = pData.pricing.strikethrough;
           }
           if (pData.pricing.countdown) {
-            PRICING.countdown = pData.pricing.countdown;
-            initCountdownTimer(pData.pricing.countdown);
+            PRICING.countdown = {
+              ...PRICING.countdown,
+              ...pData.pricing.countdown,
+              enabled: pData.pricing.countdown.enabled !== false
+            };
+            initCountdownTimer(PRICING.countdown);
           }
           if (pData.pricing.devicesPerLicense) {
             PRICING.devicesPerLicense = Number(pData.pricing.devicesPerLicense) || 3;
@@ -864,12 +899,33 @@
       });
     });
 
+    // Copy coupon code on top bar click
+    const copyCodeBtn = document.getElementById('ebb-copy-code');
+    if (copyCodeBtn) {
+      copyCodeBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const code = 'FIRST24';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(() => {
+            copyCodeBtn.classList.add('copied');
+            copyCodeBtn.textContent = 'COPIED!';
+            setTimeout(() => {
+              copyCodeBtn.classList.remove('copied');
+              copyCodeBtn.textContent = code;
+            }, 2000);
+          });
+        }
+      });
+    }
+
     // Triggers across the page
     const triggers = [
       '#nav-buy-btn',
       '#nav-header-buy-btn',
       '#card-buy-btn',
       '#hero-buy-btn',
+      '#hero-urgency-tag',
+      '.ebb-btn',
       '[data-open-checkout]'
     ];
 
@@ -878,7 +934,8 @@
         el.addEventListener('click', function (e) {
           e.preventDefault();
           const tier = el.getAttribute('data-tier') || 'universal';
-          openModal(tier);
+          const coupon = el.getAttribute('data-coupon') || (isFirst24Active() ? 'FIRST24' : null);
+          openModal(tier, coupon);
         });
       });
     });
@@ -1007,7 +1064,7 @@
     }
   }
 
-  function openModal(tier) {
+  function openModal(tier, autoCoupon) {
     if (tier && TIERS[tier]) {
       selectedTier = tier;
     }
@@ -1022,6 +1079,13 @@
     successView.style.display = 'none';
     overlay.classList.add('active');
     setTimeout(() => nameInput.focus(), 150);
+
+    const couponToApply = autoCoupon || (isFirst24Active() ? 'FIRST24' : null);
+    if (couponToApply && !appliedCoupon) {
+      if (couponCodeInput) couponCodeInput.value = couponToApply;
+      handleCouponApply();
+    }
+
     try {
       fetch('/api/admin?action=track&event=checkout', { method: 'POST', keepalive: true }).catch(() => {});
     } catch (_) {}

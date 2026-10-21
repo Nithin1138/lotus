@@ -52,7 +52,7 @@ let currentPricing = {
     enabled: true,
     value: 24,
     unit: 'hours',
-    label: 'Special Launch Discount Ends In:',
+    label: 'First 24-Hours Deal: 10% Off with code FIRST24',
     expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString()
   },
   devicesPerLicense: 3,

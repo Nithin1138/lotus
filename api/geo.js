@@ -3,7 +3,7 @@
  * GET /api/geo
  */
 
-module.exports = function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Cache-Control', 'public, max-age=3600');
@@ -41,7 +41,7 @@ module.exports = function handler(req, res) {
     INR: { amount: 999, symbol: '₹', display: '₹999', strikeAmount: 1499, strikeDisplay: '₹1,499' },
     USD: { amount: 19, symbol: '$', display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
     strikethrough: { enabled: true, inrAmount: 1499, usdAmount: 29 },
-    countdown: { enabled: false, value: 24, unit: 'hours', label: 'Special Launch Discount Ends In:' }
+    countdown: { enabled: true, value: 24, unit: 'hours', label: 'First 24-Hours Deal: 10% Off with code FIRST24' }
   };
 
   try {
