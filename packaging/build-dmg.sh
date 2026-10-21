@@ -79,12 +79,26 @@ APPLESCRIPT
 # Sync and unmount
 echo "Detaching layout disk image..."
 sync || true
-sleep 1
+sleep 2
 diskutil eject "$DEV_NODE" >/dev/null 2>&1 || hdiutil detach "$DEV_NODE" -force >/dev/null 2>&1 || true
+sleep 3
 
 # 6. Convert to compressed UDZO DMG
 echo "Compressing final production DMG..."
-hdiutil convert "$DMG_TEMP" -format UDZO -imagekey zlib-level=9 -o "$DMG_FILE" >/dev/null
+converted=0
+for attempt in 1 2 3 4 5; do
+    if hdiutil convert "$DMG_TEMP" -format UDZO -imagekey zlib-level=9 -o "$DMG_FILE" >/dev/null 2>&1; then
+        converted=1
+        break
+    fi
+    echo "  [Retry $attempt] Waiting for disk image unlock..."
+    sleep 3
+done
+
+if [ "$converted" -ne 1 ]; then
+    # Fallback to direct conversion
+    hdiutil convert "$DMG_TEMP" -format UDZO -imagekey zlib-level=9 -o "$DMG_FILE" >/dev/null
+fi
 rm -f "$DMG_TEMP"
 rm -rf "$DMG_STAGE"
 
