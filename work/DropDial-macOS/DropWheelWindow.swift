@@ -1507,7 +1507,15 @@ final class DropWheelWindowController: NSWindowController {
         wheelView.setMode(mode)
     }
 
+    private var lastToggleTime: TimeInterval = 0
+
     func toggleWheel(mode: WheelMode? = nil) {
+        let now = ProcessInfo.processInfo.systemUptime
+        if now - lastToggleTime < 0.25 {
+            return
+        }
+        lastToggleTime = now
+
         if window?.isVisible == true {
             if let targetMode = mode, targetMode != self.currentMode {
                 self.currentMode = targetMode

@@ -438,7 +438,10 @@ internal sealed class Resident : IDisposable
             Native.RegisterHotKey(handle, HOTKEY_ID_F8, Native.MOD_NOREPEAT, 0x77);
             Native.RegisterHotKey(handle, HOTKEY_ID_F9, Native.MOD_NOREPEAT, 0x78);
             Native.RegisterHotKey(handle, HOTKEY_ID_F10, Native.MOD_NOREPEAT, 0x79);
-            Native.RegisterHotKey(handle, HOTKEY_ID_ALTSPACE, Native.MOD_ALT | Native.MOD_NOREPEAT, 0x20);
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_ALTSPACE, Native.MOD_ALT | Native.MOD_NOREPEAT, 0x20))
+            {
+                Native.RegisterHotKey(handle, HOTKEY_ID_ALTSPACE, Native.MOD_ALT, 0x20);
+            }
             Native.RegisterHotKey(handle, HOTKEY_ID_WINSHIFTL, Native.MOD_WIN | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C);
             Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTL, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C);
             Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTSPACE, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x20);
@@ -466,6 +469,10 @@ internal sealed class Resident : IDisposable
                     handled = true;
                     break;
                 case HOTKEY_ID_ALTSPACE:
+                    altSpacePressed = true;
+                    app.Dispatcher.InvokeAsync(() => ToggleWheel());
+                    handled = true;
+                    break;
                 case HOTKEY_ID_WINSHIFTL:
                 case HOTKEY_ID_CTRLSHIFTL:
                     app.Dispatcher.InvokeAsync(() => ToggleWheel());
@@ -677,7 +684,7 @@ internal sealed class Resident : IDisposable
         items.Items.Add(new Forms.ToolStripSeparator());
         // Language names are shown in their own language so either can be found whatever is active.
         var language = new Forms.ToolStripMenuItem(L.T("Language") + " / Language");
-        foreach (var (code, name) in new[] { ("zh", "English"), ("en", "English") })
+        foreach (var (code, name) in new[] { ("zh", "中文"), ("en", "English") })
             language.DropDownItems.Add(new Forms.ToolStripMenuItem(name, null, (_, _) => L.Language = code) { Checked = L.Language == code });
         items.Items.Add(language);
         startupMenu = new Forms.ToolStripMenuItem(L.T("Start with Windows"));
@@ -753,7 +760,7 @@ internal sealed class Resident : IDisposable
     private void Poll(object? sender, EventArgs e)
     {
         bool nextF8 = Native.Down(0x77), nextF9 = Native.Down(0x78), nextF10 = Native.Down(0x79), nextEscape = Native.Down(0x1B), nextMouse = Native.Down(1);
-        bool nextAlt = Native.Down(0x12), nextSpace = Native.Down(0x20);
+        bool nextAlt = Native.Down(0x12) || Native.Down(0xA4) || Native.Down(0xA5), nextSpace = Native.Down(0x20);
         bool nextCtrl = Native.Down(0x11), nextShift = Native.Down(0x10), nextL = Native.Down(0x4C);
 
         bool nextAltSpace = nextAlt && nextSpace;

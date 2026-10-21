@@ -35,9 +35,10 @@ internal sealed class DropWheel : Window
     // Top Floating Pill Bar & Close Button
     private const double TopBarHeight = 44;
     private readonly Grid topBarContainer = new() { Height = TopBarHeight, HorizontalAlignment = HorizontalAlignment.Stretch, Background = Brushes.Transparent };
-    private readonly Border floatBar = new() { Height = 32, CornerRadius = new CornerRadius(16), Padding = new Thickness(3, 2, 3, 2) };
-    private readonly Border closeButton = new() { Width = 32, Height = 32, CornerRadius = new CornerRadius(16), Cursor = Cursors.Hand };
-    private readonly TextBlock closeIcon = new() { Text = "✕", FontSize = 12, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+    private readonly Border floatBar = new() { Height = 32, CornerRadius = new CornerRadius(16), Padding = new Thickness(3, 2, 4, 2) };
+    private readonly Border closeSep = new() { Width = 1, Height = 14, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 0, 3, 0) };
+    private readonly Border closeButton = new() { Width = 22, Height = 22, CornerRadius = new CornerRadius(11), Cursor = Cursors.Hand, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock closeIcon = new() { Text = "✕", FontSize = 10, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
     private Point mouseDownPos;
 
     // Tabs inside floatBar
@@ -160,39 +161,38 @@ internal sealed class DropWheel : Window
         FontFamily = UiTheme.Font;
 
         // --- 1. Assemble Top Floating Pill Toolbar ---
-        var floatStack = new StackPanel { Orientation = Orientation.Horizontal };
+        var floatStack = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
 
-        var cStack = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 8, 0) };
+        var cStack = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 6, 0) };
         convertKeycap.Child = convertKeyText;
         cStack.Children.Add(convertKeycap);
         cStack.Children.Add(convertLabel);
         convertTab.Child = cStack;
         floatStack.Children.Add(convertTab);
 
-        var tStack = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 8, 0) };
+        var tStack = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 6, 0) };
         toolsKeycap.Child = toolsKeyText;
         tStack.Children.Add(toolsKeycap);
         tStack.Children.Add(toolsLabel);
         toolsTab.Child = tStack;
         floatStack.Children.Add(toolsTab);
 
-        var aStack = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 8, 0) };
+        var aStack = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 6, 0) };
         actionsKeycap.Child = actionsKeyText;
         aStack.Children.Add(actionsKeycap);
         aStack.Children.Add(actionsLabel);
         actionsTab.Child = aStack;
         floatStack.Children.Add(actionsTab);
 
+        floatStack.Children.Add(closeSep);
+
+        closeButton.Child = closeIcon;
+        floatStack.Children.Add(closeButton);
+
         floatBar.Child = floatStack;
         floatBar.HorizontalAlignment = HorizontalAlignment.Center;
         floatBar.VerticalAlignment = VerticalAlignment.Center;
         topBarContainer.Children.Add(floatBar);
-
-        closeButton.Child = closeIcon;
-        closeButton.HorizontalAlignment = HorizontalAlignment.Right;
-        closeButton.VerticalAlignment = VerticalAlignment.Center;
-        closeButton.Margin = new Thickness(0, 0, 16, 0);
-        topBarContainer.Children.Add(closeButton);
 
         WireTabHover(convertTab, WheelMode.Convert);
         WireTabHover(toolsTab, WheelMode.Tools);
@@ -205,7 +205,7 @@ internal sealed class DropWheel : Window
         };
         closeButton.MouseLeave += (_, _) =>
         {
-            closeButton.Background = Shade.Disk;
+            closeButton.Background = Brushes.Transparent;
             closeIcon.Foreground = UiTheme.Muted;
         };
         closeButton.MouseLeftButtonUp += (_, e) =>
@@ -372,8 +372,9 @@ internal sealed class DropWheel : Window
         center.BorderBrush = Solid("#FF6208");
         floatBar.Background = Shade.Disk;
         floatBar.BorderBrush = Shade.RestingOutline;
-        closeButton.Background = Shade.Disk;
-        closeButton.BorderBrush = Shade.RestingOutline;
+        closeSep.Background = Shade.RestingOutline;
+        closeButton.Background = Brushes.Transparent;
+        closeButton.BorderBrush = Brushes.Transparent;
         closeIcon.Foreground = UiTheme.Muted;
         UpdateTopBar();
         UpdateHub();
