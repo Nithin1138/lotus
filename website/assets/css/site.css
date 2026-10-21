@@ -1348,8 +1348,8 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 #pricing .wrap { max-width: 1280px; }
 .pricing-grid { 
   display: grid; 
-  grid-template-columns: repeat(3, 1fr); 
-  gap: 24px; 
+  grid-template-columns: repeat(3, minmax(0, 1fr)); 
+  gap: 28px; 
   width: 100%; 
   max-width: 1140px; 
   margin: 36px auto 0; 
@@ -1360,6 +1360,7 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   .pricing-grid {
     grid-template-columns: 1fr;
     max-width: 480px;
+    gap: 32px;
   }
 }
 
@@ -1397,7 +1398,7 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   background: var(--surface); 
   border: 1px solid var(--line); 
   border-radius: 16px; 
-  padding: 34px 26px 26px; 
+  padding: 44px 28px 28px; 
   text-align: left; 
   display: flex; 
   flex-direction: column; 
@@ -1429,31 +1430,36 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 
 .pricing-badge { 
   position: absolute; 
-  top: -12px; 
-  right: 24px; 
+  top: -13px; 
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--accent); 
   color: #fff; 
   font-size: .68rem; 
   font-weight: 700; 
   text-transform: uppercase; 
   letter-spacing: .6px; 
-  padding: 4px 12px; 
+  padding: 4px 14px; 
   border-radius: 999px; 
   box-shadow: 0 4px 12px rgba(213, 84, 24, 0.4);
+  white-space: nowrap;
+  line-height: 1.4;
+  pointer-events: none;
+  z-index: 3;
 }
 
 .pricing-badge.badge-subtle {
-  background: rgba(148, 163, 184, 0.12);
-  color: #94a3b8;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  box-shadow: none;
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .pricing-badge.badge-team {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.32);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12);
 }
 
 .pricing-title { 
@@ -1461,6 +1467,7 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   font-weight: 700; 
   color: var(--ink); 
   margin: 0 0 6px; 
+  line-height: 1.3;
 }
 
 .pricing-desc { 
