@@ -681,12 +681,6 @@ internal sealed class Resident : IDisposable
             };
             items.Items.Add(explorerItem);
         }
-        items.Items.Add(new Forms.ToolStripSeparator());
-        // Language names are shown in their own language so either can be found whatever is active.
-        var language = new Forms.ToolStripMenuItem(L.T("Language") + " / Language");
-        foreach (var (code, name) in new[] { ("zh", "中文"), ("en", "English") })
-            language.DropDownItems.Add(new Forms.ToolStripMenuItem(name, null, (_, _) => L.Language = code) { Checked = L.Language == code });
-        items.Items.Add(language);
         startupMenu = new Forms.ToolStripMenuItem(L.T("Start with Windows"));
         var startupItem = startupMenu;
         startupItem.Click += async (_, _) =>
