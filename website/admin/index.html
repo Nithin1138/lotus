@@ -1246,11 +1246,22 @@
                     </div>
 
                     <div style="margin-bottom: 16px;">
+                      <label for="pricing-countdown-discount" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
+                        24-Hour Deal Discount Percentage (%)
+                      </label>
+                      <div class="currency-input-wrap" style="max-width: 160px;">
+                        <span class="currency-symbol-addon">%</span>
+                        <input type="number" id="pricing-countdown-discount" min="1" max="90" step="1" value="10" placeholder="10" required>
+                      </div>
+                      <span class="field-hint">Discount percentage applied when visitors use FIRST24 (Default: 10%). Updates website announcement bar, hero badge, pricing urgency header, and coupon calculations automatically.</span>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
                       <label for="pricing-countdown-label" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
                         Banner Headline Text
                       </label>
-                      <input type="text" id="pricing-countdown-label" value="Special Launch Discount Ends In:" placeholder="Special Launch Discount Ends In:">
-                      <span class="field-hint">Displayed next to the pulsating lightning icon on the website</span>
+                      <input type="text" id="pricing-countdown-label" value="First 24-Hours Deal: 10% Off All Plans with code FIRST24" placeholder="First 24-Hours Deal: 10% Off All Plans with code FIRST24">
+                      <span class="field-hint">Displayed in the pricing section urgency header on the website</span>
                     </div>
 
                     <!-- Instant Reset Countdown From Now Action Card -->

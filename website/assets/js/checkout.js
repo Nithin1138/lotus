@@ -19,7 +19,8 @@
       enabled: true,
       value: 24,
       unit: 'hours',
-      label: 'First 24-Hours Deal: 10% Off with code FIRST24',
+      discountPercent: 10,
+      label: 'First 24-Hours Deal: 10% Off All Plans with code FIRST24',
       expiresAt: null
     },
     devicesPerLicense: 3
@@ -211,9 +212,28 @@
       return;
     }
 
+    const discountPct = Math.max(1, Math.min(90, Number(countdownConfig.discountPercent || PRICING.countdown?.discountPercent || 10)));
+
     const labelEl = document.getElementById('ocb-label');
     if (labelEl) {
-      labelEl.textContent = countdownConfig.label || 'First 24-Hours Deal: 10% Off with code FIRST24';
+      if (countdownConfig.label && !countdownConfig.label.includes('10% Off') && countdownConfig.label.trim()) {
+        labelEl.textContent = countdownConfig.label;
+      } else {
+        labelEl.textContent = `First 24-Hours Deal: ${discountPct}% Off All Plans with code FIRST24`;
+      }
+    }
+
+    // Top announcement early bird bar text
+    const ebbMsg = document.querySelector('.ebb-message');
+    if (ebbMsg) {
+      const ebbSpan = ebbMsg.querySelector('span');
+      if (ebbSpan) {
+        ebbSpan.innerHTML = `Get <strong>${discountPct}% Off Lifetime Pro</strong> with code`;
+      }
+    }
+    const ebbBtnSpan = document.querySelector('.ebb-actions .ebb-btn span');
+    if (ebbBtnSpan) {
+      ebbBtnSpan.textContent = `Claim ${discountPct}% Off`;
     }
 
     let targetTime = getFirst24Expiry();
@@ -277,7 +297,7 @@
       // Micro countdown tags on "Buy" buttons
       const heroTimerEl = document.getElementById('hero-urgency-timer');
       if (heroTimerEl) {
-        heroTimerEl.textContent = `10% Off with FIRST24 · ${hours}h ${pad(minutes)}m left`;
+        heroTimerEl.textContent = `${discountPct}% Off with FIRST24 · ${hours}h ${pad(minutes)}m left`;
       }
     }
 

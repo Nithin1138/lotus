@@ -789,7 +789,7 @@
       'price-single-inr-input', 'price-single-usd-input', 'price-strike-single-inr-input', 'price-strike-single-usd-input',
       'price-inr-input', 'price-usd-input', 'price-strike-inr-input', 'price-strike-usd-input',
       'price-team-inr-input', 'price-team-usd-input', 'price-strike-team-inr-input', 'price-strike-team-usd-input',
-      'pricing-devices-input', 'pricing-countdown-val', 'pricing-countdown-label'
+      'pricing-devices-input', 'pricing-countdown-val', 'pricing-countdown-discount', 'pricing-countdown-label'
     ].forEach(id => {
       document.getElementById(id)?.addEventListener('input', () => {
         updatePricingPreviews();
@@ -1679,7 +1679,8 @@
 
     const cdVal = Number(document.getElementById('pricing-countdown-val')?.value || 24);
     const cdUnit = document.getElementById('pricing-countdown-unit')?.value || 'hours';
-    const cdLabel = document.getElementById('pricing-countdown-label')?.value || 'Special Launch Discount Ends In:';
+    const cdDiscount = Math.max(1, Math.min(90, Number(document.getElementById('pricing-countdown-discount')?.value || 10)));
+    const cdLabel = document.getElementById('pricing-countdown-label')?.value || 'First 24-Hours Deal: 10% Off All Plans with code FIRST24';
     const cdPreview = document.getElementById('pricing-countdown-preview');
     if (cdPreview) {
       if (!countdownEnabled) {
@@ -1687,9 +1688,9 @@
       } else {
         cdPreview.innerHTML = `
           <div class="countdown-sim-bar">
-            <span class="countdown-sim-badge">⚡️ ${escapeHtml(cdLabel)}</span>
+            <span class="countdown-sim-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: -1px;" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>${escapeHtml(cdLabel)}</span>
             <span class="countdown-sim-clock">01d : ${String(cdVal % 24).padStart(2, '0')}h : 42m : 18s</span>
-            <span style="font-size: 11.5px; color: var(--text-muted); margin-left: auto;">Duration: ${cdVal} ${cdUnit.toUpperCase()}</span>
+            <span style="font-size: 11.5px; color: var(--text-muted); margin-left: auto;">${cdDiscount}% Off · ${cdVal} ${cdUnit.toUpperCase()}</span>
           </div>
         `;
       }
@@ -1734,7 +1735,8 @@
   async function handleResetCountdownFreshly() {
     const countdownValue = Number(document.getElementById('pricing-countdown-val')?.value || 24);
     const countdownUnit = document.getElementById('pricing-countdown-unit')?.value || 'hours';
-    const countdownLabel = (document.getElementById('pricing-countdown-label')?.value || 'Special Launch Discount Ends In:').trim();
+    const countdownDiscount = Math.max(1, Math.min(90, Number(document.getElementById('pricing-countdown-discount')?.value || 10)));
+    const countdownLabel = (document.getElementById('pricing-countdown-label')?.value || 'First 24-Hours Deal: 10% Off All Plans with code FIRST24').trim();
 
     const singleInr = Number(document.getElementById('price-single-inr-input')?.value || 799);
     const singleUsd = Number(document.getElementById('price-single-usd-input')?.value || 15);
@@ -1803,6 +1805,7 @@
           countdownEnabled: true,
           countdownValue,
           countdownUnit,
+          countdownDiscount,
           countdownLabel,
           countdownReset: true,
           devicesPerLicense: Number(document.getElementById('pricing-devices-input')?.value) || 3
@@ -1867,7 +1870,8 @@
     const countdownEnabled = document.getElementById('pricing-countdown-enabled')?.checked ?? false;
     const countdownValue = Number(document.getElementById('pricing-countdown-val')?.value || 24);
     const countdownUnit = document.getElementById('pricing-countdown-unit')?.value || 'hours';
-    const countdownLabel = (document.getElementById('pricing-countdown-label')?.value || 'Special Launch Discount Ends In:').trim();
+    const countdownDiscount = Math.max(1, Math.min(90, Number(document.getElementById('pricing-countdown-discount')?.value || 10)));
+    const countdownLabel = (document.getElementById('pricing-countdown-label')?.value || 'First 24-Hours Deal: 10% Off All Plans with code FIRST24').trim();
     const countdownReset = document.getElementById('pricing-countdown-reset')?.checked || false;
     const devicesPerLicense = Math.max(1, Math.min(50, Number(document.getElementById('pricing-devices-input')?.value) || 3));
 
@@ -1936,6 +1940,7 @@
           countdownEnabled,
           countdownValue,
           countdownUnit,
+          countdownDiscount,
           countdownLabel,
           countdownReset,
           devicesPerLicense
@@ -2080,6 +2085,7 @@
           const countdownCheck = document.getElementById('pricing-countdown-enabled');
           const countdownValInput = document.getElementById('pricing-countdown-val');
           const countdownUnitSelect = document.getElementById('pricing-countdown-unit');
+          const countdownDiscountInput = document.getElementById('pricing-countdown-discount');
           const countdownLabelInput = document.getElementById('pricing-countdown-label');
           const devicesInput = document.getElementById('pricing-devices-input');
 
@@ -2091,6 +2097,9 @@
           }
           if (countdownUnitSelect && data.pricing.countdown?.unit) {
             countdownUnitSelect.value = data.pricing.countdown.unit;
+          }
+          if (countdownDiscountInput) {
+            countdownDiscountInput.value = data.pricing.countdown?.discountPercent || 10;
           }
           if (countdownLabelInput && data.pricing.countdown?.label) {
             countdownLabelInput.value = data.pricing.countdown.label;

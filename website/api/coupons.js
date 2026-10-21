@@ -150,6 +150,19 @@ function evaluateCoupon(code, currency, baseSubunits) {
     return { valid: false, error: 'Invalid coupon code.' };
   }
 
+  if (normalized === 'FIRST24' || normalized === 'EARLY24') {
+    try {
+      const pFile = path.join('/tmp', 'dropdial_pricing.json');
+      if (fs.existsSync(pFile)) {
+        const pData = JSON.parse(fs.readFileSync(pFile, 'utf8'));
+        if (pData?.countdown?.discountPercent) {
+          coupon.value = Number(pData.countdown.discountPercent);
+          coupon.description = `First 24-Hours Early Bird - ${coupon.value}% Off`;
+        }
+      }
+    } catch (e) {}
+  }
+
   if (!coupon.active) {
     return { valid: false, error: 'This coupon code is no longer active.' };
   }
@@ -255,6 +268,40 @@ async function evaluateCouponAsync(code, currency, baseSubunits, userEmail = '')
 
   if (!coupon) {
     return { valid: false, error: 'Invalid coupon code.' };
+  }
+
+  // Dynamic percentage sync for 24-hour deal coupon (FIRST24 / EARLY24)
+  if (cleanCode === 'FIRST24' || cleanCode === 'EARLY24') {
+    try {
+      const { getDb } = require('./_db');
+      const sql = getDb();
+      if (sql) {
+        const pRows = await sql`SELECT value FROM app_settings WHERE key = 'pricing' LIMIT 1;`;
+        if (pRows && pRows.length > 0 && pRows[0].value) {
+          let pVal = pRows[0].value;
+          if (typeof pVal === 'string') {
+            try { pVal = JSON.parse(pVal); } catch (e) {}
+          }
+          if (pVal?.countdown?.discountPercent) {
+            coupon.value = Number(pVal.countdown.discountPercent);
+            coupon.description = `First 24-Hours Early Bird - ${coupon.value}% Off`;
+          }
+        }
+      }
+    } catch (e) {}
+
+    if (!coupon.value || coupon.value === 10) {
+      try {
+        const pFile = path.join('/tmp', 'dropdial_pricing.json');
+        if (fs.existsSync(pFile)) {
+          const pData = JSON.parse(fs.readFileSync(pFile, 'utf8'));
+          if (pData?.countdown?.discountPercent) {
+            coupon.value = Number(pData.countdown.discountPercent);
+            coupon.description = `First 24-Hours Early Bird - ${coupon.value}% Off`;
+          }
+        }
+      } catch (e) {}
+    }
   }
 
   if (!coupon.active) {

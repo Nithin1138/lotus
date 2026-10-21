@@ -52,7 +52,8 @@ let currentPricing = {
     enabled: true,
     value: 24,
     unit: 'hours',
-    label: 'First 24-Hours Deal: 10% Off with code FIRST24',
+    label: 'First 24-Hours Deal: 10% Off All Plans with code FIRST24',
+    discountPercent: 10,
     expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString()
   },
   devicesPerLicense: 3,
@@ -290,7 +291,8 @@ module.exports = async function handler(req, res) {
             countdown: {
               ...currentPricing.countdown,
               ...(val.countdown || {}),
-              enabled: val.countdown ? (val.countdown.enabled === true) : currentPricing.countdown.enabled
+              enabled: val.countdown ? (val.countdown.enabled === true) : currentPricing.countdown.enabled,
+              discountPercent: Number(val.countdown?.discountPercent || currentPricing.countdown.discountPercent || 10)
             },
             devicesPerLicense: Math.max(1, Math.min(100, Number(val.devicesPerLicense || val.devices || currentPricing.devicesPerLicense || 3)))
           };
@@ -345,7 +347,8 @@ module.exports = async function handler(req, res) {
       const countdownEnabled = body.countdownEnabled !== undefined ? (body.countdownEnabled === true || body.countdownEnabled === 'true') : false;
       const countdownValue = Number(body.countdownValue) > 0 ? Number(body.countdownValue) : (currentPricing.countdown?.value || 24);
       const countdownUnit = (body.countdownUnit === 'days') ? 'days' : 'hours';
-      const countdownLabel = (body.countdownLabel || currentPricing.countdown?.label || 'Special Launch Discount Ends In:').trim();
+      const countdownDiscount = Math.max(1, Math.min(90, Number(body.countdownDiscount || body.discountPercent || currentPricing.countdown?.discountPercent || 10)));
+      const countdownLabel = (body.countdownLabel || currentPricing.countdown?.label || `First 24-Hours Deal: ${countdownDiscount}% Off All Plans with code FIRST24`).trim();
       const countdownReset = !!body.countdownReset;
 
       const devicesPerLicense = Math.max(1, Math.min(100, Number(body.devicesPerLicense || body.devices || currentPricing.devicesPerLicense || 3)));
@@ -465,6 +468,7 @@ module.exports = async function handler(req, res) {
           enabled: countdownEnabled,
           value: countdownValue,
           unit: countdownUnit,
+          discountPercent: countdownDiscount,
           label: countdownLabel,
           expiresAt: expiresAt
         },
@@ -481,6 +485,11 @@ module.exports = async function handler(req, res) {
             INSERT INTO app_settings (key, value, updated_at)
             VALUES ('pricing', ${pricingJson}::jsonb, NOW())
             ON CONFLICT (key) DO UPDATE SET value = ${pricingJson}::jsonb, updated_at = NOW();
+          `;
+          await sql`
+            UPDATE coupons
+            SET value = ${countdownDiscount}, description = ${`First 24-Hours Early Bird - ${countdownDiscount}% Off`}
+            WHERE UPPER(code) IN ('FIRST24', 'EARLY24');
           `;
         } catch (dbErr) {
           console.warn('[Neon DB Pricing Write Warning]:', dbErr.message);

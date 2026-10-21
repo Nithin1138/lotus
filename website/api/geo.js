@@ -41,7 +41,7 @@ module.exports = async function handler(req, res) {
     INR: { amount: 999, symbol: '₹', display: '₹999', strikeAmount: 1499, strikeDisplay: '₹1,499' },
     USD: { amount: 19, symbol: '$', display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
     strikethrough: { enabled: true, inrAmount: 1499, usdAmount: 29 },
-    countdown: { enabled: true, value: 24, unit: 'hours', label: 'First 24-Hours Deal: 10% Off with code FIRST24' }
+    countdown: { enabled: true, value: 24, unit: 'hours', discountPercent: 10, label: 'First 24-Hours Deal: 10% Off All Plans with code FIRST24' }
   };
 
   try {
@@ -64,7 +64,8 @@ module.exports = async function handler(req, res) {
             countdown: {
               ...currentPricing.countdown,
               ...(val.countdown || {}),
-              enabled: val.countdown ? (val.countdown.enabled === true) : false
+              enabled: val.countdown ? (val.countdown.enabled === true) : false,
+              discountPercent: Number(val.countdown?.discountPercent || currentPricing.countdown.discountPercent || 10)
             }
           };
         }
