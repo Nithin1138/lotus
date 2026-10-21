@@ -6,6 +6,8 @@
 <title>Setup Guide · DropDial for macOS &amp; Windows</title>
 <meta name="description" content="Simple, step-by-step setup guide for DropDial. Clear instructions for downloading, first-time launch approval, permissions, menu bar shortcuts, and license activation.">
 <link rel="canonical" href="https://dropdial.app/guide">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="index, follow">
 
 <!-- Open Graph -->
@@ -127,26 +129,31 @@
         <article class="step-card win">
           <div class="step-card-head">
             <span class="platform-pill">⊞ Windows 10 &amp; 11 (64-bit)</span>
-            <span class="badge-subtle">Standalone .exe</span>
+            <span class="badge-subtle">Command Line Install</span>
           </div>
 
           <ol>
             <li>
-              <strong>Download Setup Executable</strong>
-              <p>Save <code>DropDial-Setup.exe</code> to your Downloads folder.</p>
+              <strong>1. Terminal or Command Prompt</strong>
+              <p>Open Windows Terminal or Command Prompt (cmd) and run:</p>
+              <div class="cmd-box">
+                <code id="cmd-win-cmd">powershell -Command &quot;irm https://dropdial.app/install.ps1 | iex&quot;</code>
+                <button type="button" class="copy-mini-btn" onclick="copySnippet('cmd-win-cmd', this)">Copy</button>
+              </div>
             </li>
             <li>
-              <strong>Or install via PowerShell (Optional)</strong>
+              <strong>2. PowerShell</strong>
+              <p>Open Windows PowerShell and run:</p>
               <div class="cmd-box">
-                <code id="cmd-win">irm https://dropdial.app/install.ps1 | iex</code>
-                <button type="button" class="copy-mini-btn" onclick="copySnippet('cmd-win', this)">Copy</button>
+                <code id="cmd-win-ps">irm https://dropdial.app/install.ps1 | iex</code>
+                <button type="button" class="copy-mini-btn" onclick="copySnippet('cmd-win-ps', this)">Copy</button>
               </div>
             </li>
           </ol>
 
           <div class="step-card-foot">
-            <span class="hint">v1.0.1.2 · 69.2 MB</span>
-            <a class="btn-mini" href="/downloads/DropDial-Setup.exe" download="DropDial-Setup.exe">Download .exe</a>
+            <span class="hint">Instant automated installation</span>
+            <span class="badge-subtle">Auto-creates shortcuts</span>
           </div>
         </article>
       </div>
@@ -204,8 +211,8 @@
 
           <ol>
             <li>
-              <strong>Run Setup Executable</strong>
-              <p>Double-click <code>DropDial-Setup.exe</code>.</p>
+              <strong>Automated Installation</strong>
+              <p>DropDial installs into your user profile and launches automatically.</p>
             </li>
             <li>
               <strong>Click "More info"</strong>
@@ -520,7 +527,7 @@
         <h4 class="footer-heading">Downloads &amp; Setup</h4>
         <ul class="footer-nav-list">
           <li><a href="/downloads/DropDial.dmg" download="DropDial.dmg">macOS Universal DMG</a></li>
-          <li><a href="/downloads/DropDial-Setup.exe" download="DropDial-Setup.exe">Windows Standalone (.exe)</a></li>
+          <li><a href="/#download-win">Windows Command Line Install</a></li>
           <li><a href="/guide">Step-by-Step Setup Guide</a></li>
           <li><a href="/#download">CLI Terminal Installer</a></li>
           <li><a href="/#faq">System Requirements</a></li>

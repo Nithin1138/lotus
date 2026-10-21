@@ -6,12 +6,14 @@
  * sending an empathetic recovery notification to the customer.
  */
 
-const { sendPaymentFailedEmail } = require('./_utils');
+const { sendPaymentFailedEmail, sanitizeEmail, sanitizeName } = require('./_utils');
+const { checkRateLimit } = require('./_rateLimit');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -21,21 +23,36 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  try {
-    const { email, name, reason, amount, currency } = req.body || {};
+  // Rate Limiting: Max 5 failure notices per minute per IP
+  const rateLimit = checkRateLimit(req, 'payment-failed', 5, 60000);
+  if (!rateLimit.allowed) {
+    return res.status(429).json({
+      error: 'Too many requests. Please wait.',
+      retryAfterSeconds: Math.ceil(rateLimit.resetMs / 1000)
+    });
+  }
 
-    if (!email || !email.includes('@')) {
+  try {
+    const { reason, amount, currency } = req.body || {};
+    const email = sanitizeEmail(req.body?.email);
+    const name = sanitizeName(req.body?.name);
+
+    if (!email) {
       return res.status(400).json({ error: 'Valid email address is required' });
     }
 
-    console.log(`[Payment Failed API] Sending notice to ${email} (Reason: ${reason || 'declined'})`);
+    const cleanReason = String(reason || 'Transaction was declined by the bank or gateway')
+      .replace(/[<>]/g, '')
+      .slice(0, 200);
+
+    console.log(`[Payment Failed API] Sending notice to ${email} (Reason: ${cleanReason})`);
 
     const result = await sendPaymentFailedEmail({
-      to: email.trim().toLowerCase(),
-      name: (name || 'DropDial Pro User').trim(),
-      reason: reason || 'Transaction was declined by the bank or gateway',
-      amount: amount || '',
-      currency: currency || 'USD'
+      to: email,
+      name: name,
+      reason: cleanReason,
+      amount: String(amount || '').replace(/[^0-9.,₹$]/g, '').slice(0, 20),
+      currency: ['INR', 'USD'].includes((currency || '').toUpperCase()) ? (currency || '').toUpperCase() : 'USD'
     });
 
     return res.status(200).json({

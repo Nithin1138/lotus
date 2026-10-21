@@ -7,6 +7,7 @@
 
 const crypto = require('crypto');
 const { generateLicense, sendResendEmail, getPrivateKey } = require('./_utils');
+const { checkRateLimit } = require('./_rateLimit');
 
 // Default initial master pass phrase if ADMIN_KEY / ADMIN_PASSWORD is not set in environment
 const DEFAULT_ADMIN_PASS = 'dropdial2026';
@@ -141,6 +142,17 @@ module.exports = async function handler(req, res) {
 
   // Public endpoint: verify login credentials (supports 'login' or 'verify', GET or POST)
   if (action === 'login' || action === 'verify') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+
+    // Anti-Brute-Force Rate Limiting: Max 10 login attempts per 5 minutes per IP
+    const loginRateLimit = checkRateLimit(req, 'admin-login', 10, 5 * 60 * 1000);
+    if (!loginRateLimit.allowed) {
+      return res.status(429).json({
+        error: 'Too many login attempts. Account temporarily locked for security.',
+        retryAfterSeconds: Math.ceil(loginRateLimit.resetMs / 1000)
+      });
+    }
+
     const candidate = req.body?.password || req.body?.passcode || req.body?.token || req.query?.token || req.query?.passcode || req.query?.password;
     const expected = await getAdminSecret(sql);
     const fallback = (process.env.ADMIN_KEY || process.env.ADMIN_PASSWORD || process.env.LICENSE_SECRET || DEFAULT_ADMIN_PASS).trim();
@@ -156,9 +168,12 @@ module.exports = async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid admin passcode' });
     }
 
+    const isUsingDefault = safeCompare(expected, DEFAULT_ADMIN_PASS);
+
     return res.status(200).json({
       success: true,
       token: expected,
+      warning: isUsingDefault ? 'Notice: You are using the default admin passcode. Please set ADMIN_PASSWORD in your Vercel Environment Variables.' : undefined,
       message: 'Authenticated successfully'
     });
   }

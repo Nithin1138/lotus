@@ -154,7 +154,9 @@
   }
 
   /* ---------- Platform & Latest Releases ---------- */
-  const isMac = /Macintosh|Mac OS X|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const urlParams = new URLSearchParams(window.location.search);
+  const forcePlatform = urlParams.get("os") || urlParams.get("platform");
+  const isMac = forcePlatform ? forcePlatform.toLowerCase().startsWith("mac") : /Macintosh|Mac OS X|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   // Highlight detected platform card
   const cardMac = $("#download-mac");
@@ -175,6 +177,20 @@
 
   const macIconSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>';
   const winIconSvg = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>';
+
+  const heroMacIconSvg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>';
+  const heroWinIconSvg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>';
+
+  function updateHeroDownloadBtn(platform) {
+    const isM = platform === "mac";
+    $$("[data-download]").forEach(a => {
+      a.href = isM ? "/download" : "#download-win";
+      const span = a.querySelector("span");
+      if (span) span.textContent = isM ? "Download for macOS" : "Download for Windows";
+      const svg = a.querySelector("svg");
+      if (svg) svg.outerHTML = isM ? heroMacIconSvg : heroWinIconSvg;
+    });
+  }
 
   let currentPlatform = isMac ? "mac" : "win";
 
@@ -201,6 +217,7 @@
     if (cliDesc) {
       cliDesc.innerHTML = isM ? descMac : descWin;
     }
+    updateHeroDownloadBtn(platform);
   }
 
   setCliPlatform(isMac ? "mac" : "win");
@@ -217,7 +234,43 @@
     if (!e.target.closest("a, button")) setCliPlatform("mac");
   });
   if (cardWin) cardWin.addEventListener("click", (e) => {
-    if (!e.target.closest("a, button")) setCliPlatform("win");
+    if (!e.target.closest("a, button, code, .win-cli-container")) setCliPlatform("win");
+  });
+
+  // Windows Command Line Install Tab Switching & Copying
+  const winTabs = $$(".win-cli-tab");
+  const winPanels = $$(".win-cli-panel");
+  winTabs.forEach(tab => {
+    tab.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const target = tab.getAttribute("data-target");
+      winTabs.forEach(t => {
+        const isActive = t === tab;
+        t.classList.toggle("active", isActive);
+        t.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+      winPanels.forEach(p => {
+        p.classList.toggle("active", p.id === `panel-win-${target}`);
+      });
+    });
+  });
+
+  $$(".win-cli-copy").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const targetId = btn.getAttribute("data-copy-target");
+      const codeEl = document.getElementById(targetId);
+      if (!codeEl) return;
+      const text = codeEl.textContent.trim();
+      try {
+        await navigator.clipboard.writeText(text);
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Copied!</span>`;
+        setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+      } catch (err) {
+        window.prompt("Copy command:", text);
+      }
+    });
   });
 
   if (copyBtn) {
@@ -251,20 +304,11 @@
     fetch('/api/admin?action=track&event=pageview', { method: 'POST', keepalive: true }).catch(() => {});
   } catch (_) {}
 
-  $$("[data-download-win]").forEach(a => { a.href = releaseWin.url; });
-  $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · ${releaseWin.size} · Standalone Windows (.exe)`; });
-
   $$("[data-download-mac]").forEach(a => { a.href = releaseMac.url; });
   $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${releaseMac.tag} · ${releaseMac.size} · Universal Mach-O DMG`; });
 
-  // Update hero download button based on user OS, routing via universal auto-detect endpoint
-  $$("[data-download]").forEach(a => {
-    a.href = "/download";
-    const span = a.querySelector("span");
-    if (span) {
-      span.textContent = isMac ? "Download for macOS" : "Download for Windows (.exe)";
-    }
-  });
+  // Ensure hero download button matches detected platform
+  updateHeroDownloadBtn(currentPlatform);
 
   // Dynamically update download links and universal version badge from releases proxy
   fetch("/api/releases")
@@ -322,11 +366,10 @@
       if (winAsset) {
         releaseWin.url = winAsset.browser_download_url;
         releaseWin.tag = activeTag;
-        const winSizeFormatted = formatSize(winAsset.size);
-        $$("[data-download-win]").forEach(a => { a.href = releaseWin.url; });
-        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · ${winSizeFormatted} · Standalone Windows (.exe)`; });
+        $$("[data-download-win]").forEach(a => { a.href = "/#download-win"; });
+        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · Windows Command Line Install`; });
       } else if (latestTag) {
-        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · ${releaseWin.size} · Standalone Windows (.exe)`; });
+        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · Windows Command Line Install`; });
       }
 
       if (macAsset) {

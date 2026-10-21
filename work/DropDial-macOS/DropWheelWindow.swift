@@ -568,6 +568,10 @@ final class RadialWheelView: NSView {
 
     // MARK: - Hit Testing
     override func hitTest(_ point: NSPoint) -> NSView? {
+        let isMouseDownOrDrag = (NSEvent.pressedMouseButtons & 1) != 0
+        if isMouseDownOrDrag {
+            return super.hitTest(point)
+        }
         let dx = point.x - wheelCenter.x
         let dy = point.y - wheelCenter.y
         let dist = sqrt(dx * dx + dy * dy)
@@ -764,6 +768,7 @@ final class RadialWheelView: NSView {
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        DropWheelWindowController.shared.isDraggingOverWheel = true
         let paths = extractPaths(from: sender)
         if !paths.isEmpty {
             self.currentPaths = paths
@@ -774,6 +779,7 @@ final class RadialWheelView: NSView {
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        DropWheelWindowController.shared.isDraggingOverWheel = true
         let pt = convert(sender.draggingLocation, from: nil)
         let hit = indexForPoint(pt)
         let newHub = (hit == -2)
@@ -798,6 +804,7 @@ final class RadialWheelView: NSView {
     }
 
     override func draggingExited(_ sender: NSDraggingInfo?) {
+        DropWheelWindowController.shared.isDraggingOverWheel = false
         hoveredIndex = -1
         isHubHovered = false
         hoveredTopBarIndex = -1
@@ -805,6 +812,9 @@ final class RadialWheelView: NSView {
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        DropWheelWindowController.shared.isDraggingOverWheel = false
+        DropWheelWindowController.shared.stopOutsideTracking()
+
         let pt = convert(sender.draggingLocation, from: nil)
         let hit = indexForPoint(pt)
 
@@ -1313,8 +1323,12 @@ final class DropWheelWindowController: NSWindowController {
     private var currentMode: WheelMode = .conversions
     private var activeToolControllers: [ToolWindowController] = []
 
+    var isDraggingOverWheel = false
     private var localOutsideClickMonitor: Any?
     private var globalOutsideClickMonitor: Any?
+    private var outsideClickPollTimer: Timer?
+    private var outsideMouseDownLocation: NSPoint?
+    private var isOutsideTrackingActive = false
 
     init() {
         let width: CGFloat = 340
@@ -1430,7 +1444,59 @@ final class DropWheelWindowController: NSWindowController {
         installOutsideClickMonitors()
     }
 
+    func stopOutsideTracking() {
+        outsideClickPollTimer?.invalidate()
+        outsideClickPollTimer = nil
+        isOutsideTrackingActive = false
+        outsideMouseDownLocation = nil
+    }
+
+    private func startOutsideTrackingTimer() {
+        outsideClickPollTimer?.invalidate()
+        outsideClickPollTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] timer in
+            guard let self = self, let win = self.window, win.isVisible else {
+                timer.invalidate()
+                return
+            }
+
+            let isLeftDown = (NSEvent.pressedMouseButtons & 1) != 0
+
+            if isLeftDown {
+                // Mouse button is still held down!
+                // The user is actively dragging a file or holding mouse down.
+                // Keep the wheel visible so the user can complete the drag & drop!
+                return
+            } else {
+                // Mouse button was released!
+                timer.invalidate()
+                self.outsideClickPollTimer = nil
+                self.isOutsideTrackingActive = false
+
+                let cur = NSEvent.mouseLocation
+                if !win.frame.contains(cur) && !self.isDraggingOverWheel {
+                    // Clicked outside or released drag outside the wheel
+                    DispatchQueue.main.async {
+                        self.hideWheel()
+                    }
+                }
+            }
+        }
+    }
+
+    private func handleOutsideMouseUp() {
+        guard let win = self.window, win.isVisible else { return }
+        stopOutsideTracking()
+
+        let cur = NSEvent.mouseLocation
+        if !win.frame.contains(cur) && !self.isDraggingOverWheel {
+            DispatchQueue.main.async {
+                self.hideWheel()
+            }
+        }
+    }
+
     func hideWheel() {
+        stopOutsideTracking()
         removeOutsideClickMonitors()
         window?.orderOut(nil)
     }
@@ -1479,6 +1545,8 @@ final class DropWheelWindowController: NSWindowController {
     private func installOutsideClickMonitors() {
         removeOutsideClickMonitors()
         openTimestamp = ProcessInfo.processInfo.systemUptime
+        isOutsideTrackingActive = false
+        isDraggingOverWheel = false
 
         localOutsideClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             guard let self = self, let win = self.window, win.isVisible else { return event }
@@ -1502,16 +1570,35 @@ final class DropWheelWindowController: NSWindowController {
             return event
         }
 
-        globalOutsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+        globalOutsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp, .rightMouseDown]) { [weak self] event in
             guard let self = self, let win = self.window, win.isVisible else { return }
             if ProcessInfo.processInfo.systemUptime - self.openTimestamp < 0.25 { return }
-            DispatchQueue.main.async {
-                self.hideWheel()
+
+            if event.type == .rightMouseDown {
+                self.stopOutsideTracking()
+                DispatchQueue.main.async {
+                    self.hideWheel()
+                }
+                return
+            }
+
+            if event.type == .leftMouseDown {
+                // Do NOT hide the wheel on leftMouseDown!
+                // The user may be clicking on a file in Finder or Desktop to drag it to DropDial.
+                self.outsideMouseDownLocation = NSEvent.mouseLocation
+                self.isOutsideTrackingActive = true
+                self.startOutsideTrackingTimer()
+                return
+            }
+
+            if event.type == .leftMouseUp {
+                self.handleOutsideMouseUp()
             }
         }
     }
 
     private func removeOutsideClickMonitors() {
+        stopOutsideTracking()
         if let monitor = localOutsideClickMonitor {
             NSEvent.removeMonitor(monitor)
             localOutsideClickMonitor = nil

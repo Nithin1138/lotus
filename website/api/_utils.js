@@ -366,23 +366,54 @@ async function sendPaymentFailedEmail({ to, name, reason = 'Transaction was decl
 }
 
 /**
+ * Sanitizes and validates an email address.
+ * Strips whitespace, control characters, newlines (prevents CRLF injection), and validates format.
+ */
+function sanitizeEmail(email) {
+  if (!email || typeof email !== 'string') return '';
+  const clean = email.replace(/[\r\n\t\0]/g, '').trim().toLowerCase();
+  if (clean.length > 254) return '';
+  const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  return re.test(clean) ? clean : '';
+}
+
+/**
+ * Sanitizes a customer display name.
+ * Encodes angle brackets, strips control chars, and limits length.
+ */
+function sanitizeName(name) {
+  if (!name || typeof name !== 'string') return 'DropDial Customer';
+  let clean = name.replace(/[\r\n\t\0]/g, ' ').replace(/[<>]/g, '').trim();
+  if (!clean) return 'DropDial Customer';
+  return clean.slice(0, 100);
+}
+
+/**
  * Validates Razorpay Payment Signature from Client Checkout:
  * HMAC_SHA256(order_id + "|" + payment_id, secret) == signature
+ * Uses length checks to prevent timingSafeEqual throwing on mismatched buffers.
  */
 function verifyRazorpayPaymentSignature({ orderId, paymentId, signature }) {
-  const secret = process.env.RAZORPAY_KEY_SECRET;
+  const secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
   if (!secret) {
     throw new Error('RAZORPAY_KEY_SECRET is not configured on server.');
+  }
+  if (!orderId || !paymentId || !signature) {
+    return false;
   }
 
   const hmac = crypto.createHmac('sha256', secret);
   hmac.update(`${orderId}|${paymentId}`);
   const expectedSignature = hmac.digest('hex');
 
-  return crypto.timingSafeEqual(
-    Buffer.from(expectedSignature, 'utf8'),
-    Buffer.from(signature, 'utf8')
-  );
+  const expectedBuf = Buffer.from(expectedSignature, 'utf8');
+  const signatureBuf = Buffer.from(String(signature).trim(), 'utf8');
+
+  if (expectedBuf.length !== signatureBuf.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(expectedBuf, signatureBuf);
 }
 
 /**
@@ -390,19 +421,26 @@ function verifyRazorpayPaymentSignature({ orderId, paymentId, signature }) {
  * HMAC_SHA256(raw_body, webhook_secret) == x_razorpay_signature
  */
 function verifyRazorpayWebhookSignature(rawBody, signature) {
-  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  const secret = (process.env.RAZORPAY_WEBHOOK_SECRET || '').trim();
   if (!secret) {
     throw new Error('RAZORPAY_WEBHOOK_SECRET is not configured on server.');
+  }
+  if (!rawBody || !signature) {
+    return false;
   }
 
   const hmac = crypto.createHmac('sha256', secret);
   hmac.update(rawBody);
   const expectedSignature = hmac.digest('hex');
 
-  return crypto.timingSafeEqual(
-    Buffer.from(expectedSignature, 'utf8'),
-    Buffer.from(signature, 'utf8')
-  );
+  const expectedBuf = Buffer.from(expectedSignature, 'utf8');
+  const signatureBuf = Buffer.from(String(signature).trim(), 'utf8');
+
+  if (expectedBuf.length !== signatureBuf.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(expectedBuf, signatureBuf);
 }
 
 module.exports = {
@@ -412,5 +450,7 @@ module.exports = {
   sendResendEmail,
   sendPaymentFailedEmail,
   verifyRazorpayPaymentSignature,
-  verifyRazorpayWebhookSignature
+  verifyRazorpayWebhookSignature,
+  sanitizeEmail,
+  sanitizeName
 };

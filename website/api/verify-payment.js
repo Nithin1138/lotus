@@ -3,13 +3,15 @@
  * POST /api/verify-payment
  */
 
-const { generateLicense, sendResendEmail, verifyRazorpayPaymentSignature } = require('./_utils');
+const { generateLicense, sendResendEmail, verifyRazorpayPaymentSignature, sanitizeEmail, sanitizeName } = require('./_utils');
 const { incrementCouponUses } = require('./coupons');
+const { checkRateLimit } = require('./_rateLimit');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -19,40 +21,63 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  // Rate Limiting: Max 10 verification requests per minute per IP
+  const rateLimit = checkRateLimit(req, 'verify-payment', 10, 60000);
+  if (!rateLimit.allowed) {
+    return res.status(429).json({
+      error: 'Too many verification requests. Please wait a moment.',
+      retryAfterSeconds: Math.ceil(rateLimit.resetMs / 1000)
+    });
+  }
+
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      email,
-      name = 'DropDial Customer',
       tier = 'pro'
     } = body;
 
-    if (!email || !email.includes('@')) {
-      return res.status(400).json({ error: 'Customer email is required.' });
+    const email = sanitizeEmail(body.email);
+    const name = sanitizeName(body.name);
+
+    if (!email) {
+      return res.status(400).json({ error: 'A valid customer email is required.' });
     }
 
     const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
 
-    // Signature Verification
-    if (keySecret && !razorpay_order_id?.startsWith('order_mock_')) {
+    // Strict Signature Verification
+    if (keySecret) {
+      if (typeof razorpay_order_id === 'string' && razorpay_order_id.startsWith('order_mock_')) {
+        return res.status(403).json({ error: 'Mock orders are not allowed in production.' });
+      }
+
       if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
         return res.status(400).json({ error: 'Missing payment signature verification parameters.' });
       }
 
-      const isValid = verifyRazorpayPaymentSignature({
-        orderId: razorpay_order_id,
-        paymentId: razorpay_payment_id,
-        signature: razorpay_signature
-      });
+      let isValid = false;
+      try {
+        isValid = verifyRazorpayPaymentSignature({
+          orderId: razorpay_order_id,
+          paymentId: razorpay_payment_id,
+          signature: razorpay_signature
+        });
+      } catch (sigErr) {
+        console.error('[Razorpay] Signature error:', sigErr.message);
+        return res.status(400).json({ error: 'Payment signature could not be verified.' });
+      }
 
       if (!isValid) {
         console.error('[Razorpay] Invalid payment signature verification failed for:', razorpay_payment_id);
-        return res.status(400).json({ error: 'Payment signature verification failed.' });
+        return res.status(400).json({ error: 'Payment signature verification failed. Transaction rejected.' });
       }
     } else {
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(500).json({ error: 'Payment gateway configuration error. Please contact support.' });
+      }
       console.log('[Verify Payment] Simulated or sandbox payment confirmation for:', email);
     }
 

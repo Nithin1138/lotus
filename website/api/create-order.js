@@ -5,12 +5,15 @@
  */
 
 const { evaluateCoupon, evaluateCouponAsync } = require('./coupons');
+const { sanitizeEmail, sanitizeName } = require('./_utils');
+const { checkRateLimit } = require('./_rateLimit');
 
 module.exports = async function handler(req, res) {
-  // CORS & Methods
+  // Security & Cache Control Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -20,24 +23,29 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  // Rate Limiting: Max 15 order creations per minute per IP
+  const rateLimit = checkRateLimit(req, 'create-order', 15, 60000);
+  if (!rateLimit.allowed) {
+    return res.status(429).json({
+      error: 'Too many order requests. Please wait a moment before trying again.',
+      retryAfterSeconds: Math.ceil(rateLimit.resetMs / 1000)
+    });
+  }
+
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const email = (body.email || '').trim().toLowerCase();
-    const name = (body.name || 'DropDial Customer').trim();
-    const couponCode = (body.couponCode || '').trim();
+    const email = sanitizeEmail(body.email);
+    const name = sanitizeName(body.name);
+    const rawCoupon = (body.couponCode || '').trim().slice(0, 32);
+    const couponCode = /^[a-zA-Z0-9_\-]{2,32}$/.test(rawCoupon) ? rawCoupon.toUpperCase() : '';
 
-    // Determine country & strictly lock price according to location:
-    // India: ₹999 (99900 paise INR)
-    // Any other country: $19 (1900 cents USD)
-    const vercelCountry = (req.headers['x-vercel-ip-country'] || req.headers['cf-ipcountry'] || req.headers['x-country-code'] || '').toUpperCase();
-    const clientCountry = (body.country || '').toUpperCase();
-    const country = vercelCountry || clientCountry;
-
-    if (!email || !email.includes('@')) {
+    if (!email) {
       return res.status(400).json({ error: 'A valid email address is required to receive your license key.' });
     }
 
-    const tier = (body.tier || 'universal').toLowerCase();
+    const tier = (['single', 'universal', 'team'].includes((body.tier || '').toLowerCase()))
+      ? (body.tier || '').toLowerCase()
+      : 'universal';
     const tierPricing = {
       single: { INR: 79900, USD: 1500 },
       universal: { INR: 99900, USD: 1900 },
