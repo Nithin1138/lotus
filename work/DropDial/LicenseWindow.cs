@@ -229,6 +229,7 @@ internal sealed class LicenseWindow : Window
 
         if (status.IsPro && status.Info != null)
         {
+            string plan = status.Info.PlanDisplayName;
             string name = string.IsNullOrEmpty(status.Info.Name) ? status.Info.Email : status.Info.Name;
             if (status.Info.ExpiresAt.HasValue)
             {
@@ -236,25 +237,25 @@ internal sealed class LicenseWindow : Window
                 statusSubtitle.Foreground = new SolidColorBrush(Color.FromRgb(220, 100, 30));
                 if (sec <= 0)
                 {
-                    statusSubtitle.Text = "Test License Expired";
+                    statusSubtitle.Text = $"{plan} Test License Expired";
                 }
                 else if (sec < 60)
                 {
-                    statusSubtitle.Text = $"Licensed to {name} • Test Key ({sec}s left)";
+                    statusSubtitle.Text = $"{plan} Plan • Licensed to {name} ({sec}s left)";
                 }
                 else if (sec < 3600)
                 {
-                    statusSubtitle.Text = $"Licensed to {name} • Test Key ({sec / 60}m {sec % 60}s left)";
+                    statusSubtitle.Text = $"{plan} Plan • Licensed to {name} ({sec / 60}m {sec % 60}s left)";
                 }
                 else
                 {
-                    statusSubtitle.Text = $"Licensed to {name} • Test Key ({sec / 3600}h left)";
+                    statusSubtitle.Text = $"{plan} Plan • Licensed to {name} ({sec / 3600}h left)";
                 }
             }
             else
             {
                 statusSubtitle.Foreground = UiTheme.Muted;
-                statusSubtitle.Text = $"Licensed to {name}";
+                statusSubtitle.Text = $"{plan} Plan • Licensed to {name}";
             }
 
             keyInput.Text = LicenseManager.GetStoredKey() ?? "";

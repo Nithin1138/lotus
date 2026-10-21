@@ -12,6 +12,13 @@ internal sealed record LicenseInfo(string Name, string Email, string Date, strin
 {
     public bool IsExpired => ExpiresAt.HasValue && DateTimeOffset.UtcNow.ToUnixTimeSeconds() >= ExpiresAt.Value;
     public int SecondsRemaining => ExpiresAt.HasValue ? Math.Max(0, (int)(ExpiresAt.Value - DateTimeOffset.UtcNow.ToUnixTimeSeconds())) : int.MaxValue;
+    public string PlanDisplayName => (Tier?.Trim().ToLowerInvariant()) switch
+    {
+        "single" => "Single",
+        "team" => "Team",
+        "universal" => "Universal",
+        _ => "Pro"
+    };
 }
 
 internal enum LicenseStatusKind
@@ -48,22 +55,20 @@ internal sealed class LicenseStatus
         LicenseStatusKind.Pro => Info?.ExpiresAt.HasValue == true
             ? Info.SecondsRemaining switch
             {
-                <= 0 => "Test License Expired",
-                < 60 => $"{Capitalize(Info.Tier)} (Expires in {Info.SecondsRemaining}s)",
-                < 3600 => $"{Capitalize(Info.Tier)} (Expires in {Info.SecondsRemaining / 60}m {Info.SecondsRemaining % 60}s)",
-                _ => $"{Capitalize(Info.Tier)} (Expires in {Info.SecondsRemaining / 3600}h)"
+                <= 0 => $"{Info.PlanDisplayName} Test License Expired",
+                < 60 => $"DropDial {Info.PlanDisplayName} ({Info.SecondsRemaining}s left)",
+                < 3600 => $"DropDial {Info.PlanDisplayName} ({Info.SecondsRemaining / 60}m {Info.SecondsRemaining % 60}s left)",
+                _ => $"DropDial {Info.PlanDisplayName} ({Info.SecondsRemaining / 3600}h left)"
             }
-            : $"DropDial Pro ✓ ({(string.IsNullOrEmpty(Info?.Name) ? Info?.Email : Info?.Name)})",
+            : $"DropDial {Info?.PlanDisplayName ?? "Pro"} Plan ✓ ({(string.IsNullOrEmpty(Info?.Name) ? Info?.Email : Info?.Name)})",
         LicenseStatusKind.Trial => DaysRemaining switch
         {
-            <= 0 => "Trial: Last day",
-            1 => "Trial: 1 day left",
-            _ => $"Trial: {DaysRemaining} days left"
+            <= 0 => "🔑 Enter License Key (Trial: Last day)...",
+            1 => "🔑 Enter License Key (Trial: 1 day left)...",
+            _ => $"🔑 Enter License Key (Trial: {DaysRemaining} days left)..."
         },
-        _ => $"Free Tier: {LicenseManager.GetDailyConversionsRemaining()}/3 today — Activate Pro"
+        _ => $"🔑 Enter License Key (Trial Expired — {LicenseManager.GetDailyConversionsRemaining()}/3 free today)..."
     };
-
-    private static string Capitalize(string str) => string.IsNullOrEmpty(str) ? "Pro" : char.ToUpper(str[0]) + (str.Length > 1 ? str[1..].ToLower() : "");
 }
 
 internal static class LicenseManager

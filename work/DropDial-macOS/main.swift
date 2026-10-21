@@ -516,17 +516,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let licTitle: String
         switch licStatus {
         case .pro(let info):
-            licTitle = "DropDial Pro (\(info.name.isEmpty ? info.email : info.name))"
+            let plan = info.planDisplayName
+            let userIdentifier = info.name.isEmpty ? info.email : info.name
+            if let _ = info.expiresAt {
+                let sec = info.secondsRemaining
+                if sec <= 0 {
+                    licTitle = "DropDial \(plan) (Expired)..."
+                } else if sec < 60 {
+                    licTitle = "DropDial \(plan) (\(userIdentifier)) • \(sec)s left"
+                } else if sec < 3600 {
+                    let m = sec / 60
+                    licTitle = "DropDial \(plan) (\(userIdentifier)) • \(m)m left"
+                } else {
+                    let h = sec / 3600
+                    licTitle = "DropDial \(plan) (\(userIdentifier)) • \(h)h left"
+                }
+            } else {
+                licTitle = "DropDial \(plan) Plan (\(userIdentifier))"
+            }
         case .trial(let days):
             if days <= 0 {
-                licTitle = "Activate Pro (Last day of trial)..."
+                licTitle = "🔑 Activate Pro (Last day of trial)..."
             } else if days == 1 {
-                licTitle = "Activate Pro (1 day left)..."
+                licTitle = "🔑 Activate Pro (1 day left)..."
             } else {
-                licTitle = "Activate Pro (\(days) days left)..."
+                licTitle = "🔑 Activate Pro (\(days) days left)..."
             }
         case .trialExpired:
-            licTitle = "Activate DropDial Pro (Trial Expired)..."
+            licTitle = "🔑 Activate DropDial Pro (Trial Expired)..."
         }
         let licItem = NSMenuItem(title: licTitle, action: #selector(showLicenseWindow(_:)), keyEquivalent: "")
         licItem.target = self

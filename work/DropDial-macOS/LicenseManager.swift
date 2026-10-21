@@ -9,6 +9,19 @@ struct LicenseInfo: Equatable {
     let tier: String
     let expiresAt: Double? // Unix epoch seconds, nil if lifetime
 
+    var planDisplayName: String {
+        switch tier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "single":
+            return "Single"
+        case "team":
+            return "Team"
+        case "universal":
+            return "Universal"
+        default:
+            return "Pro"
+        }
+    }
+
     var isExpired: Bool {
         guard let exp = expiresAt else { return false }
         return Date().timeIntervalSince1970 >= exp
@@ -47,22 +60,23 @@ enum LicenseStatus: Equatable {
         switch self {
         case .pro(let info):
             let displayName = info.name.isEmpty ? info.email : info.name
+            let plan = info.planDisplayName
             if let _ = info.expiresAt {
                 let sec = info.secondsRemaining
                 if sec <= 0 {
-                    return "Test License Expired"
+                    return "\(plan) Test License Expired"
                 } else if sec < 60 {
-                    return "\(info.tier.capitalized) (Expires in \(sec)s)"
+                    return "DropDial \(plan) (\(sec)s left)"
                 } else if sec < 3600 {
                     let m = sec / 60
                     let s = sec % 60
-                    return "\(info.tier.capitalized) (Expires in \(m)m \(s)s)"
+                    return "DropDial \(plan) (\(m)m \(s)s left)"
                 } else {
                     let h = sec / 3600
-                    return "\(info.tier.capitalized) (Expires in \(h)h)"
+                    return "DropDial \(plan) (\(h)h left)"
                 }
             }
-            return "DropDial Pro ✓ (\(displayName))"
+            return "DropDial \(plan) Plan ✓ (\(displayName))"
         case .trial(let days):
             if days <= 0 {
                 return "Trial: Last day"
@@ -511,27 +525,28 @@ final class LicenseWindowController: NSWindowController {
 
         switch status {
         case .pro(let info):
+            let plan = info.planDisplayName
             let nameStr = info.name.isEmpty ? info.email : info.name
             if let _ = info.expiresAt {
                 let sec = info.secondsRemaining
                 if sec <= 0 {
-                    statusLabel.stringValue = "Test License Expired"
+                    statusLabel.stringValue = "\(plan) Test License Expired"
                     statusLabel.textColor = .systemRed
                 } else if sec < 60 {
-                    statusLabel.stringValue = "Licensed to \(nameStr) • Test Key (\(sec)s left)"
+                    statusLabel.stringValue = "\(plan) Plan • Licensed to \(nameStr) (\(sec)s left)"
                     statusLabel.textColor = .systemOrange
                 } else if sec < 3600 {
                     let m = sec / 60
                     let s = sec % 60
-                    statusLabel.stringValue = "Licensed to \(nameStr) • Test Key (\(m)m \(s)s left)"
+                    statusLabel.stringValue = "\(plan) Plan • Licensed to \(nameStr) (\(m)m \(s)s left)"
                     statusLabel.textColor = .systemOrange
                 } else {
                     let h = sec / 3600
-                    statusLabel.stringValue = "Licensed to \(nameStr) • Test Key (\(h)h left)"
+                    statusLabel.stringValue = "\(plan) Plan • Licensed to \(nameStr) (\(h)h left)"
                     statusLabel.textColor = .systemOrange
                 }
             } else {
-                statusLabel.stringValue = "Licensed to \(nameStr)"
+                statusLabel.stringValue = "\(plan) Plan • Licensed to \(nameStr)"
                 statusLabel.textColor = .secondaryLabelColor
             }
 

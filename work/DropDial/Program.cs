@@ -234,6 +234,7 @@ internal static class Program
             return 0;
         }
         bool startupLaunch = StartupManager.IsStartupLaunch(args);
+        bool isLicenseCmd = args.Any(a => a is "--license" or "-license" or "--activate" or "-activate");
         using var mutex = new Mutex(true, @"Local\DropDial_20261003", out bool first);
         // Both copies create the same named event, so it works whichever starts first.
         using var showRequest = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\DropDial_20261003_Show");
@@ -242,6 +243,12 @@ internal static class Program
         {
             if (opened.Length > 0)
             { ExplorerIntegration.Send(opened); return 0; }
+            if (isLicenseCmd)
+            {
+                Native.AllowSetForegroundWindow(-1);
+                showRequest.Set();
+                return 0;
+            }
             if (startupLaunch) return 0;
             // Launching DropDial again (for example from the Start menu) wakes the running copy and shows its window.
             Native.AllowSetForegroundWindow(-1);
@@ -250,6 +257,8 @@ internal static class Program
         }
         var app = new System.Windows.Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         using var resident = new Resident(app, showRequest, startupLaunch);
+        if (isLicenseCmd)
+            app.Dispatcher.InvokeAsync(LicenseWindow.ShowDialogOrActivate);
         if (opened.Length > 0)
             app.Dispatcher.InvokeAsync(() => resident.OpenFiles(opened));
         app.Run();
@@ -379,6 +388,13 @@ internal sealed class Resident : IDisposable
         taskIndicator.ResumeRequested += card => { if (jobs.FirstOrDefault(j => j.Card == card) is { } job) ResumeJob(job); };
         taskIndicator.CancelRequested += card => { if (jobs.FirstOrDefault(j => j.Card == card) is { } job) CancelJob(job); };
         tray.DoubleClick += (_, _) => ShowWelcome();
+        tray.MouseClick += (_, e) =>
+        {
+            if (e.Button == Forms.MouseButtons.Left)
+            {
+                typeof(Forms.NotifyIcon).GetMethod("ShowContextMenu", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.Invoke(tray, null);
+            }
+        };
         UpdateManager.UpdateStatusChanged += () => app.Dispatcher.InvokeAsync(BuildTrayMenu);
         _ = Task.Run(async () =>
         {

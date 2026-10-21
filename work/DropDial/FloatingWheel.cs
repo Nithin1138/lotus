@@ -239,6 +239,8 @@ internal sealed class DropWheel : Window
         center.MouseEnter += (_, _) => center.BorderThickness = new Thickness(2.0);
         center.MouseLeave += (_, _) => center.BorderThickness = new Thickness(1.5);
         center.MouseLeftButtonUp += (_, e) => { e.Handled = true; OnHubClicked(); };
+        center.MouseRightButtonUp += (_, e) => { e.Handled = true; LicenseWindow.ShowDialogOrActivate(); };
+        center.ToolTip = L.T("Click to select files. Right-click to enter license / view plan.");
 
         hubSlicePanel.Children.Add(hubModeBadge);
         hubSlicePanel.Children.Add(hubSliceTitle);

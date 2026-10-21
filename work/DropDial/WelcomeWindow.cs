@@ -25,8 +25,10 @@ internal sealed class WelcomeWindow : Window
         // Re-read every label if the language changes while the window is open (from the buttons below or the tray menu).
         L.Changed += Rebuild;
         StartupManager.Changed += RefreshStartup;
+        LicenseManager.StatusChanged += Rebuild;
         Closed += (_, _) => L.Changed -= Rebuild;
         Closed += (_, _) => StartupManager.Changed -= RefreshStartup;
+        Closed += (_, _) => LicenseManager.StatusChanged -= Rebuild;
         Rebuild();
     }
 
@@ -56,6 +58,41 @@ internal sealed class WelcomeWindow : Window
         var card = UiTheme.Card(tray, new Thickness(18, 14, 18, 14));
         card.Margin = new Thickness(0, 6, 0, 0);
         panel.Children.Add(card);
+
+        var licStatus = LicenseManager.CurrentStatus;
+        var licRow = new DockPanel();
+        var licBtn = new Button
+        {
+            Content = licStatus.IsPro ? L.T("Manage License…") : L.T("Enter License Key…"),
+            Padding = new Thickness(14, 6, 14, 6),
+            Margin = new Thickness(12, 0, 0, 0),
+            FontWeight = FontWeights.SemiBold,
+            Foreground = licStatus.IsPro ? UiTheme.Ink : Brushes.White,
+            Background = licStatus.IsPro ? UiTheme.Shade : UiTheme.Accent,
+            BorderBrush = licStatus.IsPro ? UiTheme.Line : UiTheme.Accent,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        licBtn.Click += (_, _) => LicenseWindow.ShowDialogOrActivate();
+        DockPanel.SetDock(licBtn, Dock.Right);
+        licRow.Children.Add(licBtn);
+
+        var licTextPanel = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        string licTitleText = licStatus.IsPro
+            ? $"DropDial {licStatus.Info?.PlanDisplayName ?? "Pro"} Plan ✓"
+            : (licStatus.Kind == LicenseStatusKind.Trial
+                ? $"Free Trial ({licStatus.DaysRemaining} days left)"
+                : "Free Tier (Trial Expired)");
+        string licSubText = licStatus.IsPro
+            ? $"Licensed to {(string.IsNullOrEmpty(licStatus.Info?.Name) ? licStatus.Info?.Email : licStatus.Info?.Name)}"
+            : L.T("Activate your license key to unlock unlimited conversions.");
+        licTextPanel.Children.Add(new TextBlock { Text = licTitleText, FontWeight = FontWeights.SemiBold, FontSize = 14, Foreground = UiTheme.Ink });
+        licTextPanel.Children.Add(new TextBlock { Text = licSubText, Foreground = UiTheme.Muted, FontSize = 12, Margin = new Thickness(0, 2, 0, 0) });
+        licRow.Children.Add(licTextPanel);
+
+        var licCard = UiTheme.Card(licRow, new Thickness(18, 12, 18, 12));
+        licCard.Margin = new Thickness(0, 10, 0, 0);
+        panel.Children.Add(licCard);
+
         panel.Children.Add(LayoutChoice());
 
         var hide = new CheckBox { Content = L.T("Don't show this window when DropDial starts"), IsChecked = Settings.GetBool(HideAtStartKey, false), Margin = new Thickness(0, 18, 0, 0), Foreground = UiTheme.Muted };
