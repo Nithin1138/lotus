@@ -131,6 +131,7 @@ internal sealed class DropWheel : Window
     /// Debounce timer for when scroll gestures settle or discrete mouse wheel stops.
     private readonly System.Windows.Threading.DispatcherTimer wheelSettleTimer;
     public long Instance { get; private set; }
+    public static Action? OpenLicenseAction;
     public WheelMode CurrentMode => mode;
     public bool ToolsMode => mode == WheelMode.Tools;
     public bool HasFileDrag => entered && paths.Length > 0;
@@ -239,7 +240,7 @@ internal sealed class DropWheel : Window
         center.MouseEnter += (_, _) => center.BorderThickness = new Thickness(2.0);
         center.MouseLeave += (_, _) => center.BorderThickness = new Thickness(1.5);
         center.MouseLeftButtonUp += (_, e) => { e.Handled = true; OnHubClicked(); };
-        center.MouseRightButtonUp += (_, e) => { e.Handled = true; LicenseWindow.ShowDialogOrActivate(); };
+        center.MouseRightButtonUp += (_, e) => { e.Handled = true; OpenLicenseAction?.Invoke(); };
         center.ToolTip = L.T("Click to select files. Right-click to enter license / view plan.");
 
         hubSlicePanel.Children.Add(hubModeBadge);

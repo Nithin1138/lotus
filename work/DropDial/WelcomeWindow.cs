@@ -12,6 +12,10 @@ namespace DropDial;
 internal sealed class WelcomeWindow : Window
 {
     public const string HideAtStartKey = "hideWelcome";
+    public static Action? ToggleWheelAction;
+    public static Action? PromptSelectFilesAction;
+    public static Action? ShowShelfAction;
+    public static Action? ShowLicenseAction;
     private CheckBox? startup;
     private TextBlock? startupMessage;
     private Button? startupSettings;
@@ -69,7 +73,7 @@ internal sealed class WelcomeWindow : Window
         };
         openWheelBtn.Click += (_, _) =>
         {
-            Resident.Instance?.ToggleWheel();
+            ToggleWheelAction?.Invoke();
         };
         launchRow.Children.Add(openWheelBtn);
 
@@ -86,7 +90,7 @@ internal sealed class WelcomeWindow : Window
         };
         openShelfBtn.Click += (_, _) =>
         {
-            FloatShelfWindow.Instance.ShowWindow();
+            ShowShelfAction?.Invoke();
         };
         launchRow.Children.Add(openShelfBtn);
 
@@ -102,7 +106,7 @@ internal sealed class WelcomeWindow : Window
         };
         selectFilesBtn.Click += (_, _) =>
         {
-            Resident.Instance?.PromptSelectFiles();
+            PromptSelectFilesAction?.Invoke();
         };
         launchRow.Children.Add(selectFilesBtn);
 
@@ -136,7 +140,7 @@ internal sealed class WelcomeWindow : Window
             }
             else
             {
-                LicenseWindow.ShowDialogOrActivate();
+                ShowLicenseAction?.Invoke();
             }
         };
         DockPanel.SetDock(licBtn, Dock.Right);

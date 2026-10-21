@@ -34,5 +34,6 @@
     <Compile Include="../DropDial/Presets.cs" Link="Presets.cs"/>
     <Compile Include="../DropDial/OutputFolder.cs" Link="OutputFolder.cs"/>
     <Compile Include="../DropDial/ExplorerIntegration.cs" Link="ExplorerIntegration.cs"/>
+    <Compile Include="../DropDial/LicenseManager.cs" Link="LicenseManager.cs"/>
   </ItemGroup>
 </Project>

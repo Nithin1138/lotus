@@ -375,6 +375,11 @@ internal sealed class Resident : IDisposable
         Journal.Prune();
         wheel = new DropWheel(BeginOperation);
         FloatShelfWindow.Instance.OnExecuteOperation = (files, op) => BeginOperation(files, op);
+        WelcomeWindow.ToggleWheelAction = ToggleWheel;
+        WelcomeWindow.PromptSelectFilesAction = PromptSelectFiles;
+        WelcomeWindow.ShowShelfAction = () => FloatShelfWindow.Instance.ShowWindow();
+        WelcomeWindow.ShowLicenseAction = () => LicenseWindow.ShowDialogOrActivate();
+        DropWheel.OpenLicenseAction = () => LicenseWindow.ShowDialogOrActivate();
         SetupGlobalHotKeys();
         trayIcon = AppIcon.CreateTrayIcon();
         tray = new Forms.NotifyIcon { Icon = trayIcon, Visible = true };
