@@ -281,7 +281,7 @@ internal sealed class LicenseWindow : Window
             if (LicenseManager.IsWithinFirst24Hours)
             {
                 int sec = LicenseManager.First24HoursRemainingSeconds;
-                secondaryBtn.Content = $"⚡ Buy (10% Off • {sec / 3600}h {(sec % 3600) / 60}m left)";
+                secondaryBtn.Content = $"Buy (10% Off • {sec / 3600}h {(sec % 3600) / 60}m left)";
             }
             else
             {

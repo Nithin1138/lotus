@@ -63,7 +63,7 @@ internal sealed class WelcomeWindow : Window
         var licRow = new DockPanel();
         var licBtn = new Button
         {
-            Content = licStatus.IsPro ? L.T("Manage License…") : (LicenseManager.IsWithinFirst24Hours ? "⚡ Claim 10% Off" : L.T("Enter License Key…")),
+            Content = licStatus.IsPro ? L.T("Manage License…") : (LicenseManager.IsWithinFirst24Hours ? L.T("Claim 10% Off") : L.T("Enter License Key…")),
             Padding = new Thickness(14, 6, 14, 6),
             Margin = new Thickness(12, 0, 0, 0),
             FontWeight = FontWeights.SemiBold,
@@ -91,7 +91,7 @@ internal sealed class WelcomeWindow : Window
             ? $"DropDial {licStatus.Info?.PlanDisplayName ?? "Pro"} Plan ✓"
             : (licStatus.Kind == LicenseStatusKind.Trial
                 ? (LicenseManager.IsWithinFirst24Hours
-                    ? $"Free Trial ({licStatus.DaysRemaining}d) · ⚡ 10% Off Early Bird"
+                    ? $"Free Trial ({licStatus.DaysRemaining}d) · 10% Off Early Bird"
                     : $"Free Trial ({licStatus.DaysRemaining} days left)")
                 : "Free Tier (Trial Expired)");
         string licSubText = licStatus.IsPro

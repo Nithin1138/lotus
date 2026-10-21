@@ -11,7 +11,7 @@ window.ZD_EN = {
   "nav.pricing": "Pricing",
   "nav.faq": "FAQ",
   "nav.download": "Download",
-  "hero.eyebrow": "3-Day Free Trial · ⚡ 10% Off First 24h · macOS & Windows · 100% Offline",
+  "hero.eyebrow": "3-Day Free Trial · 10% Off First 24h · macOS & Windows · 100% Offline",
   "hero.title": "Drag. Drop. <em>Convert.</em>",
   "hero.lead": "DropDial is the instant drag-and-drop offline file converter for your Mac and PC. Hold <kbd>Shift</kbd> to convert formats or <kbd>⌃</kbd> for universal file actions at your cursor with zero cloud uploads.",
   "cta.download": "Download Free Trial",

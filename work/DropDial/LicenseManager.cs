@@ -62,7 +62,7 @@ internal sealed class LicenseStatus
             }
             : $"DropDial {Info?.PlanDisplayName ?? "Pro"} Plan ✓ ({(string.IsNullOrEmpty(Info?.Name) ? Info?.Email : Info?.Name)})",
         LicenseStatusKind.Trial when LicenseManager.IsWithinFirst24Hours =>
-            $"Trial: {DaysRemaining}d · ⚡ 10% Off Early Bird ({LicenseManager.First24HoursRemainingSeconds / 3600}h {(LicenseManager.First24HoursRemainingSeconds % 3600) / 60}m left)...",
+            $"Trial: {DaysRemaining}d · 10% Off Early Bird ({LicenseManager.First24HoursRemainingSeconds / 3600}h {(LicenseManager.First24HoursRemainingSeconds % 3600) / 60}m left)...",
         LicenseStatusKind.Trial => DaysRemaining switch
         {
             <= 0 => "🔑 Enter License Key (Trial: Last day)...",

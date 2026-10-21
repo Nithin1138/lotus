@@ -82,7 +82,7 @@ enum LicenseStatus: Equatable {
                 let sec = LicenseManager.shared.first24HoursRemainingSeconds
                 let h = sec / 3600
                 let m = (sec % 3600) / 60
-                return "Trial: \(days)d · ⚡ 10% Off (\(h)h \(m)m left)"
+                return "Trial: \(days)d · 10% Off (\(h)h \(m)m left)"
             }
             if days <= 0 {
                 return "Trial: Last day — Activate Pro"
@@ -603,7 +603,7 @@ final class LicenseWindowController: NSWindowController {
                 let sec = LicenseManager.shared.first24HoursRemainingSeconds
                 let h = sec / 3600
                 let m = (sec % 3600) / 60
-                secondaryButton.title = "⚡ Buy (10% Off • \(h)h \(m)m left)"
+                secondaryButton.title = "Buy (10% Off • \(h)h \(m)m left)"
             } else {
                 secondaryButton.title = "Buy License…"
             }
