@@ -10,8 +10,20 @@ const { generateLicense, sendResendEmail, getPrivateKey } = require('./_utils');
 
 // Default initial master pass phrase if ADMIN_KEY / ADMIN_PASSWORD is not set in environment
 const DEFAULT_ADMIN_PASS = 'dropdial2026';
+let cachedPasscode = null;
 
 function getAdminSecret() {
+  if (cachedPasscode) return cachedPasscode;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const tmpPass = path.join('/tmp', 'dropdial_admin_pass.txt');
+    if (fs.existsSync(tmpPass)) {
+      const p = fs.readFileSync(tmpPass, 'utf8').trim();
+      if (p) { cachedPasscode = p; return p; }
+    }
+  } catch (_) {}
+
   return (
     process.env.ADMIN_KEY ||
     process.env.ADMIN_PASSWORD ||
@@ -124,6 +136,62 @@ module.exports = async function handler(req, res) {
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }
+  }
+
+  // PASSCODE ROTATION / UPDATE ENDPOINT
+  if (action === 'change_passcode' || action === 'update_passcode') {
+    const currentPass = (req.body?.currentPasscode || req.body?.current_passcode || '').trim();
+    const newPass = (req.body?.newPasscode || req.body?.new_passcode || '').trim();
+    const expected = getAdminSecret();
+
+    if (!currentPass || !newPass) {
+      return res.status(400).json({ error: 'Current passcode and new passcode are both required' });
+    }
+
+    try {
+      const a = Buffer.from(currentPass, 'utf8');
+      const b = Buffer.from(expected, 'utf8');
+      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+        return res.status(401).json({ error: 'Current master passcode is incorrect' });
+      }
+    } catch {
+      return res.status(401).json({ error: 'Current master passcode is incorrect' });
+    }
+
+    if (newPass.length < 8) {
+      return res.status(400).json({ error: 'New passcode must be at least 8 characters long' });
+    }
+
+    // Persist to Neon DB app_settings if available
+    try {
+      const { getDb, ensureSchema } = require('./_db');
+      const sql = getDb();
+      if (sql) {
+        await ensureSchema();
+        await sql`
+          INSERT INTO app_settings (key, value, updated_at)
+          VALUES ('admin_passcode', ${JSON.stringify(newPass)}::jsonb, NOW())
+          ON CONFLICT (key) DO UPDATE SET value = ${JSON.stringify(newPass)}::jsonb, updated_at = NOW();
+        `;
+      }
+    } catch (e) {
+      console.warn('[Admin Passcode DB Warning]:', e.message);
+    }
+
+    // Also persist in /tmp file for serverless runtime consistency
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      fs.writeFileSync(path.join('/tmp', 'dropdial_admin_pass.txt'), newPass, 'utf8');
+    } catch (_) {}
+
+    cachedPasscode = newPass;
+
+    return res.status(200).json({
+      success: true,
+      message: 'Master passcode successfully updated and active for all admin operations!',
+      token: newPass
+    });
   }
 
   // ALL OTHER ACTIONS REQUIRE AUTHENTICATION

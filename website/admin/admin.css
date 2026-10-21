@@ -2065,6 +2065,470 @@ input[type="number"] {
   transform: none;
 }
 
+/* ==============================================================================
+   3-TIER STRIKETHROUGH PRICING CARDS
+   ============================================================================== */
+.tier-strike-cards-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tier-strike-subcard {
+  background: rgba(17, 24, 39, 0.45);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  transition: all 0.2s ease;
+}
+
+.tier-strike-subcard:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.tier-strike-subcard.hero-border {
+  border: 1px solid rgba(255, 101, 0, 0.45);
+  background: rgba(255, 101, 0, 0.03);
+}
+
+.tier-strike-subcard.hero-border:hover {
+  border-color: rgba(255, 101, 0, 0.65);
+}
+
+.tier-strike-subcard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 12px;
+}
+
+.tss-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tss-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+}
+
+.tss-name {
+  font-size: 13.5px;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.tss-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tier-strike-subcard-body {
+  transition: opacity 0.2s ease;
+}
+
+/* ==============================================================================
+   REDESIGNED SECURITY & PASSCODE FORTRESS
+   ============================================================================== */
+.security-banner-card {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(20, 23, 32, 0.95) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.security-banner-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--emerald), rgba(16, 185, 129, 0.2));
+}
+
+.sbc-left {
+  flex: 1;
+  min-width: 280px;
+}
+
+.sbc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--emerald);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 3px 10px;
+  border-radius: 9999px;
+  margin-bottom: 10px;
+}
+
+.sbc-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.4px;
+  margin: 0 0 8px 0;
+}
+
+.sbc-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 650px;
+}
+
+.sbc-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.security-health-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 6px 14px;
+  border-radius: 8px;
+  color: var(--text-main);
+}
+
+.shi-meta {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* 4 Security Posture KPI Cards Grid */
+.security-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.sec-kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.sk-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.sk-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.sk-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sk-icon-wrap.emerald {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald);
+}
+
+.sk-icon-wrap.amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--amber);
+}
+
+.sk-icon-wrap.cyan {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.sk-icon-wrap.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--rose);
+}
+
+.sk-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.sk-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.btn-lock-action {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  transition: all 0.2s ease;
+}
+
+.btn-lock-action:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* Master Passcode Rotation Inputs & Entropy UI */
+.sec-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrap input {
+  width: 100%;
+  padding-right: 44px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.password-eye-btn {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+}
+
+.password-eye-btn:hover {
+  color: #ffffff;
+}
+
+.entropy-status-text {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.entropy-meter-wrap {
+  margin-top: 8px;
+  margin-bottom: 10px;
+}
+
+.entropy-bars {
+  display: flex;
+  gap: 6px;
+  height: 5px;
+  width: 100%;
+}
+
+.eb-bar {
+  flex: 1;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.eb-bar.weak {
+  background: var(--rose);
+}
+
+.eb-bar.fair {
+  background: var(--amber);
+}
+
+.eb-bar.good {
+  background: #38bdf8;
+}
+
+.eb-bar.strong {
+  background: var(--emerald);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.45);
+}
+
+.req-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.req-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  padding: 3px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.req-item svg {
+  color: var(--text-faint);
+  transition: color 0.2s ease;
+}
+
+.req-item.passed {
+  color: var(--emerald);
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.req-item.passed svg {
+  color: var(--emerald);
+}
+
+/* Terminal Command Box */
+.terminal-command-box {
+  background: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-top: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.tcb-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tcb-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.tcb-dot.red {
+  background: #ef4444;
+}
+
+.tcb-dot.yellow {
+  background: #f59e0b;
+}
+
+.tcb-dot.green {
+  background: #10b981;
+}
+
+.tcb-title {
+  margin-left: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.tcb-body {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tcb-body code {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: #58a6ff;
+  font-weight: 600;
+}
+
+.sec-architecture-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  background: rgba(56, 189, 248, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.sec-architecture-note svg {
+  color: #38bdf8;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .admin-sidebar {

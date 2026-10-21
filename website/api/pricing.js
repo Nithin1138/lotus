@@ -31,7 +31,22 @@ let currentPricing = {
   strikethrough: {
     enabled: true,
     inrAmount: 1499,
-    usdAmount: 29
+    usdAmount: 29,
+    single: {
+      enabled: true,
+      inrAmount: 1199,
+      usdAmount: 24
+    },
+    universal: {
+      enabled: true,
+      inrAmount: 1499,
+      usdAmount: 29
+    },
+    team: {
+      enabled: true,
+      inrAmount: 4999,
+      usdAmount: 99
+    }
   },
   countdown: {
     enabled: true,
@@ -42,9 +57,21 @@ let currentPricing = {
   },
   devicesPerLicense: 3,
   tiers: {
-    single: { INR: { amount: 799, display: '₹799' }, USD: { amount: 15, display: '$15' } },
-    universal: { INR: { amount: 999, display: '₹999' }, USD: { amount: 19, display: '$19' } },
-    team: { INR: { amount: 3499, display: '₹3,499' }, USD: { amount: 69, display: '$69' } }
+    single: {
+      INR: { amount: 799, display: '₹799', strikeAmount: 1199, strikeDisplay: '₹1,199' },
+      USD: { amount: 15, display: '$15', strikeAmount: 24, strikeDisplay: '$24' },
+      strikeEnabled: true
+    },
+    universal: {
+      INR: { amount: 999, display: '₹999', strikeAmount: 1499, strikeDisplay: '₹1,499' },
+      USD: { amount: 19, display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
+      strikeEnabled: true
+    },
+    team: {
+      INR: { amount: 3499, display: '₹3,499', strikeAmount: 4999, strikeDisplay: '₹4,999' },
+      USD: { amount: 69, display: '$69', strikeAmount: 99, strikeDisplay: '$99' },
+      strikeEnabled: true
+    }
   },
   lastUpdated: new Date().toISOString()
 };
@@ -61,7 +88,13 @@ try {
         ...parsed,
         INR: { ...currentPricing.INR, ...(parsed.INR || {}) },
         USD: { ...currentPricing.USD, ...(parsed.USD || {}) },
-        strikethrough: { ...currentPricing.strikethrough, ...(parsed.strikethrough || {}) },
+        strikethrough: {
+          ...currentPricing.strikethrough,
+          ...(parsed.strikethrough || {}),
+          single: { ...currentPricing.strikethrough.single, ...(parsed.strikethrough?.single || {}) },
+          universal: { ...currentPricing.strikethrough.universal, ...(parsed.strikethrough?.universal || {}) },
+          team: { ...currentPricing.strikethrough.team, ...(parsed.strikethrough?.team || {}) }
+        },
         countdown: { ...currentPricing.countdown, ...(parsed.countdown || {}) },
         devicesPerLicense: Number(parsed.devicesPerLicense || parsed.devices || currentPricing.devicesPerLicense || 3)
       };
@@ -69,7 +102,18 @@ try {
   }
 } catch (e) {}
 
+let cachedPasscode = null;
+
 function getAdminSecret() {
+  if (cachedPasscode) return cachedPasscode;
+  try {
+    const tmpPass = path.join('/tmp', 'dropdial_admin_pass.txt');
+    if (fs.existsSync(tmpPass)) {
+      const p = fs.readFileSync(tmpPass, 'utf8').trim();
+      if (p) { cachedPasscode = p; return p; }
+    }
+  } catch (_) {}
+
   return (
     process.env.ADMIN_KEY ||
     process.env.ADMIN_PASSWORD ||
@@ -179,6 +223,14 @@ module.exports = async function handler(req, res) {
       const strikeInr = Number(body.strikeInr) > 0 ? Number(body.strikeInr) : (currentPricing.strikethrough?.inrAmount || 1499);
       const strikeUsd = Number(body.strikeUsd) > 0 ? Number(body.strikeUsd) : (currentPricing.strikethrough?.usdAmount || 29);
 
+      const strikeSingleEnabled = body.strikeSingleEnabled !== undefined ? !!body.strikeSingleEnabled : (currentPricing.strikethrough?.single?.enabled ?? true);
+      const strikeSingleInr = Number(body.strikeSingleInr) > 0 ? Number(body.strikeSingleInr) : (currentPricing.strikethrough?.single?.inrAmount || 1199);
+      const strikeSingleUsd = Number(body.strikeSingleUsd) > 0 ? Number(body.strikeSingleUsd) : (currentPricing.strikethrough?.single?.usdAmount || 24);
+
+      const strikeTeamEnabled = body.strikeTeamEnabled !== undefined ? !!body.strikeTeamEnabled : (currentPricing.strikethrough?.team?.enabled ?? true);
+      const strikeTeamInr = Number(body.strikeTeamInr) > 0 ? Number(body.strikeTeamInr) : (currentPricing.strikethrough?.team?.inrAmount || 4999);
+      const strikeTeamUsd = Number(body.strikeTeamUsd) > 0 ? Number(body.strikeTeamUsd) : (currentPricing.strikethrough?.team?.usdAmount || 99);
+
       const countdownEnabled = body.countdownEnabled !== undefined ? (body.countdownEnabled === true || body.countdownEnabled === 'true') : false;
       const countdownValue = Number(body.countdownValue) > 0 ? Number(body.countdownValue) : (currentPricing.countdown?.value || 24);
       const countdownUnit = (body.countdownUnit === 'days') ? 'days' : 'hours';
@@ -213,16 +265,49 @@ module.exports = async function handler(req, res) {
 
       const tiersConfig = {
         single: {
-          INR: { amount: singleInr, display: `₹${singleInr.toLocaleString('en-IN')}` },
-          USD: { amount: singleUsd, display: `$${singleUsd}` }
+          INR: {
+            amount: singleInr,
+            display: `₹${singleInr.toLocaleString('en-IN')}`,
+            strikeAmount: strikeSingleInr,
+            strikeDisplay: `₹${strikeSingleInr.toLocaleString('en-IN')}`
+          },
+          USD: {
+            amount: singleUsd,
+            display: `$${singleUsd}`,
+            strikeAmount: strikeSingleUsd,
+            strikeDisplay: `$${strikeSingleUsd}`
+          },
+          strikeEnabled: strikeSingleEnabled
         },
         universal: {
-          INR: { amount: universalInr, display: `₹${universalInr.toLocaleString('en-IN')}` },
-          USD: { amount: universalUsd, display: `$${universalUsd}` }
+          INR: {
+            amount: universalInr,
+            display: `₹${universalInr.toLocaleString('en-IN')}`,
+            strikeAmount: strikeInr,
+            strikeDisplay: `₹${strikeInr.toLocaleString('en-IN')}`
+          },
+          USD: {
+            amount: universalUsd,
+            display: `$${universalUsd}`,
+            strikeAmount: strikeUsd,
+            strikeDisplay: `$${strikeUsd}`
+          },
+          strikeEnabled: strikeEnabled
         },
         team: {
-          INR: { amount: teamInr, display: `₹${teamInr.toLocaleString('en-IN')}` },
-          USD: { amount: teamUsd, display: `$${teamUsd}` }
+          INR: {
+            amount: teamInr,
+            display: `₹${teamInr.toLocaleString('en-IN')}`,
+            strikeAmount: strikeTeamInr,
+            strikeDisplay: `₹${strikeTeamInr.toLocaleString('en-IN')}`
+          },
+          USD: {
+            amount: teamUsd,
+            display: `$${teamUsd}`,
+            strikeAmount: strikeTeamUsd,
+            strikeDisplay: `$${strikeTeamUsd}`
+          },
+          strikeEnabled: strikeTeamEnabled
         }
       };
 
@@ -248,7 +333,22 @@ module.exports = async function handler(req, res) {
         strikethrough: {
           enabled: strikeEnabled,
           inrAmount: strikeInr,
-          usdAmount: strikeUsd
+          usdAmount: strikeUsd,
+          single: {
+            enabled: strikeSingleEnabled,
+            inrAmount: strikeSingleInr,
+            usdAmount: strikeSingleUsd
+          },
+          universal: {
+            enabled: strikeEnabled,
+            inrAmount: strikeInr,
+            usdAmount: strikeUsd
+          },
+          team: {
+            enabled: strikeTeamEnabled,
+            inrAmount: strikeTeamInr,
+            usdAmount: strikeTeamUsd
+          }
         },
         countdown: {
           enabled: countdownEnabled,
