@@ -577,7 +577,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func checkForUpdatesTapped(_ sender: Any? = nil) {
-        UpdateService.shared.checkForUpdates(isUserInitiated: true)
+        if let update = UpdateService.shared.latestRelease {
+            UpdateService.shared.showUpdateAvailableDialog(release: update)
+        } else {
+            UpdateService.shared.checkForUpdates(isUserInitiated: true)
+        }
     }
 
     @objc func showPermissionsWindow(_ sender: Any? = nil) {

@@ -235,6 +235,16 @@ module.exports = async function handler(req, res) {
       const release = await fetchLatestRelease(token);
       if (release && release.tag_name) {
         const effectiveTag = (release.tag_name === 'v1.0.1.0' || release.tag_name === '1.0.1.0') ? '1.0.1.1' : release.tag_name;
+        const releaseAssets = (release.assets && release.assets.length > 0)
+          ? release.assets.map(a => ({
+              id: a.id,
+              name: a.name,
+              size: a.size,
+              content_type: a.content_type || 'application/octet-stream',
+              browser_download_url: a.browser_download_url
+            }))
+          : canonicalAssets;
+
         return res.status(200).json({
           tag_name: effectiveTag,
           version: effectiveTag,
@@ -243,7 +253,7 @@ module.exports = async function handler(req, res) {
           body: sanitizeReleaseBody(release.body),
           published_at: release.published_at,
           html_url: `${baseUrl}/#download`,
-          assets: canonicalAssets
+          assets: releaseAssets
         });
       }
     }

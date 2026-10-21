@@ -175,22 +175,28 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
     }
 
     // MARK: - Alerts
-    private func showUpdateAvailableDialog(release: ReleaseInfo) {
+    func showUpdateAvailableDialog(release: ReleaseInfo) {
+        NSApp.activate(ignoringOtherApps: true)
+
         let alert = NSAlert()
         alert.messageText = "A New Version of DropDial is Available!"
         
         let current = UpdateService.formatVersion(currentVersion)
         let available = UpdateService.formatVersion(release.tagName)
 
-        alert.informativeText = "Current version: \(current)\nAvailable version: \(available)"
+        alert.informativeText = "Current version: \(current)\nAvailable version: \(available)\n\nWould you like to download and install this update now?"
         alert.alertStyle = .informational
 
         alert.addButton(withTitle: "Update Now")
         alert.addButton(withTitle: "Later")
 
+        alert.window.level = .floating
+        alert.window.center()
+
         let response = alert.runModal()
         switch response {
         case .alertFirstButtonReturn:
+            UserDefaults.standard.removeObject(forKey: "dropdial_ignored_update_version")
             if release.isZip && release.downloadUrl != nil {
                 startDownloadAndApply(release: release)
             } else if let dl = release.downloadUrl ?? URL(string: release.htmlUrl)?.absoluteString {
@@ -284,6 +290,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
 
         win.contentView = content
         win.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
         self.progressWindow = win
     }
 
@@ -333,11 +340,16 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
 
             // Find DropDial.app in extracted folder
             var newAppPath: String?
-            let enumerator = fileManager.enumerator(atPath: extractDir.path)
-            while let element = enumerator?.nextObject() as? String {
-                if element.hasSuffix("DropDial.app") {
-                    newAppPath = extractDir.appendingPathComponent(element).path
-                    break
+            let directApp = extractDir.appendingPathComponent("DropDial.app")
+            if fileManager.fileExists(atPath: directApp.path) {
+                newAppPath = directApp.path
+            } else {
+                let enumerator = fileManager.enumerator(atPath: extractDir.path)
+                while let element = enumerator?.nextObject() as? String {
+                    if element.hasSuffix("DropDial.app") {
+                        newAppPath = extractDir.appendingPathComponent(element).path
+                        break
+                    }
                 }
             }
 
@@ -352,23 +364,37 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
             let scriptPath = tempDir.appendingPathComponent("apply_update.sh").path
             let scriptContent = """
             #!/bin/bash
-            CURRENT_PID="\(currentPid)"
-            NEW_APP="\(foundNewApp)"
-            TARGET_APP="\(currentAppPath)"
+            exec > /tmp/dropdial_update.log 2>&1
+            CURRENT_PID="$1"
+            NEW_APP="$2"
+            TARGET_APP="$3"
+
+            echo "[DropDial Updater] Starting update at $(date)"
+            echo "[DropDial Updater] Current PID: $CURRENT_PID"
+            echo "[DropDial Updater] New App: $NEW_APP"
+            echo "[DropDial Updater] Target App: $TARGET_APP"
 
             # Wait for current app to exit
-            while kill -0 "$CURRENT_PID" 2>/dev/null; do
+            for i in {1..50}; do
+                if ! kill -0 "$CURRENT_PID" 2>/dev/null; then
+                    break
+                fi
                 sleep 0.2
             done
-            sleep 0.3
+            sleep 0.5
 
             # Replace application bundle
+            echo "[DropDial Updater] Removing existing bundle..."
             rm -rf "$TARGET_APP"
+            echo "[DropDial Updater] Copying new bundle..."
             cp -R "$NEW_APP" "$TARGET_APP"
             xattr -dr com.apple.quarantine "$TARGET_APP" 2>/dev/null || true
+            chmod -R +x "$TARGET_APP/Contents/MacOS" "$TARGET_APP/Contents/backend" 2>/dev/null || true
 
             # Relaunch the updated app
+            echo "[DropDial Updater] Relaunching..."
             open "$TARGET_APP"
+            echo "[DropDial Updater] Complete."
             """
 
             try scriptContent.write(toFile: scriptPath, atomically: true, encoding: .utf8)
@@ -379,10 +405,10 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
             try chmod.run()
             chmod.waitUntilExit()
 
-            // Execute update script detached
+            // Execute update script detached with explicit arguments
             let updater = Process()
             updater.executableURL = URL(fileURLWithPath: "/bin/bash")
-            updater.arguments = [scriptPath]
+            updater.arguments = [scriptPath, "\(currentPid)", foundNewApp, currentAppPath]
             try updater.run()
 
             DispatchQueue.main.async {
