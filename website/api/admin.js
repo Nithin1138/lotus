@@ -469,7 +469,7 @@ module.exports = async function handler(req, res) {
           published_at: new Date().toISOString(),
           status: 'Active Production',
           assets: [
-            { name: 'DropDial-Setup.exe', size: 208896 },
+            { name: 'DropDial-Setup.exe', size: 51614294 },
             { name: 'DropDial.dmg', size: 4583800 },
             { name: 'DropDial-macOS.zip', size: 4091042 },
             { name: 'DropDial-Windows-x64.zip', size: 73415552 },

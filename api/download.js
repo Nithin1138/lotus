@@ -54,7 +54,7 @@ module.exports = function handler(req, res) {
       fileName: fileName,
       command: isMac
         ? 'curl -fsSL https://dropdial.app/install.sh | bash'
-        : 'powershell -c "irm https://dropdial.app/install.ps1 | iex"'
+        : 'irm https://dropdial.app/install.ps1 | iex'
     });
   }
 

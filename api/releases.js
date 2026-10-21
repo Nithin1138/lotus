@@ -196,7 +196,7 @@ module.exports = async function handler(req, res) {
     {
       id: 1,
       name: 'DropDial-Setup.exe',
-      size: 208896,
+      size: 51614294,
       content_type: 'application/x-msdownload',
       browser_download_url: `${baseUrl}/downloads/DropDial-Setup.exe`
     },
