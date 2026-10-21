@@ -845,6 +845,12 @@ internal sealed class Resident : IDisposable
             else
             {
                 var tool = new ToolWindow(paths, operation, EnqueueTool);
+                tool.ReplaceInDropDial = newPaths =>
+                {
+                    wheel.LoadFiles(newPaths, WheelMode.Tools);
+                    wheel.Show();
+                    wheel.Activate();
+                };
                 tool.Show();
                 tool.Activate();
             }

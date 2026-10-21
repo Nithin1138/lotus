@@ -639,6 +639,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     private var cropFormView: NSView?
     private var splitFormView: NSView?
     private var actionSaveButton: NSButton?
+    private var actionReplaceButton: NSButton?
 
     // Trim Video Controls
     private var trimStartSlider: NSSlider?
@@ -856,7 +857,9 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         cancelButton.action = #selector(cancelClicked)
         container.addSubview(cancelButton)
 
-        let saveButton = NSButton(frame: NSRect(x: winContentW - 210, y: 16, width: 190, height: 32))
+        let saveW: CGFloat = 160
+        let saveX = winContentW - 20 - saveW
+        let saveButton = NSButton(frame: NSRect(x: saveX, y: 16, width: saveW, height: 32))
         saveButton.title = isOrganizePDF ? "Save Organized PDF" : (isVideoStudio ? "Save Video" : "Save New File")
         saveButton.bezelStyle = .rounded
         saveButton.keyEquivalent = "\r" // Return
@@ -866,6 +869,19 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         saveButton.action = #selector(saveClicked)
         container.addSubview(saveButton)
         self.actionSaveButton = saveButton
+
+        let replaceW: CGFloat = 180
+        let replaceX = saveX - 12 - replaceW
+        let replaceButton = NSButton(frame: NSRect(x: replaceX, y: 16, width: replaceW, height: 32))
+        replaceButton.title = "Replace in DropDial"
+        replaceButton.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Replace in DropDial")
+        replaceButton.imagePosition = .imageLeading
+        replaceButton.bezelStyle = .rounded
+        replaceButton.target = self
+        replaceButton.action = #selector(replaceClicked)
+        replaceButton.toolTip = "Apply this edit and load the new file into DropDial for another tool or conversion"
+        container.addSubview(replaceButton)
+        self.actionReplaceButton = replaceButton
     }
 
     // MARK: - Video Studio Form (Interactive Trim, Crop, Split)
@@ -3530,22 +3546,22 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
         onClose?()
     }
 
-    @objc private func saveClicked() {
+    private func buildJob() -> ConversionJob? {
         var params: [String: String] = [:]
+        var action = tool.id
 
         let isVideoStudio = (tool.id == "trimVideo" || tool.id == "cropVideo" || tool.id == "splitVideo" || tool.id == "editVideo")
         if isVideoStudio {
             player?.pause()
-            var finalAction = "trimVideo"
             if activeVideoTab == 0 {
-                finalAction = "trimVideo"
+                action = "trimVideo"
                 let start = trimStartSlider?.doubleValue ?? 0.0
                 var end = trimEndSlider?.doubleValue ?? videoDuration
                 if end <= start { end = min(videoDuration, start + 1.0) }
                 params["start"] = String(format: "%.2f", start)
                 params["end"] = String(format: "%.2f", end)
             } else if activeVideoTab == 1 {
-                finalAction = "cropVideo"
+                action = "cropVideo"
                 let px = cropOverlayView.currentPixelRect()
                 params["x"] = "\(Int(px.origin.x))"
                 params["y"] = "\(Int(px.origin.y))"
@@ -3553,7 +3569,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
                 params["height"] = "\(Int(px.height))"
                 params["ratio"] = cropOverlayView.currentRatioKey
             } else if activeVideoTab == 2 {
-                finalAction = "splitVideo"
+                action = "splitVideo"
                 if splitModeSegment?.selectedSegment == 0 {
                     if !splitPoints.isEmpty {
                         params["splitPoints"] = splitPoints.map { String(format: "%.2f", $0) }.joined(separator: ", ")
@@ -3564,39 +3580,7 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
                     params["parts"] = "\(selectedSplitParts)"
                 }
             }
-
-            guard LicenseManager.shared.canUseApp() else {
-                LicenseWindowController.shared.show()
-                return
-            }
-
-            let job = ConversionJob(Paths: paths, Action: finalAction, Parameters: params)
-            window?.close()
-            onClose?()
-
-            TaskIndicatorManager.shared.enqueue(job: job) { card in
-                BackendBridge.shared.execute(
-                    job: job,
-                    onStart: { process in
-                        card.process = process
-                    },
-                    progressHandler: { prog in
-                        card.updateProgress(prog)
-                    },
-                    completion: { result in
-                        switch result {
-                        case .success(let batch):
-                            card.markCompleted(result: batch)
-                        case .failure(let err):
-                            card.markFailed(error: err)
-                        }
-                    }
-                )
-            }
-            return
-        }
-
-        if tool.id == "cropImage" || tool.id == "cropVideo" {
+        } else if tool.id == "cropImage" || tool.id == "cropVideo" {
             let px = cropOverlayView.currentPixelRect()
             params["x"] = "\(Int(px.origin.x))"
             params["y"] = "\(Int(px.origin.y))"
@@ -3845,12 +3829,17 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
             }
         }
 
+        return ConversionJob(Paths: paths, Action: action, Parameters: params)
+    }
+
+    @objc private func saveClicked() {
         guard LicenseManager.shared.canUseApp() else {
             LicenseWindowController.shared.show()
             return
         }
 
-        let job = ConversionJob(Paths: paths, Action: tool.id, Parameters: params)
+        guard let job = buildJob() else { return }
+
         window?.close()
         onClose?()
 
@@ -3873,5 +3862,58 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
                 }
             )
         }
+    }
+
+    @objc private func replaceClicked() {
+        guard LicenseManager.shared.canUseApp() else {
+            LicenseWindowController.shared.show()
+            return
+        }
+
+        guard let job = buildJob() else { return }
+
+        actionSaveButton?.isEnabled = false
+        actionReplaceButton?.isEnabled = false
+        let origReplaceTitle = actionReplaceButton?.title ?? "Replace in DropDial"
+        actionReplaceButton?.title = "Applying…"
+
+        BackendBridge.shared.execute(
+            job: job,
+            onStart: nil,
+            progressHandler: nil,
+            completion: { [weak self] result in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    switch result {
+                    case .success(let batch):
+                        let outputs = batch.Files.compactMap { $0.Output }
+                        if !outputs.isEmpty {
+                            SoundManager.playPop()
+                            self.window?.close()
+                            self.onClose?()
+                            DropWheelWindowController.shared.loadFiles(outputs, mode: .tools)
+                        } else {
+                            self.actionSaveButton?.isEnabled = true
+                            self.actionReplaceButton?.isEnabled = true
+                            self.actionReplaceButton?.title = origReplaceTitle
+                            let alert = NSAlert()
+                            alert.messageText = "Replace Failed"
+                            alert.informativeText = "The tool completed without producing an output file."
+                            alert.alertStyle = .warning
+                            alert.runModal()
+                        }
+                    case .failure(let err):
+                        self.actionSaveButton?.isEnabled = true
+                        self.actionReplaceButton?.isEnabled = true
+                        self.actionReplaceButton?.title = origReplaceTitle
+                        let alert = NSAlert()
+                        alert.messageText = "Error Applying Tool"
+                        alert.informativeText = BackendBridge.cleanErrorMessage(err.localizedDescription)
+                        alert.alertStyle = .warning
+                        alert.runModal()
+                    }
+                }
+            }
+        )
     }
 }

@@ -58,7 +58,7 @@ internal sealed class ToolWindow : Window
     private bool rangeEdited;
     private int previewVersion;
     private string metadataText = "";
-    private Button saveButton = null!, cancelButton = null!, revealButton = null!, copyButton = null!;
+    private Button saveButton = null!, replaceButton = null!, cancelButton = null!, revealButton = null!, copyButton = null!;
     private readonly BusyLine busyLine = new();
     private readonly CropFrame cropFrame = new();
     private string editedField = "";
@@ -95,6 +95,7 @@ internal sealed class ToolWindow : Window
     public bool Busy => saving != null;
     // In a combined window, a successful save hands the result to the host instead of finishing here.
     public Action<BatchResult>? Saved { get; set; }
+    public Action<string[]>? ReplaceInDropDial { get; set; }
     public string SaveLabel { set => saveButton.Content = value; }
     public Task Start() => Initialize();
     private string ReadyText => Saved != null ? L.T("Adjust the settings, then click “Apply this step”.") : L.T("Adjust the settings, then save. The new file goes next to the original.");
@@ -954,6 +955,12 @@ internal sealed class ToolWindow : Window
         cancelButton = Button(L.T("Cancel"), () => { saving?.Cancel(); cancelButton.IsEnabled = false; status.Text = L.T("Stopping…"); return Task.CompletedTask; });
         cancelButton.Visibility = Visibility.Collapsed;
         actions.Children.Add(cancelButton);
+        replaceButton = Button(L.T("Replace in DropDial"), Replace);
+        replaceButton.IsEnabled = false;
+        replaceButton.Margin = new Thickness(0, 0, 10, 0);
+        replaceButton.ToolTip = L.T("Apply this edit and load the new file into DropDial for another tool or conversion");
+        if (Saved != null) replaceButton.Visibility = Visibility.Collapsed;
+        actions.Children.Add(replaceButton);
         saveButton = Button(IsVideoStudio ? L.T("Save Video") : L.T("Save new file"), Save);
         saveButton.IsEnabled = false;
         saveButton.Foreground = Brushes.White;
@@ -978,6 +985,7 @@ internal sealed class ToolWindow : Window
         using var busy = busyLine.Begin();
         loaded = false;
         saveButton.IsEnabled = false;
+        replaceButton.IsEnabled = false;
         framePicker.IsEnabled = false;
         previewDelay.Stop();
         previewCancellation?.Cancel();
@@ -1059,6 +1067,7 @@ internal sealed class ToolWindow : Window
         loaded = true;
         UpdateRotationPreview();
         saveButton.IsEnabled = true;
+        replaceButton.IsEnabled = true;
         framePicker.IsEnabled = true;
         SetMetadataState();
         SyncTrimRange();
@@ -2742,6 +2751,7 @@ internal sealed class ToolWindow : Window
         using var busy = busyLine.Begin();
         bodyPanel.IsEnabled = false;
         saveButton.IsEnabled = false;
+        replaceButton.IsEnabled = false;
         revealButton.Visibility = Visibility.Collapsed;
         copyButton.Visibility = Visibility.Collapsed;
         cancelButton.Visibility = Visibility.Visible;
@@ -2770,8 +2780,63 @@ internal sealed class ToolWindow : Window
         catch (Exception ex) { status.Text = L.T("Save not completed: ") + ex.Message; status.Foreground = UiTheme.Accent; }
         finally
         {
-            saving.Dispose(); saving = null; bodyPanel.IsEnabled = true; saveButton.IsEnabled = true; cancelButton.Visibility = Visibility.Collapsed;
+            saving.Dispose(); saving = null; bodyPanel.IsEnabled = true; saveButton.IsEnabled = true; replaceButton.IsEnabled = true; cancelButton.Visibility = Visibility.Collapsed;
             if (applied != null) Saved?.Invoke(applied);
+        }
+    }
+    private async Task Replace()
+    {
+        if (!loaded || saving != null)
+            return;
+        ConversionJob job;
+        try
+        { job = Capture(); }
+        catch (Exception ex) { status.Text = ex.Message; status.Foreground = UiTheme.Accent; return; }
+        if (operation.Id == "location" && Get("mode") == "set" && string.IsNullOrWhiteSpace(Get("coordinates")) && string.IsNullOrWhiteSpace(Get("locationSource")))
+        { status.Text = L.T("Type the coordinates of the new location, or choose a photo to copy its location from."); status.Foreground = UiTheme.Accent; return; }
+        if (operation.Id == "redactPDF" && regions.Count == 0 && string.IsNullOrWhiteSpace(Get("findText")) && string.IsNullOrWhiteSpace(Get("regions")))
+        { status.Text = L.T("Mark an area on the page, or type the text to black out."); status.Foreground = UiTheme.Accent; return; }
+        if (operation.Id is "rotateImage" or "rotateVideo" && double.TryParse(Get("angle", "0"), NumberStyles.Float, CultureInfo.InvariantCulture, out double chosenAngle) && chosenAngle % 360 == 0 && Get("flip", "none") == "none")
+        { status.Text = L.T("Choose a rotation or a flip first."); status.Foreground = UiTheme.Accent; return; }
+        saving = CancellationTokenSource.CreateLinkedTokenSource(closing.Token);
+        previewDelay.Stop();
+        previewCancellation?.Cancel();
+        transport?.Stop();
+        player.Stop();
+        player.Source = null;
+        using var busy = busyLine.Begin();
+        bodyPanel.IsEnabled = false;
+        saveButton.IsEnabled = false;
+        replaceButton.IsEnabled = false;
+        revealButton.Visibility = Visibility.Collapsed;
+        copyButton.Visibility = Visibility.Collapsed;
+        cancelButton.Visibility = Visibility.Visible;
+        cancelButton.IsEnabled = true;
+        status.Foreground = UiTheme.Muted;
+        status.Text = L.T("Applying edit to DropDial…");
+        string[]? newPaths = null;
+        try
+        {
+            var result = await submit(job, saving.Token, busy);
+            var success = result.Files.Where(f => f.Output != null).ToArray();
+            var failures = result.Files.Where(f => f.Error != null).ToArray();
+            if (success.Length > 0 && failures.Length == 0)
+            {
+                if (Presets.Supported(operation.Id)) Presets.SaveLast(operation.Id, PresetValues());
+                newPaths = success.Select(f => f.Output!).ToArray();
+                SoundManager.PlayPop();
+                Close();
+                return;
+            }
+            status.Text = failures.Length > 0 ? L.F("Failed to apply: {0}", failures[0].Error) : L.T("No output generated.");
+            status.Foreground = UiTheme.Accent;
+        }
+        catch (OperationCanceledException) { status.Text = L.T("Cancelled."); }
+        catch (Exception ex) { status.Text = L.T("Apply not completed: ") + ex.Message; status.Foreground = UiTheme.Accent; }
+        finally
+        {
+            saving.Dispose(); saving = null; bodyPanel.IsEnabled = true; saveButton.IsEnabled = true; replaceButton.IsEnabled = true; cancelButton.Visibility = Visibility.Collapsed;
+            if (newPaths != null) ReplaceInDropDial?.Invoke(newPaths);
         }
     }
     private async Task StepFrame(int direction)
