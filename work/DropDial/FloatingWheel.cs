@@ -28,7 +28,7 @@ internal sealed class DropWheel : Window
     }
     private readonly Action<string[], Operation> submit;
     private readonly Grid stage = new();
-    private readonly Canvas canvas = new() { Width = 380, Height = 390 };
+    private readonly Canvas canvas = new() { Width = SingleSize, Height = SingleSize + 10 };
     private readonly Ring first = new(), second = new();
     private readonly Border center;
 
@@ -57,14 +57,14 @@ internal sealed class DropWheel : Window
 
     // Center Hub elements
     private readonly StackPanel hubSlicePanel = new() { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Visibility = Visibility.Collapsed };
-    private readonly TextBlock hubModeBadge = new() { FontSize = 8.5, FontWeight = FontWeights.Bold, Foreground = Solid("#FF6208"), TextAlignment = TextAlignment.Center };
-    private readonly TextBlock hubSliceTitle = new() { FontSize = 12.5, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 96, Margin = new Thickness(0, 1, 0, 1) };
-    private readonly TextBlock hubSliceSub = new() { Text = L.T("Click or drop"), FontSize = 8, FontWeight = FontWeights.Medium, Foreground = UiTheme.Muted, TextAlignment = TextAlignment.Center };
+    private readonly TextBlock hubModeBadge = new() { FontSize = 8, FontWeight = FontWeights.Bold, Foreground = Solid("#FF6208"), TextAlignment = TextAlignment.Center };
+    private readonly TextBlock hubSliceTitle = new() { FontSize = 11.5, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 80, Margin = new Thickness(0, 1, 0, 1) };
+    private readonly TextBlock hubSliceSub = new() { Text = L.T("Click or drop"), FontSize = 7.5, FontWeight = FontWeights.Medium, Foreground = UiTheme.Muted, TextAlignment = TextAlignment.Center };
 
     private readonly StackPanel hubFilePanel = new() { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Visibility = Visibility.Collapsed };
-    private readonly Image hubThumbnail = new() { Width = 26, Height = 26, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2) };
-    private readonly TextBlock hubFileName = new() { FontSize = 8.5, FontWeight = FontWeights.SemiBold, TextAlignment = TextAlignment.Center, MaxWidth = 92, TextTrimming = TextTrimming.CharacterEllipsis };
-    private readonly TextBlock hubFileMode = new() { FontSize = 8, FontWeight = FontWeights.Medium, Foreground = Solid("#FF6208"), TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 1, 0, 0) };
+    private readonly Image hubThumbnail = new() { Width = 22, Height = 22, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2) };
+    private readonly TextBlock hubFileName = new() { FontSize = 8, FontWeight = FontWeights.SemiBold, TextAlignment = TextAlignment.Center, MaxWidth = 78, TextTrimming = TextTrimming.CharacterEllipsis };
+    private readonly TextBlock hubFileMode = new() { FontSize = 7.5, FontWeight = FontWeights.Medium, Foreground = Solid("#FF6208"), TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 1, 0, 0) };
     private readonly Border hubClearBtn = new()
     {
         Width = 18,
@@ -81,12 +81,12 @@ internal sealed class DropWheel : Window
     };
 
     private readonly StackPanel hubIdlePanel = new() { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
-    private readonly TextBlock hubBrand = new() { Text = "Lotus", FontSize = 14, FontWeight = FontWeights.Bold, Foreground = Solid("#FF6208"), TextAlignment = TextAlignment.Center };
-    private readonly TextBlock hubIdleSub = new() { Text = L.T("Drop files\nor click"), FontSize = 8.5, FontWeight = FontWeights.Medium, Foreground = UiTheme.Muted, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 2, 0, 0) };
+    private readonly TextBlock hubBrand = new() { Text = "Lotus", FontSize = 13, FontWeight = FontWeights.Bold, Foreground = Solid("#FF6208"), TextAlignment = TextAlignment.Center };
+    private readonly TextBlock hubIdleSub = new() { Text = L.T("Drop files\nor click"), FontSize = 8, FontWeight = FontWeights.Medium, Foreground = UiTheme.Muted, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 2, 0, 0) };
 
     // Bottom pagination dots and hint label
     private readonly StackPanel paginationDots = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
-    private readonly TextBlock hint = new() { TextAlignment = TextAlignment.Center, FontSize = 9, Foreground = UiTheme.Muted, Width = 380 };
+    private readonly TextBlock hint = new() { TextAlignment = TextAlignment.Center, FontSize = 8.5, Foreground = UiTheme.Muted, Width = SingleSize };
 
     // The wheel's colours in the light and the dark theme; it takes the current theme each time it opens.
     private sealed record Look(Brush RestingFace, Brush SelectedFace, Brush OpenFace, Brush RestingSide, Brush SelectedSide, Brush OpenSide, Brush RestingOutline, Brush OpenOutline, Brush OuterFace, Brush Disk, Brush Hub, Brush HubEdge);
@@ -132,10 +132,11 @@ internal sealed class DropWheel : Window
     public WheelMode CurrentMode => mode;
     public bool ToolsMode => mode == WheelMode.Tools;
     public bool HasFileDrag => entered && paths.Length > 0;
-    // The size of the window's picture: 380 for one wheel, larger when a second wheel can open around it.
+    // The size of the window's picture: 330 for one wheel, larger when a second wheel can open around it.
     public double StageSize { get; private set; } = SingleSize;
-    private const double SingleSize = 380, DoubleSize = 640;
-    private const double Center = 190, Outer = 172, Inner = 65, OuterRingInner = 184, OuterRingOuter = 300;
+    private const double SingleSize = 330, DoubleSize = 530;
+    private const double Center = 165, Outer = 148, Inner = 54, OuterRingInner = 156, OuterRingOuter = 246;
+    private const double HubRadius = 46;
 
     public DropWheel(Action<string[], Operation> submit)
     {
@@ -207,22 +208,22 @@ internal sealed class DropWheel : Window
         };
 
         // --- 2. Assemble Canvas & Wheel ---
-        disk = new Ellipse { Width = 360, Height = 360, Fill = Shade.Disk, IsHitTestVisible = false,
+        disk = new Ellipse { Width = (Outer + 7) * 2, Height = (Outer + 7) * 2, Fill = Shade.Disk, IsHitTestVisible = false,
             Effect = new DropShadowEffect { BlurRadius = 14, ShadowDepth = 5, Opacity = .13, Color = Color.FromRgb(42, 50, 45) } };
-        Canvas.SetLeft(disk, 10);
-        Canvas.SetTop(disk, 10);
+        Canvas.SetLeft(disk, Center - (Outer + 7));
+        Canvas.SetTop(disk, Center - (Outer + 7));
         canvas.Children.Add(disk);
 
-        hubSide = new Ellipse { Width = 112, Height = 112, Fill = RestingSide, IsHitTestVisible = false,
+        hubSide = new Ellipse { Width = HubRadius * 2, Height = HubRadius * 2, Fill = RestingSide, IsHitTestVisible = false,
             Effect = new DropShadowEffect { BlurRadius = 8, ShadowDepth = 2, Opacity = .08, Color = Color.FromRgb(42, 50, 45) } };
-        Canvas.SetLeft(hubSide, Center - 56); Canvas.SetTop(hubSide, Center - 56 + 4);
+        Canvas.SetLeft(hubSide, Center - HubRadius); Canvas.SetTop(hubSide, Center - HubRadius + 4);
         Canvas.SetZIndex(hubSide, 9); canvas.Children.Add(hubSide);
 
         center = new Border
         {
-            Width = 112,
-            Height = 112,
-            CornerRadius = new CornerRadius(56),
+            Width = HubRadius * 2,
+            Height = HubRadius * 2,
+            CornerRadius = new CornerRadius(HubRadius),
             Background = Shade.Hub,
             BorderBrush = Solid("#FF6208"),
             BorderThickness = new Thickness(1.5),
@@ -270,8 +271,8 @@ internal sealed class DropWheel : Window
 
         center.Child = hubGrid;
 
-        Canvas.SetLeft(center, Center - 56);
-        Canvas.SetTop(center, Center - 56);
+        Canvas.SetLeft(center, Center - HubRadius);
+        Canvas.SetTop(center, Center - HubRadius);
         Canvas.SetZIndex(center, 10);
         canvas.Children.Add(center);
 
@@ -279,7 +280,7 @@ internal sealed class DropWheel : Window
         canvas.Children.Add(paginationDots);
 
         Canvas.SetLeft(hint, 0);
-        Canvas.SetTop(hint, Center + Outer + 10);
+        Canvas.SetTop(hint, Center + Outer + 6);
         Canvas.SetZIndex(hint, 15);
         canvas.Children.Add(hint);
 
@@ -523,7 +524,7 @@ internal sealed class DropWheel : Window
         double scale = Native.GetDpiForWindow(hwnd) / 96.0;
         int sizeW = (int)Math.Round(SingleSize * scale);
         int sizeH = (int)Math.Round((SingleSize + TopBarHeight) * scale);
-        int radius = (int)Math.Round(180.0 * scale);
+        int radius = (int)Math.Round(Outer * scale);
         int targetX = (point.X + radius + sizeW / 2 <= area.Right) ? (point.X + radius - sizeW / 2) : (point.X - radius - sizeW / 2);
         int x = Math.Clamp(targetX, area.Left, Math.Max(area.Left, area.Right - sizeW));
         int targetY = point.Y - sizeH / 2;
@@ -548,7 +549,7 @@ internal sealed class DropWheel : Window
             Width = size;
             Height = size + TopBarHeight;
             canvas.Width = size;
-            canvas.Height = size > SingleSize ? size : 390;
+            canvas.Height = size > SingleSize ? size : (SingleSize + 10);
             return;
         }
         Native.GetWindowRect(hwnd, out var current);
@@ -564,7 +565,7 @@ internal sealed class DropWheel : Window
         Width = size;
         Height = size + TopBarHeight;
         canvas.Width = size;
-        canvas.Height = size > SingleSize ? size : 390;
+        canvas.Height = size > SingleSize ? size : (SingleSize + 10);
         Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, pixelsW, pixelsH, 0x0010 | 0x0040);
         UpdateLayout();
     }
@@ -1000,17 +1001,26 @@ internal sealed class DropWheel : Window
     protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnPreviewMouseLeftButtonDown(e);
-        // Allow dragging the window when clicking on empty top bar or disk background
         var ptInCanvas = e.GetPosition(canvas);
         double distFromCenter = (ptInCanvas - new Point(Center, Center)).Length;
         var ptInTopBar = e.GetPosition(topBarContainer);
-        bool overTopBarBackground = ptInTopBar.Y >= 0 && ptInTopBar.Y <= topBarContainer.ActualHeight &&
+        bool overTopBar = ptInTopBar.Y >= 0 && ptInTopBar.Y <= topBarContainer.ActualHeight &&
+            ptInTopBar.X >= 0 && ptInTopBar.X <= topBarContainer.ActualWidth;
+        bool overTopBarBackground = overTopBar &&
             !closeButton.IsMouseOver && !convertTab.IsMouseOver && !toolsTab.IsMouseOver && !actionsTab.IsMouseOver;
-        bool overCanvasBackground = (distFromCenter > Outer && distFromCenter <= 180) || (distFromCenter < Inner && distFromCenter > 56);
 
-        if (overTopBarBackground || overCanvasBackground)
+        if (overTopBarBackground)
         {
             DragMove();
+            return;
+        }
+
+        // Tap/click at the side of the wheel (outside the interactive wheel disk)
+        double maxRadius = (groups != null && openGroup >= 0) ? (OuterRingOuter + 10) : Outer;
+        if (distFromCenter > maxRadius && !overTopBar)
+        {
+            e.Handled = true;
+            Dismiss("SideTap");
         }
     }
 
@@ -1018,7 +1028,7 @@ internal sealed class DropWheel : Window
     {
         var point = e.GetPosition(canvas);
         double dist = (point - new Point(Center, Center)).Length;
-        if (dist <= 56)
+        if (dist <= HubRadius)
         {
             e.Handled = true;
             OnHubClicked();
@@ -1042,6 +1052,17 @@ internal sealed class DropWheel : Window
         {
             e.Handled = true;
             TriggerOperation(selected);
+        }
+        else
+        {
+            var ptInTopBar = e.GetPosition(topBarContainer);
+            bool overTopBar = ptInTopBar.Y >= 0 && ptInTopBar.Y <= topBarContainer.ActualHeight &&
+                ptInTopBar.X >= 0 && ptInTopBar.X <= topBarContainer.ActualWidth;
+            if (!overTopBar)
+            {
+                e.Handled = true;
+                Dismiss("SideTap");
+            }
         }
     }
 
@@ -1362,9 +1383,10 @@ internal sealed class DropWheel : Window
         for (int i = 0; i < actions.Count; i++)
         {
             double angle = rotRad + (-Math.PI / 2 + i * 2 * Math.PI / actions.Count), half = Math.PI / actions.Count;
-            double labelWidth = Math.Clamp(2 * 119 * Math.Sin(half) - 16, 72, groups != null ? 92 : 112);
+            double midRadius = (Inner + Outer) / 2;
+            double labelWidth = Math.Clamp(2 * midRadius * Math.Sin(half) - 14, 60, groups != null ? 82 : 100);
             string? preview = groups != null ? Preview(groups[i]) : null;
-            AddPetal(first, angle - half + .016, angle + half - .016, Inner, Outer, 119, labelWidth, (actions[i].Recent ? "↻ " : "") + actions[i].Label, preview, groups != null ? 13 : actions.Count > 7 ? 11.5 : 13.5, RestingFace, 1, -rotationDeg, actions[i].Id);
+            AddPetal(first, angle - half + .016, angle + half - .016, Inner, Outer, midRadius, labelWidth, (actions[i].Recent ? "↻ " : "") + actions[i].Label, preview, groups != null ? 12 : actions.Count > 7 ? 11 : 12.5, RestingFace, 1, -rotationDeg, actions[i].Id);
         }
         UpdateLayout();
     }
@@ -1394,8 +1416,9 @@ internal sealed class DropWheel : Window
         for (int i = 0; i < n; i++)
         {
             double middle = direction - total / 2 + width * (i + .5), half = width / 2;
-            double labelWidth = Math.Clamp(2 * 242 * Math.Sin(half) - 16, 70, 104);
-            AddPetal(second, middle - half + .018, middle + half - .018, OuterRingInner, OuterRingOuter, 242, labelWidth, group.Items[i].Label, null, 12, OuterFace, 20, 0, group.Items[i].Id);
+            double outerMidRadius = (OuterRingInner + OuterRingOuter) / 2;
+            double labelWidth = Math.Clamp(2 * outerMidRadius * Math.Sin(half) - 14, 60, 96);
+            AddPetal(second, middle - half + .018, middle + half - .018, OuterRingInner, OuterRingOuter, outerMidRadius, labelWidth, group.Items[i].Label, null, 11.5, OuterFace, 20, 0, group.Items[i].Id);
         }
         UpdateLayout();
     }

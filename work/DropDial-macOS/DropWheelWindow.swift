@@ -248,10 +248,10 @@ final class RadialWheelView: NSView {
     }
 
     let wheelCenter = CGPoint(x: 170, y: 155)
-    let innerRadius: CGFloat = 52
-    let outerRadius: CGFloat = 138
-    let backdropRadius: CGFloat = 144
-    let hubRadius: CGFloat = 46
+    let innerRadius: CGFloat = 48
+    let outerRadius: CGFloat = 130
+    let backdropRadius: CGFloat = 136
+    let hubRadius: CGFloat = 42
     let topBarRect = NSRect(x: 170 - 110, y: 308, width: 220, height: 32)
     let closeButtonRect = NSRect(x: 170 - 110 + 220 + 8, y: 308, width: 32, height: 32)
 
@@ -569,10 +569,17 @@ final class RadialWheelView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         let pt = convert(event.locationInWindow, from: nil)
-        mouseDownHit = indexForPoint(pt)
+        let hit = indexForPoint(pt)
+        mouseDownHit = hit
         dragStartMouseScreen = NSEvent.mouseLocation
         dragStartWindowOrigin = window?.frame.origin
         isDraggingWindow = false
+
+        if hit == -1 {
+            SoundManager.playPop()
+            DropWheelWindowController.shared.hideWheel()
+            return
+        }
     }
 
     override func mouseDragged(with event: NSEvent) {
@@ -635,6 +642,10 @@ final class RadialWheelView: NSView {
             onHubClicked?()
         } else if hit >= 0 && hit < items.count {
             onSelectSlice?(items[hit], currentPaths)
+        } else if hit == -1 || hit == -3 {
+            // Tapped at the side of the wheel / gap
+            SoundManager.playPop()
+            DropWheelWindowController.shared.hideWheel()
         }
         updateCursor(for: pt)
     }
@@ -1276,6 +1287,7 @@ final class DropWheelWindowController: NSWindowController {
     private var activeToolControllers: [ToolWindowController] = []
 
     private var localOutsideClickMonitor: Any?
+    private var globalOutsideClickMonitor: Any?
 
     init() {
         let width: CGFloat = 340
@@ -1451,10 +1463,10 @@ final class DropWheelWindowController: NSWindowController {
                 let dx = local.x - self.wheelView.wheelCenter.x
                 let dy = local.y - self.wheelView.wheelCenter.y
                 let dist = sqrt(dx * dx + dy * dy)
-                let inCircle = (dist <= self.wheelView.backdropRadius)
+                let inPetalsOrHub = (dist <= self.wheelView.outerRadius)
                 let inTopBar = self.wheelView.topBarRect.contains(local)
                 let inCloseBtn = self.wheelView.closeButtonRect.contains(local)
-                if !inCircle && !inTopBar && !inCloseBtn {
+                if !inPetalsOrHub && !inTopBar && !inCloseBtn {
                     DispatchQueue.main.async {
                         self.hideWheel()
                     }
@@ -1462,12 +1474,24 @@ final class DropWheelWindowController: NSWindowController {
             }
             return event
         }
+
+        globalOutsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            guard let self = self, let win = self.window, win.isVisible else { return }
+            if ProcessInfo.processInfo.systemUptime - self.openTimestamp < 0.25 { return }
+            DispatchQueue.main.async {
+                self.hideWheel()
+            }
+        }
     }
 
     private func removeOutsideClickMonitors() {
         if let monitor = localOutsideClickMonitor {
             NSEvent.removeMonitor(monitor)
             localOutsideClickMonitor = nil
+        }
+        if let g = globalOutsideClickMonitor {
+            NSEvent.removeMonitor(g)
+            globalOutsideClickMonitor = nil
         }
     }
 

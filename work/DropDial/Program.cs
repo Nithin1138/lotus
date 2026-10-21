@@ -317,7 +317,7 @@ internal sealed class Resident : IDisposable
     private readonly Channel<QueuedJob> queue = Channel.CreateBounded<QueuedJob>(new BoundedChannelOptions(16) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
     private readonly CancellationTokenSource stopping = new();
     private readonly DragShortcutTracker dragShortcuts = new(Native.GetSystemMetrics(68), Native.GetSystemMetrics(69));
-    private bool f8, f9, f10, escape, mouse, releasePending, altSpacePressed, ctrlShiftLPressed;
+    private bool f8, f9, f10, escape, mouse, altSpacePressed, ctrlShiftLPressed;
     private DateTime activated = DateTime.MinValue;
     private string? lastOutput;
     private bool disposed;
@@ -706,7 +706,6 @@ internal sealed class Resident : IDisposable
             if (wheel.CurrentMode == mode)
                 return;
             activated = DateTime.UtcNow;
-            releasePending = false;
             wheel.ChangeMode(mode);
             Journal.Write("WheelModeChanged", new { reason, mode });
             return;
@@ -714,22 +713,9 @@ internal sealed class Resident : IDisposable
         if (!modifier && (DateTime.UtcNow - activated).TotalMilliseconds < 200)
             return;
         activated = DateTime.UtcNow;
-        releasePending = false;
         Native.GetCursorPos(out var point);
         wheel.OpenAt(point, mode);
         Journal.Write("WheelOpened", new { reason, mode, mouseDown = Native.Down(1), point.X, point.Y });
-        if (modifier)
-        {
-            long instance = wheel.Instance;
-            var confirmation = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(2000) };
-            confirmation.Tick += (_, _) =>
-            {
-                confirmation.Stop();
-                if (wheel.IsVisible && wheel.Instance == instance && !wheel.HasFileDrag && !Native.Down(1))
-                    wheel.Dismiss("NotFileDrag");
-            };
-            confirmation.Start();
-        }
     }
 
     private void Poll(object? sender, EventArgs e)
@@ -792,14 +778,34 @@ internal sealed class Resident : IDisposable
 
         if (nextEscape && !escape && wheel.IsVisible)
             wheel.Dismiss("Escape");
-        if (wheel.IsVisible && mouse && !nextMouse && !releasePending)
+
+        // When mouse button is clicked, dismiss wheel if click happened outside the wheel window bounds
+        if (wheel.IsVisible && nextMouse && !mouse)
         {
-            releasePending = true;
-            var instance = wheel.Instance;
-            // Let the OLE Drop callback finish before closing an uncommitted wheel.
-            var delay = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
-            delay.Tick += (_, _) => { delay.Stop(); if (wheel.IsVisible && wheel.Instance == instance) wheel.Dismiss("ReleasedOutside"); };
-            delay.Start();
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(wheel).Handle;
+            if (hwnd != IntPtr.Zero && Native.GetWindowRect(hwnd, out var rect))
+            {
+                if (cursor.X < rect.Left || cursor.X > rect.Right || cursor.Y < rect.Top || cursor.Y > rect.Bottom)
+                {
+                    if ((DateTime.UtcNow - activated).TotalMilliseconds > 250)
+                    {
+                        wheel.Dismiss("OutsideClick");
+                    }
+                }
+            }
+        }
+
+        // If a file drag was underway and mouse was released outside the wheel:
+        if (wheel.IsVisible && wheel.HasFileDrag && mouse && !nextMouse)
+        {
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(wheel).Handle;
+            if (hwnd != IntPtr.Zero && Native.GetWindowRect(hwnd, out var rect))
+            {
+                if (cursor.X < rect.Left || cursor.X > rect.Right || cursor.Y < rect.Top || cursor.Y > rect.Bottom)
+                {
+                    wheel.Dismiss("DragReleasedOutside");
+                }
+            }
         }
         f8 = nextF8;
         f9 = nextF9;
