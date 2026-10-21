@@ -247,18 +247,18 @@ final class RadialWheelView: NSView {
         scrollVelocity = 0
     }
 
-    let wheelCenter = CGPoint(x: 170, y: 160)
-    let innerRadius: CGFloat = 48
-    let outerRadius: CGFloat = 130
-    let backdropRadius: CGFloat = 136
-    let hubRadius: CGFloat = 42
-    let topBarRect = NSRect(x: 170 - 110, y: 316, width: 220, height: 32)
-    let closeButtonRect = NSRect(x: 170 - 110 + 220 + 8, y: 316, width: 32, height: 32)
+    let wheelCenter = CGPoint(x: 170, y: 165)
+    let innerRadius: CGFloat = 52
+    let outerRadius: CGFloat = 138
+    let backdropRadius: CGFloat = 144
+    let hubRadius: CGFloat = 46
+    let topBarRect = NSRect(x: 170 - 110, y: 318, width: 220, height: 32)
+    let closeButtonRect = NSRect(x: 170 - 110 + 220 + 8, y: 318, width: 32, height: 32)
 
     var hubClearButtonRect: NSRect {
         // Small into (x) button centered inside top of middle circle, just above the file
         let size: CGFloat = 16
-        return NSRect(x: wheelCenter.x - size / 2, y: wheelCenter.y + 24, width: size, height: size)
+        return NSRect(x: wheelCenter.x - size / 2, y: wheelCenter.y + 26, width: size, height: size)
     }
 
     var isDarkMode: Bool {
@@ -1318,7 +1318,7 @@ final class DropWheelWindowController: NSWindowController {
 
     init() {
         let width: CGFloat = 340
-        let height: CGFloat = 370
+        let height: CGFloat = 380
         let panel = KeyPanel(
             contentRect: NSRect(x: 0, y: 0, width: width, height: height),
             styleMask: [.borderless, .nonactivatingPanel],
@@ -1398,7 +1398,7 @@ final class DropWheelWindowController: NSWindowController {
     func showAtCursor(mode: WheelMode) {
         let mouse = NSEvent.mouseLocation
         let width: CGFloat = 340
-        let height: CGFloat = 370
+        let height: CGFloat = 380
         let screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) }) ?? NSScreen.main ?? NSScreen()
         let frame = screen.visibleFrame
 
