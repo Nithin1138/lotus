@@ -40,6 +40,7 @@ internal static class Native
         return cls is "CabinetWClass" or "ExploreWClass" or "Progman" or "WorkerW" or "ShellTabWindowClass" or "Shell_TrayWnd" or "DirectUIHWND" or "Windows.UI.Core.CoreWindow";
     }
     // Lets a window in another process come to the front; used when a second launch asks the running copy to show itself.
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)] public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
     [DllImport("user32.dll")] public static extern bool AllowSetForegroundWindow(int processId);
     [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int width, int height, uint flags);
     [DllImport("user32.dll", SetLastError = true)] public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);

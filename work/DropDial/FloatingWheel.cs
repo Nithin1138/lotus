@@ -539,19 +539,54 @@ internal sealed class DropWheel : Window
         Resize(SingleSize);
         if (!IsVisible)
             Show();
+
         var hwnd = new WindowInteropHelper(this).Handle;
-        var area = Forms.Screen.FromPoint(new System.Drawing.Point(point.X, point.Y)).WorkingArea;
-        Native.SetWindowPos(hwnd, new IntPtr(-1), point.X, point.Y, 0, 0, 0x0001 | 0x0010);
-        double scale = Native.GetDpiForWindow(hwnd) / 96.0;
+        var screen = (point.X > 0 || point.Y > 0)
+            ? Forms.Screen.FromPoint(new System.Drawing.Point(point.X, point.Y))
+            : Forms.Screen.PrimaryScreen;
+        var area = screen?.WorkingArea ?? new System.Drawing.Rectangle(0, 0, 1920, 1080);
+
+        if (point.X <= 0 && point.Y <= 0)
+        {
+            point.X = area.Left + area.Width / 2;
+            point.Y = area.Top + area.Height / 2;
+        }
+
+        uint dpi = Native.GetDpiForWindow(hwnd);
+        double scale = dpi > 0 ? (dpi / 96.0) : 1.0;
+        try
+        {
+            var dpiScale = VisualTreeHelper.GetDpi(this);
+            if (dpiScale.DpiScaleX > 0) scale = dpiScale.DpiScaleX;
+        }
+        catch { }
+        if (scale < 0.25) scale = 1.0;
+
         int sizeW = (int)Math.Round(SingleSize * scale);
         int sizeH = (int)Math.Round((SingleSize + TopBarHeight + 25) * scale);
         int radius = (int)Math.Round(Outer * scale);
-        int targetX = (point.X + radius + sizeW / 2 <= area.Right) ? (point.X + radius - sizeW / 2) : (point.X - radius - sizeW / 2);
+
+        int targetX;
+        if (HasFileDrag)
+        {
+            targetX = (point.X + radius + sizeW / 2 <= area.Right) ? (point.X + radius - sizeW / 2) : (point.X - radius - sizeW / 2);
+        }
+        else
+        {
+            // Center the wheel comfortably at the trigger point
+            targetX = point.X - sizeW / 2;
+        }
+
         int x = Math.Clamp(targetX, area.Left, Math.Max(area.Left, area.Right - sizeW));
         int targetY = point.Y - sizeH / 2;
         int y = Math.Clamp(targetY, area.Top, Math.Max(area.Top, area.Bottom - sizeH));
+
         Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, sizeW, sizeH, 0x0010 | 0x0040);
+        Left = x / scale;
+        Top = y / scale;
+        Topmost = true;
         UpdateLayout();
+        Activate();
         Focus();
     }
 
@@ -576,7 +611,16 @@ internal sealed class DropWheel : Window
             return;
         }
         Native.GetWindowRect(hwnd, out var current);
-        double scale = Native.GetDpiForWindow(hwnd) / 96.0;
+        uint dpi = Native.GetDpiForWindow(hwnd);
+        double scale = dpi > 0 ? (dpi / 96.0) : 1.0;
+        try
+        {
+            var dpiScale = VisualTreeHelper.GetDpi(this);
+            if (dpiScale.DpiScaleX > 0) scale = dpiScale.DpiScaleX;
+        }
+        catch { }
+        if (scale < 0.25) scale = 1.0;
+
         int pixelsW = (int)Math.Round(size * scale);
         int pixelsH = (int)Math.Round((size + TopBarHeight + 25) * scale);
         int midX = (current.Left + current.Right) / 2;
@@ -592,6 +636,9 @@ internal sealed class DropWheel : Window
         topBarContainer.Width = size;
         bottomStack.Width = size;
         Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, pixelsW, pixelsH, 0x0010 | 0x0040);
+        Left = x / scale;
+        Top = y / scale;
+        Topmost = true;
         UpdateLayout();
     }
 

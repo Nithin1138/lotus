@@ -52,8 +52,62 @@ internal sealed class WelcomeWindow : Window
         steps.Children.Add(Step(3, L.T("Release on an option"), L.T("The new file is saved next to the original, which is never changed.")));
         panel.Children.Add(steps);
 
+        var launchRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 16, 0, 10) };
+
+        var openWheelBtn = new Button
+        {
+            Content = L.T("Open Floating Wheel"),
+            Padding = new Thickness(16, 8, 16, 8),
+            Margin = new Thickness(0, 0, 10, 0),
+            FontWeight = FontWeights.SemiBold,
+            Foreground = Brushes.White,
+            Background = UiTheme.Accent,
+            BorderBrush = UiTheme.Accent,
+            Cursor = Cursors.Hand
+        };
+        openWheelBtn.Click += (_, _) =>
+        {
+            Resident.Instance?.ToggleWheel();
+        };
+        launchRow.Children.Add(openWheelBtn);
+
+        var openShelfBtn = new Button
+        {
+            Content = L.T("Open Floating Shelf"),
+            Padding = new Thickness(14, 8, 14, 8),
+            Margin = new Thickness(0, 0, 10, 0),
+            FontWeight = FontWeights.Normal,
+            Foreground = UiTheme.Ink,
+            Background = UiTheme.Shade,
+            BorderBrush = UiTheme.Line,
+            Cursor = Cursors.Hand
+        };
+        openShelfBtn.Click += (_, _) =>
+        {
+            FloatShelfWindow.Instance.ShowWindow();
+        };
+        launchRow.Children.Add(openShelfBtn);
+
+        var selectFilesBtn = new Button
+        {
+            Content = L.T("Choose Files…"),
+            Padding = new Thickness(14, 8, 14, 8),
+            FontWeight = FontWeights.Normal,
+            Foreground = UiTheme.Ink,
+            Background = UiTheme.Shade,
+            BorderBrush = UiTheme.Line,
+            Cursor = Cursors.Hand
+        };
+        selectFilesBtn.Click += (_, _) =>
+        {
+            Resident.Instance?.PromptSelectFiles();
+        };
+        launchRow.Children.Add(selectFilesBtn);
+
+        panel.Children.Add(launchRow);
+
         var tray = new StackPanel();
-        tray.Children.Add(new TextBlock { Text = L.T("DropDial runs in the notification area (next to the clock) and has no main window. Right-click its icon to pause or cancel jobs, change the language or quit. Can't see the icon? Click the ^ arrow on the taskbar."), TextWrapping = TextWrapping.Wrap, Foreground = UiTheme.Ink, LineHeight = 20 });
+        tray.Children.Add(new TextBlock { Text = L.T("DropDial runs in the notification area (next to the clock) and has no main window. Click or right-click its tray icon to toggle the wheel, pause jobs, or change settings."), TextWrapping = TextWrapping.Wrap, Foreground = UiTheme.Ink, LineHeight = 20 });
         tray.Children.Add(new TextBlock { Text = L.T("Everything is processed on this PC. Nothing is uploaded, and DropDial never connects to the internet."), TextWrapping = TextWrapping.Wrap, Foreground = UiTheme.Muted, FontSize = 12, Margin = new Thickness(0, 8, 0, 0) });
         var card = UiTheme.Card(tray, new Thickness(18, 14, 18, 14));
         card.Margin = new Thickness(0, 6, 0, 0);

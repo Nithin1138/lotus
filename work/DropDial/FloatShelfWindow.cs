@@ -339,9 +339,33 @@ internal sealed class FloatShelfWindow : Window
 
     public void ShowWindow()
     {
+        EnsureVisiblePosition();
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         Show();
         Activate();
+        Topmost = true;
+    }
+
+    public void EnsureVisiblePosition()
+    {
+        try
+        {
+            var workArea = SystemParameters.WorkArea;
+            double targetLeft = workArea.Right - Width - 24;
+            double targetTop = workArea.Top + (workArea.Height - Height) / 2;
+
+            if (double.IsNaN(Left) || Left < workArea.Left || Left > (workArea.Right - 60) ||
+                double.IsNaN(Top) || Top < workArea.Top || Top > (workArea.Bottom - 60))
+            {
+                Left = Math.Max(workArea.Left + 10, targetLeft);
+                Top = Math.Max(workArea.Top + 10, targetTop);
+            }
+        }
+        catch
+        {
+            Left = 100;
+            Top = 100;
+        }
     }
 
     private readonly List<string> floatedPaths = [];
@@ -368,10 +392,7 @@ internal sealed class FloatShelfWindow : Window
         ShowInTaskbar = false;
         FontFamily = UiTheme.Font;
 
-        // Position on right edge of primary screen
-        var workingArea = Forms.Screen.PrimaryScreen?.WorkingArea ?? new System.Drawing.Rectangle(0, 0, 1920, 1080);
-        Left = workingArea.Right - Width - 24;
-        Top = (workingArea.Height - Height) / 2;
+        EnsureVisiblePosition();
 
         var rootGrid = new Grid();
 
@@ -844,8 +865,11 @@ internal sealed class FloatShelfWindow : Window
 
     public void ShowShelf()
     {
+        EnsureVisiblePosition();
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         if (!IsVisible) Show();
         Activate();
+        Topmost = true;
     }
 
     public void HideShelf()
@@ -856,5 +880,18 @@ internal sealed class FloatShelfWindow : Window
     public void ToggleShelf()
     {
         if (IsVisible) HideShelf(); else ShowShelf();
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        // Intercept close so window instance remains reusable across app lifetime
+        e.Cancel = true;
+        HideShelf();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+        instance = null;
     }
 }

@@ -365,8 +365,11 @@ internal sealed class Resident : IDisposable
     private const int HOTKEY_ID_CTRLSHIFTL = 9006;
     private const int HOTKEY_ID_CTRLSHIFTSPACE = 9007;
 
+    internal static Resident? Instance { get; private set; }
+
     public Resident(System.Windows.Application app, EventWaitHandle showRequest, bool startupLaunch = false)
     {
+        Instance = this;
         this.app = app;
         StartupManager.RefreshPortablePath();
         Journal.Prune();
@@ -387,12 +390,12 @@ internal sealed class Resident : IDisposable
         taskIndicator.PauseRequested += card => { if (jobs.FirstOrDefault(j => j.Card == card) is { } job) PauseJob(job); };
         taskIndicator.ResumeRequested += card => { if (jobs.FirstOrDefault(j => j.Card == card) is { } job) ResumeJob(job); };
         taskIndicator.CancelRequested += card => { if (jobs.FirstOrDefault(j => j.Card == card) is { } job) CancelJob(job); };
-        tray.DoubleClick += (_, _) => ShowWelcome();
+        tray.DoubleClick += (_, _) => ToggleWheel();
         tray.MouseClick += (_, e) =>
         {
             if (e.Button == Forms.MouseButtons.Left)
             {
-                typeof(Forms.NotifyIcon).GetMethod("ShowContextMenu", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.Invoke(tray, null);
+                ToggleWheel();
             }
         };
         UpdateManager.UpdateStatusChanged += () => app.Dispatcher.InvokeAsync(BuildTrayMenu);
@@ -472,7 +475,7 @@ internal sealed class Resident : IDisposable
         return IntPtr.Zero;
     }
 
-    private void ToggleWheel(WheelMode? targetMode = null)
+    internal void ToggleWheel(WheelMode? targetMode = null)
     {
         if ((DateTime.UtcNow - activated).TotalMilliseconds < 250)
             return;
@@ -592,7 +595,7 @@ internal sealed class Resident : IDisposable
             Process.Start(new ProcessStartInfo(Notices.Path) { UseShellExecute = true });
     }
 
-    private void PromptSelectFiles()
+    internal void PromptSelectFiles()
     {
         using var dialog = new Forms.OpenFileDialog
         {
@@ -822,7 +825,7 @@ internal sealed class Resident : IDisposable
             {
                 if (cursor.X < rect.Left || cursor.X > rect.Right || cursor.Y < rect.Top || cursor.Y > rect.Bottom)
                 {
-                    if ((DateTime.UtcNow - activated).TotalMilliseconds > 250)
+                    if ((DateTime.UtcNow - activated).TotalMilliseconds > 400)
                     {
                         wheel.Dismiss("OutsideClick");
                     }
@@ -1254,6 +1257,7 @@ internal sealed class Resident : IDisposable
         FloatShelfWindow.Instance.Close();
         wheel.Close();
         taskIndicator.Close();
+        if (Instance == this) Instance = null;
         Journal.Write("Stopped");
     }
 
