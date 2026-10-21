@@ -910,7 +910,7 @@
         el.addEventListener('click', function (e) {
           e.preventDefault();
           const tier = el.getAttribute('data-tier') || 'universal';
-          const coupon = el.getAttribute('data-coupon') || (isFirst24Active() ? 'FIRST24' : null);
+          const coupon = el.getAttribute('data-coupon') || null;
           openModal(tier, coupon);
         });
       });
@@ -963,10 +963,14 @@
 
   function showCouponSuccess(code, discountDisplay) {
     couponFeedback.className = 'cko-coupon-feedback success';
+    const discountText = (appliedCoupon && appliedCoupon.type === 'percent')
+      ? `${appliedCoupon.value}% off applied`
+      : `${discountDisplay || ''} off applied`;
+
     couponFeedback.innerHTML = `
       <div class="cko-coupon-pill">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        <span><strong>${code}</strong> — ${discountDisplay} off applied</span>
+        <span><strong>${code}</strong> — ${discountText}</span>
       </div>
       <button type="button" class="cko-coupon-remove" id="coupon-remove-btn">Remove</button>
     `;
@@ -1056,7 +1060,7 @@
     overlay.classList.add('active');
     setTimeout(() => nameInput.focus(), 150);
 
-    const couponToApply = autoCoupon || (isFirst24Active() ? 'FIRST24' : null);
+    const couponToApply = autoCoupon || null;
     if (couponToApply && !appliedCoupon) {
       if (couponCodeInput) couponCodeInput.value = couponToApply;
       handleCouponApply();
