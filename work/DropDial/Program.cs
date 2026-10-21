@@ -317,7 +317,7 @@ internal sealed class Resident : IDisposable
     private readonly Channel<QueuedJob> queue = Channel.CreateBounded<QueuedJob>(new BoundedChannelOptions(16) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
     private readonly CancellationTokenSource stopping = new();
     private readonly DragShortcutTracker dragShortcuts = new(Native.GetSystemMetrics(68), Native.GetSystemMetrics(69));
-    private bool f8, f9, f10, escape, mouse, releasePending;
+    private bool f8, f9, f10, escape, mouse, releasePending, altSpacePressed, ctrlShiftLPressed;
     private DateTime activated = DateTime.MinValue;
     private string? lastOutput;
     private bool disposed;
@@ -721,8 +721,13 @@ internal sealed class Resident : IDisposable
         if (modifier)
         {
             long instance = wheel.Instance;
-            var confirmation = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-            confirmation.Tick += (_, _) => { confirmation.Stop(); if (wheel.IsVisible && wheel.Instance == instance && !wheel.HasFileDrag) wheel.Dismiss("NotFileDrag"); };
+            var confirmation = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(2000) };
+            confirmation.Tick += (_, _) =>
+            {
+                confirmation.Stop();
+                if (wheel.IsVisible && wheel.Instance == instance && !wheel.HasFileDrag && !Native.Down(1))
+                    wheel.Dismiss("NotFileDrag");
+            };
             confirmation.Start();
         }
     }
@@ -730,8 +735,14 @@ internal sealed class Resident : IDisposable
     private void Poll(object? sender, EventArgs e)
     {
         bool nextF8 = Native.Down(0x77), nextF9 = Native.Down(0x78), nextF10 = Native.Down(0x79), nextEscape = Native.Down(0x1B), nextMouse = Native.Down(1);
+        bool nextAlt = Native.Down(0x12), nextSpace = Native.Down(0x20);
+        bool nextCtrl = Native.Down(0x11), nextShift = Native.Down(0x10), nextL = Native.Down(0x4C);
+
+        bool nextAltSpace = nextAlt && nextSpace;
+        bool nextCtrlShiftL = nextCtrl && nextShift && nextL;
+
         Native.GetCursorPos(out var cursor);
-        var request = dragShortcuts.Update(nextMouse, Native.Down(0x10), Native.Down(0x11), Native.Down(0x12), cursor.X, cursor.Y, nextMouse && !mouse && Native.ShellFileWindow());
+        var request = dragShortcuts.Update(nextMouse, nextShift, nextCtrl, nextAlt, cursor.X, cursor.Y, nextMouse && !mouse && Native.ShellFileWindow());
         if (nextEscape && !escape)
             dragShortcuts.Cancel();
         else if (request != DragMenuRequest.None)
@@ -744,14 +755,41 @@ internal sealed class Resident : IDisposable
             };
             Activate(m, "DragModifier", true);
         }
-        // F8/F9/F10 are only observed while the mouse is held, never registered as global hotkeys,
-        // so other applications still receive them.
-        if (nextF8 && !f8 && nextMouse)
-            Activate(WheelMode.Convert, "DragFunctionKey", true);
-        if (nextF9 && !f9 && nextMouse)
-            Activate(WheelMode.Tools, "DragFunctionKey", true);
-        if (nextF10 && !f10 && nextMouse)
-            Activate(WheelMode.Actions, "DragFunctionKey", true);
+
+        // F8 / F9 / F10 shortcut triggers:
+        // When mouse is held (dragging), they switch the drag wheel mode.
+        // When mouse is NOT held, they toggle the corresponding wheel at the cursor position.
+        if (nextF8 && !f8)
+        {
+            if (nextMouse)
+                Activate(WheelMode.Convert, "DragFunctionKey", true);
+            else
+                ToggleWheel(WheelMode.Convert);
+        }
+        if (nextF9 && !f9)
+        {
+            if (nextMouse)
+                Activate(WheelMode.Tools, "DragFunctionKey", true);
+            else
+                ToggleWheel(WheelMode.Tools);
+        }
+        if (nextF10 && !f10)
+        {
+            if (nextMouse)
+                Activate(WheelMode.Actions, "DragFunctionKey", true);
+            else
+                ToggleWheel(WheelMode.Actions);
+        }
+
+        // Alt+Space or Ctrl+Shift+L toggles the wheel
+        if (nextAltSpace && !altSpacePressed)
+            ToggleWheel();
+        if (nextCtrlShiftL && !ctrlShiftLPressed)
+            ToggleWheel();
+
+        altSpacePressed = nextAltSpace;
+        ctrlShiftLPressed = nextCtrlShiftL;
+
         if (nextEscape && !escape && wheel.IsVisible)
             wheel.Dismiss("Escape");
         if (wheel.IsVisible && mouse && !nextMouse && !releasePending)

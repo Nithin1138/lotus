@@ -306,9 +306,9 @@ internal static class UpdateManager
             string batPath = Path.Combine(Path.GetTempPath(), $"apply_update_{Guid.NewGuid():N}.bat");
             string batContent = $@"@echo off
 set CURRENT_PID={currentPid}
-set SOURCE_DIR=""{sourceDir}""
-set TARGET_DIR=""{targetDir}""
-set EXE_PATH=""{targetExe}""
+set SOURCE_DIR={sourceDir}
+set TARGET_DIR={targetDir}
+set EXE_PATH={targetExe}
 
 :waitloop
 tasklist /fi ""PID eq %CURRENT_PID%"" 2>NUL | find /I ""%CURRENT_PID%"" >NUL
@@ -318,8 +318,8 @@ if not errorlevel 1 (
 )
 
 timeout /t 1 /nobreak >NUL
-xcopy %SOURCE_DIR%\* %TARGET_DIR%\ /E /Y /I >NUL
-start """" %EXE_PATH%
+xcopy ""%SOURCE_DIR%\*"" ""%TARGET_DIR%\"" /E /Y /I >NUL
+start """" ""%EXE_PATH%""
 del /f /q ""%~f0""
 ";
             File.WriteAllText(batPath, batContent);
