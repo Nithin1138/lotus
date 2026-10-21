@@ -32,8 +32,12 @@ internal static class Checks
             try
             {
                 wheel.Preview([path],false,"convert:jpg");var actions=(List<Operation>)typeof(DropWheel).GetField("operations",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel)!;var hit=typeof(DropWheel).GetMethod("Hit",BindingFlags.NonPublic|BindingFlags.Static)!;var ring=typeof(DropWheel).GetField("first",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel);
-                for(int i=0;i<actions.Count;i++){double angle=-Math.PI/2+i*2*Math.PI/actions.Count;Require((int)hit.Invoke(null,[ring!,new Point(190+119*Math.Cos(angle),190+119*Math.Sin(angle)),65d,172d])! == i);}
-                Require((int)hit.Invoke(null,[ring!,new Point(190,190),65d,172d])! == -1);Require((int)hit.Invoke(null,[ring!,new Point(190,130),65d,172d])! == -1);Require((int)hit.Invoke(null,[ring!,new Point(1,1),65d,172d])! == -1);
+                double centerVal=(double)(typeof(DropWheel).GetField("Center",BindingFlags.NonPublic|BindingFlags.Static)?.GetRawConstantValue()??165d);
+                double innerVal=(double)(typeof(DropWheel).GetField("Inner",BindingFlags.NonPublic|BindingFlags.Static)?.GetRawConstantValue()??54d);
+                double outerVal=(double)(typeof(DropWheel).GetField("Outer",BindingFlags.NonPublic|BindingFlags.Static)?.GetRawConstantValue()??148d);
+                double midRadius=(innerVal+outerVal)/2;
+                for(int i=0;i<actions.Count;i++){double angle=-Math.PI/2+i*2*Math.PI/actions.Count;Require((int)hit.Invoke(null,[ring!,new Point(centerVal+midRadius*Math.Cos(angle),centerVal+midRadius*Math.Sin(angle)),innerVal,outerVal])! == i);}
+                Require((int)hit.Invoke(null,[ring!,new Point(centerVal,centerVal),innerVal,outerVal])! == -1);Require((int)hit.Invoke(null,[ring!,new Point(centerVal,centerVal-innerVal/2),innerVal,outerVal])! == -1);Require((int)hit.Invoke(null,[ring!,new Point(1,1),innerVal,outerVal])! == -1);
             }
             finally{wheel.Close();try{File.Delete(path);}catch(IOException){}}
         });
@@ -47,7 +51,11 @@ internal static class Checks
                 Require(actions.Count>0);
                 var hit=typeof(DropWheel).GetMethod("Hit",BindingFlags.NonPublic|BindingFlags.Static)!;
                 var ring=typeof(DropWheel).GetField("first",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(wheel);
-                for(int i=0;i<actions.Count;i++){double angle=-Math.PI/2+i*2*Math.PI/actions.Count;Require((int)hit.Invoke(null,[ring!,new Point(190+119*Math.Cos(angle),190+119*Math.Sin(angle)),65d,172d])! == i);}
+                double centerVal=(double)(typeof(DropWheel).GetField("Center",BindingFlags.NonPublic|BindingFlags.Static)?.GetRawConstantValue()??165d);
+                double innerVal=(double)(typeof(DropWheel).GetField("Inner",BindingFlags.NonPublic|BindingFlags.Static)?.GetRawConstantValue()??54d);
+                double outerVal=(double)(typeof(DropWheel).GetField("Outer",BindingFlags.NonPublic|BindingFlags.Static)?.GetRawConstantValue()??148d);
+                double midRadius=(innerVal+outerVal)/2;
+                for(int i=0;i<actions.Count;i++){double angle=-Math.PI/2+i*2*Math.PI/actions.Count;Require((int)hit.Invoke(null,[ring!,new Point(centerVal+midRadius*Math.Cos(angle),centerVal+midRadius*Math.Sin(angle)),innerVal,outerVal])! == i);}
             }
             finally{wheel.Close();try{File.Delete(path);}catch(IOException){}}
         });

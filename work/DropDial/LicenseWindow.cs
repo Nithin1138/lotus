@@ -15,7 +15,7 @@ internal sealed class LicenseWindow : Window
     private readonly Button pasteBtn;
     private readonly Button primaryBtn;
     private readonly Button secondaryBtn;
-    private readonly TextBlock messageText;
+    private readonly TextBlock messageText = new();
 
     public static void ShowDialogOrActivate()
     {
@@ -148,13 +148,10 @@ internal sealed class LicenseWindow : Window
         panel.Children.Add(keyRow);
 
         // 5. Message / Feedback Text
-        messageText = new TextBlock
-        {
-            FontSize = 11,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 14),
-            MinHeight = 16
-        };
+        messageText.FontSize = 11;
+        messageText.HorizontalAlignment = HorizontalAlignment.Center;
+        messageText.Margin = new Thickness(0, 0, 0, 14);
+        messageText.MinHeight = 16;
         panel.Children.Add(messageText);
 
         // 6. Action Buttons Row (Balanced, clean)

@@ -12,7 +12,7 @@ internal sealed class DragShortcutTracker(int horizontalThreshold, int verticalT
 
     public DragMenuRequest Update(bool mouseDown, bool shift, bool control, bool alt, int x, int y, bool shellSource)
     {
-        int chord = alt ? 3 : (control ? 2 : (shift ? 1 : 0));
+        int chord = shift && !alt ? (control ? 2 : 1) : 0;
         if (!mouseDown)
         {
             down = candidate = moved = triggered = suppressed = false;
@@ -33,25 +33,12 @@ internal sealed class DragShortcutTracker(int horizontalThreshold, int verticalT
                  Math.Abs((long)y - startY) >= Math.Max(2, verticalThreshold);
 
         DragMenuRequest request = DragMenuRequest.None;
-        if (candidate && moved && !suppressed)
+        if (candidate && moved && !suppressed && chord != 0)
         {
-            if (chord != 0)
-            {
-                if (!triggered || chord != previousChord)
-                {
-                    triggered = true;
-                    request = chord switch
-                    {
-                        3 => DragMenuRequest.Actions,
-                        2 => DragMenuRequest.Tools,
-                        _ => DragMenuRequest.Convert
-                    };
-                }
-            }
-            else if (!triggered)
+            if (!triggered || chord == 2 && previousChord != 2 || chord == 1 && previousChord == 0)
             {
                 triggered = true;
-                request = DragMenuRequest.Convert;
+                request = chord == 2 ? DragMenuRequest.Tools : DragMenuRequest.Convert;
             }
         }
 
