@@ -231,7 +231,13 @@ final class LicenseManager {
 
     // MARK: - Offline ECDSA P-256 Key Verification
     func verifyKey(_ licenseKey: String) -> (isValid: Bool, info: LicenseInfo?, error: String?) {
-        let trimmed = licenseKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        var trimmed = licenseKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("\"") && trimmed.hasSuffix("\"") && trimmed.count >= 2 {
+            trimmed = String(trimmed.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if trimmed.lowercased().hasPrefix("dd-") && !trimmed.hasPrefix("DD-") {
+            trimmed = "DD-" + trimmed.dropFirst(3)
+        }
 
         guard trimmed.hasPrefix("DD-") else {
             return (false, nil, "Invalid license key format (must start with DD-)")
@@ -475,11 +481,22 @@ final class LicenseWindowController: NSWindowController {
             self.updateDisplay()
         }
 
-        // If not already Pro and clipboard contains a DD- key, autofill it seamlessly
+        // If not already Pro and field is empty, autofill if clipboard contains a DD- key
         if case .pro = LicenseManager.shared.status { } else {
-            if let clip = NSPasteboard.general.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
-               clip.hasPrefix("DD-") {
-                keyTextField.stringValue = clip
+            if keyTextField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if var clip = NSPasteboard.general.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines), !clip.isEmpty {
+                    if clip.hasPrefix("\"") && clip.hasSuffix("\"") && clip.count >= 2 {
+                        clip = String(clip.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
+                    if clip.lowercased().hasPrefix("dd-") && !clip.hasPrefix("DD-") {
+                        clip = "DD-" + clip.dropFirst(3)
+                    }
+                    if clip.hasPrefix("DD-") {
+                        keyTextField.stringValue = clip
+                        messageLabel.stringValue = "Key pasted • Click Activate to confirm"
+                        messageLabel.textColor = .secondaryLabelColor
+                    }
+                }
             }
         }
 
@@ -540,7 +557,6 @@ final class LicenseWindowController: NSWindowController {
             }
             statusLabel.textColor = .secondaryLabelColor
 
-            keyTextField.stringValue = ""
             keyTextField.isEnabled = true
             pasteButton.isEnabled = true
 
@@ -557,7 +573,6 @@ final class LicenseWindowController: NSWindowController {
             statusLabel.stringValue = "Trial expired • Free tier: \(rem)/\(LicenseManager.shared.maxFreeDailyConversions) conversions left today"
             statusLabel.textColor = .systemOrange
 
-            keyTextField.stringValue = ""
             keyTextField.isEnabled = true
             pasteButton.isEnabled = true
 
@@ -572,10 +587,16 @@ final class LicenseWindowController: NSWindowController {
     }
 
     @objc private func pasteKeyTapped() {
-        guard let clip = NSPasteboard.general.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines), !clip.isEmpty else {
+        guard var clip = NSPasteboard.general.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines), !clip.isEmpty else {
             messageLabel.stringValue = "Clipboard is empty"
             messageLabel.textColor = .systemOrange
             return
+        }
+        if clip.hasPrefix("\"") && clip.hasSuffix("\"") && clip.count >= 2 {
+            clip = String(clip.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if clip.lowercased().hasPrefix("dd-") && !clip.hasPrefix("DD-") {
+            clip = "DD-" + clip.dropFirst(3)
         }
         keyTextField.stringValue = clip
         messageLabel.stringValue = ""
@@ -597,7 +618,15 @@ final class LicenseWindowController: NSWindowController {
     }
 
     @objc private func activateTapped() {
-        let key = keyTextField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        var key = keyTextField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        if key.hasPrefix("\"") && key.hasSuffix("\"") && key.count >= 2 {
+            key = String(key.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if key.lowercased().hasPrefix("dd-") && !key.hasPrefix("DD-") {
+            key = "DD-" + key.dropFirst(3)
+        }
+        keyTextField.stringValue = key
+
         guard !key.isEmpty else {
             messageLabel.stringValue = "Please enter your license key."
             messageLabel.textColor = .systemRed
@@ -624,6 +653,7 @@ final class LicenseWindowController: NSWindowController {
 
         if alert.runModal() == .alertFirstButtonReturn {
             LicenseManager.shared.deactivate()
+            keyTextField.stringValue = ""
             messageLabel.stringValue = "License deactivated."
             messageLabel.textColor = .secondaryLabelColor
             updateDisplay()

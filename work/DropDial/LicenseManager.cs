@@ -216,6 +216,11 @@ internal static class LicenseManager
     public static (bool IsValid, LicenseInfo? Info, string? Error) VerifyKey(string licenseKey)
     {
         string trimmed = licenseKey?.Trim() ?? "";
+        if (trimmed.StartsWith("\"") && trimmed.EndsWith("\"") && trimmed.Length >= 2)
+            trimmed = trimmed[1..^1].Trim();
+        if (trimmed.StartsWith("dd-", StringComparison.OrdinalIgnoreCase) && !trimmed.StartsWith("DD-"))
+            trimmed = "DD-" + trimmed[3..];
+
         if (!trimmed.StartsWith("DD-", StringComparison.Ordinal))
         {
             return (false, null, "Invalid license key format (must start with DD-)");

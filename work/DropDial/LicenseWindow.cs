@@ -121,9 +121,14 @@ internal sealed class LicenseWindow : Window
                 var clip = Clipboard.GetText()?.Trim();
                 if (!string.IsNullOrEmpty(clip))
                 {
+                    if (clip.StartsWith("\"") && clip.EndsWith("\"") && clip.Length >= 2)
+                        clip = clip[1..^1].Trim();
+                    if (clip.StartsWith("dd-", StringComparison.OrdinalIgnoreCase) && !clip.StartsWith("DD-"))
+                        clip = "DD-" + clip[3..];
+
                     keyInput.Text = clip;
                     keyInput.SelectAll();
-                    if (clip.StartsWith("DD-") && messageText != null)
+                    if (clip.StartsWith("DD-", StringComparison.OrdinalIgnoreCase) && messageText != null)
                     {
                         messageText.Text = "Key pasted • Click Activate to confirm";
                         messageText.Foreground = UiTheme.Muted;
@@ -184,14 +189,26 @@ internal sealed class LicenseWindow : Window
 
         Content = UiTheme.Frame(this, panel, "DropDial Pro");
 
-        // Pre-fill from clipboard if it holds a DD- key
+        // Pre-fill from clipboard if it holds a DD- key and input is empty
         try
         {
-            if (Clipboard.ContainsText())
+            if (Clipboard.ContainsText() && string.IsNullOrEmpty(keyInput.Text))
             {
                 string clip = Clipboard.GetText().Trim();
+                if (clip.StartsWith("\"") && clip.EndsWith("\"") && clip.Length >= 2)
+                    clip = clip[1..^1].Trim();
+                if (clip.StartsWith("dd-", StringComparison.OrdinalIgnoreCase) && !clip.StartsWith("DD-"))
+                    clip = "DD-" + clip[3..];
+
                 if (clip.StartsWith("DD-", StringComparison.OrdinalIgnoreCase))
+                {
                     keyInput.Text = clip;
+                    if (messageText != null)
+                    {
+                        messageText.Text = "Key pasted • Click Activate to confirm";
+                        messageText.Foreground = UiTheme.Muted;
+                    }
+                }
             }
         }
         catch { }
@@ -260,7 +277,6 @@ internal sealed class LicenseWindow : Window
             statusSubtitle.Foreground = UiTheme.Muted;
             statusSubtitle.Text = $"{status.DaysRemaining} day{(status.DaysRemaining == 1 ? "" : "s")} remaining in free trial";
 
-            keyInput.Text = keyInput.Text.StartsWith("DD-") ? keyInput.Text : "";
             keyInput.IsEnabled = true;
             pasteBtn.IsEnabled = true;
 
@@ -276,7 +292,6 @@ internal sealed class LicenseWindow : Window
             statusSubtitle.Foreground = new SolidColorBrush(Color.FromRgb(220, 100, 30));
             statusSubtitle.Text = "Free trial expired — enter a key to activate";
 
-            keyInput.Text = keyInput.Text.StartsWith("DD-") ? keyInput.Text : "";
             keyInput.IsEnabled = true;
             pasteBtn.IsEnabled = true;
 
@@ -303,6 +318,12 @@ internal sealed class LicenseWindow : Window
         }
 
         string key = keyInput.Text.Trim();
+        if (key.StartsWith("\"") && key.EndsWith("\"") && key.Length >= 2)
+            key = key[1..^1].Trim();
+        if (key.StartsWith("dd-", StringComparison.OrdinalIgnoreCase) && !key.StartsWith("DD-"))
+            key = "DD-" + key[3..];
+        keyInput.Text = key;
+
         if (string.IsNullOrEmpty(key))
         {
             messageText.Text = "Please enter your license key.";
@@ -326,6 +347,12 @@ internal sealed class LicenseWindow : Window
     private void OnActivateClick()
     {
         string key = keyInput.Text.Trim();
+        if (key.StartsWith("\"") && key.EndsWith("\"") && key.Length >= 2)
+            key = key[1..^1].Trim();
+        if (key.StartsWith("dd-", StringComparison.OrdinalIgnoreCase) && !key.StartsWith("DD-"))
+            key = "DD-" + key[3..];
+        keyInput.Text = key;
+
         if (string.IsNullOrEmpty(key))
         {
             messageText.Text = "Please paste or enter your license key.";
@@ -359,6 +386,7 @@ internal sealed class LicenseWindow : Window
         if (result == MessageBoxResult.Yes)
         {
             LicenseManager.Deactivate();
+            keyInput.Text = "";
             messageText.Text = "License deactivated.";
             messageText.Foreground = UiTheme.Muted;
             UpdateUI();
