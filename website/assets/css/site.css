@@ -2109,10 +2109,13 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   margin-bottom: 0;
 }
 .pricing-strike-wrap {
-  display: inline-flex;
+  display: none !important;
   align-items: center;
   gap: 10px;
   margin-bottom: 4px;
+}
+.pricing-strike-wrap.is-active {
+  display: inline-flex !important;
 }
 .pricing-strike-amount {
   font-size: 1.25rem;
@@ -2250,13 +2253,16 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
    FIRST 24-HOURS ANNOUNCEMENT BAR & COUPON PROMO
    ============================================================================== */
 .early-bird-bar {
-  display: none;
+  display: none !important;
   background: linear-gradient(90deg, rgba(255, 101, 0, 0.14) 0%, rgba(255, 140, 56, 0.08) 50%, rgba(255, 101, 0, 0.14) 100%);
   border-bottom: 1px solid rgba(255, 101, 0, 0.28);
   color: var(--text, #f4f4f5);
   position: relative;
   z-index: 55;
   transition: all 0.25s ease;
+}
+.early-bird-bar.is-active {
+  display: block !important;
 }
 
 [data-theme="light"] .early-bird-bar {

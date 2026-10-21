@@ -219,8 +219,11 @@
     if (headerEl) headerEl.style.display = 'none';
     if (heroTag) heroTag.style.display = 'none';
 
-    if (!countdownConfig || countdownConfig.enabled === false) {
-      if (ebbBar) ebbBar.style.display = 'none';
+    if (!countdownConfig || countdownConfig.enabled !== true) {
+      if (ebbBar) {
+        ebbBar.classList.remove('is-active');
+        ebbBar.style.display = 'none';
+      }
       return;
     }
 
@@ -242,7 +245,10 @@
     let targetTime = getFirst24Expiry();
 
     // Show only the top announcement bar
-    if (ebbBar) ebbBar.style.display = 'block';
+    if (ebbBar) {
+      ebbBar.classList.add('is-active');
+      ebbBar.style.display = 'block';
+    }
 
     function updateTick() {
       const currentTime = Date.now();
@@ -282,15 +288,19 @@
     const priceConfig = getActivePriceConfig();
 
     // 1. Strikethrough pricing logic for ALL 3 TIERS (Individual toggles & amounts)
+    // 1. Strikethrough pricing logic for ALL 3 TIERS (Individual toggles & amounts)
+    // Master switch: strikethrough must be explicitly enabled
+    const masterStrikeEnabled = Boolean(PRICING.strikethrough && PRICING.strikethrough.enabled === true);
+
     // Universal Pro (Hero)
     const strikeWrap = document.getElementById('pro-pricing-strike-wrap');
     const strikeAmountEl = document.getElementById('pro-pricing-strike-amount');
     const discountBadgeEl = document.getElementById('pro-pricing-discount-badge');
 
-    const strikeEnabled = PRICING.strikethrough && (
+    const strikeEnabled = masterStrikeEnabled && (
       PRICING.strikethrough.universal !== undefined
-        ? PRICING.strikethrough.universal.enabled !== false
-        : PRICING.strikethrough.enabled !== false
+        ? PRICING.strikethrough.universal.enabled === true
+        : true
     );
     const strikeAmount = isIndia
       ? (PRICING.strikethrough?.universal?.inrAmount || PRICING.strikethrough?.inrAmount || PRICING.INR?.strikeAmount || 1499)
@@ -304,10 +314,12 @@
 
     if (strikeWrap && strikeAmountEl && discountBadgeEl) {
       if (strikeEnabled && hasSavings) {
+        strikeWrap.classList.add('is-active');
         strikeWrap.style.display = 'inline-flex';
         strikeAmountEl.textContent = strikeDisplay;
         discountBadgeEl.textContent = `${savingsPercent}% OFF`;
       } else {
+        strikeWrap.classList.remove('is-active');
         strikeWrap.style.display = 'none';
       }
     }
@@ -317,9 +329,11 @@
     const singleStrikeAmountEl = document.getElementById('single-pricing-strike-amount');
     const singleDiscountBadgeEl = document.getElementById('single-pricing-discount-badge');
     const singleBaseAmt = TIERS.single[selectedCurrency].amount;
-    const singleStrikeEnabled = PRICING.strikethrough?.single
-      ? PRICING.strikethrough.single.enabled !== false
-      : (TIERS.single.strikeEnabled !== false);
+    const singleStrikeEnabled = masterStrikeEnabled && (
+      PRICING.strikethrough?.single !== undefined
+        ? PRICING.strikethrough.single.enabled === true
+        : (TIERS.single.strikeEnabled === true)
+    );
     const singleStrikeAmt = isIndia
       ? (PRICING.strikethrough?.single?.inrAmount || TIERS.single.INR.strikeAmount || 1199)
       : (PRICING.strikethrough?.single?.usdAmount || TIERS.single.USD.strikeAmount || 24);
@@ -329,10 +343,12 @@
 
     if (singleStrikeWrap && singleStrikeAmountEl && singleDiscountBadgeEl) {
       if (singleStrikeEnabled && singleHasSavings) {
+        singleStrikeWrap.classList.add('is-active');
         singleStrikeWrap.style.display = 'inline-flex';
         singleStrikeAmountEl.textContent = singleStrikeDisp;
         singleDiscountBadgeEl.textContent = `${singleSavingsPct}% OFF`;
       } else {
+        singleStrikeWrap.classList.remove('is-active');
         singleStrikeWrap.style.display = 'none';
       }
     }
@@ -342,9 +358,11 @@
     const teamStrikeAmountEl = document.getElementById('team-pricing-strike-amount');
     const teamDiscountBadgeEl = document.getElementById('team-pricing-discount-badge');
     const teamBaseAmt = TIERS.team[selectedCurrency].amount;
-    const teamStrikeEnabled = PRICING.strikethrough?.team
-      ? PRICING.strikethrough.team.enabled !== false
-      : (TIERS.team.strikeEnabled !== false);
+    const teamStrikeEnabled = masterStrikeEnabled && (
+      PRICING.strikethrough?.team !== undefined
+        ? PRICING.strikethrough.team.enabled === true
+        : (TIERS.team.strikeEnabled === true)
+    );
     const teamStrikeAmt = isIndia
       ? (PRICING.strikethrough?.team?.inrAmount || TIERS.team.INR.strikeAmount || 4999)
       : (PRICING.strikethrough?.team?.usdAmount || TIERS.team.USD.strikeAmount || 99);
@@ -354,10 +372,12 @@
 
     if (teamStrikeWrap && teamStrikeAmountEl && teamDiscountBadgeEl) {
       if (teamStrikeEnabled && teamHasSavings) {
+        teamStrikeWrap.classList.add('is-active');
         teamStrikeWrap.style.display = 'inline-flex';
         teamStrikeAmountEl.textContent = teamStrikeDisp;
         teamDiscountBadgeEl.textContent = `${teamSavingsPct}% OFF`;
       } else {
+        teamStrikeWrap.classList.remove('is-active');
         teamStrikeWrap.style.display = 'none';
       }
     }
@@ -474,7 +494,7 @@
     }
   }
 
-  const PRICING_CACHE_KEY = 'dropdial_pricing_cache_v2';
+  const PRICING_CACHE_KEY = 'dropdial_pricing_cache_v4';
 
   function applyPricingPayload(pricing) {
     if (!pricing || typeof pricing !== 'object') return;
