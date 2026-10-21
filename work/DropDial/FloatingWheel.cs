@@ -513,7 +513,7 @@ internal sealed class DropWheel : Window
                 {
                     currentSideIndex = sideIndex;
                     SoundManager.PlayTick();
-                    syncDisplayedItems();
+                    SyncWindow();
                     UpdatePaginationDots();
                     Render(operations);
                     hint.Text = Prompt();

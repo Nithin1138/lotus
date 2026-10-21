@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace DropDial;
@@ -78,7 +80,7 @@ internal sealed class WelcomeWindow : Window
             Margin = new Thickness(0, 0, 10, 0),
             FontWeight = FontWeights.Normal,
             Foreground = UiTheme.Ink,
-            Background = UiTheme.Shade,
+            Background = UiTheme.Surface,
             BorderBrush = UiTheme.Line,
             Cursor = Cursors.Hand
         };
@@ -94,7 +96,7 @@ internal sealed class WelcomeWindow : Window
             Padding = new Thickness(14, 8, 14, 8),
             FontWeight = FontWeights.Normal,
             Foreground = UiTheme.Ink,
-            Background = UiTheme.Shade,
+            Background = UiTheme.Surface,
             BorderBrush = UiTheme.Line,
             Cursor = Cursors.Hand
         };
@@ -122,7 +124,7 @@ internal sealed class WelcomeWindow : Window
             Margin = new Thickness(12, 0, 0, 0),
             FontWeight = FontWeights.SemiBold,
             Foreground = licStatus.IsPro ? UiTheme.Ink : Brushes.White,
-            Background = licStatus.IsPro ? UiTheme.Shade : UiTheme.Accent,
+            Background = licStatus.IsPro ? UiTheme.Surface : UiTheme.Accent,
             BorderBrush = licStatus.IsPro ? UiTheme.Line : UiTheme.Accent,
             VerticalAlignment = VerticalAlignment.Center
         };
