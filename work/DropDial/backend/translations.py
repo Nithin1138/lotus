@@ -16,7 +16,7 @@ EN = {
     'The selection is too small for this ratio; enlarge it or change the ratio': 'The selection is too small for this ratio; enlarge it or change the ratio',
     'Processing timed out (over {0} seconds)': 'Processing timed out (over {0} seconds)',
     'The processing engine exited with code {0}': 'The processing engine exited with code {0}',
-    'Could not choose a name for the output file': 'Could not choose a name for the output file',
+    'Could not save output file due to permission restrictions': 'Could not save output file due to permission restrictions',
     'The engine did not produce a valid output': 'The engine did not produce a valid output',
     'Nothing was produced': 'Nothing was produced',
     'The selected image frame does not exist': 'The selected image frame does not exist',
