@@ -199,12 +199,14 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG exists. Uploading assets..."
             if [ -n "$NOTES_FILE" ]; then
-              gh release edit "$TAG" --notes-file "$NOTES_FILE" --title "DropDial $TAG" || true
+              gh release edit "$TAG" --notes-file "$NOTES_FILE" --title "DropDial $TAG" --draft=false --latest || true
+            else
+              gh release edit "$TAG" --draft=false --latest || true
             fi
             gh release upload "$TAG" $ASSETS --clobber
           else
             echo "Creating release $TAG..."
-            CMD="gh release create \"$TAG\" $ASSETS --title \"DropDial $TAG\""
+            CMD="gh release create \"$TAG\" $ASSETS --title \"DropDial $TAG\" --draft=false --latest"
             if [ -n "$NOTES_FILE" ]; then
               CMD="$CMD --notes-file \"$NOTES_FILE\""
             else

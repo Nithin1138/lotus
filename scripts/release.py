@@ -214,12 +214,12 @@ def publish_release(new_ver, notes_file):
     check_rel = run_cmd(f"gh release view {tag}", check=False)
     if check_rel.returncode == 0:
         print(f"  [i] Updating existing GitHub release {tag}...")
-        run_cmd(f'gh release edit {tag} --notes-file "{notes_file}" --title "DropDial {tag}"')
+        run_cmd(f'gh release edit {tag} --notes-file "{notes_file}" --title "DropDial {tag}" --draft=false --latest')
         if assets:
             run_cmd(f"gh release upload {tag} {assets_args} --clobber")
     else:
         print(f"  [i] Creating new GitHub release {tag}...")
-        run_cmd(f'gh release create {tag} {assets_args} --notes-file "{notes_file}" --title "DropDial {tag}"')
+        run_cmd(f'gh release create {tag} {assets_args} --notes-file "{notes_file}" --title "DropDial {tag}" --draft=false --latest')
 
     print(f"\n🎉 Release {tag} published successfully!")
     print(f"👉 GitHub Release: https://github.com/Nithin1138/lotus/releases/tag/{tag}")

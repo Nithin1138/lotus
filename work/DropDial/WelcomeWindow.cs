@@ -61,10 +61,17 @@ internal sealed class WelcomeWindow : Window
         L.Changed += Rebuild;
         StartupManager.Changed += RefreshStartup;
         LicenseManager.StatusChanged += Rebuild;
+        UpdateManager.UpdateStatusChanged += OnUpdateStatusChanged;
         Closed += (_, _) => L.Changed -= Rebuild;
         Closed += (_, _) => StartupManager.Changed -= RefreshStartup;
         Closed += (_, _) => LicenseManager.StatusChanged -= Rebuild;
+        Closed += (_, _) => UpdateManager.UpdateStatusChanged -= OnUpdateStatusChanged;
         Rebuild();
+    }
+
+    private void OnUpdateStatusChanged()
+    {
+        Dispatcher.InvokeAsync(Rebuild);
     }
 
     private void Rebuild()
@@ -82,6 +89,46 @@ internal sealed class WelcomeWindow : Window
     private UIElement Body()
     {
         var panel = new StackPanel { Margin = new Thickness(20, 2, 20, 12) };
+
+        if (UpdateManager.AvailableUpdate is { } upd)
+        {
+            var updateCard = new Border
+            {
+                Background = UiTheme.Tint,
+                BorderBrush = UiTheme.Accent,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(10, 5, 10, 5),
+                Margin = new Thickness(0, 0, 0, 9)
+            };
+            var updateRow = new DockPanel();
+            var updateBtn = new Button
+            {
+                Content = L.T("Update Now"),
+                Padding = new Thickness(10, 3, 10, 3),
+                FontSize = 11,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = Brushes.White,
+                Background = UiTheme.Accent,
+                BorderBrush = UiTheme.Accent,
+                Cursor = Cursors.Hand,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            DockPanel.SetDock(updateBtn, Dock.Right);
+            updateBtn.Click += (_, _) => UpdateManager.ShowUpdatePrompt(upd);
+            updateRow.Children.Add(updateBtn);
+            var updateText = new TextBlock
+            {
+                Text = $"✨ {L.T("New version available:")} {upd.TagName}",
+                FontWeight = FontWeights.SemiBold,
+                FontSize = 11.5,
+                Foreground = UiTheme.Ink,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            updateRow.Children.Add(updateText);
+            updateCard.Child = updateRow;
+            panel.Children.Add(updateCard);
+        }
 
         var heading = new StackPanel { Orientation = Orientation.Horizontal };
         heading.Children.Add(new Image { Source = AppIcon.Window, Width = 32, Height = 32, Margin = new Thickness(0, 0, 10, 0) });

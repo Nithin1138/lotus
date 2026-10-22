@@ -321,6 +321,7 @@ internal sealed class Resident : IDisposable
     private readonly DropWheel wheel;
     private readonly TaskIndicatorWindow taskIndicator = new();
     private readonly DispatcherTimer timer;
+    private readonly DispatcherTimer updateTimer;
     private readonly Forms.NotifyIcon tray;
     private readonly System.Drawing.Icon trayIcon;
     private readonly Channel<QueuedJob> queue = Channel.CreateBounded<QueuedJob>(new BoundedChannelOptions(16) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
@@ -403,13 +404,38 @@ internal sealed class Resident : IDisposable
             {
                 ToggleWheel();
             }
+            if (UpdateManager.AvailableUpdate == null)
+            {
+                _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
+            }
         };
-        UpdateManager.UpdateStatusChanged += () => app.Dispatcher.InvokeAsync(BuildTrayMenu);
+        tray.BalloonTipClicked += (_, _) =>
+        {
+            if (UpdateManager.AvailableUpdate is { } upd)
+            {
+                UpdateManager.ShowUpdatePrompt(upd);
+            }
+            else
+            {
+                ToggleWheel();
+            }
+        };
+        UpdateManager.UpdateStatusChanged += () => app.Dispatcher.InvokeAsync(() =>
+        {
+            BuildTrayMenu();
+            if (UpdateManager.AvailableUpdate is { } upd)
+            {
+                Notify(L.T("DropDial Update Available"), string.Format(L.T("DropDial {0} is ready. Click here to update now."), upd.TagName));
+            }
+        });
         _ = Task.Run(async () =>
         {
-            await Task.Delay(3000);
+            await Task.Delay(2500);
             await UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
         });
+        updateTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(30) };
+        updateTimer.Tick += (_, _) => _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
+        updateTimer.Start();
         timer = new DispatcherTimer(DispatcherPriority.Input) { Interval = TimeSpan.FromMilliseconds(25) };
         timer.Tick += Poll;
         timer.Start();
@@ -527,6 +553,8 @@ internal sealed class Resident : IDisposable
         welcome.Topmost = true;
         welcome.Activate();
         welcome.Topmost = false;
+        if (UpdateManager.AvailableUpdate == null)
+            _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
     }
 
     private void WatchForSecondLaunch(EventWaitHandle showRequest)
@@ -1227,6 +1255,7 @@ internal sealed class Resident : IDisposable
         disposed = true;
         StartupManager.Changed -= RefreshStartupMenu;
         timer.Stop();
+        updateTimer.Stop();
         stopping.Cancel();
         queue.Writer.TryComplete();
         foreach (var job in jobs.ToList())

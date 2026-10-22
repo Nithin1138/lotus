@@ -1,4 +1,5 @@
 import Cocoa
+import UserNotifications
 
 // MARK: - Update Information Model
 struct ReleaseInfo {
@@ -15,6 +16,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
     static let shared = UpdateService()
 
     private let releasesApiUrl = "https://dropdial.app/api/releases/latest"
+    private let fallbackReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest"
 
     static func formatVersion(_ raw: String) -> String {
         var clean = raw.trimmingCharacters(in: CharacterSet(charactersIn: "vV \t\r\n"))
@@ -58,28 +60,11 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
 
     // MARK: - Check For Updates
     func checkForUpdates(isUserInitiated: Bool) {
-        guard let url = URL(string: releasesApiUrl) else { return }
-
-        var request = URLRequest(url: url)
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("DropDial-macOS/\(currentVersion)", forHTTPHeaderField: "User-Agent")
-        request.timeoutInterval = 15.0
-
-        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+        fetchReleaseData(urlString: releasesApiUrl) { [weak self] release, error, is404 in
             guard let self = self else { return }
-
-            if let _ = error {
-                if isUserInitiated {
-                    DispatchQueue.main.async {
-                        self.showConnectionAlert()
-                    }
-                }
-                return
-            }
-
-            let httpResponse = response as? HTTPURLResponse
-            if let http = httpResponse, http.statusCode == 404 {
-                // No releases published yet on the repository; app is up to date
+            if let release = release {
+                self.handleReleaseResult(release: release, isUserInitiated: isUserInitiated)
+            } else if is404 {
                 DispatchQueue.main.async {
                     self.latestRelease = nil
                     self.onUpdateStatusChanged?()
@@ -87,20 +72,57 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
                         self.showUpToDateAlert()
                     }
                 }
+            } else {
+                // Try fallback to GitHub releases API directly
+                self.fetchReleaseData(urlString: self.fallbackReleasesApiUrl) { [weak self] fbRelease, fbError, fbIs404 in
+                    guard let self = self else { return }
+                    if let fbRelease = fbRelease {
+                        self.handleReleaseResult(release: fbRelease, isUserInitiated: isUserInitiated)
+                    } else {
+                        DispatchQueue.main.async {
+                            if fbIs404 {
+                                self.latestRelease = nil
+                                self.onUpdateStatusChanged?()
+                                if isUserInitiated {
+                                    self.showUpToDateAlert()
+                                }
+                            } else if isUserInitiated {
+                                self.showConnectionAlert()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func fetchReleaseData(urlString: String, completion: @escaping (ReleaseInfo?, Error?, Bool) -> Void) {
+        guard let url = URL(string: urlString) else {
+            completion(nil, nil, false)
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("DropDial-macOS/\(currentVersion)", forHTTPHeaderField: "User-Agent")
+        request.timeoutInterval = 12.0
+
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(nil, error, false)
+                return
+            }
+
+            let http = response as? HTTPURLResponse
+            if let status = http?.statusCode, status == 404 {
+                completion(nil, nil, true)
                 return
             }
 
             guard let data = data,
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let tagName = json["tag_name"] as? String else {
-                // Invalid response or no release tag found; treat as up to date
-                DispatchQueue.main.async {
-                    self.latestRelease = nil
-                    self.onUpdateStatusChanged?()
-                    if isUserInitiated {
-                        self.showUpToDateAlert()
-                    }
-                }
+                completion(nil, nil, false)
                 return
             }
 
@@ -108,11 +130,9 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
             let releaseBody = json["body"] as? String ?? ""
             let htmlUrl = json["html_url"] as? String ?? "https://dropdial.app"
 
-            // Look for matching macOS asset: prefer .zip for direct in-place update, fallback to .dmg
             var downloadUrl: String?
             var isZip = false
             if let assets = json["assets"] as? [[String: Any]] {
-                // First pass: look for macOS .zip
                 for a in assets {
                     if let name = a["name"] as? String,
                        let urlStr = a["browser_download_url"] as? String {
@@ -123,7 +143,6 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
                         }
                     }
                 }
-                // Second pass: if no zip found, look for dmg
                 if downloadUrl == nil {
                     for a in assets {
                         if let name = a["name"] as? String,
@@ -146,36 +165,58 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
                 downloadUrl: downloadUrl,
                 isZip: isZip
             )
-
-            let hasUpdate = self.isNewer(remote: tagName, local: self.currentVersion)
-
-            DispatchQueue.main.async {
-                if hasUpdate {
-                    self.latestRelease = release
-                    self.onUpdateStatusChanged?()
-
-                    // Check if ignored for automatic prompts
-                    let ignoredVersion = UserDefaults.standard.string(forKey: "dropdial_ignored_update_version")
-                    if !isUserInitiated && ignoredVersion == tagName {
-                        // Keep menu bar item updated, but do not nag with a popup
-                        return
-                    }
-
-                    self.showUpdateAvailableDialog(release: release)
-                } else {
-                    self.latestRelease = nil
-                    self.onUpdateStatusChanged?()
-                    if isUserInitiated {
-                        self.showUpToDateAlert()
-                    }
-                }
-            }
+            completion(release, nil, false)
         }
         task.resume()
     }
 
+    private func handleReleaseResult(release: ReleaseInfo, isUserInitiated: Bool) {
+        let hasUpdate = isNewer(remote: release.tagName, local: currentVersion)
+
+        DispatchQueue.main.async {
+            if hasUpdate {
+                self.latestRelease = release
+                self.onUpdateStatusChanged?()
+                self.postUpdateNotification(release: release)
+
+                let ignoredVersion = UserDefaults.standard.string(forKey: "dropdial_ignored_update_version")
+                let ignoredTime = UserDefaults.standard.double(forKey: "dropdial_ignored_update_time")
+                let now = Date().timeIntervalSince1970
+
+                var snoozed = false
+                if !isUserInitiated && ignoredVersion == release.tagName && (now - ignoredTime) < 14400 {
+                    snoozed = true
+                }
+
+                if !snoozed {
+                    self.showUpdateAvailableDialog(release: release)
+                }
+            } else {
+                self.latestRelease = nil
+                self.onUpdateStatusChanged?()
+                if isUserInitiated {
+                    self.showUpToDateAlert()
+                }
+            }
+        }
+    }
+
+    private func postUpdateNotification(release: ReleaseInfo) {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = "DropDial Update Available"
+            content.body = "Version \(UpdateService.formatVersion(release.tagName)) is ready to install. Click to update now."
+            content.sound = .default
+            let request = UNNotificationRequest(identifier: "dropdial_update_available", content: content, trigger: nil)
+            center.add(request, withCompletionHandler: nil)
+        }
+    }
+
     // MARK: - Alerts
     func showUpdateAvailableDialog(release: ReleaseInfo) {
+        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
         let alert = NSAlert()
@@ -192,11 +233,15 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
 
         alert.window.level = .floating
         alert.window.center()
+        alert.window.makeKeyAndOrderFront(nil)
 
         let response = alert.runModal()
+        NSApp.setActivationPolicy(.accessory)
+
         switch response {
         case .alertFirstButtonReturn:
             UserDefaults.standard.removeObject(forKey: "dropdial_ignored_update_version")
+            UserDefaults.standard.removeObject(forKey: "dropdial_ignored_update_time")
             if release.isZip && release.downloadUrl != nil {
                 startDownloadAndApply(release: release)
             } else if let dl = release.downloadUrl ?? URL(string: release.htmlUrl)?.absoluteString {
@@ -204,6 +249,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
             }
         case .alertSecondButtonReturn:
             UserDefaults.standard.set(release.tagName, forKey: "dropdial_ignored_update_version")
+            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "dropdial_ignored_update_time")
         default:
             break
         }

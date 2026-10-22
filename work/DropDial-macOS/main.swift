@@ -154,11 +154,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // 3. Setup update status listener & auto-check for updates after 3 seconds
+        // 3. Setup update status listener & auto-check for updates
         UpdateService.shared.onUpdateStatusChanged = { [weak self] in
             self?.rebuildMenu()
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            UpdateService.shared.checkForUpdates(isUserInitiated: false)
+        }
+        // Periodic background update check every 30 minutes
+        Timer.scheduledTimer(withTimeInterval: 1800, repeats: true) { _ in
             UpdateService.shared.checkForUpdates(isUserInitiated: false)
         }
 
@@ -501,7 +505,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 5. Licensing & Updates
         if let update = UpdateService.shared.latestRelease {
-            let updateItem = NSMenuItem(title: "Update Available (\(UpdateService.formatVersion(update.tagName)))...", action: #selector(checkForUpdatesTapped(_:)), keyEquivalent: "")
+            let updateItem = NSMenuItem(title: "✨ Update Available (\(UpdateService.formatVersion(update.tagName)))...", action: #selector(checkForUpdatesTapped(_:)), keyEquivalent: "")
             updateItem.target = self
             updateItem.isEnabled = true
             menu.addItem(updateItem)

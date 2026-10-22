@@ -24,6 +24,7 @@ internal sealed class ReleaseInfo
 internal static class UpdateManager
 {
     public const string ReleasesApiUrl = "https://dropdial.app/api/releases/latest";
+    public const string FallbackReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest";
 
     public static string FormatVersion(string raw)
     {
@@ -39,7 +40,7 @@ internal static class UpdateManager
     public static string CurrentVersion =>
         FormatVersion(typeof(UpdateManager).Assembly.GetName().Version is { } v
             ? (v.Revision > 0 ? $"{v.Major}.{v.Minor}.{v.Build}.{v.Revision}" : $"{v.Major}.{v.Minor}.{v.Build}")
-            : "1.0.1.3");
+            : "1.0.1.4");
 
     public static ReleaseInfo? AvailableUpdate { get; private set; }
     public static event Action? UpdateStatusChanged;
@@ -71,12 +72,29 @@ internal static class UpdateManager
             client.DefaultRequestHeaders.UserAgent.ParseAdd($"DropDial-Windows/{CurrentVersion}");
             client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
 
-            var response = await client.GetAsync(ReleasesApiUrl);
-            if (!response.IsSuccessStatusCode)
+            HttpResponseMessage? response = null;
+            try
             {
-                if ((int)response.StatusCode == 404)
+                response = await client.GetAsync(ReleasesApiUrl);
+            }
+            catch { }
+
+            if (response == null || (!response.IsSuccessStatusCode && (int)response.StatusCode != 404))
+            {
+                try
+                {
+                    response?.Dispose();
+                    response = await client.GetAsync(FallbackReleasesApiUrl);
+                }
+                catch { }
+            }
+
+            if (response == null || !response.IsSuccessStatusCode)
+            {
+                if (response != null && (int)response.StatusCode == 404)
                 {
                     AvailableUpdate = null;
+                    UpdateStatusChanged?.Invoke();
                     if (isUserInitiated)
                         ShowUpToDateDialog();
                     return;
@@ -93,6 +111,7 @@ internal static class UpdateManager
             if (!root.TryGetProperty("tag_name", out var tagElem))
             {
                 AvailableUpdate = null;
+                UpdateStatusChanged?.Invoke();
                 if (isUserInitiated)
                     ShowUpToDateDialog();
                 return;
@@ -153,12 +172,20 @@ internal static class UpdateManager
                 UpdateStatusChanged?.Invoke();
 
                 string? ignored = Settings.GetString("IgnoredUpdateVersion");
+                string? ignoredTimeStr = Settings.GetString("IgnoredUpdateTime");
+                bool snoozed = false;
                 if (!isUserInitiated && string.Equals(ignored, tagName, StringComparison.OrdinalIgnoreCase))
                 {
-                    return;
+                    if (long.TryParse(ignoredTimeStr, out var ticks) && (DateTime.UtcNow - new DateTime(ticks, DateTimeKind.Utc)) < TimeSpan.FromHours(4))
+                    {
+                        snoozed = true;
+                    }
                 }
 
-                ShowUpdatePrompt(release);
+                if (!snoozed)
+                {
+                    ShowUpdatePrompt(release);
+                }
             }
             else
             {
@@ -180,8 +207,14 @@ internal static class UpdateManager
         }
     }
 
-    private static void ShowUpdatePrompt(ReleaseInfo release)
+    public static void ShowUpdatePrompt(ReleaseInfo release)
     {
+        if (System.Windows.Application.Current?.Dispatcher is { } disp && !disp.CheckAccess())
+        {
+            disp.Invoke(() => ShowUpdatePrompt(release));
+            return;
+        }
+
         string current = FormatVersion(CurrentVersion);
         string available = FormatVersion(release.TagName);
 
@@ -190,10 +223,18 @@ internal static class UpdateManager
                          $"Available version: {available}\n\n" +
                          $"Would you like to download and install this update now?";
 
-        var choice = MessageBox.Show(message, "DropDial Update Available", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+        var choice = MessageBox.Show(
+            message,
+            "DropDial Update Available",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Information,
+            MessageBoxDefaultButton.Button1,
+            MessageBoxOptions.DefaultDesktopOnly
+        );
 
         if (choice == DialogResult.Yes)
         {
+            Settings.Set("IgnoredUpdateVersion", "");
             if (release.IsZip && !string.IsNullOrEmpty(release.DownloadUrl))
             {
                 _ = DownloadAndApplyUpdateAsync(release);
@@ -210,26 +251,43 @@ internal static class UpdateManager
         else
         {
             Settings.Set("IgnoredUpdateVersion", release.TagName);
+            Settings.Set("IgnoredUpdateTime", DateTime.UtcNow.Ticks.ToString());
         }
     }
 
     private static void ShowUpToDateDialog()
     {
+        if (System.Windows.Application.Current?.Dispatcher is { } disp && !disp.CheckAccess())
+        {
+            disp.Invoke(ShowUpToDateDialog);
+            return;
+        }
+
         MessageBox.Show(
             $"You are running DropDial {FormatVersion(CurrentVersion)}, which is currently the newest version available.",
             "DropDial is Up to Date",
             MessageBoxButtons.OK,
-            MessageBoxIcon.Information
+            MessageBoxIcon.Information,
+            MessageBoxDefaultButton.Button1,
+            MessageBoxOptions.DefaultDesktopOnly
         );
     }
 
     private static void ShowErrorDialog(string error)
     {
+        if (System.Windows.Application.Current?.Dispatcher is { } disp && !disp.CheckAccess())
+        {
+            disp.Invoke(() => ShowErrorDialog(error));
+            return;
+        }
+
         MessageBox.Show(
             error,
             "Check for Updates",
             MessageBoxButtons.OK,
-            MessageBoxIcon.Information
+            MessageBoxIcon.Information,
+            MessageBoxDefaultButton.Button1,
+            MessageBoxOptions.DefaultDesktopOnly
         );
     }
 
