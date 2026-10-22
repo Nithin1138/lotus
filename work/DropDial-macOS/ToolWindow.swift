@@ -3833,8 +3833,9 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     }
 
     @objc private func saveClicked() {
-        guard LicenseManager.shared.canUseApp() else {
-            LicenseWindowController.shared.show()
+        let perm = LicenseManager.shared.canPerformConversion(fileCount: paths.count, isProTool: true, record: false)
+        guard perm.allowed else {
+            LicenseWindowController.shared.show(reason: perm.reason)
             return
         }
 
@@ -3865,8 +3866,9 @@ final class ToolWindowController: NSWindowController, NSWindowDelegate {
     }
 
     @objc private func replaceClicked() {
-        guard LicenseManager.shared.canUseApp() else {
-            LicenseWindowController.shared.show()
+        let perm = LicenseManager.shared.canPerformConversion(fileCount: paths.count, isProTool: true, record: false)
+        guard perm.allowed else {
+            LicenseWindowController.shared.show(reason: perm.reason)
             return
         }
 

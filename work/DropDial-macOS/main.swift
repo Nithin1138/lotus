@@ -175,6 +175,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.rebuildMenu()
         }
 
+        if LicenseManager.shared.shouldShowTrialExpiredPromptOnLaunch() {
+            LicenseManager.shared.markTrialExpiredPromptShown()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                LicenseWindowController.shared.show(reason: "Your Free Trial Has Ended")
+            }
+        }
+
         if CommandLine.arguments.contains("--show-license") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 LicenseWindowController.shared.show()

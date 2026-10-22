@@ -448,6 +448,12 @@ internal sealed class Resident : IDisposable
         watch = new WatchFolders(Enqueue);
         watch.Reload();
         Journal.Write("Started", new { noMainWindow = true, modifierShortcuts = true, dragFunctionKeys = true });
+        LicenseManager.Initialize();
+        if (LicenseManager.ShouldShowTrialExpiredPromptOnLaunch())
+        {
+            LicenseManager.MarkTrialExpiredPromptShown();
+            app.Dispatcher.InvokeAsync(() => LicenseWindow.ShowDialogOrActivate("Your Free Trial Has Ended"));
+        }
         // DropDial only starts when someone launches it, so show how to use it. People who prefer the quiet start
         // can switch the window off; they still get the tray notification.
         if (startupLaunch) { /* Sign-in launches stay quiet. */ }
@@ -913,6 +919,13 @@ internal sealed class Resident : IDisposable
 
     private async Task<BatchResult> EnqueueTool(ConversionJob job, CancellationToken token, IProgress<JobProgress>? progress)
     {
+        var check = LicenseManager.CanPerformConversion(job.Paths.Length, isProTool: true, record: false);
+        if (!check.Allowed)
+        {
+            LicenseWindow.ShowDialogOrActivate(check.Reason);
+            return new BatchResult([], [new FailedFile(job.Paths[0], check.Reason ?? "Requires DropDial Pro")]);
+        }
+
         var completion = new TaskCompletionSource<BatchResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         var queued = new QueuedJob(job, completion, token, progress);
         progress?.Report(new JobProgress("queued", 0, job.Paths.Length, Path.GetFileName(job.Paths[0])));
@@ -923,18 +936,43 @@ internal sealed class Resident : IDisposable
 
     private void BeginOperation(string[] paths, Operation operation)
     {
-        if (!LicenseManager.CanUseApp())
-        {
-            LicenseWindow.ShowDialogOrActivate();
-            return;
-        }
-
-        Catalog.RememberLast(paths, operation);
+        // 1. Utility file actions (Copy, Move, Copy Path, Terminal, Shelf) are free utilities
         if (operation.Id.StartsWith("action:"))
         {
             ExecuteFileAction(operation.Id, paths);
             return;
         }
+
+        // 2. Flows Menu
+        if (operation.Id == Flows.MenuId)
+        {
+            OpenMenu.ShowList(paths, Flows.For(paths), BeginOperation);
+            return;
+        }
+
+        // 3. Pro Tools check: Tool operations, combined/parts tools, and Flows are Pro Tools
+        bool isProTool = operation.Tool || operation.Parts != null || operation.Id.StartsWith(Flows.Prefix);
+        if (isProTool)
+        {
+            var check = LicenseManager.CanPerformConversion(paths.Length, isProTool: true, record: false);
+            if (!check.Allowed)
+            {
+                LicenseWindow.ShowDialogOrActivate(check.Reason);
+                return;
+            }
+        }
+        else
+        {
+            // Standard format conversion
+            var check = LicenseManager.CanPerformConversion(paths.Length, isProTool: false, record: true);
+            if (!check.Allowed)
+            {
+                LicenseWindow.ShowDialogOrActivate(check.Reason);
+                return;
+            }
+        }
+
+        Catalog.RememberLast(paths, operation);
         if (operation.Parts != null)
         {
             var combined = new ComboWindow(paths, operation, EnqueueTool);

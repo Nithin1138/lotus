@@ -1659,6 +1659,13 @@ final class DropWheelWindowController: NSWindowController {
 
         // 2. Check if Tool
         if item.isTool {
+            let perm = LicenseManager.shared.canPerformConversion(fileCount: activePaths.count, isProTool: true, record: false)
+            guard perm.allowed else {
+                hideWheel()
+                LicenseWindowController.shared.show(reason: perm.reason)
+                return
+            }
+
             if activePaths.count > 1 {
                 let multi = Catalog.multiFileTools(for: activePaths)
                 if let matched = multi.first(where: { $0.id == item.id }) {
@@ -1774,10 +1781,10 @@ final class DropWheelWindowController: NSWindowController {
 
     private func executeJob(action: String, paths: [String], params: [String: String]?) {
         let isProTool = Catalog.findTool(id: action) != nil
-        let perm = LicenseManager.shared.canPerformConversion(fileCount: paths.count, isProTool: isProTool)
+        let perm = LicenseManager.shared.canPerformConversion(fileCount: paths.count, isProTool: isProTool, record: !isProTool)
         guard perm.allowed else {
             hideWheel()
-            LicenseWindowController.shared.show()
+            LicenseWindowController.shared.show(reason: perm.reason)
             return
         }
 

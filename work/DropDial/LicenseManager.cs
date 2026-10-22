@@ -144,6 +144,7 @@ internal static class LicenseManager
         public long TrialStartTime { get; set; }
         public string? DailyConversionDate { get; set; }
         public int DailyConversionCount { get; set; }
+        public string? LastTrialExpiredPromptDate { get; set; }
     }
 
     static LicenseManager()
@@ -250,22 +251,39 @@ internal static class LicenseManager
         StatusChanged?.Invoke();
     }
 
-    public static (bool Allowed, string? Reason) CanPerformConversion(int fileCount = 1, bool isProTool = false)
+    public static bool ShouldShowTrialExpiredPromptOnLaunch()
+    {
+        RefreshStatus();
+        if (CurrentStatus.IsPro || CurrentStatus.Kind != LicenseStatusKind.TrialExpired)
+            return false;
+        var state = LoadState();
+        string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        return state.LastTrialExpiredPromptDate != today;
+    }
+
+    public static void MarkTrialExpiredPromptShown()
+    {
+        var state = LoadState();
+        state.LastTrialExpiredPromptDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        SaveState(state);
+    }
+
+    public static (bool Allowed, string? Reason) CanPerformConversion(int fileCount = 1, bool isProTool = false, bool record = true)
     {
         RefreshStatus();
         if (CurrentStatus.IsPro) return (true, null);
         if (CurrentStatus.Kind == LicenseStatusKind.Trial && CurrentStatus.DaysRemaining >= 0) return (true, null);
 
-        if (isProTool) return (false, "Advanced Pro Tools require DropDial Pro.");
-        if (fileCount > 3) return (false, $"Bulk batch conversion ({fileCount} files) requires DropDial Pro.");
+        if (isProTool) return (false, "Tools require DropDial Pro. Upgrade to unlock.");
+        if (fileCount > 3) return (false, $"Batch conversion of {fileCount} files requires DropDial Pro.");
 
         if (GetDailyConversionsRemaining() > 0)
         {
-            RecordDailyConversion();
+            if (record) RecordDailyConversion();
             return (true, null);
         }
 
-        return (false, "You have reached your 3 free conversions for today. Unlock unlimited lifetime conversions with DropDial Pro.");
+        return (false, "You have reached your 3 free conversions for today. Upgrade to DropDial Pro for unlimited conversions.");
     }
 
     public static (bool IsValid, LicenseInfo? Info, string? Error) VerifyKey(string licenseKey)

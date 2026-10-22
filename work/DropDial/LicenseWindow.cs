@@ -10,30 +10,39 @@ internal sealed class LicenseWindow : Window
 {
     private static LicenseWindow? openInstance;
 
+    private readonly TextBlock titleText;
     private readonly TextBlock statusSubtitle;
     private readonly TextBox keyInput;
     private readonly Button pasteBtn;
     private readonly Button primaryBtn;
     private readonly Button secondaryBtn;
+    private readonly Button dismissBtn;
     private readonly TextBlock messageText = new();
+    private string? activeReason;
 
-    public static void ShowDialogOrActivate()
+    public static void ShowDialogOrActivate(string? reason = null)
     {
         if (openInstance != null)
         {
+            if (!string.IsNullOrEmpty(reason))
+            {
+                openInstance.activeReason = reason;
+                openInstance.UpdateUI();
+            }
             openInstance.Activate();
             return;
         }
 
-        var win = new LicenseWindow();
+        var win = new LicenseWindow(reason);
         openInstance = win;
         win.Closed += (_, _) => openInstance = null;
         win.Show();
         win.Activate();
     }
 
-    public LicenseWindow()
+    public LicenseWindow(string? reason = null)
     {
+        activeReason = reason;
         UiTheme.Apply(this);
         Width = 440;
         SizeToContent = SizeToContent.Height;
@@ -55,7 +64,7 @@ internal sealed class LicenseWindow : Window
         panel.Children.Add(iconImg);
 
         // 2. Title
-        var titleText = new TextBlock
+        titleText = new TextBlock
         {
             Text = "DropDial Pro",
             FontSize = 18,
@@ -184,6 +193,21 @@ internal sealed class LicenseWindow : Window
 
         panel.Children.Add(btnRow);
 
+        dismissBtn = new Button
+        {
+            Content = "Continue with Free (3/day)",
+            Height = 28,
+            Margin = new Thickness(0, 10, 0, 0),
+            Background = Brushes.Transparent,
+            Foreground = UiTheme.Muted,
+            BorderThickness = new Thickness(0),
+            Cursor = System.Windows.Input.Cursors.Hand,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Visibility = Visibility.Collapsed
+        };
+        dismissBtn.Click += (_, _) => Close();
+        panel.Children.Add(dismissBtn);
+
         Content = UiTheme.Frame(this, panel, "DropDial Pro");
 
         // Pre-fill from clipboard if it holds a DD- key and input is empty
@@ -269,9 +293,13 @@ internal sealed class LicenseWindow : Window
 
             primaryBtn.Content = "Done";
             messageText.Text = "";
+            titleText.Text = "DropDial Pro";
+            dismissBtn.Visibility = Visibility.Collapsed;
         }
         else if (status.Kind == LicenseStatusKind.Trial)
         {
+            titleText.Text = "DropDial Pro";
+            dismissBtn.Visibility = Visibility.Collapsed;
             statusSubtitle.Foreground = UiTheme.Muted;
             statusSubtitle.Text = status.DaysRemaining <= 1
                 ? $"Last day of free trial • {LicenseManager.FormatTimeRemaining(LicenseManager.TrialRemainingSeconds)} remaining"
@@ -297,18 +325,28 @@ internal sealed class LicenseWindow : Window
         }
         else
         {
+            titleText.Text = "Your Free Trial Has Ended";
             statusSubtitle.Foreground = new SolidColorBrush(Color.FromRgb(220, 100, 30));
-            statusSubtitle.Text = "Free trial expired — enter a key to activate";
+            int rem = LicenseManager.GetDailyConversionsRemaining();
+            if (!string.IsNullOrEmpty(activeReason))
+            {
+                statusSubtitle.Text = $"{activeReason}\nFree tier: {rem}/3 conversions left today";
+            }
+            else
+            {
+                statusSubtitle.Text = $"You are on the Free Tier • {rem}/3 conversions left today\nUpgrade to DropDial Pro for unlimited conversions.";
+            }
 
             keyInput.IsEnabled = true;
             pasteBtn.IsEnabled = true;
 
-            secondaryBtn.Content = "Buy License…";
+            secondaryBtn.Content = "Upgrade to Pro…";
             secondaryBtn.Click -= OnBuyClick;
             secondaryBtn.Click -= OnDeactivateClick;
             secondaryBtn.Click += OnBuyClick;
 
             primaryBtn.Content = "Activate";
+            dismissBtn.Visibility = Visibility.Visible;
         }
     }
 

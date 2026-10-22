@@ -265,7 +265,23 @@ final class LicenseManager {
         return formatter.string(from: Date())
     }
 
-    func canPerformConversion(fileCount: Int = 1, isProTool: Bool = false) -> (allowed: Bool, reason: String?) {
+    private let lastTrialExpiredPromptKey = "DROPDIAL_LAST_TRIAL_EXPIRED_PROMPT_DATE"
+
+    func shouldShowTrialExpiredPromptOnLaunch() -> Bool {
+        refreshStatus()
+        guard case .trialExpired = status else { return false }
+        let defaults = UserDefaults.standard
+        let todayStr = getTodayDateString()
+        let lastPrompt = defaults.string(forKey: lastTrialExpiredPromptKey) ?? ""
+        return lastPrompt != todayStr
+    }
+
+    func markTrialExpiredPromptShown() {
+        let defaults = UserDefaults.standard
+        defaults.set(getTodayDateString(), forKey: lastTrialExpiredPromptKey)
+    }
+
+    func canPerformConversion(fileCount: Int = 1, isProTool: Bool = false, record: Bool = true) -> (allowed: Bool, reason: String?) {
         refreshStatus()
         if status.isPro {
             return (true, nil)
@@ -276,19 +292,21 @@ final class LicenseManager {
 
         // Trial has expired — Freemium daily hook
         if isProTool {
-            return (false, "Advanced Pro Tools (Trimming, OCR, Redact, Audio Bleep) require DropDial Pro.")
+            return (false, "Tools require DropDial Pro. Upgrade to unlock.")
         }
         if fileCount > 3 {
-            return (false, "Bulk batch conversion (\(fileCount) files) requires DropDial Pro.")
+            return (false, "Batch conversion of \(fileCount) files requires DropDial Pro.")
         }
 
         let remaining = getDailyConversionsRemaining()
         if remaining > 0 {
-            recordDailyConversion()
+            if record {
+                recordDailyConversion()
+            }
             return (true, nil)
         }
 
-        return (false, "You've reached your 3 free conversions for today. Unlock unlimited lifetime conversions with DropDial Pro.")
+        return (false, "You have reached your 3 free conversions for today. Upgrade to DropDial Pro for unlimited conversions.")
     }
 
     // MARK: - Offline ECDSA P-256 Key Verification
@@ -426,10 +444,12 @@ final class LicenseWindowController: NSWindowController {
     private var messageLabel: NSTextField!
     private var primaryButton: NSButton!
     private var secondaryButton: NSButton!
+    private var dismissButton: NSButton!
+    private var activeReason: String? = nil
 
     convenience init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 260),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 280),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -455,7 +475,7 @@ final class LicenseWindowController: NSWindowController {
         visualEffect.blendingMode = .behindWindow
         window.contentView = visualEffect
 
-        let container = LicenseFlippedView(frame: NSRect(x: 0, y: 0, width: 420, height: 260))
+        let container = LicenseFlippedView(frame: NSRect(x: 0, y: 0, width: 420, height: 280))
         container.autoresizingMask = [.width, .height]
         visualEffect.addSubview(container)
 
@@ -528,12 +548,23 @@ final class LicenseWindowController: NSWindowController {
         primaryButton.target = self
         container.addSubview(primaryButton)
 
+        dismissButton = NSButton(frame: NSRect(x: (420 - 220) / 2, y: 236, width: 220, height: 22))
+        dismissButton.isBordered = false
+        dismissButton.title = "Continue with Free (3/day)"
+        dismissButton.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
+        dismissButton.contentTintColor = .secondaryLabelColor
+        dismissButton.target = self
+        dismissButton.action = #selector(dismissTapped)
+        dismissButton.isHidden = true
+        container.addSubview(dismissButton)
+
         updateDisplay()
     }
 
     private var windowUpdateTimer: Timer?
 
-    func show() {
+    func show(reason: String? = nil) {
+        activeReason = reason
         messageLabel.stringValue = ""
         updateDisplay()
 
@@ -573,6 +604,8 @@ final class LicenseWindowController: NSWindowController {
 
         switch status {
         case .pro(let info):
+            titleLabel.stringValue = "DropDial Pro"
+            dismissButton.isHidden = true
             let plan = info.planDisplayName
             let nameStr = info.name.isEmpty ? info.email : info.name
             if let _ = info.expiresAt {
@@ -613,6 +646,8 @@ final class LicenseWindowController: NSWindowController {
             messageLabel.stringValue = ""
 
         case .trial(let days):
+            titleLabel.stringValue = "DropDial Pro"
+            dismissButton.isHidden = true
             if days <= 1 {
                 let timeStr = LicenseManager.formatTimeRemaining(LicenseManager.shared.trialRemainingSeconds)
                 statusLabel.stringValue = "Last day of free trial • \(timeStr) remaining"
@@ -637,21 +672,32 @@ final class LicenseWindowController: NSWindowController {
             primaryButton.isEnabled = true
 
         case .trialExpired:
+            titleLabel.stringValue = "Your Free Trial Has Ended"
             let rem = LicenseManager.shared.getDailyConversionsRemaining()
-            statusLabel.stringValue = "Trial expired • Free tier: \(rem)/\(LicenseManager.shared.maxFreeDailyConversions) conversions left today"
+            if let reason = activeReason, !reason.isEmpty {
+                statusLabel.stringValue = "\(reason) • Free tier: \(rem)/\(LicenseManager.shared.maxFreeDailyConversions) left today"
+            } else {
+                statusLabel.stringValue = "Free tier: \(rem)/\(LicenseManager.shared.maxFreeDailyConversions) conversions left today • Upgrade for unlimited"
+            }
             statusLabel.textColor = .systemOrange
 
             keyTextField.isEnabled = true
             pasteButton.isEnabled = true
 
-            secondaryButton.title = "Buy License…"
+            secondaryButton.title = "Upgrade to Pro…"
             secondaryButton.action = #selector(buyTapped)
             secondaryButton.isHidden = false
 
             primaryButton.title = "Activate"
             primaryButton.action = #selector(activateTapped)
             primaryButton.isEnabled = true
+
+            dismissButton.isHidden = false
         }
+    }
+
+    @objc private func dismissTapped() {
+        window?.close()
     }
 
     @objc private func pasteKeyTapped() {
