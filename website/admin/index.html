@@ -11,7 +11,17 @@
   <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/icon-32.png">
   <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+  <meta name="color-scheme" content="dark light">
   <link rel="stylesheet" href="/admin/admin.css">
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('dd_admin_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', t);
+        document.documentElement.style.colorScheme = t;
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body class="admin-body">
 
@@ -161,13 +171,23 @@
             <span class="user-status"><span class="status-dot green"></span> Live Mode</span>
           </div>
         </div>
-        <button id="admin-logout-btn" class="logout-btn" title="Sign out">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </button>
+        <div class="sidebar-footer-actions">
+          <button id="sidebar-theme-toggle-btn" class="sidebar-icon-btn" title="Toggle Light/Dark Theme" aria-label="Toggle theme">
+            <svg class="theme-icon-dark" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg class="theme-icon-light" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+          <button id="admin-logout-btn" class="logout-btn" title="Sign out" aria-label="Sign out">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </aside>
 
@@ -198,7 +218,7 @@
             <span>Issue Pro License</span>
           </button>
 
-          <button id="open-reset-modal-btn" class="btn btn-secondary" style="border-color: rgba(239, 68, 68, 0.35); color: #f87171;" title="Reset test revenue, profits, licenses, and coupons with 2-step verification">
+          <button id="open-reset-modal-btn" class="btn btn-secondary btn-reset-data" title="Reset test revenue, profits, licenses, and coupons with 2-step verification">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
               <line x1="10" y1="11" x2="10" y2="17"/>
@@ -207,12 +227,22 @@
             <span>Reset Test Data</span>
           </button>
 
+          <button id="theme-toggle-btn" class="btn btn-secondary theme-toggle-btn" title="Toggle Light / Dark Theme" aria-label="Toggle theme">
+            <svg class="theme-icon-dark" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg class="theme-icon-light" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+            <span class="theme-text">Theme</span>
+          </button>
+
           <div class="live-status-pill" id="live-sync-indicator" title="Live Real-Time Sync Active">
             <span class="status-dot green pulse-dot"></span>
             <span id="live-sync-text">Live Sync</span>
           </div>
 
-          <button id="refresh-data-btn" class="btn btn-secondary" title="Sync live records">
+          <button id="refresh-data-btn" class="btn btn-secondary" title="Sync live records" aria-label="Refresh live data">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="23 4 23 10 17 10"/>
               <polyline points="1 20 1 14 7 14"/>
@@ -386,7 +416,7 @@
               <div class="geo-split-list">
                 <div class="geo-item">
                   <div class="geo-info">
-                    <span class="geo-flag">🇮🇳</span>
+                    <span class="geo-flag geo-code">IN</span>
                     <div>
                       <span class="geo-name">India (Domestic)</span>
                       <span class="geo-plan">Locked Tier: ₹999 INR (paise: 99900)</span>
@@ -400,7 +430,7 @@
 
                 <div class="geo-item">
                   <div class="geo-info">
-                    <span class="geo-flag">🇺🇸</span>
+                    <span class="geo-flag geo-code">US</span>
                     <div>
                       <span class="geo-name">United States &amp; Americas</span>
                       <span class="geo-plan">Locked Tier: $19 USD (cents: 1900)</span>
@@ -414,7 +444,7 @@
 
                 <div class="geo-item">
                   <div class="geo-info">
-                    <span class="geo-flag">🇪🇺</span>
+                    <span class="geo-flag geo-code">EU</span>
                     <div>
                       <span class="geo-name">Europe &amp; Worldwide</span>
                       <span class="geo-plan">Locked Tier: $19 USD (cents: 1900)</span>
@@ -974,7 +1004,7 @@
                   <div class="currency-card featured-tier-card">
                     <div class="currency-card-head">
                       <div class="currency-tier-info">
-                        <span class="currency-tier-name" style="color: var(--accent, #ff6500);">Universal Pro Lifetime ★</span>
+                        <span class="currency-tier-name hero-name">Universal Pro Lifetime ★</span>
                         <span class="currency-tier-sub">Mac &amp; PC (Up to 3 Devices)</span>
                       </div>
                       <span class="currency-type-tag featured-tag">RECOMMENDED • HERO</span>
@@ -1028,33 +1058,33 @@
                 </div>
 
                 <!-- SECTION 2: Devices Limit per License Key -->
-                <div class="feature-toggle-card devices-setting-card" style="margin-bottom: 22px;">
-                  <div class="feature-toggle-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: none; padding-bottom: 0;">
-                    <div class="feature-toggle-info" style="display: flex; align-items: center; gap: 14px;">
-                      <div class="device-setting-icon" style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <div class="devices-setting-card mb-20">
+                  <div class="devices-setting-header">
+                    <div class="devices-setting-info">
+                      <div class="device-setting-icon">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                       </div>
                       <div>
-                        <div class="feature-toggle-title" style="font-size: 13.5px; font-weight: 700; color: #fff; margin-bottom: 2px;">
+                        <div class="devices-setting-title">
                           Devices Valid Per License Key
                         </div>
-                        <p class="feature-toggle-desc" style="font-size: 12px; color: var(--text-muted); margin: 0;">
+                        <p class="devices-setting-desc">
                           Max personal Mac &amp; Windows machines per universal key. Updates dynamically in real-time across the website pricing card, feature lists, and FAQ.
                         </p>
                       </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-                      <label for="pricing-devices-input" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Max Activations:</label>
-                      <div class="currency-input-wrap" style="width: 80px;">
-                        <input type="number" id="pricing-devices-input" min="1" max="50" step="1" value="3" placeholder="3" required style="text-align: center; font-size: 15px; font-weight: 800;">
+                    <div class="devices-setting-controls">
+                      <label for="pricing-devices-input" class="devices-label">Max Activations:</label>
+                      <div class="currency-input-wrap devices-input-wrap">
+                        <input type="number" id="pricing-devices-input" min="1" max="50" step="1" value="3" placeholder="3" required>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <!-- SECTION 2: 3-Tier Strikethrough Pricing with Individual Toggles -->
-                <div class="feature-toggle-card mb-20" style="padding-bottom: 6px;">
-                  <div class="feature-toggle-header" style="border-bottom: none;">
+                <div class="feature-toggle-card mb-20">
+                  <div class="feature-toggle-header">
                     <div class="feature-toggle-info">
                       <div class="feature-toggle-title">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="12" x2="20" y2="12"/><line x1="7" y1="6" x2="17" y2="18"/></svg>
@@ -1067,7 +1097,7 @@
                   </div>
 
                   <!-- 3 Individual Tier Strikethrough Sub-Cards -->
-                  <div class="tier-strike-cards-stack" style="display: flex; flex-direction: column; gap: 14px; padding: 0 16px 16px 16px;">
+                  <div class="tier-strike-cards-stack">
                     
                     <!-- Tier 1 Strike: Single Platform -->
                     <div class="tier-strike-subcard" id="tier-strike-subcard-single">
@@ -1115,11 +1145,11 @@
                     </div>
 
                     <!-- Tier 2 Strike: Universal Pro Lifetime (Hero) -->
-                    <div class="tier-strike-subcard hero-border" id="tier-strike-subcard-universal" style="border: 1px solid rgba(255, 101, 0, 0.45); background: rgba(255, 101, 0, 0.03);">
+                    <div class="tier-strike-subcard hero-border" id="tier-strike-subcard-universal">
                       <div class="tier-strike-subcard-header" id="strike-toggle-header">
                         <div class="tss-info">
-                          <span class="tss-badge" style="background:var(--accent); color:#fff;">Tier 2 Hero ★</span>
-                          <strong class="tss-name" style="color:var(--accent);">Universal Pro Lifetime (Mac + PC, Up to 3 Devices)</strong>
+                          <span class="tss-badge hero-badge">Tier 2 Hero ★</span>
+                          <strong class="tss-name hero-name">Universal Pro Lifetime (Mac + PC, Up to 3 Devices)</strong>
                           <span class="tss-sub">Flagship 80%+ Volume Anchor</span>
                         </div>
                         <label class="toggle-switch" title="Toggle Strikethrough for Universal Pro">
@@ -1307,9 +1337,9 @@
 
                 <!-- SECTION 4: Master Passcode Authorization -->
                 <div class="passcode-authorization-card">
-                  <div class="pac-header" style="margin-bottom: 14px;">
-                    <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 3px;">Deploy Changes to Edge &amp; Database</div>
-                    <div style="font-size: 12px; color: var(--text-muted);">Saves retail prices, promotional discount anchors, and countdown timers across all platforms.</div>
+                  <div class="pac-header">
+                    <div class="pac-title">Deploy Changes to Edge &amp; Database</div>
+                    <div class="pac-desc">Saves retail prices, promotional discount anchors, and countdown timers across all platforms.</div>
                   </div>
 
                   <div class="form-group" style="margin-bottom: 16px;">

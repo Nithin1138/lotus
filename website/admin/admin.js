@@ -82,9 +82,60 @@
    * Initialize Session & Data Store
    */
   function init() {
+    initTheme();
     loadLocalStore();
     checkAuthSession();
     bindEvents();
+  }
+
+  /**
+   * Theme Management: Light & Dark Modes
+   */
+  function initTheme() {
+    const savedTheme = localStorage.getItem('dd_admin_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    applyTheme(savedTheme);
+
+    const toggleBtns = [
+      document.getElementById('theme-toggle-btn'),
+      document.getElementById('sidebar-theme-toggle-btn')
+    ];
+
+    toggleBtns.forEach(btn => {
+      if (!btn) return;
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const current = document.documentElement.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+      });
+    });
+
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+        if (!localStorage.getItem('dd_admin_theme')) {
+          applyTheme(e.matches ? 'light' : 'dark');
+        }
+      });
+    }
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.style.colorScheme = theme;
+    try {
+      localStorage.setItem('dd_admin_theme', theme);
+    } catch (_) {}
+
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    if (themeBtn) {
+      themeBtn.title = theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme';
+      const label = themeBtn.querySelector('.theme-text');
+      if (label) label.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+    }
+    const sideThemeBtn = document.getElementById('sidebar-theme-toggle-btn');
+    if (sideThemeBtn) {
+      sideThemeBtn.title = theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme';
+    }
   }
 
   function loadLocalStore() {
@@ -1553,14 +1604,14 @@
         const usdPct = singleStrikeUsd > singleUsd ? Math.round(((singleStrikeUsd - singleUsd) / singleStrikeUsd) * 100) : 0;
         singlePreviewEl.innerHTML = `
           <div class="preview-pill-item">
-            <span>🇮🇳 India:</span>
+            <span>India:</span>
             <span class="preview-pill-strike">₹${singleStrikeInr.toLocaleString('en-IN')}</span>
             <span class="preview-pill-price">₹${singleInr.toLocaleString('en-IN')}</span>
             <span class="preview-pill-badge">${inrPct}% OFF</span>
             <span class="preview-pill-savings">Save ₹${(singleStrikeInr - singleInr).toLocaleString('en-IN')}</span>
           </div>
           <div class="preview-pill-item">
-            <span>🌍 Global:</span>
+            <span>Global:</span>
             <span class="preview-pill-strike">$${singleStrikeUsd}</span>
             <span class="preview-pill-price">$${singleUsd}</span>
             <span class="preview-pill-badge">${usdPct}% OFF</span>
@@ -1603,14 +1654,14 @@
         const usdPct = strikeUsd > usd ? Math.round(((strikeUsd - usd) / strikeUsd) * 100) : 0;
         previewEl.innerHTML = `
           <div class="preview-pill-item">
-            <span>🇮🇳 India:</span>
+            <span>India:</span>
             <span class="preview-pill-strike">₹${strikeInr.toLocaleString('en-IN')}</span>
             <span class="preview-pill-price">₹${inr.toLocaleString('en-IN')}</span>
             <span class="preview-pill-badge">${inrPct}% OFF</span>
             <span class="preview-pill-savings">Save ₹${(strikeInr - inr).toLocaleString('en-IN')}</span>
           </div>
           <div class="preview-pill-item">
-            <span>🌍 Global:</span>
+            <span>Global:</span>
             <span class="preview-pill-strike">$${strikeUsd}</span>
             <span class="preview-pill-price">$${usd}</span>
             <span class="preview-pill-badge">${usdPct}% OFF</span>
@@ -1653,14 +1704,14 @@
         const usdPct = teamStrikeUsd > teamUsd ? Math.round(((teamStrikeUsd - teamUsd) / teamStrikeUsd) * 100) : 0;
         teamPreviewEl.innerHTML = `
           <div class="preview-pill-item">
-            <span>🇮🇳 India:</span>
+            <span>India:</span>
             <span class="preview-pill-strike">₹${teamStrikeInr.toLocaleString('en-IN')}</span>
             <span class="preview-pill-price">₹${teamInr.toLocaleString('en-IN')}</span>
             <span class="preview-pill-badge">${inrPct}% OFF</span>
             <span class="preview-pill-savings">Save ₹${(teamStrikeInr - teamInr).toLocaleString('en-IN')}</span>
           </div>
           <div class="preview-pill-item">
-            <span>🌍 Global:</span>
+            <span>Global:</span>
             <span class="preview-pill-strike">$${teamStrikeUsd}</span>
             <span class="preview-pill-price">$${teamUsd}</span>
             <span class="preview-pill-badge">${usdPct}% OFF</span>
@@ -2281,7 +2332,7 @@
               <div class="empty-icon" style="color:var(--emerald); width:48px; height:48px; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; background:var(--emerald-bg); border-radius:50%; border:1px solid var(--emerald-border);">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
-              <h4 style="font-size:16px; font-weight:700; color:#ffffff; margin-bottom:6px;">All Releases Deployed &amp; Synced</h4>
+              <h4 style="font-size:16px; font-weight:700; color:var(--text-heading); margin-bottom:6px;">All Releases Deployed &amp; Synced</h4>
               <p style="font-size:13px; color:var(--text-muted); max-width:440px; margin:0 auto;">No staged drafts waiting in CI/CD pipeline. Push a git tag (e.g. <code>v1.0.1.0</code>) to trigger GitHub Actions and stage a new build here for 2-step verification.</p>
             </div>
           `;
@@ -2347,7 +2398,7 @@ ${escapeHtml(cleanBody)}
             return `
               <tr>
                 <td><strong style="font-family:var(--font-mono); font-size:13px; color:var(--text-main);">${escapeHtml(r.tag_name)}</strong></td>
-                <td><span style="font-weight:600; color:#ffffff;">${escapeHtml(r.name || r.tag_name)}</span></td>
+                <td><span style="font-weight:600; color:var(--text-heading);">${escapeHtml(r.name || r.tag_name)}</span></td>
                 <td><span style="color:var(--text-muted); font-size:12px;">${escapeHtml(pubDate)}</span></td>
                 <td><span class="badge-status info">${assetCount} Assets</span></td>
                 <td>
@@ -2459,7 +2510,7 @@ ${escapeHtml(cleanBody)}
         throw new Error(data.error || 'Failed to launch release to production');
       }
 
-      showToast(`🚀 Success! Version ${targetVersion} is now LIVE in production!`, 'success');
+      showToast(`Success! Version ${targetVersion} is now LIVE in production!`, 'success');
       closeLaunchModal();
       await loadReleases(false);
     } catch (err) {
@@ -2623,7 +2674,7 @@ ${escapeHtml(cleanBody)}
       renderAllViews();
       renderCouponsTable();
 
-      showToast(`🧹 Reset complete! All test revenue, profits, licenses, and coupons wiped to zero.`, 'success');
+      showToast(`Reset complete! All test revenue, profits, licenses, and coupons wiped to zero.`, 'success');
       closeResetModal();
 
       // Refresh live server state
