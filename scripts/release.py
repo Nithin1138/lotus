@@ -70,8 +70,18 @@ def bump_api_releases(new_ver):
         if p.exists():
             content = p.read_text(encoding="utf-8")
             content = re.sub(r"let activeTag = '[\d\.]+';", f"let activeTag = '{new_ver}';", content)
+            content = re.sub(r"/releases/download/v[\d\.]+/DropDial-Windows", f"/releases/download/v{new_ver}/DropDial-Windows", content)
             p.write_text(content, encoding="utf-8")
-            print(f"  [✓] Updated {rel_file} fallback tag to {new_ver}")
+            print(f"  [✓] Updated {rel_file} fallback tag and URLs to {new_ver}")
+
+def bump_redirects_and_scripts(new_ver):
+    for f in ["vercel.json", "install.ps1", "website/install.ps1"]:
+        p = ROOT_DIR / f
+        if p.exists():
+            content = p.read_text(encoding="utf-8")
+            content = re.sub(r"/releases/download/v[\d\.]+/DropDial-Windows", f"/releases/download/v{new_ver}/DropDial-Windows", content)
+            p.write_text(content, encoding="utf-8")
+            print(f"  [✓] Updated {f} download URLs to v{new_ver}")
 
 def bump_api_admin(new_ver):
     for adm_file in ["api/admin.js", "website/api/admin.js"]:
@@ -253,6 +263,7 @@ def main():
     bump_csharp_update_manager(new_ver)
     bump_api_releases(new_ver)
     bump_api_admin(new_ver)
+    bump_redirects_and_scripts(new_ver)
     bump_website(curr_ver, new_ver)
 
     notes_file = ensure_release_notes(new_ver, curr_ver)

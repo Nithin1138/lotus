@@ -44,7 +44,7 @@ if (-not (Test-Path $installDir)) {
 }
 
 # 5. Resolve Release Asset URL
-$downloadUrl = "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.5/DropDial-Windows-x64.zip"
+$downloadUrl = "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.6/DropDial-Windows-x64.zip"
 $isLightweightUpdate = $false
 
 try {
