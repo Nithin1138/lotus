@@ -35,5 +35,6 @@
     <Compile Include="../DropDial/OutputFolder.cs" Link="OutputFolder.cs"/>
     <Compile Include="../DropDial/ExplorerIntegration.cs" Link="ExplorerIntegration.cs"/>
     <Compile Include="../DropDial/LicenseManager.cs" Link="LicenseManager.cs"/>
+    <Compile Include="../DropDial/UpdateManager.cs" Link="UpdateManager.cs"/>
   </ItemGroup>
 </Project>
