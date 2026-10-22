@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DropDial Admin</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/icon-32.png">
+  <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+  <meta name="color-scheme" content="dark light">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="stylesheet" href="/admin/admin.css?v=1.0.1.6">
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('dd_admin_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', t);
+        document.documentElement.style.colorScheme = t;
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="admin-body">
+
+  <!-- ========================================================
+       1. AUTHENTICATION GATEWAY
+       ======================================================== -->
+  <div id="auth-gate" class="auth-gate-overlay">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo-badge">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <h2>DropDial Admin</h2>
+        <p>Sign in to manage licenses, orders, and settings</p>
+      </div>
+
+      <form id="auth-form" class="auth-form">
+        <div class="form-group">
+          <label for="admin-passcode-input">Passcode</label>
+          <div class="password-input-wrap">
+            <input type="password" id="admin-passcode-input" placeholder="Enter your admin passcode" autocomplete="current-password" required autofocus>
+            <button type="button" id="toggle-pass-btn" class="pass-toggle-btn" aria-label="Toggle password visibility">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <div id="auth-error-msg" class="auth-error-msg"></div>
+        </div>
+
+        <button type="submit" id="auth-submit-btn" class="btn btn-primary auth-btn">
+          <span>Sign In</span>
+        </button>
+
+        <div class="auth-footer-badge">
+          <span class="security-dot"></span>
+          <span>Secured connection</span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       2. EXECUTIVE OPERATIONS DASHBOARD APP
+       ======================================================== -->
+  <div id="admin-dashboard-app" class="admin-app" style="display: none;">
+
+    <!-- Left Master Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo-wrap">
+          <img src="/assets/img/logo.png" alt="DropDial" width="26" height="26">
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">DropDial</span>
+          <span class="brand-sub">Admin</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">MAIN</div>
+        <button class="nav-tab active" data-tab="overview">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="9"/>
+            <rect x="14" y="3" width="7" height="5"/>
+            <rect x="14" y="12" width="7" height="9"/>
+            <rect x="3" y="16" width="7" height="5"/>
+          </svg>
+          <span>Overview</span>
+        </button>
+
+        <button class="nav-tab" data-tab="licenses">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+          </svg>
+          <span>License Keys</span>
+          <span id="badge-total-licenses" class="nav-counter">0</span>
+        </button>
+
+        <button class="nav-tab" data-tab="transactions">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+            <line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
+          <span>Orders</span>
+          <span id="badge-total-tx" class="nav-counter">0</span>
+        </button>
+
+        <button class="nav-tab" data-tab="coupons">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+          <span>Coupons</span>
+          <span id="badge-total-coupons" class="nav-counter">0</span>
+        </button>
+
+        <button class="nav-tab" data-tab="pricing">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          <span>Pricing</span>
+        </button>
+
+        <button class="nav-tab" data-tab="traffic">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <span>Traffic</span>
+        </button>
+
+        <div class="nav-section-title">INFRASTRUCTURE</div>
+        <button class="nav-tab" data-tab="releases">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 17l6-6-6-6M12 19h8"/>
+          </svg>
+          <span>Releases</span>
+          <span id="badge-staged-releases" class="nav-counter" style="display:none;background:var(--amber);color:#000;">1</span>
+        </button>
+
+        <button class="nav-tab" data-tab="health">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          <span>System Health</span>
+        </button>
+
+        <button class="nav-tab" data-tab="settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>Security</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="admin-user-info">
+          <div class="user-avatar">AD</div>
+          <div class="user-details">
+            <span class="user-role">Administrator</span>
+            <span class="user-status"><span class="status-dot green"></span> Live Mode</span>
+          </div>
+        </div>
+        <div class="sidebar-footer-actions">
+          <button id="sidebar-theme-toggle-btn" class="sidebar-icon-btn" title="Toggle Light/Dark Theme" aria-label="Toggle theme">
+            <svg class="theme-icon-dark" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg class="theme-icon-light" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+          <button id="admin-logout-btn" class="logout-btn" title="Sign out" aria-label="Sign out">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Center -->
+    <main class="admin-main">
+      
+      <!-- Top Global Bar -->
+      <header class="admin-topbar">
+        <div class="topbar-left">
+          <h1 id="view-title">Overview</h1>
+          <span class="view-tag" id="view-tag">Live data</span>
+        </div>
+
+        <div class="topbar-actions">
+          <button id="open-coupon-modal-btn" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+              <line x1="7" y1="7" x2="7.01" y2="7"/>
+            </svg>
+            <span>Create Coupon</span>
+          </button>
+
+          <button id="open-issue-modal-btn" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Issue Pro License</span>
+          </button>
+
+          <button id="open-reset-modal-btn" class="btn btn-secondary btn-reset-data" title="Reset test revenue, profits, licenses, and coupons with 2-step verification">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+            <span>Reset Test Data</span>
+          </button>
+
+          <button id="theme-toggle-btn" class="btn btn-secondary theme-toggle-btn" title="Toggle Light / Dark Theme" aria-label="Toggle theme">
+            <svg class="theme-icon-dark" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg class="theme-icon-light" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+            <span class="theme-text">Theme</span>
+          </button>
+
+          <div class="live-status-pill" id="live-sync-indicator" title="Live Real-Time Sync Active">
+            <span class="status-dot green pulse-dot"></span>
+            <span id="live-sync-text">Live Sync</span>
+          </div>
+
+          <button id="refresh-data-btn" class="btn btn-secondary" title="Sync live records" aria-label="Refresh live data">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Views Router -->
+      <div class="admin-content-area">
+
+        <!-- ==============================================
+             TAB 1: EXECUTIVE OVERVIEW
+             ============================================== -->
+        <section id="tab-overview" class="tab-view active">
+          
+          <!-- Revenue & Profit Filter Bar -->
+          <div class="revenue-filter-bar">
+            <div class="rf-title-group">
+              <div class="rf-label">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span>Revenue</span>
+              </div>
+              <span class="rf-active-caption" id="rf-active-caption">All-Time Direct Sales</span>
+            </div>
+            <div class="rf-pill-group" id="revenue-period-filters" role="group" aria-label="Revenue time filter">
+              <button type="button" class="rf-pill-btn active" data-period="all">All Time</button>
+              <button type="button" class="rf-pill-btn" data-period="monthly">Monthly</button>
+              <button type="button" class="rf-pill-btn" data-period="weekly">Weekly</button>
+              <button type="button" class="rf-pill-btn" data-period="today">Today</button>
+            </div>
+          </div>
+
+          <!-- KPI Metrics Row -->
+          <div class="kpi-grid">
+            
+            <!-- Gross Revenue -->
+            <div class="kpi-card revenue-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Revenue</span>
+                <span class="kpi-badge emerald" id="kpi-growth-badge">Live</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="kpi-gross-revenue">₹0</span>
+                <span class="kpi-sub-val" id="kpi-gross-usd">($0 USD)</span>
+              </div>
+              <div class="kpi-footer">
+                <span>Total sales</span>
+                <span class="currency-split" id="kpi-split-text">India: ₹0 • Global: $0</span>
+              </div>
+            </div>
+
+            <!-- Net Profit -->
+            <div class="kpi-card profit-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Net Profit</span>
+                <span class="kpi-badge emerald">97.8% Margin</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="kpi-net-profit">₹0</span>
+                <span class="kpi-sub-val">After fees</span>
+              </div>
+              <div class="kpi-footer">
+                <span>Zero server costs</span>
+              </div>
+            </div>
+
+            <!-- Pro Licenses -->
+            <div class="kpi-card license-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Active Licenses</span>
+                <span class="kpi-badge violet">Verified</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="kpi-total-licenses">0</span>
+                <span class="kpi-sub-val">Pro licenses</span>
+              </div>
+              <div class="kpi-footer">
+                <span>0 Chargebacks • 0 Revocations</span>
+              </div>
+            </div>
+
+            <!-- Page Views & Conversion -->
+            <div class="kpi-card traffic-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Traffic</span>
+                <span class="kpi-badge sky" id="kpi-conversion-rate">0.0% Conv</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="kpi-total-views">0</span>
+                <span class="kpi-sub-val">Page views</span>
+              </div>
+              <div class="kpi-footer">
+                <span id="kpi-checkout-stats">0 Checkouts • 0 Paid</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Mid Section: Conversion Funnel & Sales Geo Split -->
+          <div class="overview-analytics-grid">
+            
+            <!-- Conversion Funnel Card -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Conversion Funnel</h3>
+                  <p class="panel-subtitle">Visitor journey from page view to purchase</p>
+                </div>
+                <span class="pill-badge">Real-Time</span>
+              </div>
+
+              <div class="funnel-container">
+                <div class="funnel-step">
+                  <div class="funnel-bar-wrap">
+                    <div class="funnel-label">
+                      <span>1. Page Visits</span>
+                      <strong id="fnl-visits">0</strong>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" id="fnl-bar-visits" style="width: 100%;"></div></div>
+                  </div>
+                  <span class="funnel-rate">100%</span>
+                </div>
+
+                <div class="funnel-step">
+                  <div class="funnel-bar-wrap">
+                    <div class="funnel-label">
+                      <span>2. Pricing Card Explored</span>
+                      <strong id="fnl-pricing">0</strong>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" id="fnl-bar-pricing" style="width: 0%;"></div></div>
+                  </div>
+                  <span class="funnel-rate" id="fnl-rate-pricing">0%</span>
+                </div>
+
+                <div class="funnel-step">
+                  <div class="funnel-bar-wrap">
+                    <div class="funnel-label">
+                      <span>3. Checkout Modal Opened</span>
+                      <strong id="fnl-checkout">0</strong>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" id="fnl-bar-checkout" style="width: 0%;"></div></div>
+                  </div>
+                  <span class="funnel-rate" id="fnl-rate-checkout">0%</span>
+                </div>
+
+                <div class="funnel-step">
+                  <div class="funnel-bar-wrap">
+                    <div class="funnel-label">
+                      <span class="emerald-text">4. Payment &amp; License Issued</span>
+                      <strong id="fnl-completed">0</strong>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill emerald-fill" id="fnl-bar-completed" style="width: 0%;"></div></div>
+                  </div>
+                  <span class="funnel-rate emerald-text" id="fnl-final-conv">0.0%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Regional Sales Breakdown (Flag emojis allowed as requested) -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Sales by Region</h3>
+                  <p class="panel-subtitle">Revenue split by country pricing tier</p>
+                </div>
+                <span class="pill-badge">Vercel Edge</span>
+              </div>
+
+              <div class="geo-split-list">
+                <div class="geo-item">
+                  <div class="geo-info">
+                    <span class="geo-flag geo-code">IN</span>
+                    <div>
+                      <span class="geo-name">India (Domestic)</span>
+                      <span class="geo-plan">Locked Tier: ₹999 INR (paise: 99900)</span>
+                    </div>
+                  </div>
+                  <div class="geo-revenue">
+                    <strong id="geo-inr-rev">₹0</strong>
+                    <span id="geo-inr-orders">0 Orders</span>
+                  </div>
+                </div>
+
+                <div class="geo-item">
+                  <div class="geo-info">
+                    <span class="geo-flag geo-code">US</span>
+                    <div>
+                      <span class="geo-name">United States &amp; Americas</span>
+                      <span class="geo-plan">Locked Tier: $19 USD (cents: 1900)</span>
+                    </div>
+                  </div>
+                  <div class="geo-revenue">
+                    <strong id="geo-usd-rev">$0</strong>
+                    <span id="geo-usd-orders">0 Orders</span>
+                  </div>
+                </div>
+
+                <div class="geo-item">
+                  <div class="geo-info">
+                    <span class="geo-flag geo-code">EU</span>
+                    <div>
+                      <span class="geo-name">Europe &amp; Worldwide</span>
+                      <span class="geo-plan">Locked Tier: $19 USD (cents: 1900)</span>
+                    </div>
+                  </div>
+                  <div class="geo-revenue">
+                    <strong id="geo-eur-rev">$0</strong>
+                    <span id="geo-eur-orders">0 Orders</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="geo-insight-note">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <span>Server-enforced pricing via <code>x-vercel-ip-country</code> prevents client tampering.</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom: Recent Orders Feed -->
+          <div class="panel-card mt-24">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Recent Orders</h3>
+                <p class="panel-subtitle">Latest payments and license deliveries</p>
+              </div>
+              <button id="view-all-tx-btn" class="btn btn-secondary btn-sm">View Full Ledger</button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Payment ID</th>
+                    <th>Customer Name</th>
+                    <th>Email Address</th>
+                    <th>Amount Paid</th>
+                    <th>Country</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-tx-tbody">
+                  <!-- Populated in real-time -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB 2: LICENSE KEYS REGISTRY
+             ============================================== -->
+        <section id="tab-licenses" class="tab-view">
+          
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">License Keys</h3>
+                <p class="panel-subtitle">All issued Pro license keys and their status</p>
+              </div>
+              <button id="export-licenses-btn" class="btn btn-secondary btn-sm">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Export CSV</span>
+              </button>
+            </div>
+
+            <div class="tab-control-bar">
+              <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="license-search-input" placeholder="Search by customer name, email, or key...">
+              </div>
+
+              <div class="control-actions">
+                <select id="license-filter-select" class="control-select">
+                  <option value="all">All Tiers</option>
+                  <option value="pro">Pro Lifetime</option>
+                  <option value="team">Studio / Commercial</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Customer Name</th>
+                    <th>Email Address</th>
+                    <th>Tier</th>
+                    <th>License Key</th>
+                    <th>Date Issued</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="licenses-tbody">
+                  <!-- Populated in real-time -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB 3: TRANSACTIONS & FINANCIAL LEDGER
+             ============================================== -->
+        <section id="tab-transactions" class="tab-view">
+          
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">All Transactions</h3>
+                <p class="panel-subtitle">Complete record of payments and settlements</p>
+              </div>
+              <button id="export-tx-btn" class="btn btn-secondary btn-sm">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Download Tax CSV</span>
+              </button>
+            </div>
+
+            <div class="tab-control-bar">
+              <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="tx-search-input" placeholder="Search by payment ID, order ID, or customer...">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Payment ID</th>
+                    <th>Order ID</th>
+                    <th>Customer Name</th>
+                    <th>Email</th>
+                    <th>Amount</th>
+                    <th>Payment Method</th>
+                    <th>Coupon</th>
+                    <th>Country</th>
+                    <th>Status</th>
+                    <th>Captured At</th>
+                  </tr>
+                </thead>
+                <tbody id="all-tx-tbody">
+                  <!-- Populated in real-time -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB 4: COUPONS & PROMOTIONAL OFFERS
+             ============================================== -->
+        <section id="tab-coupons" class="tab-view">
+          
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Coupon Codes</h3>
+                <p class="panel-subtitle">Manage discount codes for checkout</p>
+              </div>
+              <button id="create-new-coupon-btn" class="btn btn-primary btn-sm">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Create Coupon</span>
+              </button>
+            </div>
+
+            <div class="tab-control-bar">
+              <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="coupon-search-input" placeholder="Search coupon code or description...">
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Coupon Code</th>
+                    <th>Discount</th>
+                    <th>Target Pricing</th>
+                    <th>Redemptions</th>
+                    <th>Valid Until</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="coupons-tbody">
+                  <!-- Populated in real-time -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB 5: TRAFFIC & ATTRIBUTION
+             ============================================== -->
+        <section id="tab-traffic" class="tab-view">
+          
+          <div class="overview-analytics-grid">
+            
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Referrer Channels</h3>
+                  <p class="panel-subtitle">Where visitors come from</p>
+                </div>
+              </div>
+
+              <div class="traffic-source-list">
+                <div class="source-item">
+                  <span class="source-channel">Direct / Organic Brand</span>
+                  <div class="source-bar-wrap"><div class="source-bar" id="ref-bar-direct" style="width: 58%;"></div></div>
+                  <span class="source-count" id="ref-count-direct">58%</span>
+                </div>
+                <div class="source-item">
+                  <span class="source-channel">GitHub (Open Source)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" id="ref-bar-github" style="width: 24%;"></div></div>
+                  <span class="source-count" id="ref-count-github">24%</span>
+                </div>
+                <div class="source-item">
+                  <span class="source-channel">Google Search (SEO)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" id="ref-bar-google" style="width: 12%;"></div></div>
+                  <span class="source-count" id="ref-count-google">12%</span>
+                </div>
+                <div class="source-item">
+                  <span class="source-channel">Twitter / X &amp; Reddit</span>
+                  <div class="source-bar-wrap"><div class="source-bar" id="ref-bar-social" style="width: 6%;"></div></div>
+                  <span class="source-count" id="ref-count-social">6%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Platform Distribution</h3>
+                  <p class="panel-subtitle">Downloads by operating system</p>
+                </div>
+              </div>
+
+              <div class="traffic-source-list">
+                <div class="source-item">
+                  <span class="source-channel">macOS (Apple Silicon M-Series)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 62%;"></div></div>
+                  <span class="source-count">62%</span>
+                </div>
+                <div class="source-item">
+                  <span class="source-channel">Windows 11 / 10 (64-bit)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 29%;"></div></div>
+                  <span class="source-count">29%</span>
+                </div>
+                <div class="source-item">
+                  <span class="source-channel">macOS (Intel x86_64)</span>
+                  <div class="source-bar-wrap"><div class="source-bar" style="width: 9%;"></div></div>
+                  <span class="source-count">9%</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB 6: SYSTEM HEALTH & INTEGRATIONS
+             ============================================== -->
+        <section id="tab-health" class="tab-view">
+          
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Service Status</h3>
+                <p class="panel-subtitle">Connectivity with payment and delivery services</p>
+              </div>
+              <button id="recheck-health-btn" class="btn btn-secondary btn-sm">Run Health Check</button>
+            </div>
+
+            <div class="health-checklist">
+              
+              <!-- Razorpay Standard Checkout Gateway -->
+              <div class="health-item">
+                <div class="health-left">
+                  <div class="health-icon" id="icon-razorpay">
+                    <span class="status-dot green"></span>
+                  </div>
+                  <div>
+                    <h4 class="health-title">Razorpay Payments</h4>
+                    <p class="health-desc" id="desc-razorpay">Checking API credentials...</p>
+                  </div>
+                </div>
+                <div class="health-status-badge" id="badge-razorpay">Checking...</div>
+              </div>
+
+              <!-- Resend License Email Delivery -->
+              <div class="health-item">
+                <div class="health-left">
+                  <div class="health-icon" id="icon-resend">
+                    <span class="status-dot green"></span>
+                  </div>
+                  <div>
+                    <h4 class="health-title">Resend Email</h4>
+                    <p class="health-desc" id="desc-resend">Checking email delivery service...</p>
+                  </div>
+                </div>
+                <div class="health-status-badge" id="badge-resend">Checking...</div>
+              </div>
+
+              <!-- ECDSA Cryptographic Engine -->
+              <div class="health-item">
+                <div class="health-left">
+                  <div class="health-icon" id="icon-crypto">
+                    <span class="status-dot green"></span>
+                  </div>
+                  <div>
+                    <h4 class="health-title">License Key Generator</h4>
+                    <p class="health-desc">Offline cryptographic signing engine</p>
+                  </div>
+                </div>
+                <div class="health-status-badge green-badge">Loaded &bull; Standalone</div>
+              </div>
+
+              <!-- Vercel Edge Geo IP Routing -->
+              <div class="health-item">
+                <div class="health-left">
+                  <div class="health-icon" id="icon-geo">
+                    <span class="status-dot green"></span>
+                  </div>
+                  <div>
+                    <h4 class="health-title">Geo-Pricing Detection</h4>
+                    <p class="health-desc">Country detection for regional pricing</p>
+                  </div>
+                </div>
+                <div class="health-status-badge green-badge">Operational</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Quick Email Delivery Verification Tool -->
+          <div class="panel-card mt-24">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Test Email Delivery</h3>
+                <p class="panel-subtitle">Send a sample license email to verify delivery</p>
+              </div>
+            </div>
+
+            <form id="test-email-form" class="inline-test-form">
+              <input type="email" id="test-email-input" placeholder="Enter your email to receive test key..." required>
+              <button type="submit" id="send-test-email-btn" class="btn btn-primary">
+                <span>Send Test Email</span>
+              </button>
+            </form>
+            <div id="test-email-result" class="test-result-box" style="display: none;"></div>
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB: PRODUCTION RELEASES (2-STEP VERIFICATION)
+             ============================================== -->
+        <section id="tab-releases" class="tab-view">
+          
+          <!-- Top summary cards: Current Active vs Previous Release vs Staged Drafts -->
+          <div class="kpi-grid">
+            
+            <!-- Current Active Release Card -->
+            <div class="kpi-card revenue-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Current Active Release</span>
+                <span id="release-current-badge" class="kpi-badge emerald">Live in Production</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="release-current-tag" style="color:var(--emerald);">--</span>
+                <span class="kpi-sub-val">Global Canonical</span>
+              </div>
+              <div class="kpi-footer">
+                <span id="release-current-date">Serving all desktop app downloads</span>
+                <span class="status-dot" style="background:var(--emerald); box-shadow:0 0 8px var(--emerald);"></span>
+              </div>
+            </div>
+
+            <!-- Previous Production Release Card -->
+            <div class="kpi-card profit-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Previous Production Release</span>
+                <span class="kpi-badge sky">Rollback Target</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="release-prev-tag" style="color:var(--sky);">--</span>
+                <span class="kpi-sub-val">Fallback Stable</span>
+              </div>
+              <div class="kpi-footer">
+                <span id="release-prev-date">Instant 2-Step Verified Revert Target</span>
+                <span class="status-dot" style="background:var(--sky); box-shadow:0 0 8px var(--sky);"></span>
+              </div>
+            </div>
+
+            <!-- Staged / Draft Releases Card -->
+            <div class="kpi-card traffic-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Staged Releases</span>
+                <span class="kpi-badge amber">Awaiting Approval</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="release-staged-count" style="color:var(--amber);">0</span>
+                <span class="kpi-sub-val">Built Drafts</span>
+              </div>
+              <div class="kpi-footer">
+                <span>Built by CI/CD · Pending 2-Step Approval</span>
+                <span class="status-dot" style="background:var(--amber); box-shadow:0 0 8px var(--amber);"></span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Staged Releases Ready to Launch -->
+          <div class="panel-card mt-24">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Staged Releases</h3>
+                <p class="panel-subtitle">New builds awaiting approval to go live</p>
+              </div>
+              <button id="refresh-releases-btn" class="btn btn-secondary btn-sm">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Refresh Status</span>
+              </button>
+            </div>
+
+            <div id="staged-releases-list" class="releases-list-container">
+              <div class="empty-state">
+                <div class="empty-icon"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg></div>
+                <h4>Scanning for staged releases...</h4>
+                <p>Checking GitHub repository for built drafts and release tags.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Production History & 2-Step Verified Rollback -->
+          <div class="panel-card mt-24">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Release History</h3>
+                <p class="panel-subtitle">Published versions with rollback option</p>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Version</th>
+                    <th>Release Title</th>
+                    <th>Published At</th>
+                    <th>Binary Assets</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="published-releases-tbody">
+                  <tr>
+                    <td colspan="6" class="text-center py-20 text-muted">Loading releases...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB: PRICING & PROMOTIONAL ENGINE
+             ============================================== -->
+        <section id="tab-pricing" class="tab-view">
+          
+          <div class="panel-card mb-24">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Pricing Configuration</h3>
+                <p class="panel-subtitle">Set retail prices, discount anchors, and countdown banners</p>
+              </div>
+              <span class="kpi-badge emerald" id="pricing-live-badge">
+                <span class="pulse-dot"></span> Live Synchronized
+              </span>
+            </div>
+
+            <div class="settings-content">
+              <p class="settings-desc">
+                Adjust baseline retail prices and promotional discount anchors without redeploying code. All updates propagate instantly to edge geo-detection and Razorpay checkouts worldwide.
+              </p>
+
+              <form id="update-pricing-form" class="settings-form">
+                
+                <!-- SECTION 1: 3-Tier Retail Pricing Architecture -->
+                <div class="pricing-tier-grid">
+                  <!-- Tier 1: Single Platform -->
+                  <div class="currency-card">
+                    <div class="currency-card-head">
+                      <div class="currency-tier-info">
+                        <span class="currency-tier-name">Single Platform</span>
+                        <span class="currency-tier-sub">1 Mac or Windows PC</span>
+                      </div>
+                      <span class="currency-type-tag">SOLO LICENSE</span>
+                    </div>
+                    <div class="currency-inputs-row">
+                      <div class="currency-input-field">
+                        <label for="price-single-inr-input">India (INR)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">₹</span>
+                          <input type="number" id="price-single-inr-input" min="99" step="1" value="799" placeholder="799" required>
+                        </div>
+                      </div>
+                      <div class="currency-input-field">
+                        <label for="price-single-usd-input">Global (USD)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">$</span>
+                          <input type="number" id="price-single-usd-input" min="1" step="1" value="15" placeholder="15" required>
+                        </div>
+                      </div>
+                    </div>
+                    <span class="field-hint">Entry single-device retail price (Default: ₹799 / $15)</span>
+                  </div>
+
+                  <!-- Tier 2: Universal Pro Lifetime (Hero) -->
+                  <div class="currency-card featured-tier-card">
+                    <div class="currency-card-head">
+                      <div class="currency-tier-info">
+                        <span class="currency-tier-name hero-name">Universal Pro Lifetime ★</span>
+                        <span class="currency-tier-sub">Mac &amp; PC (Up to 3 Devices)</span>
+                      </div>
+                      <span class="currency-type-tag featured-tag">RECOMMENDED • HERO</span>
+                    </div>
+                    <div class="currency-inputs-row">
+                      <div class="currency-input-field">
+                        <label for="price-inr-input">India (INR)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">₹</span>
+                          <input type="number" id="price-inr-input" min="99" step="1" value="999" placeholder="999" required>
+                        </div>
+                      </div>
+                      <div class="currency-input-field">
+                        <label for="price-usd-input">Global (USD)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">$</span>
+                          <input type="number" id="price-usd-input" min="1" step="1" value="19" placeholder="19" required>
+                        </div>
+                      </div>
+                    </div>
+                    <span class="field-hint">Primary hero retail offer (Default: ₹999 / $19)</span>
+                  </div>
+
+                  <!-- Tier 3: Commercial / Team License -->
+                  <div class="currency-card">
+                    <div class="currency-card-head">
+                      <div class="currency-tier-info">
+                        <span class="currency-tier-name">Team License</span>
+                        <span class="currency-tier-sub">Up to 10 Seats / Machines</span>
+                      </div>
+                      <span class="currency-type-tag team-tag">TEAMS &amp; STUDIOS</span>
+                    </div>
+                    <div class="currency-inputs-row">
+                      <div class="currency-input-field">
+                        <label for="price-team-inr-input">India (INR)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">₹</span>
+                          <input type="number" id="price-team-inr-input" min="99" step="1" value="3499" placeholder="3499" required>
+                        </div>
+                      </div>
+                      <div class="currency-input-field">
+                        <label for="price-team-usd-input">Global (USD)</label>
+                        <div class="currency-input-wrap">
+                          <span class="currency-symbol-addon">$</span>
+                          <input type="number" id="price-team-usd-input" min="1" step="1" value="69" placeholder="69" required>
+                        </div>
+                      </div>
+                    </div>
+                    <span class="field-hint">Commercial anchor retail pricing (Default: ₹3,499 / $69)</span>
+                  </div>
+                </div>
+
+                <!-- SECTION 2: Devices Limit per License Key -->
+                <div class="devices-setting-card mb-20">
+                  <div class="devices-setting-header">
+                    <div class="devices-setting-info">
+                      <div class="device-setting-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                      </div>
+                      <div>
+                        <div class="devices-setting-title">
+                          Devices Valid Per License Key
+                        </div>
+                        <p class="devices-setting-desc">
+                          Max personal Mac &amp; Windows machines per universal key. Updates dynamically in real-time across the website pricing card, feature lists, and FAQ.
+                        </p>
+                      </div>
+                    </div>
+                    <div class="devices-setting-controls">
+                      <label for="pricing-devices-input" class="devices-label">Max Activations:</label>
+                      <div class="currency-input-wrap devices-input-wrap">
+                        <input type="number" id="pricing-devices-input" min="1" max="50" step="1" value="3" placeholder="3" required>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SECTION 2: 3-Tier Strikethrough Pricing with Individual Toggles -->
+                <div class="feature-toggle-card mb-20">
+                  <div class="feature-toggle-header">
+                    <div class="feature-toggle-info">
+                      <div class="feature-toggle-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="12" x2="20" y2="12"/><line x1="7" y1="6" x2="17" y2="18"/></svg>
+                        <span>Strikethrough Pricing &amp; Perceived Discount Anchors (All 3 Tiers)</span>
+                      </div>
+                      <p class="feature-toggle-desc">
+                        Display crossed-out higher original prices alongside active selling prices to demonstrate instant perceived value and dramatically lift checkout conversions. Enable, disable, and calibrate each tier individually below.
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- 3 Individual Tier Strikethrough Sub-Cards -->
+                  <div class="tier-strike-cards-stack">
+                    
+                    <!-- Tier 1 Strike: Single Platform -->
+                    <div class="tier-strike-subcard" id="tier-strike-subcard-single">
+                      <div class="tier-strike-subcard-header" id="strike-toggle-header-single">
+                        <div class="tss-info">
+                          <span class="tss-badge">Tier 1</span>
+                          <strong class="tss-name">Single Platform (1 Mac or 1 PC)</strong>
+                          <span class="tss-sub">Entry Floor Strikethrough</span>
+                        </div>
+                        <label class="toggle-switch" title="Toggle Strikethrough for Single Platform">
+                          <input type="checkbox" id="pricing-strike-single-enabled" checked>
+                          <span class="toggle-slider"></span>
+                        </label>
+                      </div>
+
+                      <div class="tier-strike-subcard-body" id="pricing-strike-single-fields">
+                        <div class="pricing-dual-grid" style="margin-bottom: 10px;">
+                          <div>
+                            <label for="price-strike-single-inr-input" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; display: block;">
+                              India Original Price (₹)
+                            </label>
+                            <div class="currency-input-wrap">
+                              <span class="currency-symbol-addon">₹</span>
+                              <input type="number" id="price-strike-single-inr-input" min="100" step="1" value="1199" placeholder="1199">
+                            </div>
+                            <span class="field-hint">e.g. 1199 (Renders as <del>₹1,199</del>)</span>
+                          </div>
+
+                          <div>
+                            <label for="price-strike-single-usd-input" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; display: block;">
+                              Global Original Price ($)
+                            </label>
+                            <div class="currency-input-wrap">
+                              <span class="currency-symbol-addon">$</span>
+                              <input type="number" id="price-strike-single-usd-input" min="2" step="1" value="24" placeholder="24">
+                            </div>
+                            <span class="field-hint">e.g. 24 (Renders as <del>$24</del>)</span>
+                          </div>
+                        </div>
+
+                        <div class="preview-sim-row" id="pricing-strike-single-preview">
+                          <!-- Populated by admin.js -->
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Tier 2 Strike: Universal Pro Lifetime (Hero) -->
+                    <div class="tier-strike-subcard hero-border" id="tier-strike-subcard-universal">
+                      <div class="tier-strike-subcard-header" id="strike-toggle-header">
+                        <div class="tss-info">
+                          <span class="tss-badge hero-badge">Tier 2 Hero ★</span>
+                          <strong class="tss-name hero-name">Universal Pro Lifetime (Mac + PC, Up to 3 Devices)</strong>
+                          <span class="tss-sub">Flagship 80%+ Volume Anchor</span>
+                        </div>
+                        <label class="toggle-switch" title="Toggle Strikethrough for Universal Pro">
+                          <input type="checkbox" id="pricing-strike-enabled" checked>
+                          <span class="toggle-slider"></span>
+                        </label>
+                      </div>
+
+                      <div class="tier-strike-subcard-body" id="pricing-strike-fields">
+                        <div class="pricing-dual-grid" style="margin-bottom: 10px;">
+                          <div>
+                            <label for="price-strike-inr-input" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; display: block;">
+                              India Original Price (₹)
+                            </label>
+                            <div class="currency-input-wrap">
+                              <span class="currency-symbol-addon">₹</span>
+                              <input type="number" id="price-strike-inr-input" min="100" step="1" value="1499" placeholder="1499">
+                            </div>
+                            <span class="field-hint">e.g. 1499 (Renders as <del>₹1,499</del>)</span>
+                          </div>
+
+                          <div>
+                            <label for="price-strike-usd-input" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; display: block;">
+                              Global Original Price ($)
+                            </label>
+                            <div class="currency-input-wrap">
+                              <span class="currency-symbol-addon">$</span>
+                              <input type="number" id="price-strike-usd-input" min="2" step="1" value="29" placeholder="29">
+                            </div>
+                            <span class="field-hint">e.g. 29 (Renders as <del>$29</del>)</span>
+                          </div>
+                        </div>
+
+                        <div class="preview-sim-row" id="pricing-strike-preview">
+                          <!-- Populated by admin.js -->
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Tier 3 Strike: Team / Commercial License -->
+                    <div class="tier-strike-subcard" id="tier-strike-subcard-team">
+                      <div class="tier-strike-subcard-header" id="strike-toggle-header-team">
+                        <div class="tss-info">
+                          <span class="tss-badge">Tier 3</span>
+                          <strong class="tss-name">Commercial / Team License (Up to 10 Seats)</strong>
+                          <span class="tss-sub">High-Ticket Anchor</span>
+                        </div>
+                        <label class="toggle-switch" title="Toggle Strikethrough for Team License">
+                          <input type="checkbox" id="pricing-strike-team-enabled" checked>
+                          <span class="toggle-slider"></span>
+                        </label>
+                      </div>
+
+                      <div class="tier-strike-subcard-body" id="pricing-strike-team-fields">
+                        <div class="pricing-dual-grid" style="margin-bottom: 10px;">
+                          <div>
+                            <label for="price-strike-team-inr-input" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; display: block;">
+                              India Original Price (₹)
+                            </label>
+                            <div class="currency-input-wrap">
+                              <span class="currency-symbol-addon">₹</span>
+                              <input type="number" id="price-strike-team-inr-input" min="100" step="1" value="4999" placeholder="4999">
+                            </div>
+                            <span class="field-hint">e.g. 4999 (Renders as <del>₹4,999</del>)</span>
+                          </div>
+
+                          <div>
+                            <label for="price-strike-team-usd-input" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; display: block;">
+                              Global Original Price ($)
+                            </label>
+                            <div class="currency-input-wrap">
+                              <span class="currency-symbol-addon">$</span>
+                              <input type="number" id="price-strike-team-usd-input" min="2" step="1" value="99" placeholder="99">
+                            </div>
+                            <span class="field-hint">e.g. 99 (Renders as <del>$99</del>)</span>
+                          </div>
+                        </div>
+
+                        <div class="preview-sim-row" id="pricing-strike-team-preview">
+                          <!-- Populated by admin.js -->
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- SECTION 3: Limited-Time Offer Expiry Countdown Timer -->
+                <div class="feature-toggle-card">
+                  <div class="feature-toggle-header" id="countdown-toggle-header">
+                    <div class="feature-toggle-info">
+                      <div class="feature-toggle-title">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span>Urgency Countdown Banner</span>
+                      </div>
+                      <p class="feature-toggle-desc">
+                        Display a live animated urgency banner above the pricing section with real-time ticking clock (Days, Hours, Minutes, Seconds).
+                      </p>
+                    </div>
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="pricing-countdown-enabled" checked>
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div id="pricing-countdown-fields" class="feature-toggle-body">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                      <div>
+                        <label for="pricing-countdown-val" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
+                          Offer Duration Value
+                        </label>
+                        <input type="number" id="pricing-countdown-val" min="1" step="1" value="24" placeholder="24">
+                        <span class="field-hint">Number of units for the limited-time sale</span>
+                      </div>
+
+                      <div>
+                        <label for="pricing-countdown-unit" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
+                          Duration Time Unit
+                        </label>
+                        <select id="pricing-countdown-unit">
+                          <option value="hours" selected>Hours (e.g. 24 hours)</option>
+                          <option value="days">Days (e.g. 3 days)</option>
+                        </select>
+                        <span class="field-hint">Scale the urgency window</span>
+                      </div>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                      <label for="pricing-countdown-discount" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
+                        24-Hour Deal Discount Percentage (%)
+                      </label>
+                      <div class="currency-input-wrap" style="max-width: 160px;">
+                        <span class="currency-symbol-addon">%</span>
+                        <input type="number" id="pricing-countdown-discount" min="1" max="90" step="1" value="10" placeholder="10" required>
+                      </div>
+                      <span class="field-hint">Discount percentage applied when visitors use FIRST24 (Default: 10%). Updates website announcement bar, hero badge, pricing urgency header, and coupon calculations automatically.</span>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                      <label for="pricing-countdown-label" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">
+                        Banner Headline Text
+                      </label>
+                      <input type="text" id="pricing-countdown-label" value="First 24-Hours Deal: 10% Off All Plans with code FIRST24" placeholder="First 24-Hours Deal: 10% Off All Plans with code FIRST24">
+                      <span class="field-hint">Displayed in the pricing section urgency header on the website</span>
+                    </div>
+
+                    <!-- Instant Reset Countdown From Now Action Card -->
+                    <div class="countdown-reset-action-card">
+                      <div class="cra-info">
+                        <div class="cra-header">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                          <strong>Restart Countdown Freshly From Now</strong>
+                        </div>
+                        <p class="cra-desc">Instantly reset the limited-time sale countdown to start ticking from this exact second for <span id="cra-duration-desc" style="color:var(--text-main); font-weight:700;">24 hours</span>.</p>
+                        <div class="cra-status">
+                          <span class="cra-dot"></span>
+                          <span id="cra-expiry-label">Expires: Calculating...</span>
+                        </div>
+                      </div>
+                      <button type="button" class="cra-btn" id="btn-reset-countdown-now">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <span>Reset Countdown From Now</span>
+                      </button>
+                    </div>
+
+                    <div style="margin-bottom: 16px; padding: 10px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+                      <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-main);">
+                        <input type="checkbox" id="pricing-countdown-reset" style="width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer;">
+                        <span>Also restart timer countdown from now when clicking "Save &amp; Deploy Live Pricing Everywhere" below</span>
+                      </label>
+                    </div>
+
+                    <!-- Live Ticking Simulator Preview -->
+                    <div class="preview-simulation-box">
+                      <div class="preview-sim-title">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span>Active Website Banner Simulation</span>
+                      </div>
+                      <div id="pricing-countdown-preview">
+                        <!-- Populated dynamically by admin.js -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SECTION 4: Master Passcode Authorization -->
+                <div class="passcode-authorization-card">
+                  <div class="pac-header">
+                    <div class="pac-title">Deploy Changes to Edge &amp; Database</div>
+                    <div class="pac-desc">Saves retail prices, promotional discount anchors, and countdown timers across all platforms.</div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="pricing-admin-passcode" style="color: var(--text-main); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      Admin Master Passcode
+                    </label>
+                    <input type="password" id="pricing-admin-passcode" placeholder="Enter master passcode (or uses active authenticated session)" autocomplete="current-password">
+                    <span class="field-hint">Required to verify administrative authenticity before committing live price changes.</span>
+                  </div>
+
+                  <button type="button" id="save-pricing-btn" class="save-pricing-action-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    <span>Save &amp; Deploy Live Pricing Everywhere</span>
+                  </button>
+                  <div id="pricing-update-msg" class="passcode-msg" style="margin-top: 14px;"></div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB: REDESIGNED SECURITY & PASSCODE COMMAND CENTER
+             ============================================== -->
+        <section id="tab-settings" class="tab-view">
+          
+          <!-- Security Posture Status Strip -->
+          <div class="security-status-strip mb-24">
+            <div class="sss-item">
+              <span class="sss-dot green"></span>
+              <div class="sss-text">
+                <span class="sss-label">Session Gate</span>
+                <strong class="sss-val">TLS 1.3 Strict &bull; Active</strong>
+              </div>
+            </div>
+
+            <div class="sss-item">
+              <span class="sss-dot amber"></span>
+              <div class="sss-text">
+                <span class="sss-label">Verification Cipher</span>
+                <strong class="sss-val">crypto.timingSafeEqual (Constant Time)</strong>
+              </div>
+            </div>
+
+            <div class="sss-item">
+              <span class="sss-dot cyan"></span>
+              <div class="sss-text">
+                <span class="sss-label">Persistence</span>
+                <strong class="sss-val">Neon PostgreSQL + Edge /tmp</strong>
+              </div>
+            </div>
+
+            <div class="sss-action">
+              <button type="button" id="btn-emergency-lock-session" class="btn-lock-action">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Lock Session</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Main Master Passcode Rotation Fortress Card -->
+          <div class="panel-card mb-24">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Change Passcode</h3>
+                <p class="panel-subtitle">Update your admin login passcode</p>
+              </div>
+              <button type="button" id="btn-generate-secure-pass" class="btn btn-secondary btn-sm" title="Generate strong random passcode">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+                <span>Generate Secure Passcode</span>
+              </button>
+            </div>
+
+            <div class="settings-content">
+              
+              <form id="change-passcode-form" class="settings-form" autocomplete="off">
+                
+                <!-- Current Passcode -->
+                <div class="form-group mb-16">
+                  <label for="current-passcode-input" class="sec-label">
+                    <span>Current Passcode</span>
+                    <span class="badge-status info">Required</span>
+                  </label>
+                  <div class="password-input-wrap">
+                    <input type="password" id="current-passcode-input" placeholder="Enter current admin passcode" required autocomplete="current-password">
+                    <button type="button" class="password-eye-btn" data-target="current-passcode-input" title="Show/Hide Passcode">
+                      <svg class="eye-show" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      <svg class="eye-hide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    </button>
+                  </div>
+                  <span class="field-hint">Enter your existing admin passcode to authorize changes.</span>
+                </div>
+
+                <!-- New Passcode + Strength Evaluation -->
+                <div class="form-group mb-16">
+                  <label for="new-passcode-input" class="sec-label">
+                    <span>New Passcode</span>
+                    <span id="entropy-label" class="entropy-status-text">Enter minimum 8 characters</span>
+                  </label>
+                  <div class="password-input-wrap">
+                    <input type="password" id="new-passcode-input" placeholder="Enter new strong passcode (min 8 characters)" required autocomplete="new-password">
+                    <button type="button" class="password-eye-btn" data-target="new-passcode-input" title="Show/Hide Passcode">
+                      <svg class="eye-show" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      <svg class="eye-hide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    </button>
+                  </div>
+
+                  <!-- 4-Segment Live Entropy Meter -->
+                  <div class="entropy-meter-wrap">
+                    <div class="entropy-bars">
+                      <span class="eb-bar" id="eb-bar-1"></span>
+                      <span class="eb-bar" id="eb-bar-2"></span>
+                      <span class="eb-bar" id="eb-bar-3"></span>
+                      <span class="eb-bar" id="eb-bar-4"></span>
+                    </div>
+                  </div>
+
+                  <!-- Real-Time Requirements Checklist -->
+                  <div class="req-checklist">
+                    <span class="req-item" id="req-len">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      8+ Characters
+                    </span>
+                    <span class="req-item" id="req-upper">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      Uppercase (A-Z)
+                    </span>
+                    <span class="req-item" id="req-lower">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      Lowercase (a-z)
+                    </span>
+                    <span class="req-item" id="req-num">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      Number (0-9)
+                    </span>
+                    <span class="req-item" id="req-symbol">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      Special Character (!@#$...)
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Confirm New Passcode -->
+                <div class="form-group mb-20">
+                  <label for="confirm-passcode-input" class="sec-label">
+                    <span>Confirm Passcode</span>
+                    <span id="passcode-match-badge" class="badge-status" style="display:none;">Match Status</span>
+                  </label>
+                  <div class="password-input-wrap">
+                    <input type="password" id="confirm-passcode-input" placeholder="Retype new passcode exactly to confirm" required autocomplete="new-password">
+                    <button type="button" class="password-eye-btn" data-target="confirm-passcode-input" title="Show/Hide Passcode">
+                      <svg class="eye-show" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      <svg class="eye-hide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    </button>
+                  </div>
+                  <span class="field-hint">Type the new passcode again to verify.</span>
+                </div>
+
+                <!-- Action Button -->
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+                  <button type="submit" id="btn-save-master-passcode" class="btn btn-primary" style="padding: 12px 28px; font-weight: 700;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    <span>Update Passcode</span>
+                  </button>
+                </div>
+
+              </form>
+              <div id="passcode-update-msg" class="passcode-msg" style="margin-top: 16px;"></div>
+            </div>
+          </div>
+
+          <!-- Production Serverless Environment (Vercel) Integration Card -->
+          <div class="panel-card mb-24">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Environment Settings</h3>
+                <p class="panel-subtitle">Server-level configuration for Vercel deployment</p>
+              </div>
+              <span class="kpi-badge cyan">Vercel Edge</span>
+            </div>
+
+            <div class="settings-content">
+              <p class="settings-desc">
+                When you update your passcode, it is saved to your database (<code style="font-family:var(--font-mono); color:var(--emerald);">app_settings</code>). To update your environment variable in Vercel as well, run this command in your terminal:
+              </p>
+
+              <div class="terminal-command-box">
+                <div class="tcb-header">
+                  <span class="tcb-dot red"></span>
+                  <span class="tcb-dot yellow"></span>
+                  <span class="tcb-dot green"></span>
+                  <span class="tcb-title">Terminal &bull; Production Environment Setup</span>
+                </div>
+                <div class="tcb-body">
+                  <code id="vercel-env-cmd-text">vercel env add ADMIN_KEY production</code>
+                  <button type="button" id="btn-copy-vercel-cmd" class="btn btn-secondary btn-sm">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <span id="copy-cmd-label">Copy Command</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="sec-architecture-note">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span><strong>Security Architecture:</strong> Even if a malicious actor sends thousands of guesses per second, the server uses constant-time byte buffer comparison (<code style="font-family:var(--font-mono); color:var(--emerald);">timingSafeEqual</code>) which executes in identical CPU clock cycles regardless of how many characters match, rendering timing analysis impossible.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Event Audit Ledger Card -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Security &amp; Authorization Audit Log</h3>
+                <p class="panel-subtitle">Real-time ledger of administrative security actions, authentications, and key updates</p>
+              </div>
+              <span class="badge-status success" id="audit-log-badge">Active Monitoring</span>
+            </div>
+
+            <div class="settings-content" style="padding: 0;">
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Event &amp; Action</th>
+                      <th>Target / Domain</th>
+                      <th>Verification Mechanism</th>
+                      <th>Status</th>
+                      <th>Recorded Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody id="security-audit-ledger-rows">
+                    <!-- Populated dynamically by admin.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ========================================================
+       3. MODAL: ISSUE NEW PRO LICENSE
+       ======================================================== -->
+  <div id="issue-modal" class="admin-modal-overlay" style="display: none;">
+    <div class="admin-modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Issue New License</h3>
+          <p>Generate and issue a license key for a customer</p>
+        </div>
+        <button id="close-issue-modal-btn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <form id="issue-license-form" class="modal-form">
+        <div class="form-group">
+          <label for="issue-name">Customer Name</label>
+          <input type="text" id="issue-name" placeholder="e.g. John Doe" required>
+        </div>
+
+        <div class="form-group">
+          <label for="issue-email">Customer Email</label>
+          <input type="email" id="issue-email" placeholder="customer@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="issue-tier">License Tier</label>
+          <select id="issue-tier" class="control-select w-100">
+            <option value="single">Single Platform (1 Mac or 1 Windows PC)</option>
+            <option value="universal" selected>Universal Pro Lifetime (Mac + PC, Up to 3 Devices)</option>
+            <option value="team">Commercial / Team License (Up to 10 Seats / Machines)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="issue-expiry">Duration</label>
+          <select id="issue-expiry" class="control-select w-100">
+            <option value="0">Lifetime (Never Expires - Standard)</option>
+            <option value="120">⚡ 2 Minutes (Testing Immediate Expiry)</option>
+            <option value="300">⚡ 5 Minutes (Testing Quick Expiry)</option>
+            <option value="600">⚡ 10 Minutes (Testing Session Expiry)</option>
+            <option value="3600">1 Hour (Testing Demo)</option>
+            <option value="86400">24 Hours (1-Day Pass)</option>
+            <option value="604800">7 Days (Extended Trial)</option>
+            <option value="2592000">30 Days (Monthly Pass)</option>
+            <option value="custom">Custom Duration (Minutes)...</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="issue-expiry-custom-wrap" style="display: none;">
+          <label for="issue-expiry-custom">Custom Duration (in minutes)</label>
+          <input type="number" id="issue-expiry-custom" min="1" step="1" placeholder="e.g. 15">
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="custom-checkbox">
+            <input type="checkbox" id="issue-send-email" checked>
+            <span class="checkmark"></span>
+            <span class="checkbox-label">Send branded activation email immediately via Resend</span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-issue-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="generate-key-btn" class="btn btn-primary">
+            <span>Generate &amp; Issue Key</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Result Key Display -->
+      <div id="generated-key-result" class="key-result-card" style="display: none;">
+        <span class="result-label">Generated License Key:</span>
+        <div class="key-display-box">
+          <code id="newly-generated-key">DD-...</code>
+          <button id="copy-new-key-btn" class="btn btn-secondary btn-sm" title="Copy to Clipboard">Copy</button>
+        </div>
+        <p class="result-note" id="issue-email-status"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       4. MODAL: CREATE COUPON OFFER
+       ======================================================== -->
+  <div id="coupon-modal" class="admin-modal-overlay" style="display: none;">
+    <div class="admin-modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Create Coupon Offer</h3>
+          <p>Define a promotional discount code for customer checkout</p>
+        </div>
+        <button id="close-coupon-modal-btn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <form id="create-coupon-form" class="modal-form">
+        <div class="form-group">
+          <label for="new-coupon-code">Coupon Code</label>
+          <input type="text" id="new-coupon-code" placeholder="e.g. LAUNCH50, SPECIAL20" style="text-transform: uppercase;" required>
+        </div>
+
+        <div class="form-group">
+          <label for="new-coupon-type">Discount Type</label>
+          <select id="new-coupon-type" class="control-select w-100">
+            <option value="percent">Percentage Off (%)</option>
+            <option value="flat">Flat Amount Off (₹ / $)</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="group-coupon-percent">
+          <label for="new-coupon-value">Percentage Discount (%)</label>
+          <input type="number" id="new-coupon-value" min="1" max="95" value="20" placeholder="e.g. 20 for 20% off">
+        </div>
+
+        <div class="form-group" id="group-coupon-flat" style="display: none;">
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+              <label for="new-coupon-inr">Flat Off in INR (₹)</label>
+              <input type="number" id="new-coupon-inr" min="10" value="200" placeholder="e.g. 200">
+            </div>
+            <div style="flex: 1;">
+              <label for="new-coupon-usd">Flat Off in USD ($)</label>
+              <input type="number" id="new-coupon-usd" min="1" value="4" placeholder="e.g. 4">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="new-coupon-limit">Max Usages / Redemptions</label>
+          <input type="number" id="new-coupon-limit" min="1" value="100" placeholder="e.g. 100 uses">
+        </div>
+
+        <div class="form-group">
+          <label for="new-coupon-expiry">Expiry Date</label>
+          <input type="date" id="new-coupon-expiry" value="2026-12-31">
+        </div>
+
+        <div class="form-group">
+          <label for="new-coupon-desc">Promotion Description</label>
+          <input type="text" id="new-coupon-desc" placeholder="e.g. Special Launch 20% Discount">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-coupon-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="save-coupon-btn" class="btn btn-primary">
+            <span>Create &amp; Activate Coupon</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL: 2-STEP VERIFIED RELEASE LAUNCH
+       ======================================================== -->
+  <div id="launch-release-modal" class="admin-modal-overlay" style="display: none;">
+    <div class="admin-modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 style="color:var(--emerald);">2-Step Verified Release Launch</h3>
+          <p>Authorize publishing new production version to all desktop users</p>
+        </div>
+        <button id="close-launch-modal-btn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <form id="launch-release-form" class="modal-form">
+        <!-- Version Info Box -->
+        <div class="release-verify-box" style="background:rgba(16, 185, 129, 0.08); border:1px solid rgba(16, 185, 129, 0.25); border-radius:var(--radius-md); padding:16px; margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">Target Release</span>
+            <span id="launch-modal-badge" class="badge-status success">Staged Draft</span>
+          </div>
+          <div id="launch-modal-title" style="font-size:16px; font-weight:700; color:var(--text-main);">DropDial 1.0.0.0</div>
+          <div id="launch-modal-assets" style="font-size:12px; color:var(--text-muted); margin-top:4px;">5 Assets (macOS DMG/ZIP + Windows Setup/ZIP)</div>
+          
+          <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); font-size:12px; line-height:1.4;">
+            <span style="color:var(--text-muted);">Release Notes Preview:</span>
+            <div id="launch-modal-notes" style="margin-top:4px; max-height:80px; overflow-y:auto; color:var(--text-main); font-family:var(--font-mono); font-size:11px; white-space:pre-wrap; background:rgba(0,0,0,0.3); padding:8px; border-radius:4px;"></div>
+          </div>
+        </div>
+
+        <input type="hidden" id="launch-target-version">
+
+        <!-- Verification Step 1: Retype Version -->
+        <div class="form-group">
+          <label for="launch-confirm-version">
+            <span>Step 1: Type Version Number to Confirm</span>
+            <span id="launch-prompt-hint" style="color:var(--emerald); font-weight:700; margin-left:6px;"></span>
+          </label>
+          <input type="text" id="launch-confirm-version" placeholder="e.g. 1.0.0.0" autocomplete="off" required>
+          <span class="field-hint">Safety check: Protects against accidental clicks</span>
+        </div>
+
+        <!-- Verification Step 2: Admin Password -->
+        <div class="form-group">
+          <label for="launch-passcode">Step 2: Enter Admin Passcode</label>
+          <input type="password" id="launch-passcode" placeholder="Enter your admin passcode" required>
+          <span class="field-hint">Enter your admin passcode to confirm deployment</span>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-launch-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="confirm-launch-submit-btn" class="btn btn-primary" style="background:var(--emerald); border-color:var(--emerald);">
+            <span>Publish Release</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL: 2-STEP VERIFIED RELEASE REVERT / ROLLBACK
+       ======================================================== -->
+  <div id="revert-release-modal" class="admin-modal-overlay" style="display: none;">
+    <div class="admin-modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 style="color:var(--rose);">Roll Back Release</h3>
+          <p>Switch active download version back to an earlier release</p>
+        </div>
+        <button id="close-revert-modal-btn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <form id="revert-release-form" class="modal-form">
+        <!-- Rollback Warning Box -->
+        <div class="release-verify-box" style="background:rgba(239, 68, 68, 0.08); border:1px solid rgba(239, 68, 68, 0.25); border-radius:var(--radius-md); padding:16px; margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:var(--rose); font-weight:700;">Rollback Target</span>
+            <span class="badge-status warning">Demoting Current</span>
+          </div>
+          <div id="revert-modal-target" style="font-size:16px; font-weight:700; color:var(--text-main);">Revert to v0.0.0.0</div>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">
+            Once confirmed, client auto-updates and web download buttons will immediately serve this previous version.
+          </p>
+        </div>
+
+        <input type="hidden" id="revert-target-version">
+
+        <!-- Verification Step 1: Retype Target Version -->
+        <div class="form-group">
+          <label for="revert-confirm-version">
+            <span>Step 1: Type Version Number to Confirm</span>
+            <span id="revert-prompt-hint" style="color:var(--rose); font-weight:700; margin-left:6px;"></span>
+          </label>
+          <input type="text" id="revert-confirm-version" placeholder="e.g. 0.0.0.0" autocomplete="off" required>
+        </div>
+
+        <!-- Verification Step 2: Admin Password -->
+        <div class="form-group">
+          <label for="revert-passcode">Step 2: Enter Admin Passcode</label>
+          <input type="password" id="revert-passcode" placeholder="Enter your admin passcode" required>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-revert-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="confirm-revert-submit-btn" class="btn btn-primary" style="background:var(--rose); border-color:var(--rose);">
+            <span>Confirm Rollback</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- ========================================================
+       MODAL: 2-STEP PERMANENT RESET TEST DATA & FINANCIALS
+       ======================================================== -->
+  <div id="reset-data-modal" class="admin-modal-overlay" style="display: none;">
+    <div class="admin-modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 style="color:var(--rose);">Reset Test Data &amp; Financials</h3>
+          <p>Permanently purge test revenue, profits, test licenses, and reset coupons</p>
+        </div>
+        <button id="close-reset-modal-btn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <form id="reset-data-form" class="modal-form">
+        <div class="release-verify-box" style="background:rgba(239, 68, 68, 0.08); border:1px solid rgba(239, 68, 68, 0.25); border-radius:var(--radius-md); padding:16px; margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:var(--rose); font-weight:700;">Permanent Purge Warning</span>
+            <span class="badge-status error">Irreversible</span>
+          </div>
+          <p style="font-size:13px; color:var(--text-main); margin-bottom:6px;">
+            This will permanently reset all <strong>test revenue, net profit calculations, captured transactions, test licenses, promotional coupons, and visitor analytics</strong> back to zero.
+          </p>
+          <p style="font-size:12px; color:var(--text-muted);">
+            Use this after all your testing to launch a 100% clean, pristine ledger for live production sales.
+          </p>
+        </div>
+
+        <!-- Verification Step 1: Retype RESET -->
+        <div class="form-group">
+          <label for="reset-confirm-word">
+            <span>Step 1: Type <strong style="color:var(--rose);">RESET</strong> to confirm</span>
+          </label>
+          <input type="text" id="reset-confirm-word" placeholder="Type RESET in capital letters" autocomplete="off" required>
+        </div>
+
+        <!-- Verification Step 2: Admin Password -->
+        <div class="form-group">
+          <label for="reset-passcode">Step 2: Enter Admin Master Passcode</label>
+          <input type="password" id="reset-passcode" placeholder="Enter your admin passcode" required>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-reset-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="confirm-reset-submit-btn" class="btn btn-primary" style="background:var(--rose); border-color:var(--rose);">
+            <span>Verify &amp; Wipe Test Data</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/admin/admin.js?v=1.0.1.6"></script>
+</body>
+</html>
