@@ -423,6 +423,7 @@ internal static class LicenseManager
         string deviceId = GetDeviceId();
         string deviceName = Environment.MachineName;
 
+        string? serverSuccessMsg = null;
         // Verify device limit with activation server
         try
         {
@@ -453,6 +454,19 @@ internal static class LicenseManager
                     return (false, "This license has reached its device limit. Deactivate your other device to use it here.");
                 }
             }
+            else
+            {
+                try
+                {
+                    string respJson = await response.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(respJson);
+                    if (doc.RootElement.TryGetProperty("message", out var msgElem) && !string.IsNullOrWhiteSpace(msgElem.GetString()))
+                    {
+                        serverSuccessMsg = msgElem.GetString();
+                    }
+                }
+                catch { }
+            }
         }
         catch
         {
@@ -464,7 +478,10 @@ internal static class LicenseManager
         SaveState(state);
 
         RefreshStatus();
-        return (true, $"DropDial Pro successfully activated! Thank you, {(string.IsNullOrEmpty(info.Name) ? info.Email : info.Name)}.");
+        string displayMsg = !string.IsNullOrWhiteSpace(serverSuccessMsg)
+            ? serverSuccessMsg!
+            : $"DropDial Pro successfully activated! Thank you, {(string.IsNullOrEmpty(info.Name) ? info.Email : info.Name)}.";
+        return (true, displayMsg);
     }
 
     public static (bool Success, string Message) Activate(string licenseKey)

@@ -449,7 +449,13 @@ final class LicenseManager {
 
                 // If success or network unavailable, apply activation
                 self.saveAndApply(key: cleanKey, info: info)
-                completion(true, "DropDial Pro successfully activated! Thank you, \(info.name.isEmpty ? info.email : info.name).")
+                var successMsg = "DropDial Pro successfully activated! Thank you, \(info.name.isEmpty ? info.email : info.name)."
+                if let data = data,
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let msg = json["message"] as? String, !msg.isEmpty {
+                    successMsg = msg
+                }
+                completion(true, successMsg)
             }
         }.resume()
     }

@@ -229,3 +229,204 @@ Here is the complete breakdown of DropDial's **business model, plans, benefits, 
 - **Tangerine (`tangerineformac.com`)**: Locked to Mac, has no staging shelf, and permanently bricks after just 20 files.
 - **ZestDrop (`zestdrop.org`)**: Windows-only with no Mac client and no OCR.
 - **DropDial**: True dual-native (Swift on Mac + WPF on Windows), 1 key for both OS, a multi-file floating shelf, native Apple Vision OCR, and 3 free conversions every day even after the trial ends.
+
+
+
+
+
+
+
+
+Viewed LicenseManager.cs:60-140
+Viewed LicenseManager.cs:250-350
+Viewed LicenseManager.cs:350-450
+Searched for "license"
+Searched for "generateLicense"
+Viewed _utils.js:80-140
+Searched for "activate"
+Viewed package.json:1-25
+Searched for "neondatabase"
+Viewed _db.js:1-80
+Viewed _db.js:80-121
+Listed directory api
+Viewed verify-payment.js:1-60
+Viewed verify-payment.js:60-110
+Searched for "data-license-devices"
+Viewed checkout.js:480-540
+Viewed checkout.js:30-75
+Viewed LicenseWindow.cs:50-120
+Searched for "Your Free Trial Has Ended"
+Viewed LicenseManager.swift:650-730
+Viewed LicenseManager.swift:570-650
+Viewed LicenseManager.swift:500-570
+Ran command: `diff -rq api/ website/api/`
+Viewed vercel.json:1-23
+Viewed _db.js:40-60
+Edited _db.js
+Viewed _db.js:1-10
+Edited _db.js
+Searched for "verifyLicense"
+Viewed _utils.js:50-85
+Viewed _utils.js:1-50
+Viewed _utils.js:400-417
+Ran command: `node -e "
+const { generateLicense } = require('./api/_utils');
+const crypto = require('crypto');
+const key = generateLicense('test@example.com', 'Test User', 'single');
+console.log('Generated key:', key);
+const parts = key.slice(3).split('.');
+const payloadBuf = Buffer.from(parts[0].replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+const sigBuf = Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+const { getPrivateKey } = require('./api/_utils');
+const pubKey = crypto.createPublicKey(getPrivateKey());
+const verify = crypto.createVerify('SHA256');
+verify.update(payloadBuf);
+const valid = verify.verify({ key: pubKey, dsaEncoding: 'ieee-p1363' }, sigBuf);
+console.log('Valid signature:', valid, 'Payload:', JSON.parse(payloadBuf.toString()));
+"`
+Edited _utils.js
+Viewed _utils.js:430-455
+Edited _utils.js
+Created activate.js
+Created activate.js
+Created deactivate.js
+Created deactivate.js
+Viewed LicenseManager.cs:1-50
+Searched for "class StoredLicenseState"
+Viewed LicenseManager.cs:140-170
+Viewed LicenseWindow.cs:75-130
+Viewed LicenseWindow.cs:270-330
+Viewed LicenseWindow.cs:360-420
+Edited LicenseManager.cs
+Viewed LicenseManager.cs:140-155
+Viewed LicenseManager.cs:390-425
+Edited LicenseManager.cs
+Edited LicenseManager.cs
+Viewed LicenseWindow.cs:75-90
+Viewed LicenseWindow.cs:360-425
+Edited LicenseWindow.cs
+Viewed LicenseManager.swift:340-410
+Viewed LicenseManager.swift:410-435
+Viewed LicenseManager.swift:490-565
+Viewed LicenseManager.swift:470-495
+Viewed LicenseManager.swift:740-780
+Viewed LicenseManager.swift:395-445
+Viewed LicenseManager.swift:440-475
+Viewed LicenseManager.swift:1-25
+Edited LicenseManager.swift
+Ran command: `git status`
+Ran command: `git diff work/DropDial/Program.cs`
+Searched for "CheckForUpdatesAsync"
+Viewed Program.cs:405-445
+Viewed Program.cs:570-600
+Viewed Program.cs:720-765
+Viewed Program.cs:690-725
+Viewed UpdateManager.cs:1-60
+Viewed UpdateManager.cs:120-190
+Edited Program.cs
+Viewed Program.cs:565-585
+Viewed Program.cs:700-725
+Edited Program.cs
+Edited Program.cs
+Ran command: `./build-mac.sh`
+Used tool: manage_task
+Used tool: manage_task
+Used tool: manage_task
+Used tool: manage_task
+Used tool: manage_task
+Used tool: manage_task
+Used tool: manage_task
+Used tool: manage_task
+Used tool: manage_task
+Ran command: `git status`
+Ran command: `git diff work/DropDial/Catalog.cs work/DropDial/WelcomeWindow.cs`
+Ran command: `git diff work/DropDial/LicenseWindow.cs work/DropDial/LicenseManager.cs`
+Ran command: `dotnet build work/DropDial/DropDial.csproj`
+Ran command: `git status`
+Ran command: `git add -A && git commit -m "Enforce single plan device limits, add one-time payment badge, disable 2-wheels on Windows, and fix tray menu blink"`
+Ran command: `git push origin main && git tag -f v1.0.1.6 && git push origin v1.0.1.6 -f`
+
+All requested updates and fixes have been implemented, built, committed, and pushed to `main` with the tag `v1.0.1.6` updated.
+
+---
+
+### 1. Two Wheels (Category) Feature Overview
+
+#### What is the Two Wheels (Category) Feature?
+DropDial supports a large suite of tools across various workflows (PDF manipulation, image editing, conversion, extraction, etc.). When a file type has more than 8-10 compatible tools, displaying all tools simultaneously on a single radial wheel can crowd the circumference. 
+
+The two-wheel layout was designed as a hierarchical radial navigation model:
+1. **Inner Ring (Category Wheel)**:
+   - When hovering near the center or opening the dial, the inner circular ring displays high-level functional categories (for example: *Optimize*, *Convert*, *Pages*, *Security*).
+2. **Outer Ring (Action Ring)**:
+   - Moving the cursor or mouse pointer onto an inner category segment expands the corresponding tools in the outer ring.
+   - Only the tools belonging to the selected category are populated along the perimeter.
+3. **Workflow Intent**:
+   - The goal was to provide quick sub-menu selection without needing multi-level rectangular desktop menus, keeping mouse movement radial.
+
+#### Why It Is Disabled in Windows:
+- **Interaction Friction**: In rapid drag-and-drop scenarios, users found moving through two concentric rings requires higher cursor precision than simply seeing the available tools directly or using pagination / combined tools.
+- **Combined Tools Mode**: The application defaults to combined tool entries (e.g., *Crop & rotate*, *Size & compress*) and paged dials, which allow one-click access without category traversal.
+- **Current State**: `Catalog.TwoWheels` is locked to `false`, the option has been removed from [WelcomeWindow.cs](file:///Users/nithin/Desktop/lotus/work/DropDial/WelcomeWindow.cs), and the layout toggle submenu has been removed from the notification tray context menu.
+
+---
+
+
+list out in all hacker news, product hunt,indie hackers,uneed, r/sideProject 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Searched for "single"
+Viewed pricing.js:25-75
+
+To maximize revenue for a native desktop utility like **DropDial**, your pricing cannot simply be a direct currency conversion ($1 $\neq$ ₹85). 
+
+You are selling to two completely distinct psychological buyer archetypes:
+1. **The Global/US/EU Buyer**: High purchasing power, value-to-hourly-rate calculations, zero hesitation under $30, but suspicious of software that looks "too cheap" ($5–$9 feels like abandonware or malware).
+2. **The Indian Buyer**: Highly price-sensitive, compares desktop utilities to annual OTT subscriptions (Netflix/Hotstar), but possesses **frictionless 1-tap UPI impulse buying** when kept below critical psychological psychological thresholds (₹499 / ₹799 / ₹999).
+
+Here is the realistic, data-grounded pricing and packaging strategy to maximize Total Revenue ($\text{Revenue} = \text{Conversion Rate} \times \text{Average Order Value}$).
+
+---
+
+## 1. The Recommended Price Matrix
+
+| Plan Tier | **Global (USD $)** <br> *(US, EU, UK, CA, AU)* | **India (INR ₹)** <br> *(UPI / Local Cards)* | Target Audience & Buyer Behavior |
+| :--- | :--- | :--- | :--- |
+| **Single Platform**<br>*(1 Device, Mac OR Win)* | **$19** <br>*(Strikethrough: $29)* | **₹699** <br>*(Strikethrough: ₹999)* | **The "Decoy" Anchor**: Designed to make Universal look irresistible. |
+| **Universal Pro (Hero)**<br>*(3 Devices, Mac AND Win)* | **$29** <br>*(Strikethrough: $39)* | **₹999** <br>*(Strikethrough: ₹1,499)* | **The Revenue Driver (75–80% of Sales)**: The sweet spot for solo creators and devs. |
+| **Team / Agency**<br>*(5 Commercial Seats)* | **$89** <br>*(Strikethrough: $119)* | **₹2,999** <br>*(Strikethrough: ₹4,499)* | **The Margin Booster**: Expensed by small studios and agencies. |
+
+*(With your configured `FIRST24` 10% coupon, Universal drops to **$26.10** globally and **₹899** in India).*
+
+---
+
+
+---
+
+## Summary of Admin Settings to Input:
+If you want to apply this optimal revenue strategy in your `/admin` pricing tab:
+* **Single Tier**:
+  - USD: `$19` (Strike: `$29`)
+  - INR: `₹699` (Strike: `₹999`)
+* **Universal Tier (Hero)**:
+  - USD: `$29` (Strike: `$39`)
+  - INR: `₹999` (Strike: `₹1,499`)
+* **Team Tier**:
+  - USD: `$89` (Strike: `$119`)
+  - INR: `₹2,999` (Strike: `₹4,499`)
+* **First 24h Countdown Discount**: `10%` (Leaves Universal at $26.10 / ₹899).

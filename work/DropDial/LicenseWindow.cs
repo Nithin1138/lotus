@@ -398,8 +398,9 @@ internal sealed class LicenseWindow : Window
 
         if (success)
         {
-            messageText.Text = "";
             UpdateUI();
+            messageText.Text = msg;
+            messageText.Foreground = new SolidColorBrush(Color.FromRgb(40, 167, 69));
         }
         else
         {
@@ -433,9 +434,9 @@ internal sealed class LicenseWindow : Window
 
         if (success)
         {
+            UpdateUI();
             messageText.Text = msg;
             messageText.Foreground = new SolidColorBrush(Color.FromRgb(40, 167, 69));
-            UpdateUI();
         }
         else
         {

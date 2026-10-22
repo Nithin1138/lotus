@@ -437,6 +437,139 @@ function verifyLicense(licenseKey) {
   }
 }
 
+/**
+ * Sends a device activation alert email notifying user of a new device activation,
+ * active device count, and remaining device allowances.
+ */
+async function sendDeviceActivationEmail({ to, name, planDisplayName, deviceName, platform, currentDevices, maxDevices }) {
+  const apiKey = (process.env.RESEND_API_KEY || '').trim();
+  if (!apiKey) {
+    console.warn(`[Resend] RESEND_API_KEY is not configured. Activation email to ${to} skipped.`);
+    return { success: false, warning: 'RESEND_API_KEY not configured' };
+  }
+
+  let fromEmail = (process.env.RESEND_FROM_EMAIL || '').trim();
+  if (!fromEmail || fromEmail.includes('atslift.app')) {
+    fromEmail = 'DropDial Pro <onboarding@resend.dev>';
+  }
+  const customerName = name || 'DropDial Pro User';
+  const remaining = Math.max(0, maxDevices - currentDevices);
+  const formattedPlatform = (platform || 'Desktop').toLowerCase().includes('mac') ? 'macOS' : (platform || 'Desktop').toLowerCase().includes('win') ? 'Windows' : (platform || 'Desktop');
+  const nowFormatted = new Date().toUTCString();
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DropDial License Activated on a New Device</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #0d0f12; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e6e8eb; }
+    .wrapper { max-width: 580px; margin: 30px auto; background-color: #16181d; border: 1px solid #282c35; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
+    .header { background: linear-gradient(135deg, #1c1f26 0%, #16181d 100%); padding: 32px 30px 24px 30px; text-align: center; border-bottom: 1px solid #282c35; }
+    .logo-badge { display: inline-block; background-color: #ff6500; color: #ffffff; font-weight: 800; font-size: 12px; letter-spacing: 1.5px; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 800; color: #ffffff; margin: 0 0 6px 0; }
+    .subtitle { font-size: 13.5px; color: #9aa1ad; margin: 0; }
+    .content { padding: 30px; }
+    .greeting { font-size: 15px; color: #d0d5dd; line-height: 1.6; margin: 0 0 20px 0; }
+    .device-box { background: #0b0c0f; border: 1px solid #282c35; border-left: 4px solid #ff6500; border-radius: 10px; padding: 18px 20px; margin: 20px 0; }
+    .device-title { font-size: 11px; font-weight: 700; color: #ff6500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .device-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1c2027; font-size: 13.5px; }
+    .device-row:last-child { border-bottom: none; }
+    .row-label { color: #8e95a2; }
+    .row-value { color: #ffffff; font-weight: 600; }
+    .remaining-card { background: #1a1d24; border-radius: 10px; padding: 18px 20px; margin: 20px 0; border: 1px solid #2a2f3a; }
+    .remaining-headline { font-size: 14px; font-weight: 700; color: #ffffff; margin-bottom: 6px; }
+    .remaining-desc { font-size: 13px; color: #b6bcc8; line-height: 1.6; margin: 0; }
+    .badge-remaining { display: inline-block; background: rgba(16, 185, 129, 0.15); color: #34d399; font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.3); margin-top: 6px; }
+    .badge-full { display: inline-block; background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(245, 158, 11, 0.3); margin-top: 6px; }
+    .footer { background: #101216; padding: 22px 30px; text-align: center; font-size: 12px; color: #6e7685; border-top: 1px solid #20242d; line-height: 1.6; }
+    .footer a { color: #ff6500; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="logo-badge">DropDial Security Alert</div>
+      <h1 class="title">License Key Activated</h1>
+      <p class="subtitle">${customerName}, a new device was connected to your license.</p>
+    </div>
+
+    <div class="content">
+      <p class="greeting">
+        Your <strong>${planDisplayName}</strong> license was just used to activate DropDial on the device below:
+      </p>
+
+      <div class="device-box">
+        <div class="device-title">Device Activation Details</div>
+        <div class="device-row"><span class="row-label">Device Name:</span><span class="row-value">${deviceName || 'Personal Machine'}</span></div>
+        <div class="device-row"><span class="row-label">Platform:</span><span class="row-value">${formattedPlatform}</span></div>
+        <div class="device-row"><span class="row-label">Plan Tier:</span><span class="row-value">${planDisplayName}</span></div>
+        <div class="device-row"><span class="row-label">Timestamp:</span><span class="row-value">${nowFormatted}</span></div>
+      </div>
+
+      <div class="remaining-card">
+        <div class="remaining-headline">Device Activation Allowance</div>
+        <p class="remaining-desc">
+          Your plan allows up to <strong>${maxDevices}</strong> device ${maxDevices === 1 ? 'activation' : 'activations'}.
+          Currently <strong>${currentDevices} of ${maxDevices}</strong> ${currentDevices === 1 ? 'device is' : 'devices are'} active.
+        </p>
+        ${remaining > 0
+          ? `<div class="badge-remaining">${remaining} device ${remaining === 1 ? 'slot' : 'slots'} remaining</div>`
+          : `<div class="badge-full">All ${maxDevices} device slots are currently in use</div>`
+        }
+        ${remaining === 0 ? `
+          <p style="font-size: 12.5px; color: #8e95a2; margin-top: 10px; line-height: 1.5;">
+            Need to switch or transfer to another computer in the future? Simply open DropDial on any existing device and click <strong>Deactivate</strong> from the menu.
+          </p>
+        ` : ''}
+      </div>
+
+      <p style="font-size: 12px; color: #6e7685; line-height: 1.6; margin-top: 16px;">
+        If you performed this activation, no further action is required. If you did not authorize this activation, you can deactivate your devices anytime or reply directly to this email for support.
+      </p>
+    </div>
+
+    <div class="footer">
+      DropDial • Fast, Private Desktop File Conversion &amp; Tools<br>
+      Need assistance? Reply directly to this email or visit <a href="https://dropdial.app">dropdial.app</a>.
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: [to],
+        subject: `DropDial Activated on ${deviceName || 'New Device'} (${currentDevices}/${maxDevices} Active)`,
+        html: htmlContent,
+        text: `DropDial License Activated\n\nHi ${customerName},\n\nYour ${planDisplayName} license key was just activated on a new device:\n- Device: ${deviceName || 'Personal Machine'}\n- Platform: ${formattedPlatform}\n- Active Devices: ${currentDevices} of ${maxDevices} in use\n- Devices Remaining: ${remaining}\n\nDate: ${nowFormatted}\n\nIf you did not authorize this, please contact support or deactivate your devices from DropDial.\n\nDropDial Team`
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('[Resend Error]', data);
+      return { success: false, error: data };
+    }
+
+    console.log(`[Resend Success] Activation notification delivered to ${to}, ID: ${data.id}`);
+    return { success: true, id: data.id };
+  } catch (err) {
+    console.error('[Resend Network Error]', err);
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   b64urlEncode,
   getPrivateKey,
@@ -444,6 +577,7 @@ module.exports = {
   verifyLicense,
   sendResendEmail,
   sendPaymentFailedEmail,
+  sendDeviceActivationEmail,
   verifyRazorpayPaymentSignature,
   verifyRazorpayWebhookSignature
 };

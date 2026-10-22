@@ -258,7 +258,7 @@ internal static class Program
         var app = new System.Windows.Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         using var resident = new Resident(app, showRequest, startupLaunch);
         if (isLicenseCmd)
-            app.Dispatcher.InvokeAsync(LicenseWindow.ShowDialogOrActivate);
+            app.Dispatcher.InvokeAsync(() => LicenseWindow.ShowDialogOrActivate());
         if (opened.Length > 0)
             app.Dispatcher.InvokeAsync(() => resident.OpenFiles(opened));
         app.Run();
@@ -327,7 +327,7 @@ internal sealed class Resident : IDisposable
     private readonly Channel<QueuedJob> queue = Channel.CreateBounded<QueuedJob>(new BoundedChannelOptions(16) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
     private readonly CancellationTokenSource stopping = new();
     private readonly DragShortcutTracker dragShortcuts = new(Native.GetSystemMetrics(68), Native.GetSystemMetrics(69));
-    private bool f8, f9, f10, escape, mouse, ctrl, shift, alt, altSpacePressed, ctrlShiftLPressed, ctrlShiftSpacePressed, ctrlShiftPressed;
+    private bool f8, f9, f10, escape, mouse, ctrl, shift, alt, altSpacePressed, ctrlShiftLPressed, ctrlShiftSpacePressed;
     private DateTime activated = DateTime.MinValue;
     private string? lastOutput;
     private bool disposed;
@@ -934,7 +934,7 @@ internal sealed class Resident : IDisposable
         if (!check.Allowed)
         {
             LicenseWindow.ShowDialogOrActivate(check.Reason);
-            return new BatchResult([], [new FailedFile(job.Paths[0], check.Reason ?? "Requires DropDial Pro")]);
+            return new BatchResult(job.Paths.Select(p => new FileResult(p, null, check.Reason ?? "Requires DropDial Pro")).ToArray());
         }
 
         var completion = new TaskCompletionSource<BatchResult>(TaskCreationOptions.RunContinuationsAsynchronously);
