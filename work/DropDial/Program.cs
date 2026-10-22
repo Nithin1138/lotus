@@ -404,7 +404,11 @@ internal sealed class Resident : IDisposable
             {
                 ToggleWheel();
             }
-            if (UpdateManager.AvailableUpdate == null)
+            if (UpdateManager.AvailableUpdate is { } upd)
+            {
+                UpdateManager.ShowUpdatePrompt(upd);
+            }
+            else
             {
                 _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
             }
@@ -430,10 +434,10 @@ internal sealed class Resident : IDisposable
         });
         _ = Task.Run(async () =>
         {
-            await Task.Delay(2500);
+            await Task.Delay(1000);
             await UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
         });
-        updateTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(30) };
+        updateTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(15) };
         updateTimer.Tick += (_, _) => _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
         updateTimer.Start();
         timer = new DispatcherTimer(DispatcherPriority.Input) { Interval = TimeSpan.FromMilliseconds(25) };
@@ -553,7 +557,9 @@ internal sealed class Resident : IDisposable
         welcome.Topmost = true;
         welcome.Activate();
         welcome.Topmost = false;
-        if (UpdateManager.AvailableUpdate == null)
+        if (UpdateManager.AvailableUpdate is { } existingUpd)
+            UpdateManager.ShowUpdatePrompt(existingUpd);
+        else
             _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
     }
 

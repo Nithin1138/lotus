@@ -12,10 +12,10 @@ struct ReleaseInfo {
 }
 
 // MARK: - Update Service
-final class UpdateService: NSObject, URLSessionDownloadDelegate {
+final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificationCenterDelegate {
     static let shared = UpdateService()
 
-    private let releasesApiUrl = "https://dropdial.app/api/releases/latest"
+    private let releasesApiUrl = "https://www.dropdial.app/api/releases/latest"
     private let fallbackReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest"
 
     static func formatVersion(_ raw: String) -> String {
@@ -39,6 +39,15 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
     private var progressWindow: NSWindow?
     private var progressBar: NSProgressIndicator?
     private var progressLabel: NSTextField?
+
+    private var isShowingPrompt = false
+    private var isUpdating = false
+    private var sessionDismissedVersion: String?
+
+    override init() {
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
+    }
 
     // MARK: - Version Comparison
     func isNewer(remote: String, local: String) -> Bool {
@@ -179,16 +188,8 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
                 self.onUpdateStatusChanged?()
                 self.postUpdateNotification(release: release)
 
-                let ignoredVersion = UserDefaults.standard.string(forKey: "dropdial_ignored_update_version")
-                let ignoredTime = UserDefaults.standard.double(forKey: "dropdial_ignored_update_time")
-                let now = Date().timeIntervalSince1970
-
-                var snoozed = false
-                if !isUserInitiated && ignoredVersion == release.tagName && (now - ignoredTime) < 14400 {
-                    snoozed = true
-                }
-
-                if !snoozed {
+                // If user tapped check, or if not dismissed yet in this running session: show prompt!
+                if isUserInitiated || self.sessionDismissedVersion != release.tagName {
                     self.showUpdateAvailableDialog(release: release)
                 }
             } else {
@@ -214,8 +215,25 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
         }
     }
 
+    // MARK: - UNUserNotificationCenterDelegate
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            if let release = self.latestRelease {
+                self.showUpdateAvailableDialog(release: release)
+            } else {
+                self.checkForUpdates(isUserInitiated: true)
+            }
+        }
+        completionHandler()
+    }
+
     // MARK: - Alerts
     func showUpdateAvailableDialog(release: ReleaseInfo) {
+        guard !isShowingPrompt && !isUpdating else { return }
+        isShowingPrompt = true
+        defer { isShowingPrompt = false }
+
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
@@ -233,6 +251,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
 
         alert.window.level = .floating
         alert.window.center()
+        alert.window.orderFrontRegardless()
         alert.window.makeKeyAndOrderFront(nil)
 
         let response = alert.runModal()
@@ -240,16 +259,15 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
 
         switch response {
         case .alertFirstButtonReturn:
-            UserDefaults.standard.removeObject(forKey: "dropdial_ignored_update_version")
-            UserDefaults.standard.removeObject(forKey: "dropdial_ignored_update_time")
+            sessionDismissedVersion = nil
             if release.isZip && release.downloadUrl != nil {
                 startDownloadAndApply(release: release)
             } else if let dl = release.downloadUrl ?? URL(string: release.htmlUrl)?.absoluteString {
                 openManualDownload(url: dl)
             }
         case .alertSecondButtonReturn:
-            UserDefaults.standard.set(release.tagName, forKey: "dropdial_ignored_update_version")
-            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "dropdial_ignored_update_time")
+            // Snooze only for subsequent automatic checks in this active running session
+            sessionDismissedVersion = release.tagName
         default:
             break
         }
@@ -287,6 +305,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
             return
         }
 
+        isUpdating = true
         showProgressUI(version: release.tagName)
 
         let sessionConfig = URLSessionConfiguration.default
@@ -341,6 +360,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
     }
 
     @objc private func cancelUpdateDownload() {
+        isUpdating = false
         downloadTask?.cancel()
         downloadTask = nil
         progressWindow?.close()
@@ -465,6 +485,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
         } catch {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
+                self.isUpdating = false
                 self.progressWindow?.close()
                 self.progressWindow = nil
 
@@ -479,9 +500,10 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate {
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        if let error = error, (error as NSError).code != NSURLErrorCancelled {
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.isUpdating = false
+            if let error = error, (error as NSError).code != NSURLErrorCancelled {
                 self.progressWindow?.close()
                 self.progressWindow = nil
 

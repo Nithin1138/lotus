@@ -23,8 +23,11 @@ internal sealed class ReleaseInfo
 
 internal static class UpdateManager
 {
-    public const string ReleasesApiUrl = "https://dropdial.app/api/releases/latest";
+    public const string ReleasesApiUrl = "https://www.dropdial.app/api/releases/latest";
     public const string FallbackReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest";
+
+    private static bool _isShowingPrompt = false;
+    private static string? _sessionDismissedVersion = null;
 
     public static string FormatVersion(string raw)
     {
@@ -202,18 +205,7 @@ internal static class UpdateManager
                 AvailableUpdate = release;
                 UpdateStatusChanged?.Invoke();
 
-                string? ignored = Settings.GetString("IgnoredUpdateVersion");
-                string? ignoredTimeStr = Settings.GetString("IgnoredUpdateTime");
-                bool snoozed = false;
-                if (!isUserInitiated && string.Equals(ignored, tagName, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (long.TryParse(ignoredTimeStr, out var ticks) && (DateTime.UtcNow - new DateTime(ticks, DateTimeKind.Utc)) < TimeSpan.FromHours(4))
-                    {
-                        snoozed = true;
-                    }
-                }
-
-                if (!snoozed)
+                if (isUserInitiated || !string.Equals(_sessionDismissedVersion, tagName, StringComparison.OrdinalIgnoreCase))
                 {
                     ShowUpdatePrompt(release);
                 }
@@ -246,43 +238,108 @@ internal static class UpdateManager
             return;
         }
 
-        string current = FormatVersion(CurrentVersion);
-        string available = FormatVersion(release.TagName);
+        if (_isShowingPrompt) return;
+        _isShowingPrompt = true;
 
-        string message = $"A new version of DropDial is available!\n\n" +
-                         $"Current version: {current}\n" +
-                         $"Available version: {available}\n\n" +
-                         $"Would you like to download and install this update now?";
-
-        var choice = MessageBox.Show(
-            message,
-            "DropDial Update Available",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Information,
-            MessageBoxDefaultButton.Button1,
-            MessageBoxOptions.DefaultDesktopOnly
-        );
-
-        if (choice == DialogResult.Yes)
+        try
         {
-            Settings.Set("IgnoredUpdateVersion", "");
-            if (release.IsZip && !string.IsNullOrEmpty(release.DownloadUrl))
+            string current = FormatVersion(CurrentVersion);
+            string available = FormatVersion(release.TagName);
+
+            using var form = new Form
             {
-                _ = DownloadAndApplyUpdateAsync(release);
+                Text = "DropDial Update Available",
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                StartPosition = FormStartPosition.CenterScreen,
+                ClientSize = new System.Drawing.Size(420, 185),
+                TopMost = true,
+                ShowInTaskbar = true
+            };
+
+            try
+            {
+                using var stream = typeof(UpdateManager).Assembly.GetManifestResourceStream("DropDial.AppIcon");
+                if (stream != null) form.Icon = new System.Drawing.Icon(stream);
             }
-            else if (!string.IsNullOrEmpty(release.DownloadUrl))
+            catch { }
+
+            var titleLabel = new System.Windows.Forms.Label
             {
-                OpenBrowser(release.DownloadUrl);
+                Text = "A new version of DropDial is available!",
+                Location = new System.Drawing.Point(20, 18),
+                Size = new System.Drawing.Size(380, 24),
+                Font = new System.Drawing.Font(System.Drawing.FontFamily.GenericSansSerif, 10.5f, System.Drawing.FontStyle.Bold)
+            };
+
+            var infoLabel = new System.Windows.Forms.Label
+            {
+                Text = $"Current version: {current}\nAvailable version: {available}\n\nWould you like to download and install this update now?",
+                Location = new System.Drawing.Point(20, 48),
+                Size = new System.Drawing.Size(380, 65),
+                Font = new System.Drawing.Font(System.Drawing.FontFamily.GenericSansSerif, 9.25f, System.Drawing.FontStyle.Regular)
+            };
+
+            var updateBtn = new System.Windows.Forms.Button
+            {
+                Text = "Update Now",
+                Location = new System.Drawing.Point(205, 130),
+                Size = new System.Drawing.Size(105, 34),
+                DialogResult = DialogResult.Yes,
+                Font = new System.Drawing.Font(System.Drawing.FontFamily.GenericSansSerif, 9.0f, System.Drawing.FontStyle.Bold)
+            };
+
+            var laterBtn = new System.Windows.Forms.Button
+            {
+                Text = "Later",
+                Location = new System.Drawing.Point(320, 130),
+                Size = new System.Drawing.Size(80, 34),
+                DialogResult = DialogResult.No
+            };
+
+            form.AcceptButton = updateBtn;
+            form.CancelButton = laterBtn;
+
+            form.Controls.Add(titleLabel);
+            form.Controls.Add(infoLabel);
+            form.Controls.Add(updateBtn);
+            form.Controls.Add(laterBtn);
+
+            Native.AllowSetForegroundWindow(-1);
+            form.Shown += (_, _) =>
+            {
+                form.Activate();
+                form.BringToFront();
+                updateBtn.Focus();
+            };
+
+            var choice = form.ShowDialog();
+
+            if (choice == DialogResult.Yes)
+            {
+                _sessionDismissedVersion = null;
+                if (release.IsZip && !string.IsNullOrEmpty(release.DownloadUrl))
+                {
+                    _ = DownloadAndApplyUpdateAsync(release);
+                }
+                else if (!string.IsNullOrEmpty(release.DownloadUrl))
+                {
+                    OpenBrowser(release.DownloadUrl);
+                }
+                else
+                {
+                    OpenBrowser(release.HtmlUrl);
+                }
             }
             else
             {
-                OpenBrowser(release.HtmlUrl);
+                _sessionDismissedVersion = release.TagName;
             }
         }
-        else
+        finally
         {
-            Settings.Set("IgnoredUpdateVersion", release.TagName);
-            Settings.Set("IgnoredUpdateTime", DateTime.UtcNow.Ticks.ToString());
+            _isShowingPrompt = false;
         }
     }
 
@@ -294,13 +351,12 @@ internal static class UpdateManager
             return;
         }
 
+        Native.AllowSetForegroundWindow(-1);
         MessageBox.Show(
             $"You are running DropDial {FormatVersion(CurrentVersion)}, which is currently the newest version available.",
             "DropDial is Up to Date",
             MessageBoxButtons.OK,
-            MessageBoxIcon.Information,
-            MessageBoxDefaultButton.Button1,
-            MessageBoxOptions.DefaultDesktopOnly
+            MessageBoxIcon.Information
         );
     }
 
@@ -312,13 +368,12 @@ internal static class UpdateManager
             return;
         }
 
+        Native.AllowSetForegroundWindow(-1);
         MessageBox.Show(
             error,
             "Check for Updates",
             MessageBoxButtons.OK,
-            MessageBoxIcon.Information,
-            MessageBoxDefaultButton.Button1,
-            MessageBoxOptions.DefaultDesktopOnly
+            MessageBoxIcon.Information
         );
     }
 

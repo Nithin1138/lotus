@@ -158,11 +158,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         UpdateService.shared.onUpdateStatusChanged = { [weak self] in
             self?.rebuildMenu()
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             UpdateService.shared.checkForUpdates(isUserInitiated: false)
         }
-        // Periodic background update check every 30 minutes
-        Timer.scheduledTimer(withTimeInterval: 1800, repeats: true) { _ in
+        // Periodic background update check every 15 minutes
+        Timer.scheduledTimer(withTimeInterval: 900, repeats: true) { _ in
             UpdateService.shared.checkForUpdates(isUserInitiated: false)
         }
 
@@ -194,6 +194,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 DropWheelWindowController.shared.showWheel()
             }
         }
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if let update = UpdateService.shared.latestRelease {
+            UpdateService.shared.showUpdateAvailableDialog(release: update)
+        } else {
+            UpdateService.shared.checkForUpdates(isUserInitiated: true)
+        }
+        return true
     }
 
     func application(_ sender: NSApplication, openFiles filenames: [String]) {
