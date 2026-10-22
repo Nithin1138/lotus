@@ -32,6 +32,23 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'License key and device ID are required' });
     }
 
+    // Check if this is a deactivation request (e.g. POST /api/deactivate)
+    const isDeactivate = req.query?.action === 'deactivate' || body.action === 'deactivate' || (req.url && req.url.includes('deactivate'));
+    if (isDeactivate) {
+      const sql = getDb();
+      if (sql) {
+        await ensureSchema();
+        await sql`
+          DELETE FROM license_activations
+          WHERE license_key = ${licenseKey.trim()} AND device_id = ${String(deviceId).trim()}
+        `;
+      }
+      return res.status(200).json({
+        success: true,
+        message: 'Device registration successfully released.'
+      });
+    }
+
     // 1. Verify cryptographic signature & decode payload
     const verification = verifyLicense(licenseKey);
     if (!verification.valid) {

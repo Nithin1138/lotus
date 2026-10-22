@@ -139,6 +139,30 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
+  // Public endpoint: system health check (e.g. GET /api/status)
+  if (action === 'status' || (req.url && req.url.includes('status'))) {
+    return res.status(200).json({
+      service: 'DropDial Licensing & Payment Gateway',
+      status: 'operational',
+      timestamp: new Date().toISOString(),
+      config: {
+        razorpay: {
+          keyIdConfigured: Boolean(process.env.RAZORPAY_KEY_ID),
+          keySecretConfigured: Boolean(process.env.RAZORPAY_KEY_SECRET),
+          webhookSecretConfigured: Boolean(process.env.RAZORPAY_WEBHOOK_SECRET)
+        },
+        resend: {
+          apiKeyConfigured: Boolean(process.env.RESEND_API_KEY),
+          fromEmailConfigured: Boolean(process.env.RESEND_FROM_EMAIL)
+        },
+        licensing: {
+          privateKeyLoaded: Boolean(getPrivateKey()),
+          algorithm: 'ECDSA P-256 (secp256r1) + SHA-256'
+        }
+      }
+    });
+  }
+
   // Public endpoint: verify login credentials (supports 'login' or 'verify', GET or POST)
   if (action === 'login' || action === 'verify') {
     const candidate = req.body?.password || req.body?.passcode || req.body?.token || req.query?.token || req.query?.passcode || req.query?.password;

@@ -2,6 +2,9 @@
   "version": 2,
   "cleanUrls": true,
   "rewrites": [
+    { "source": "/api/deactivate", "destination": "/api/activate?action=deactivate" },
+    { "source": "/api/status", "destination": "/api/admin?action=status" },
+    { "source": "/api/payment-failed", "destination": "/api/verify-payment?action=payment-failed" },
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
   "headers": [

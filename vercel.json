@@ -16,6 +16,9 @@
   "rewrites": [
     { "source": "/download", "destination": "/api/download" },
     { "source": "/api/releases/latest", "destination": "/api/releases" },
+    { "source": "/api/deactivate", "destination": "/api/activate?action=deactivate" },
+    { "source": "/api/status", "destination": "/api/admin?action=status" },
+    { "source": "/api/payment-failed", "destination": "/api/verify-payment?action=payment-failed" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/admin", "destination": "/website/admin/index.html" },
     { "source": "/admin/", "destination": "/website/admin/index.html" },

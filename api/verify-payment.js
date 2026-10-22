@@ -3,7 +3,7 @@
  * POST /api/verify-payment
  */
 
-const { generateLicense, sendResendEmail, verifyRazorpayPaymentSignature } = require('./_utils');
+const { generateLicense, sendResendEmail, sendPaymentFailedEmail, verifyRazorpayPaymentSignature } = require('./_utils');
 const { incrementCouponUses } = require('./coupons');
 
 module.exports = async function handler(req, res) {
@@ -21,6 +21,27 @@ module.exports = async function handler(req, res) {
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+
+    // Handle payment-failed notifications (e.g. POST /api/payment-failed)
+    const isPaymentFailed = req.query?.action === 'payment-failed' || body.action === 'payment-failed' || (req.url && req.url.includes('payment-failed'));
+    if (isPaymentFailed) {
+      const { email: failEmail, name: failName, reason, amount, currency } = body;
+      if (!failEmail || !failEmail.includes('@')) {
+        return res.status(400).json({ error: 'Valid email address is required' });
+      }
+      const result = await sendPaymentFailedEmail({
+        to: failEmail.trim().toLowerCase(),
+        name: (failName || 'DropDial Pro User').trim(),
+        reason: reason || 'Transaction was declined by the bank or gateway',
+        amount: amount || '',
+        currency: currency || 'USD'
+      });
+      return res.status(200).json({
+        success: result.success !== false,
+        message: 'Payment failed email dispatched',
+        id: result.id
+      });
+    }
     const {
       razorpay_order_id,
       razorpay_payment_id,
