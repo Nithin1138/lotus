@@ -434,7 +434,7 @@
             <div class="empty-state-box">
               ${ICONS.emptyBox}
               <strong>No active licenses issued yet</strong>
-              <p>Generated ECDSA cryptographic keys from orders or manual issuance will be stored here.</p>
+              <p>Issued license keys from orders or manual creation will appear here.</p>
             </div>
           </td>
         </tr>
@@ -954,31 +954,31 @@
     document.querySelectorAll('.tab-view').forEach(v => v.classList.toggle('active', v.id === `tab-${tabId}`));
 
     const titles = {
-      overview: 'Executive Overview',
-      pricing: 'Pricing Engine & Offers',
-      licenses: 'License Keys Registry',
-      transactions: 'Financial Ledger',
-      coupons: 'Coupons & Promotional Offers',
-      traffic: 'Traffic & Conversion',
-      releases: 'Production Release Manager',
-      health: 'System & Gateway Health',
-      settings: 'Security & Passcode Fortress'
+      overview: 'Overview',
+      pricing: 'Pricing & Offers',
+      licenses: 'License Keys',
+      transactions: 'Transactions',
+      coupons: 'Coupons & Discounts',
+      traffic: 'Traffic & Analytics',
+      releases: 'Releases',
+      health: 'System Status',
+      settings: 'Settings & Security'
     };
 
     const subtitles = {
-      overview: 'Live Production Intelligence',
-      pricing: 'Real-Time Multi-Tier Retail & Strikethrough Control',
-      licenses: 'ECDSA Cryptographic Key Ledger',
-      transactions: 'Captured Revenue & Settlements',
-      coupons: 'Promotional Discounts & Codes',
-      traffic: 'Audience & OS Telemetry',
-      releases: '2-Step Cryptographic Verification & Instant Rollback',
-      health: 'Infrastructure Connectivity',
-      settings: 'Zero-Trust Cryptographic Access & Master Key Rotation'
+      overview: 'Live metrics and activity',
+      pricing: 'Manage product tiers, discounts, and banners',
+      licenses: 'Manage issued licenses and activations',
+      transactions: 'Payment records and customer orders',
+      coupons: 'Promotional codes and discounts',
+      traffic: 'Visitor analytics and platform breakdown',
+      releases: 'Production builds and rollback controls',
+      health: 'Gateway and service connectivity',
+      settings: 'Passcode management and configuration'
     };
 
-    document.getElementById('view-title').textContent = titles[tabId] || 'Executive Suite';
-    document.getElementById('view-tag').textContent = subtitles[tabId] || 'Admin';
+    document.getElementById('view-title').textContent = titles[tabId] || 'Admin';
+    document.getElementById('view-tag').textContent = subtitles[tabId] || 'DropDial';
 
     if (tabId === 'releases') {
       loadReleases();
@@ -1372,7 +1372,7 @@
         label.textContent = 'Good: Strong combination of characters';
         label.style.color = '#38bdf8';
       } else {
-        label.textContent = 'Armored: High cryptographic entropy';
+        label.textContent = 'Strong: High entropy passcode';
         label.style.color = 'var(--emerald)';
       }
     }
@@ -1427,9 +1427,9 @@
 
       evaluatePasswordStrength(key);
       navigator.clipboard.writeText(key).then(() => {
-        showToast('16-character cryptographic key generated & copied to clipboard!', 'success');
+        showToast('Secure passcode generated and copied to clipboard!', 'success');
       }).catch(() => {
-        showToast('16-character key generated in inputs!', 'info');
+        showToast('Secure passcode generated!', 'info');
       });
     }
   }
@@ -1467,16 +1467,16 @@
       state.securityLogs = [
         {
           id: 'sec_1',
-          event: 'Admin Session Initialized',
-          target: 'Executive Suite',
-          mechanism: 'TLS 1.3 Strict + SessionStorage',
+          event: 'Admin Session Started',
+          target: 'Admin Dashboard',
+          mechanism: 'TLS 1.3 + SessionStorage',
           status: 'Active',
           timestamp: new Date().toISOString()
         },
         {
           id: 'sec_2',
-          event: 'Zero-Trust Gatekeeper Verified',
-          target: 'crypto.timingSafeEqual',
+          event: 'Admin Authentication',
+          target: 'Passcode Verification',
           mechanism: 'Constant-Time Equality',
           status: 'Verified',
           timestamp: new Date(Date.now() - 90000).toISOString()

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DropDial Executive Admin Suite</title>
+  <title>DropDial Admin</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
@@ -27,15 +27,15 @@
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
         </div>
-        <h2>DropDial Executive Suite</h2>
-        <p>Enterprise Operations, Real-Time Financial Ledger &amp; License Manager</p>
+        <h2>DropDial Admin</h2>
+        <p>Sign in to manage licenses, orders, and settings</p>
       </div>
 
       <form id="auth-form" class="auth-form">
         <div class="form-group">
-          <label for="admin-passcode-input">Master Passcode</label>
+          <label for="admin-passcode-input">Passcode</label>
           <div class="password-input-wrap">
-            <input type="password" id="admin-passcode-input" placeholder="Enter administrative passcode..." autocomplete="current-password" required autofocus>
+            <input type="password" id="admin-passcode-input" placeholder="Enter your admin passcode" autocomplete="current-password" required autofocus>
             <button type="button" id="toggle-pass-btn" class="pass-toggle-btn" aria-label="Toggle password visibility">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -47,12 +47,12 @@
         </div>
 
         <button type="submit" id="auth-submit-btn" class="btn btn-primary auth-btn">
-          <span>Authenticate &amp; Enter</span>
+          <span>Sign In</span>
         </button>
 
         <div class="auth-footer-badge">
           <span class="security-dot"></span>
-          <span>Secured with ECDSA P-256 Session Token</span>
+          <span>Secured connection</span>
         </div>
       </form>
     </div>
@@ -71,12 +71,12 @@
         </div>
         <div class="brand-text">
           <span class="brand-title">DropDial</span>
-          <span class="brand-sub">EXECUTIVE SUITE</span>
+          <span class="brand-sub">Admin</span>
         </div>
       </div>
 
       <nav class="sidebar-nav">
-        <div class="nav-section-title">CORE OPERATIONS</div>
+        <div class="nav-section-title">MAIN</div>
         <button class="nav-tab active" data-tab="overview">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="9"/>
@@ -84,7 +84,7 @@
             <rect x="14" y="12" width="7" height="9"/>
             <rect x="3" y="16" width="7" height="5"/>
           </svg>
-          <span>Executive Overview</span>
+          <span>Overview</span>
         </button>
 
         <button class="nav-tab" data-tab="licenses">
@@ -100,7 +100,7 @@
             <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
             <line x1="1" y1="10" x2="23" y2="10"/>
           </svg>
-          <span>Transactions</span>
+          <span>Orders</span>
           <span id="badge-total-tx" class="nav-counter">0</span>
         </button>
 
@@ -109,7 +109,7 @@
             <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
             <line x1="7" y1="7" x2="7.01" y2="7"/>
           </svg>
-          <span>Coupons &amp; Offers</span>
+          <span>Coupons</span>
           <span id="badge-total-coupons" class="nav-counter">0</span>
         </button>
 
@@ -118,14 +118,14 @@
             <line x1="12" y1="1" x2="12" y2="23"/>
             <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
           </svg>
-          <span>Pricing &amp; Offers</span>
+          <span>Pricing</span>
         </button>
 
         <button class="nav-tab" data-tab="traffic">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
-          <span>Traffic &amp; Conversion</span>
+          <span>Traffic</span>
         </button>
 
         <div class="nav-section-title">INFRASTRUCTURE</div>
@@ -133,7 +133,7 @@
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M4 17l6-6-6-6M12 19h8"/>
           </svg>
-          <span>Production Releases</span>
+          <span>Releases</span>
           <span id="badge-staged-releases" class="nav-counter" style="display:none;background:var(--amber);color:#000;">1</span>
         </button>
 
@@ -141,7 +141,7 @@
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
           </svg>
-          <span>System &amp; Gateways</span>
+          <span>System Health</span>
         </button>
 
         <button class="nav-tab" data-tab="settings">
@@ -149,7 +149,7 @@
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
-          <span>Security &amp; Passcode</span>
+          <span>Security</span>
         </button>
       </nav>
 
@@ -161,7 +161,7 @@
             <span class="user-status"><span class="status-dot green"></span> Live Mode</span>
           </div>
         </div>
-        <button id="admin-logout-btn" class="logout-btn" title="Lock &amp; Exit Admin Session">
+        <button id="admin-logout-btn" class="logout-btn" title="Sign out">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
@@ -177,8 +177,8 @@
       <!-- Top Global Bar -->
       <header class="admin-topbar">
         <div class="topbar-left">
-          <h1 id="view-title">Executive Overview</h1>
-          <span class="view-tag" id="view-tag">Live Production Intelligence</span>
+          <h1 id="view-title">Overview</h1>
+          <span class="view-tag" id="view-tag">Live data</span>
         </div>
 
         <div class="topbar-actions">
@@ -235,7 +235,7 @@
             <div class="rf-title-group">
               <div class="rf-label">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                <span>Revenue &amp; Profit Filter</span>
+                <span>Revenue</span>
               </div>
               <span class="rf-active-caption" id="rf-active-caption">All-Time Direct Sales</span>
             </div>
@@ -253,7 +253,7 @@
             <!-- Gross Revenue -->
             <div class="kpi-card revenue-card">
               <div class="kpi-header">
-                <span class="kpi-title">Gross Revenue</span>
+                <span class="kpi-title">Revenue</span>
                 <span class="kpi-badge emerald" id="kpi-growth-badge">Live</span>
               </div>
               <div class="kpi-value-wrap">
@@ -261,7 +261,7 @@
                 <span class="kpi-sub-val" id="kpi-gross-usd">($0 USD)</span>
               </div>
               <div class="kpi-footer">
-                <span>Direct Lifetime Sales</span>
+                <span>Total sales</span>
                 <span class="currency-split" id="kpi-split-text">India: ₹0 • Global: $0</span>
               </div>
             </div>
@@ -274,10 +274,10 @@
               </div>
               <div class="kpi-value-wrap">
                 <span class="kpi-main-val" id="kpi-net-profit">₹0</span>
-                <span class="kpi-sub-val">After Gateway Fees</span>
+                <span class="kpi-sub-val">After fees</span>
               </div>
               <div class="kpi-footer">
-                <span>0 Server Costs • Pure Native App</span>
+                <span>Zero server costs</span>
               </div>
             </div>
 
@@ -285,11 +285,11 @@
             <div class="kpi-card license-card">
               <div class="kpi-header">
                 <span class="kpi-title">Active Licenses</span>
-                <span class="kpi-badge violet">100% Verified</span>
+                <span class="kpi-badge violet">Verified</span>
               </div>
               <div class="kpi-value-wrap">
                 <span class="kpi-main-val" id="kpi-total-licenses">0</span>
-                <span class="kpi-sub-val">Lifetime Pro Seats</span>
+                <span class="kpi-sub-val">Pro licenses</span>
               </div>
               <div class="kpi-footer">
                 <span>0 Chargebacks • 0 Revocations</span>
@@ -299,12 +299,12 @@
             <!-- Page Views & Conversion -->
             <div class="kpi-card traffic-card">
               <div class="kpi-header">
-                <span class="kpi-title">Traffic &amp; Conversion</span>
+                <span class="kpi-title">Traffic</span>
                 <span class="kpi-badge sky" id="kpi-conversion-rate">0.0% Conv</span>
               </div>
               <div class="kpi-value-wrap">
                 <span class="kpi-main-val" id="kpi-total-views">0</span>
-                <span class="kpi-sub-val">Tracked Visits</span>
+                <span class="kpi-sub-val">Page views</span>
               </div>
               <div class="kpi-footer">
                 <span id="kpi-checkout-stats">0 Checkouts • 0 Paid</span>
@@ -320,8 +320,8 @@
             <div class="panel-card">
               <div class="panel-header">
                 <div>
-                  <h3 class="panel-title">Checkout Conversion Funnel</h3>
-                  <p class="panel-subtitle">Audience progression from landing page to Pro activation</p>
+                  <h3 class="panel-title">Conversion Funnel</h3>
+                  <p class="panel-subtitle">Visitor journey from page view to purchase</p>
                 </div>
                 <span class="pill-badge">Real-Time</span>
               </div>
@@ -377,8 +377,8 @@
             <div class="panel-card">
               <div class="panel-header">
                 <div>
-                  <h3 class="panel-title">Regional Pricing Distribution</h3>
-                  <p class="panel-subtitle">Automatic geo-localized price tier distribution</p>
+                  <h3 class="panel-title">Sales by Region</h3>
+                  <p class="panel-subtitle">Revenue split by country pricing tier</p>
                 </div>
                 <span class="pill-badge">Vercel Edge</span>
               </div>
@@ -443,8 +443,8 @@
           <div class="panel-card mt-24">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Recent Customer Orders</h3>
-                <p class="panel-subtitle">Real-time payment captures and license deliveries</p>
+                <h3 class="panel-title">Recent Orders</h3>
+                <p class="panel-subtitle">Latest payments and license deliveries</p>
               </div>
               <button id="view-all-tx-btn" class="btn btn-secondary btn-sm">View Full Ledger</button>
             </div>
@@ -479,8 +479,8 @@
           <div class="panel-card">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Cryptographic License Registry</h3>
-                <p class="panel-subtitle">Offline ECDSA P-256 signatures issued to DropDial Pro users</p>
+                <h3 class="panel-title">License Keys</h3>
+                <p class="panel-subtitle">All issued Pro license keys and their status</p>
               </div>
               <button id="export-licenses-btn" class="btn btn-secondary btn-sm">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -517,7 +517,7 @@
                     <th>Customer Name</th>
                     <th>Email Address</th>
                     <th>Tier</th>
-                    <th>Cryptographic License Key</th>
+                    <th>License Key</th>
                     <th>Date Issued</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -540,8 +540,8 @@
           <div class="panel-card">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Financial Transactions Ledger</h3>
-                <p class="panel-subtitle">Comprehensive record of all captured payments and gateway settlements</p>
+                <h3 class="panel-title">All Transactions</h3>
+                <p class="panel-subtitle">Complete record of payments and settlements</p>
               </div>
               <button id="export-tx-btn" class="btn btn-secondary btn-sm">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -596,8 +596,8 @@
           <div class="panel-card">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Coupon Codes &amp; Promotional Offers</h3>
-                <p class="panel-subtitle">Create, activate, disable, or delete discount codes for DropDial Pro checkout</p>
+                <h3 class="panel-title">Coupon Codes</h3>
+                <p class="panel-subtitle">Manage discount codes for checkout</p>
               </div>
               <button id="create-new-coupon-btn" class="btn btn-primary btn-sm">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -650,8 +650,8 @@
             <div class="panel-card">
               <div class="panel-header">
                 <div>
-                  <h3 class="panel-title">Visitor Referrer Channels</h3>
-                  <p class="panel-subtitle">Acquisition channels driving DropDial traffic</p>
+                  <h3 class="panel-title">Referrer Channels</h3>
+                  <p class="panel-subtitle">Where visitors come from</p>
                 </div>
               </div>
 
@@ -682,8 +682,8 @@
             <div class="panel-card">
               <div class="panel-header">
                 <div>
-                  <h3 class="panel-title">Operating System Distribution</h3>
-                  <p class="panel-subtitle">Device breakdown of downloaded binary packages</p>
+                  <h3 class="panel-title">Platform Distribution</h3>
+                  <p class="panel-subtitle">Downloads by operating system</p>
                 </div>
               </div>
 
@@ -718,8 +718,8 @@
           <div class="panel-card">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Production Gateway Status</h3>
-                <p class="panel-subtitle">Connectivity checks with payment networks and delivery infrastructure</p>
+                <h3 class="panel-title">Service Status</h3>
+                <p class="panel-subtitle">Connectivity with payment and delivery services</p>
               </div>
               <button id="recheck-health-btn" class="btn btn-secondary btn-sm">Run Health Check</button>
             </div>
@@ -733,8 +733,8 @@
                     <span class="status-dot green"></span>
                   </div>
                   <div>
-                    <h4 class="health-title">Razorpay Payment Gateway API</h4>
-                    <p class="health-desc" id="desc-razorpay">Validating API key and webhook credentials...</p>
+                    <h4 class="health-title">Razorpay Payments</h4>
+                    <p class="health-desc" id="desc-razorpay">Checking API credentials...</p>
                   </div>
                 </div>
                 <div class="health-status-badge" id="badge-razorpay">Checking...</div>
@@ -747,8 +747,8 @@
                     <span class="status-dot green"></span>
                   </div>
                   <div>
-                    <h4 class="health-title">Resend Automated Email Delivery</h4>
-                    <p class="health-desc" id="desc-resend">Checking transactional email credentials...</p>
+                    <h4 class="health-title">Resend Email</h4>
+                    <p class="health-desc" id="desc-resend">Checking email delivery service...</p>
                   </div>
                 </div>
                 <div class="health-status-badge" id="badge-resend">Checking...</div>
@@ -761,8 +761,8 @@
                     <span class="status-dot green"></span>
                   </div>
                   <div>
-                    <h4 class="health-title">ECDSA P-256 Offline Cryptographic Engine</h4>
-                    <p class="health-desc">P-256 Curve with SHA-256 raw 64-byte signature generator</p>
+                    <h4 class="health-title">License Key Generator</h4>
+                    <p class="health-desc">Offline cryptographic signing engine</p>
                   </div>
                 </div>
                 <div class="health-status-badge green-badge">Loaded &bull; Standalone</div>
@@ -775,8 +775,8 @@
                     <span class="status-dot green"></span>
                   </div>
                   <div>
-                    <h4 class="health-title">Edge IP Country Detection (Dual Layer)</h4>
-                    <p class="health-desc">x-vercel-ip-country header detection + client timezone fallback</p>
+                    <h4 class="health-title">Geo-Pricing Detection</h4>
+                    <p class="health-desc">Country detection for regional pricing</p>
                   </div>
                 </div>
                 <div class="health-status-badge green-badge">Operational</div>
@@ -789,8 +789,8 @@
           <div class="panel-card mt-24">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Direct Resend License Email Test</h3>
-                <p class="panel-subtitle">Send a real sample license email to your inbox to verify template formatting &amp; delivery speed</p>
+                <h3 class="panel-title">Test Email Delivery</h3>
+                <p class="panel-subtitle">Send a sample license email to verify delivery</p>
               </div>
             </div>
 
@@ -867,8 +867,8 @@
           <div class="panel-card mt-24">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Staged Releases Available to Launch</h3>
-                <p class="panel-subtitle">New binaries built by CI/CD (macOS &amp; Windows) awaiting your 2-step verification to go live</p>
+                <h3 class="panel-title">Staged Releases</h3>
+                <p class="panel-subtitle">New builds awaiting approval to go live</p>
               </div>
               <button id="refresh-releases-btn" class="btn btn-secondary btn-sm">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -889,8 +889,8 @@
           <div class="panel-card mt-24">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Published Release History &amp; Verified Revert</h3>
-                <p class="panel-subtitle">Instant rollback to any previous version with 2-step passcode verification</p>
+                <h3 class="panel-title">Release History</h3>
+                <p class="panel-subtitle">Published versions with rollback option</p>
               </div>
             </div>
 
@@ -925,8 +925,8 @@
           <div class="panel-card mb-24">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Product Pricing &amp; Promotional Engine</h3>
-                <p class="panel-subtitle">Configure real-time retail pricing, individual tier strikethrough anchors, and urgency countdown banners across website &amp; checkout</p>
+                <h3 class="panel-title">Pricing Configuration</h3>
+                <p class="panel-subtitle">Set retail prices, discount anchors, and countdown banners</p>
               </div>
               <span class="kpi-badge emerald" id="pricing-live-badge">
                 <span class="pulse-dot"></span> Live Synchronized
@@ -1376,12 +1376,12 @@
           <div class="panel-card mb-24">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Master Passcode Rotation</h3>
-                <p class="panel-subtitle">Authenticate with current credentials and rotate to a hardened master access key across the entire platform</p>
+                <h3 class="panel-title">Change Passcode</h3>
+                <p class="panel-subtitle">Update your admin login passcode</p>
               </div>
-              <button type="button" id="btn-generate-secure-pass" class="btn btn-secondary btn-sm" title="Generate 16-character high-entropy cryptographic password">
+              <button type="button" id="btn-generate-secure-pass" class="btn btn-secondary btn-sm" title="Generate strong random passcode">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
-                <span>Generate 16-Char Cryptographic Key</span>
+                <span>Generate Secure Passcode</span>
               </button>
             </div>
 
@@ -1392,23 +1392,23 @@
                 <!-- Current Passcode -->
                 <div class="form-group mb-16">
                   <label for="current-passcode-input" class="sec-label">
-                    <span>1. Current Master Passcode</span>
-                    <span class="badge-status info">Required For Verification</span>
+                    <span>Current Passcode</span>
+                    <span class="badge-status info">Required</span>
                   </label>
                   <div class="password-input-wrap">
-                    <input type="password" id="current-passcode-input" placeholder="Enter current admin master passcode" required autocomplete="current-password">
+                    <input type="password" id="current-passcode-input" placeholder="Enter current admin passcode" required autocomplete="current-password">
                     <button type="button" class="password-eye-btn" data-target="current-passcode-input" title="Show/Hide Passcode">
                       <svg class="eye-show" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                       <svg class="eye-hide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                     </button>
                   </div>
-                  <span class="field-hint">Your input is checked in constant-time against your production environment key or active Neon DB setting.</span>
+                  <span class="field-hint">Enter your existing admin passcode to authorize changes.</span>
                 </div>
 
                 <!-- New Passcode + Strength Evaluation -->
                 <div class="form-group mb-16">
                   <label for="new-passcode-input" class="sec-label">
-                    <span>2. New Hardened Master Passcode</span>
+                    <span>New Passcode</span>
                     <span id="entropy-label" class="entropy-status-text">Enter minimum 8 characters</span>
                   </label>
                   <div class="password-input-wrap">
@@ -1457,7 +1457,7 @@
                 <!-- Confirm New Passcode -->
                 <div class="form-group mb-20">
                   <label for="confirm-passcode-input" class="sec-label">
-                    <span>3. Retype New Master Passcode</span>
+                    <span>Confirm Passcode</span>
                     <span id="passcode-match-badge" class="badge-status" style="display:none;">Match Status</span>
                   </label>
                   <div class="password-input-wrap">
@@ -1467,14 +1467,14 @@
                       <svg class="eye-hide" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                     </button>
                   </div>
-                  <span class="field-hint">Safety verification: Ensures you don't lock yourself out with a typographical error.</span>
+                  <span class="field-hint">Type the new passcode again to verify.</span>
                 </div>
 
                 <!-- Action Button -->
                 <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 10px;">
                   <button type="submit" id="btn-save-master-passcode" class="btn btn-primary" style="padding: 12px 28px; font-weight: 700;">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                    <span>Rotate &amp; Commit Master Passcode</span>
+                    <span>Update Passcode</span>
                   </button>
                 </div>
 
@@ -1487,15 +1487,15 @@
           <div class="panel-card mb-24">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">Production Serverless Environment (Vercel)</h3>
-                <p class="panel-subtitle">Permanent configuration of server-level ADMIN_KEY environment variable</p>
+                <h3 class="panel-title">Environment Settings</h3>
+                <p class="panel-subtitle">Server-level configuration for Vercel deployment</p>
               </div>
               <span class="kpi-badge cyan">Vercel Edge</span>
             </div>
 
             <div class="settings-content">
               <p class="settings-desc">
-                When you rotate the master passcode using the form above, it is instantly saved to your <strong>Neon PostgreSQL</strong> database (<code style="font-family:var(--font-mono); color:var(--emerald);">app_settings</code>) and cached across active serverless lambdas. To also permanently freeze it in your Vercel Project environment variables, copy and run this CLI command:
+                When you update your passcode, it is saved to your database (<code style="font-family:var(--font-mono); color:var(--emerald);">app_settings</code>). To update your environment variable in Vercel as well, run this command in your terminal:
               </p>
 
               <div class="terminal-command-box">
@@ -1565,8 +1565,8 @@
     <div class="admin-modal-card">
       <div class="modal-header">
         <div>
-          <h3>Issue New Pro License</h3>
-          <p>Generate a cryptographically signed ECDSA P-256 license key</p>
+          <h3>Issue New License</h3>
+          <p>Generate and issue a license key for a customer</p>
         </div>
         <button id="close-issue-modal-btn" class="modal-close-btn">&times;</button>
       </div>
@@ -1583,7 +1583,7 @@
         </div>
 
         <div class="form-group">
-          <label for="issue-tier">License Tier / Model</label>
+          <label for="issue-tier">License Tier</label>
           <select id="issue-tier" class="control-select w-100">
             <option value="single">Single Platform (1 Mac or 1 Windows PC)</option>
             <option value="universal" selected>Universal Pro Lifetime (Mac + PC, Up to 3 Devices)</option>
@@ -1592,7 +1592,7 @@
         </div>
 
         <div class="form-group">
-          <label for="issue-expiry">License Duration / Expiration</label>
+          <label for="issue-expiry">Duration</label>
           <select id="issue-expiry" class="control-select w-100">
             <option value="0">Lifetime (Never Expires - Standard)</option>
             <option value="120">⚡ 2 Minutes (Testing Immediate Expiry)</option>
@@ -1752,15 +1752,15 @@
 
         <!-- Verification Step 2: Admin Password -->
         <div class="form-group">
-          <label for="launch-passcode">Step 2: Enter Admin Master Passcode</label>
+          <label for="launch-passcode">Step 2: Enter Admin Passcode</label>
           <input type="password" id="launch-passcode" placeholder="Enter your admin passcode" required>
-          <span class="field-hint">Cryptographic authentication verified directly by serverless gateway</span>
+          <span class="field-hint">Enter your admin passcode to confirm deployment</span>
         </div>
 
         <div class="modal-actions">
           <button type="button" id="cancel-launch-btn" class="btn btn-secondary">Cancel</button>
           <button type="submit" id="confirm-launch-submit-btn" class="btn btn-primary" style="background:var(--emerald); border-color:var(--emerald);">
-            <span>Verify &amp; Launch to Production</span>
+            <span>Publish Release</span>
           </button>
         </div>
       </form>
@@ -1774,8 +1774,8 @@
     <div class="admin-modal-card">
       <div class="modal-header">
         <div>
-          <h3 style="color:var(--rose);">Emergency Release Rollback</h3>
-          <p>Revert active production downloads to a previous verified release</p>
+          <h3 style="color:var(--rose);">Roll Back Release</h3>
+          <p>Switch active download version back to an earlier release</p>
         </div>
         <button id="close-revert-modal-btn" class="modal-close-btn">&times;</button>
       </div>
@@ -1789,7 +1789,7 @@
           </div>
           <div id="revert-modal-target" style="font-size:16px; font-weight:700; color:var(--text-main);">Revert to v0.0.0.0</div>
           <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">
-            Once confirmed, client auto-updates and web download buttons will instantly serve this previous version.
+            Once confirmed, client auto-updates and web download buttons will immediately serve this previous version.
           </p>
         </div>
 
@@ -1806,18 +1806,19 @@
 
         <!-- Verification Step 2: Admin Password -->
         <div class="form-group">
-          <label for="revert-passcode">Step 2: Enter Admin Master Passcode</label>
+          <label for="revert-passcode">Step 2: Enter Admin Passcode</label>
           <input type="password" id="revert-passcode" placeholder="Enter your admin passcode" required>
         </div>
 
         <div class="modal-actions">
           <button type="button" id="cancel-revert-btn" class="btn btn-secondary">Cancel</button>
           <button type="submit" id="confirm-revert-submit-btn" class="btn btn-primary" style="background:var(--rose); border-color:var(--rose);">
-            <span>Verify &amp; Rollback Production</span>
+            <span>Confirm Rollback</span>
           </button>
         </div>
       </form>
     </div>
+  </div>
   <!-- ========================================================
        MODAL: 2-STEP PERMANENT RESET TEST DATA & FINANCIALS
        ======================================================== -->
