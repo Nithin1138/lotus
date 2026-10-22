@@ -181,6 +181,10 @@ module.exports = async function handler(req, res) {
       res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Setup.exe` });
       return res.end();
     }
+    if (lower.includes('update')) {
+      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Windows-Update.zip` });
+      return res.end();
+    }
     if (lower.includes('windows') || lower.includes('win')) {
       res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Windows-x64.zip` });
       return res.end();
@@ -223,6 +227,13 @@ module.exports = async function handler(req, res) {
     },
     {
       id: 5,
+      name: 'DropDial-Windows-Update.zip',
+      size: 15421891,
+      content_type: 'application/zip',
+      browser_download_url: `${baseUrl}/downloads/DropDial-Windows-Update.zip`
+    },
+    {
+      id: 6,
       name: 'DropDial.exe',
       size: 208896,
       content_type: 'application/x-msdownload',
@@ -262,7 +273,7 @@ module.exports = async function handler(req, res) {
   }
 
   // Check if Neon DB has a latest_release saved by admin via 2-step verification
-  let activeTag = '1.0.1.4';
+  let activeTag = '1.0.1.5';
   try {
     const { getDb, ensureSchema } = require('./_db');
     const sql = getDb();

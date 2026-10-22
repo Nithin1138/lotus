@@ -40,7 +40,7 @@ internal static class UpdateManager
     public static string CurrentVersion =>
         FormatVersion(typeof(UpdateManager).Assembly.GetName().Version is { } v
             ? (v.Revision > 0 ? $"{v.Major}.{v.Minor}.{v.Build}.{v.Revision}" : $"{v.Major}.{v.Minor}.{v.Build}")
-            : "1.0.1.4");
+            : "1.0.1.5");
 
     public static ReleaseInfo? AvailableUpdate { get; private set; }
     public static event Action? UpdateStatusChanged;
@@ -127,6 +127,14 @@ internal static class UpdateManager
 
             if (root.TryGetProperty("assets", out var assetsElem) && assetsElem.ValueKind == JsonValueKind.Array)
             {
+                // Check if this machine already has local runtime (i.e. existing installation updating in-place)
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                bool hasLocalRuntime = Directory.Exists(Path.Combine(baseDir, "runtime"));
+
+                string? updateZipUrl = null;
+                string? fullZipUrl = null;
+                string? exeUrl = null;
+
                 foreach (var asset in assetsElem.EnumerateArray())
                 {
                     string assetName = asset.TryGetProperty("name", out var aName) ? (aName.GetString() ?? "") : "";
@@ -134,23 +142,46 @@ internal static class UpdateManager
 
                     if (assetName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (assetName.Contains("win", StringComparison.OrdinalIgnoreCase) || assetName.Contains("windows", StringComparison.OrdinalIgnoreCase))
+                        if (assetName.Contains("update", StringComparison.OrdinalIgnoreCase))
                         {
-                            downloadUrl = assetUrl;
-                            isZip = true;
-                            break;
+                            updateZipUrl = assetUrl;
                         }
-                        if (downloadUrl == null)
+                        else if (assetName.Contains("win", StringComparison.OrdinalIgnoreCase) || assetName.Contains("windows", StringComparison.OrdinalIgnoreCase))
                         {
-                            downloadUrl = assetUrl;
-                            isZip = true;
+                            fullZipUrl = assetUrl;
+                        }
+                        else if (fullZipUrl == null)
+                        {
+                            fullZipUrl = assetUrl;
                         }
                     }
-                    else if (downloadUrl == null && (assetName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || assetName.EndsWith(".msi", StringComparison.OrdinalIgnoreCase)))
+                    else if (exeUrl == null && (assetName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || assetName.EndsWith(".msi", StringComparison.OrdinalIgnoreCase)))
                     {
-                        downloadUrl = assetUrl;
-                        isZip = false;
+                        exeUrl = assetUrl;
                     }
+                }
+
+                // If existing runtime is present and a lightweight update zip is available, download that (~15 MB)
+                // Otherwise fall back to the full standalone zip (~250 MB) or executable installer.
+                if (hasLocalRuntime && !string.IsNullOrEmpty(updateZipUrl))
+                {
+                    downloadUrl = updateZipUrl;
+                    isZip = true;
+                }
+                else if (!string.IsNullOrEmpty(fullZipUrl))
+                {
+                    downloadUrl = fullZipUrl;
+                    isZip = true;
+                }
+                else if (!string.IsNullOrEmpty(updateZipUrl))
+                {
+                    downloadUrl = updateZipUrl;
+                    isZip = true;
+                }
+                else if (!string.IsNullOrEmpty(exeUrl))
+                {
+                    downloadUrl = exeUrl;
+                    isZip = false;
                 }
             }
 
@@ -319,9 +350,9 @@ internal static class UpdateManager
 
                 long? totalBytes = response.Content.Headers.ContentLength;
                 using var contentStream = await response.Content.ReadAsStreamAsync(cts.Token);
-                using var fileStream = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
+                using var fileStream = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None, 65536, true);
 
-                var buffer = new byte[8192];
+                var buffer = new byte[65536];
                 long totalRead = 0;
                 int read;
 

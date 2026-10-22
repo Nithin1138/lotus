@@ -5,6 +5,7 @@
 # ==============================================================================
 
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 
 Write-Host ""
 Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
@@ -22,6 +23,7 @@ if (-not [Environment]::Is64BitOperatingSystem) {
 # 2. Setup destinations
 $installDir = Join-Path $env:LOCALAPPDATA "Programs\DropDial"
 $exePath = Join-Path $installDir "DropDial.exe"
+$hasRuntime = (Test-Path (Join-Path $installDir "runtime\python\python.exe")) -and (Test-Path (Join-Path $installDir "runtime\ffmpeg\ffmpeg.exe"))
 Write-Host "→ Installation target: $installDir" -ForegroundColor Gray
 
 # 3. Terminate running DropDial instance if any
@@ -39,15 +41,22 @@ if (-not (Test-Path $installDir)) {
 
 # 5. Resolve Release Asset URL
 $downloadUrl = "https://dropdial.app/downloads/DropDial-Windows-x64.zip"
+$isLightweightUpdate = $false
+
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
     $releaseInfo = Invoke-RestMethod -Uri "https://dropdial.app/api/releases/latest" -Headers @{ "User-Agent" = "DropDial-Installer" } -TimeoutSec 6 -ErrorAction SilentlyContinue
     if ($releaseInfo -and $releaseInfo.assets) {
-        $winAsset = $releaseInfo.assets | Where-Object { 
-            $_.name -like "*win*.zip" -or $_.name -like "*windows*.zip"
+        $updateAsset = $releaseInfo.assets | Where-Object { $_.name -like "*update*.zip" } | Select-Object -First 1
+        $fullAsset = $releaseInfo.assets | Where-Object { 
+            ($_.name -like "*win*.zip" -or $_.name -like "*windows*.zip") -and ($_.name -notlike "*update*")
         } | Select-Object -First 1
-        if ($winAsset) {
-            $downloadUrl = $winAsset.browser_download_url
+
+        if ($hasRuntime -and $updateAsset) {
+            $downloadUrl = $updateAsset.browser_download_url
+            $isLightweightUpdate = $true
+        } elseif ($fullAsset) {
+            $downloadUrl = $fullAsset.browser_download_url
         }
     }
 } catch {
@@ -57,17 +66,83 @@ try {
 $tempZip = Join-Path $env:TEMP ("DropDial-Setup-" + [System.Guid]::NewGuid().ToString("N") + ".zip")
 $tempExtract = Join-Path $env:TEMP ("DropDial-Extract-" + [System.Guid]::NewGuid().ToString("N"))
 
-Write-Host "→ Downloading DropDial for Windows..." -ForegroundColor Cyan
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
+if ($isLightweightUpdate) {
+    Write-Host "→ Existing runtime detected. Downloading fast application update (~15 MB)..." -ForegroundColor Cyan
+} else {
+    Write-Host "→ Downloading DropDial for Windows..." -ForegroundColor Cyan
+}
 
-# Use WebClient for clean progress and reliability across Windows versions
-$wc = New-Object System.Net.WebClient
-$wc.Headers.Add("User-Agent", "DropDial-Installer")
-$wc.DownloadFile($downloadUrl, $tempZip)
-$wc.Dispose()
+function Download-DropDialFile {
+    param(
+        [string]$Url,
+        [string]$OutPath
+    )
+
+    try {
+        $req = [System.Net.HttpWebRequest]::Create($Url)
+        $req.Method = "GET"
+        $req.UserAgent = "DropDial-Installer"
+        $req.Timeout = 300000
+
+        $resp = $req.GetResponse()
+        $totalLength = $resp.ContentLength
+        $stream = $resp.GetResponseStream()
+        $fs = [System.IO.File]::Create($OutPath)
+
+        $bufSize = 65536
+        $buf = New-Object byte[] $bufSize
+        $totalBytesRead = 0
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        $uiSw = [System.Diagnostics.Stopwatch]::StartNew()
+
+        while (($bytesRead = $stream.Read($buf, 0, $bufSize)) -gt 0) {
+            $fs.Write($buf, 0, $bytesRead)
+            $totalBytesRead += $bytesRead
+
+            if ($uiSw.ElapsedMilliseconds -ge 150 -or $totalBytesRead -eq $totalLength) {
+                $uiSw.Restart()
+                $elapsedSec = [Math]::Max(0.001, $sw.Elapsed.TotalSeconds)
+                $speedMBs = ($totalBytesRead / 1MB) / $elapsedSec
+
+                if ($totalLength -gt 0) {
+                    $pct = [int](($totalBytesRead * 100) / $totalLength)
+                    $barWidth = 22
+                    $filled = [int](($pct * $barWidth) / 100)
+                    $unfilled = $barWidth - $filled
+                    $bar = ("=" * $filled) + (">" * [Math]::Min(1, $unfilled)) + (" " * [Math]::Max(0, $unfilled - 1))
+                    $curMB = $totalBytesRead / 1MB
+                    $totMB = $totalLength / 1MB
+                    Write-Host -NoNewline ("`r  [{0}] {1,3}% ({2:N1} MB / {3:N1} MB) - {4:N1} MB/s   " -f $bar, $pct, $curMB, $totMB, $speedMBs)
+                } else {
+                    $curMB = $totalBytesRead / 1MB
+                    Write-Host -NoNewline ("`r  Downloading: {0:N1} MB ({1:N1} MB/s)   " -f $curMB, $speedMBs)
+                }
+            }
+        }
+        Write-Host ""
+    } catch {
+        # Fallback to WebClient if buffered stream encounters issues
+        Write-Host "`n→ Resuming download via standard client..." -ForegroundColor Gray
+        $wc = New-Object System.Net.WebClient
+        $wc.Headers.Add("User-Agent", "DropDial-Installer")
+        $wc.DownloadFile($Url, $OutPath)
+        $wc.Dispose()
+    } finally {
+        if ($fs) { $fs.Dispose() }
+        if ($stream) { $stream.Dispose() }
+        if ($resp) { $resp.Dispose() }
+    }
+}
+
+Download-DropDialFile -Url $downloadUrl -OutPath $tempZip
 
 Write-Host "→ Extracting application files..." -ForegroundColor Cyan
-Expand-Archive -LiteralPath $tempZip -DestinationPath $tempExtract -Force
+try {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($tempZip, $tempExtract)
+} catch {
+    Expand-Archive -LiteralPath $tempZip -DestinationPath $tempExtract -Force
+}
 
 # Locate DropDial folder or files
 $sourceDir = if (Test-Path (Join-Path $tempExtract "DropDial\DropDial.exe")) {

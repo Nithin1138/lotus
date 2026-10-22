@@ -144,7 +144,20 @@ jobs:
       - name: Package Windows binaries
         shell: pwsh
         run: |
+          # 1. Full standalone offline package (includes runtime, ~250 MB)
           Compress-Archive -Path outputs/DropDial -DestinationPath outputs/DropDial-Windows-x64.zip -Force
+
+          # 2. Lightweight app-only update package (excludes runtime, ~15 MB)
+          $updateStage = "outputs/DropDial-Update"
+          if (Test-Path $updateStage) { Remove-Item -Path $updateStage -Recurse -Force }
+          New-Item -ItemType Directory -Path $updateStage -Force | Out-Null
+          Copy-Item -Path "outputs/DropDial/*" -Destination $updateStage -Recurse -Force
+          if (Test-Path "$updateStage/runtime") {
+            Remove-Item -Path "$updateStage/runtime" -Recurse -Force
+          }
+          Compress-Archive -Path "$updateStage/*" -DestinationPath outputs/DropDial-Windows-Update.zip -Force
+          Remove-Item -Path $updateStage -Recurse -Force
+
           Copy-Item -LiteralPath outputs/DropDial/DropDial.exe -Destination outputs/DropDial.exe -Force
 
       - name: Upload Windows artifact
@@ -153,6 +166,7 @@ jobs:
           name: DropDial-Windows-x64
           path: |
             outputs/DropDial-Windows-x64.zip
+            outputs/DropDial-Windows-Update.zip
             outputs/DropDial.exe
           if-no-files-found: error
 

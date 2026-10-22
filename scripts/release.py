@@ -196,9 +196,10 @@ def publish_release(new_ver, notes_file):
     mac_zip = ROOT_DIR / "outputs" / "DropDial-macOS" / "DropDial-macOS.zip"
     mac_dmg = ROOT_DIR / "outputs" / "DropDial-macOS" / "DropDial.dmg"
     win_zip = ROOT_DIR / "outputs" / "DropDial-Windows-x64.zip"
+    win_update_zip = ROOT_DIR / "outputs" / "DropDial-Windows-Update.zip"
     win_exe = ROOT_DIR / "outputs" / "DropDial.exe"
 
-    for candidate in [mac_zip, mac_dmg, win_zip, win_exe]:
+    for candidate in [mac_zip, mac_dmg, win_zip, win_update_zip, win_exe]:
         if candidate.exists():
             assets.append(str(candidate))
         else:
