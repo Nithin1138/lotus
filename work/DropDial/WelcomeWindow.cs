@@ -13,6 +13,7 @@ internal sealed class WelcomeWindow : Window
 {
     public const string HideAtStartKey = "hideWelcome";
     public static Action? ToggleWheelAction;
+    public static Action<WheelMode?>? ToggleModeAction;
     public static Action? PromptSelectFilesAction;
     public static Action? ShowShelfAction;
     public static Action? ShowLicenseAction;
@@ -41,19 +42,19 @@ internal sealed class WelcomeWindow : Window
             {
                 e.Handled = true;
                 WindowState = WindowState.Minimized;
-                Program.Resident.Instance?.ToggleWheel(WheelMode.Convert);
+                ToggleModeAction?.Invoke(WheelMode.Convert);
             }
             else if (e.Key == Key.F9)
             {
                 e.Handled = true;
                 WindowState = WindowState.Minimized;
-                Program.Resident.Instance?.ToggleWheel(WheelMode.Tools);
+                ToggleModeAction?.Invoke(WheelMode.Tools);
             }
             else if (e.Key == Key.F10)
             {
                 e.Handled = true;
                 WindowState = WindowState.Minimized;
-                Program.Resident.Instance?.ToggleWheel(WheelMode.Actions);
+                ToggleModeAction?.Invoke(WheelMode.Actions);
             }
         };
         // Re-read every label if the language changes while the window is open (from the tray menu).

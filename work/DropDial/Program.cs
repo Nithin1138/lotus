@@ -376,6 +376,7 @@ internal sealed class Resident : IDisposable
         wheel = new DropWheel(BeginOperation);
         FloatShelfWindow.Instance.OnExecuteOperation = (files, op) => BeginOperation(files, op);
         WelcomeWindow.ToggleWheelAction = () => ToggleWheel();
+        WelcomeWindow.ToggleModeAction = mode => ToggleWheel(mode);
         WelcomeWindow.PromptSelectFilesAction = () => PromptSelectFiles();
         WelcomeWindow.ShowShelfAction = () => FloatShelfWindow.Instance.ShowWindow();
         WelcomeWindow.ShowLicenseAction = () => LicenseWindow.ShowDialogOrActivate();
