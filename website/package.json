@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "DropDial official website and Razorpay checkout",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "20.x"
   },
   "license": "MIT"
 }

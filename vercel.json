@@ -17,9 +17,9 @@
     { "source": "/download", "destination": "/api/download" },
     { "source": "/api/releases/latest", "destination": "/api/releases" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/admin", "destination": "/admin/index.html" },
-    { "source": "/admin/", "destination": "/admin/index.html" },
-    { "source": "/admin/(.*)", "destination": "/admin/$1" },
+    { "source": "/admin", "destination": "/website/admin/index.html" },
+    { "source": "/admin/", "destination": "/website/admin/index.html" },
+    { "source": "/admin/(.*)", "destination": "/website/admin/$1" },
     { "source": "/(.*)", "destination": "/website/$1" }
   ],
   "headers": [
