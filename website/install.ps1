@@ -40,12 +40,22 @@ if (-not (Test-Path $installDir)) {
 }
 
 # 5. Resolve Release Asset URL
-$downloadUrl = "https://dropdial.app/downloads/DropDial-Windows-x64.zip"
+$downloadUrl = "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.5/DropDial-Windows-x64.zip"
 $isLightweightUpdate = $false
 
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
-    $releaseInfo = Invoke-RestMethod -Uri "https://dropdial.app/api/releases/latest" -Headers @{ "User-Agent" = "DropDial-Installer" } -TimeoutSec 6 -ErrorAction SilentlyContinue
+    $releaseInfo = $null
+    try {
+        $releaseInfo = Invoke-RestMethod -Uri "https://dropdial.app/api/releases/latest" -Headers @{ "User-Agent" = "DropDial-Installer" } -TimeoutSec 6 -ErrorAction SilentlyContinue
+    } catch {}
+
+    if (-not $releaseInfo -or -not $releaseInfo.assets) {
+        try {
+            $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/Nithin1138/lotus/releases/latest" -Headers @{ "User-Agent" = "DropDial-Installer" } -TimeoutSec 6 -ErrorAction SilentlyContinue
+        } catch {}
+    }
+
     if ($releaseInfo -and $releaseInfo.assets) {
         $updateAsset = $releaseInfo.assets | Where-Object { $_.name -like "*update*.zip" } | Select-Object -First 1
         $fullAsset = $releaseInfo.assets | Where-Object { 

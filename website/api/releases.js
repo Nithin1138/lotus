@@ -182,11 +182,11 @@ module.exports = async function handler(req, res) {
       return res.end();
     }
     if (lower.includes('update')) {
-      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Windows-Update.zip` });
+      res.writeHead(302, { 'Location': 'https://github.com/Nithin1138/lotus/releases/download/v1.0.1.5/DropDial-Windows-Update.zip' });
       return res.end();
     }
     if (lower.includes('windows') || lower.includes('win')) {
-      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Windows-x64.zip` });
+      res.writeHead(302, { 'Location': 'https://github.com/Nithin1138/lotus/releases/download/v1.0.1.5/DropDial-Windows-x64.zip' });
       return res.end();
     }
     if (lower.endsWith('.exe')) {
@@ -221,16 +221,16 @@ module.exports = async function handler(req, res) {
     {
       id: 4,
       name: 'DropDial-Windows-x64.zip',
-      size: 96049041,
+      size: 262569028,
       content_type: 'application/zip',
-      browser_download_url: `${baseUrl}/downloads/DropDial-Windows-x64.zip`
+      browser_download_url: 'https://github.com/Nithin1138/lotus/releases/download/v1.0.1.5/DropDial-Windows-x64.zip'
     },
     {
       id: 5,
       name: 'DropDial-Windows-Update.zip',
-      size: 15421891,
+      size: 73462975,
       content_type: 'application/zip',
-      browser_download_url: `${baseUrl}/downloads/DropDial-Windows-Update.zip`
+      browser_download_url: 'https://github.com/Nithin1138/lotus/releases/download/v1.0.1.5/DropDial-Windows-Update.zip'
     },
     {
       id: 6,

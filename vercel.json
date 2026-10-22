@@ -1,6 +1,18 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/downloads/DropDial-Windows-Update.zip",
+      "destination": "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.5/DropDial-Windows-Update.zip",
+      "permanent": false
+    },
+    {
+      "source": "/downloads/DropDial-Windows-x64.zip",
+      "destination": "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.5/DropDial-Windows-x64.zip",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     { "source": "/download", "destination": "/api/download" },
     { "source": "/api/releases/latest", "destination": "/api/releases" },
