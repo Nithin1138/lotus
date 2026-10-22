@@ -737,7 +737,7 @@ internal sealed class Resident : IDisposable
         items.Items.Add(startupItem);
         if (UpdateManager.AvailableUpdate is { } update)
         {
-            items.Items.Add($"✨ Update to {update.TagName} Available...", null, (_, _) => _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: true));
+            items.Items.Add($"Update to {update.TagName} Available...", null, (_, _) => _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: true));
         }
         else
         {

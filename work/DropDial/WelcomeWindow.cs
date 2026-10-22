@@ -119,7 +119,7 @@ internal sealed class WelcomeWindow : Window
             updateRow.Children.Add(updateBtn);
             var updateText = new TextBlock
             {
-                Text = $"✨ {L.T("New version available:")} {upd.TagName}",
+                Text = $"{L.T("New version available:")} {upd.TagName}",
                 FontWeight = FontWeights.SemiBold,
                 FontSize = 11.5,
                 Foreground = UiTheme.Ink,

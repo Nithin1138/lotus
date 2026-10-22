@@ -517,7 +517,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 5. Licensing & Updates
         if let update = UpdateService.shared.latestRelease {
-            let updateItem = NSMenuItem(title: "✨ Update Available (\(UpdateService.formatVersion(update.tagName)))...", action: #selector(checkForUpdatesTapped(_:)), keyEquivalent: "")
+            let updateItem = NSMenuItem(title: "Update Available (\(UpdateService.formatVersion(update.tagName)))...", action: #selector(checkForUpdatesTapped(_:)), keyEquivalent: "")
             updateItem.target = self
             updateItem.isEnabled = true
             menu.addItem(updateItem)
@@ -557,14 +557,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let m = (sec % 3600) / 60
                 licTitle = "10% Off Early Bird (\(h)h \(m)m left) • Activate..."
             } else if days <= 0 {
-                licTitle = "🔑 Activate Pro (Last day of trial)..."
+                licTitle = "Activate Pro (Last day of trial)..."
             } else if days == 1 {
-                licTitle = "🔑 Activate Pro (1 day left)..."
+                licTitle = "Activate Pro (1 day left)..."
             } else {
-                licTitle = "🔑 Activate Pro (\(days) days left)..."
+                licTitle = "Activate Pro (\(days) days left)..."
             }
         case .trialExpired:
-            licTitle = "🔑 Activate DropDial Pro (Trial Expired)..."
+            licTitle = "Activate DropDial Pro (Trial Expired)..."
         }
         let licItem = NSMenuItem(title: licTitle, action: #selector(showLicenseWindow(_:)), keyEquivalent: "")
         licItem.target = self

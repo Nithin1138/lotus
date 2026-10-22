@@ -65,11 +65,11 @@ internal sealed class LicenseStatus
             $"Trial: {DaysRemaining}d · 10% Off Early Bird ({LicenseManager.First24HoursRemainingSeconds / 3600}h {(LicenseManager.First24HoursRemainingSeconds % 3600) / 60}m left)...",
         LicenseStatusKind.Trial => DaysRemaining switch
         {
-            <= 0 => "🔑 Enter License Key (Trial: Last day)...",
-            1 => "🔑 Enter License Key (Trial: 1 day left)...",
-            _ => $"🔑 Enter License Key (Trial: {DaysRemaining} days left)..."
+            <= 0 => "Enter License Key (Trial: Last day)...",
+            1 => "Enter License Key (Trial: 1 day left)...",
+            _ => $"Enter License Key (Trial: {DaysRemaining} days left)..."
         },
-        _ => $"🔑 Enter License Key (Trial Expired — {LicenseManager.GetDailyConversionsRemaining()}/3 free today)..."
+        _ => $"Enter License Key (Trial Expired — {LicenseManager.GetDailyConversionsRemaining()}/3 free today)..."
     };
 }
 
