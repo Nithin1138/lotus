@@ -593,13 +593,11 @@ internal sealed class DropWheel : Window
             flags |= 0x0010; // SWP_NOACTIVATE only when user is currently holding the mouse dragging a file
 
         Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, sizeW, sizeH, flags);
-        Topmost = false;
         Topmost = true;
 
         if (!isDragging)
         {
-            Native.BringWindowToTop(hwnd);
-            Native.SetForegroundWindow(hwnd);
+            Native.ForceForeground(hwnd);
             Activate();
             Focus();
         }
@@ -656,7 +654,6 @@ internal sealed class DropWheel : Window
         uint resizeFlags = 0x0040;
         if (Native.Down(1)) resizeFlags |= 0x0010;
         Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, pixelsW, pixelsH, resizeFlags);
-        Topmost = false;
         Topmost = true;
     }
 

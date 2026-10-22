@@ -365,6 +365,7 @@ internal sealed class Resident : IDisposable
     private const int HOTKEY_ID_WINSHIFTL = 9005;
     private const int HOTKEY_ID_CTRLSHIFTL = 9006;
     private const int HOTKEY_ID_CTRLSHIFTSPACE = 9007;
+    private const int HOTKEY_ID_CTRLSHIFTD = 9008;
 
     internal static Resident? Instance { get; private set; }
 
@@ -475,6 +476,7 @@ internal sealed class Resident : IDisposable
             }
             Native.RegisterHotKey(handle, HOTKEY_ID_WINSHIFTL, Native.MOD_WIN | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C);
             Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTL, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C);
+            Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTD, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x44);
             Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTSPACE, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x20);
         }
         catch { }
@@ -488,14 +490,17 @@ internal sealed class Resident : IDisposable
             switch (id)
             {
                 case HOTKEY_ID_F8:
+                    f8 = true;
                     app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Convert));
                     handled = true;
                     break;
                 case HOTKEY_ID_F9:
+                    f9 = true;
                     app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Tools));
                     handled = true;
                     break;
                 case HOTKEY_ID_F10:
+                    f10 = true;
                     app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Actions));
                     handled = true;
                     break;
@@ -506,10 +511,13 @@ internal sealed class Resident : IDisposable
                     break;
                 case HOTKEY_ID_WINSHIFTL:
                 case HOTKEY_ID_CTRLSHIFTL:
+                case HOTKEY_ID_CTRLSHIFTD:
+                    ctrlShiftLPressed = true;
                     app.Dispatcher.InvokeAsync(() => ToggleWheel());
                     handled = true;
                     break;
                 case HOTKEY_ID_CTRLSHIFTSPACE:
+                    ctrlShiftSpacePressed = true;
                     app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Tools));
                     handled = true;
                     break;
@@ -520,7 +528,7 @@ internal sealed class Resident : IDisposable
 
     internal void ToggleWheel(WheelMode? targetMode = null)
     {
-        if ((DateTime.UtcNow - activated).TotalMilliseconds < 180)
+        if ((DateTime.UtcNow - activated).TotalMilliseconds < 250)
             return;
         activated = DateTime.UtcNow;
         if (wheel.IsVisible)
@@ -790,12 +798,12 @@ internal sealed class Resident : IDisposable
     {
         bool nextF8 = Native.Down(0x77), nextF9 = Native.Down(0x78), nextF10 = Native.Down(0x79), nextEscape = Native.Down(0x1B), nextMouse = Native.Down(1);
         bool nextAlt = Native.IsAltDown(), nextSpace = Native.Down(0x20);
-        bool nextCtrl = Native.IsCtrlDown(), nextShift = Native.IsShiftDown(), nextL = Native.Down(0x4C);
+        bool nextCtrl = Native.IsCtrlDown(), nextShift = Native.IsShiftDown(), nextL = Native.Down(0x4C), nextD = Native.Down(0x44);
 
         bool nextAltSpace = nextAlt && nextSpace;
         bool nextCtrlShift = nextCtrl && nextShift && !nextAlt;
         bool nextCtrlShiftSpace = nextCtrlShift && nextSpace;
-        bool nextCtrlShiftL = nextCtrlShift && nextL;
+        bool nextCtrlShiftL = nextCtrlShift && (nextL || nextD);
 
         Native.GetCursorPos(out var cursor);
         var request = dragShortcuts.Update(nextMouse, nextShift, nextCtrl, nextAlt, cursor.X, cursor.Y, true);
@@ -837,7 +845,7 @@ internal sealed class Resident : IDisposable
                 ToggleWheel(WheelMode.Actions);
         }
 
-        // Keyboard hotkeys when not mouse dragging:
+        // Keyboard hotkeys when not mouse dragging (fallback when RegisterHotKey was unhandled):
         if (!nextMouse)
         {
             if (nextAltSpace && !altSpacePressed)
@@ -845,15 +853,12 @@ internal sealed class Resident : IDisposable
             if (nextCtrlShiftSpace && !ctrlShiftSpacePressed)
                 ToggleWheel(WheelMode.Tools);
             if (nextCtrlShiftL && !ctrlShiftLPressed)
-                ToggleWheel(WheelMode.Tools);
-            if (ctrlShiftPressed && !nextCtrlShift && !nextAlt && !nextL && !nextSpace)
-                ToggleWheel(WheelMode.Tools);
+                ToggleWheel();
         }
 
         altSpacePressed = nextAltSpace;
         ctrlShiftSpacePressed = nextCtrlShiftSpace;
         ctrlShiftLPressed = nextCtrlShiftL;
-        ctrlShiftPressed = nextCtrlShift && !nextMouse;
 
         if (nextEscape && !escape && wheel.IsVisible)
             wheel.Dismiss("Escape");
@@ -1287,6 +1292,7 @@ internal sealed class Resident : IDisposable
                 Native.UnregisterHotKey(handle, HOTKEY_ID_ALTSPACE);
                 Native.UnregisterHotKey(handle, HOTKEY_ID_WINSHIFTL);
                 Native.UnregisterHotKey(handle, HOTKEY_ID_CTRLSHIFTL);
+                Native.UnregisterHotKey(handle, HOTKEY_ID_CTRLSHIFTD);
                 Native.UnregisterHotKey(handle, HOTKEY_ID_CTRLSHIFTSPACE);
             }
             catch { }

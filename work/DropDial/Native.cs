@@ -53,6 +53,37 @@ internal static class Native
     public const uint MOD_WIN = 0x0008;
     public const uint MOD_NOREPEAT = 0x4000;
     public const int WM_HOTKEY = 0x0312;
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+    [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+    public static void ForceForeground(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero) return;
+        try
+        {
+            AllowSetForegroundWindow(-1);
+            IntPtr fg = GetForegroundWindow();
+            uint fgThread = fg != IntPtr.Zero ? GetWindowThreadProcessId(fg, out _) : 0;
+            uint curThread = GetCurrentThreadId();
+            if (fgThread != 0 && fgThread != curThread)
+            {
+                AttachThreadInput(curThread, fgThread, true);
+                SetForegroundWindow(hwnd);
+                BringWindowToTop(hwnd);
+                SetWindowPos(hwnd, new IntPtr(-1), 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0040); // SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW
+                AttachThreadInput(curThread, fgThread, false);
+            }
+            else
+            {
+                SetForegroundWindow(hwnd);
+                BringWindowToTop(hwnd);
+                SetWindowPos(hwnd, new IntPtr(-1), 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0040);
+            }
+        }
+        catch { }
+    }
+
     public static bool Down(int key) => (GetAsyncKeyState(key) & 0x8000) != 0;
     public static bool IsShiftDown() => Down(0x10) || Down(0xA0) || Down(0xA1);
     public static bool IsCtrlDown() => Down(0x11) || Down(0xA2) || Down(0xA3);

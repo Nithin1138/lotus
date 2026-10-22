@@ -51,6 +51,9 @@ final class HotKeyManager {
 
         // ID 5: F10 (keyCode 109) -> Toggle Actions Wheel
         register(id: 5, keyCode: UInt32(kVK_F10), modifiers: 0)
+
+        // ID 6: Cmd + Shift + D (keyCode 2) -> Toggle DropDial Wheel
+        register(id: 6, keyCode: UInt32(kVK_ANSI_D), modifiers: UInt32(cmdKey | shiftKey))
     }
 
     private func register(id: UInt32, keyCode: UInt32, modifiers: UInt32) {
@@ -71,7 +74,7 @@ final class HotKeyManager {
                 DropWheelWindowController.shared.toggleWheel(mode: .tools)
             case 5:
                 DropWheelWindowController.shared.toggleWheel(mode: .actions)
-            case 3, 4:
+            case 3, 4, 6:
                 DropWheelWindowController.shared.toggleWheel(mode: nil)
             default:
                 break
