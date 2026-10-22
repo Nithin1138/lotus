@@ -134,10 +134,10 @@ internal sealed class ToolWindow : Window
             return;
         }
         Title = (IsVideoStudio ? "DropDial · Video Studio" : operation.Label) + " · " + Path.GetFileName(paths[0]);
-        Width = 1040;
-        Height = 800;
-        MinWidth = 850;
-        MinHeight = 640;
+        Width = Math.Min(920, Math.Max(760, (int)SystemParameters.WorkArea.Width - 60));
+        Height = Math.Min(640, Math.Max(520, (int)SystemParameters.WorkArea.Height - 60));
+        MinWidth = 740;
+        MinHeight = 500;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = UiTheme.WindowBack;
         FontFamily = UiTheme.Font;
@@ -153,13 +153,13 @@ internal sealed class ToolWindow : Window
     }
     private UIElement Build()
     {
-        var root = new Grid { Margin = new Thickness(24, 8, 24, 22) };
+        var root = new Grid { Margin = new Thickness(18, 4, 18, 14) };
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var header = new StackPanel();
-        header.Children.Add(new TextBlock { Text = operation.Label, FontSize = 26, FontWeight = FontWeights.SemiBold });
-        header.Children.Add(new TextBlock { Text = paths.Length == 1 ? Path.GetFileName(paths[0]) : L.F("{0} files selected", paths.Length), Foreground = UiTheme.Muted, Margin = new Thickness(0, 6, 0, 20) });
+        header.Children.Add(new TextBlock { Text = operation.Label, FontSize = 18, FontWeight = FontWeights.SemiBold });
+        header.Children.Add(new TextBlock { Text = paths.Length == 1 ? Path.GetFileName(paths[0]) : L.F("{0} files selected", paths.Length), Foreground = UiTheme.Muted, Margin = new Thickness(0, 2, 0, 10), FontSize = 12 });
         if (host != null)
         { header.Visibility = Visibility.Collapsed; root.Margin = new Thickness(0); }
         root.Children.Add(header);
@@ -170,11 +170,11 @@ internal sealed class ToolWindow : Window
         Grid.SetRow(body, 1);
         root.Children.Add(body);
         var left = new StackPanel { Margin = new Thickness(0, 0, 0, 0) };
-        left.Children.Add(new TextBlock { Text = VisualPreview || Rotating ? L.T("Preview") : L.T("Source preview"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 12) });
+        left.Children.Add(new TextBlock { Text = VisualPreview || Rotating ? L.T("Preview") : L.T("Source preview"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8), FontSize = 12 });
         left.Children.Add(framePicker);
         framePicker.SelectionChanged += async (_, _) => { if (loaded && framePicker.SelectedItem is ComboBoxItem item) { imageFrame = (int)item.Tag; regions.Clear(); regionList.Items.Clear(); await Initialize(); if (LivePreview) SchedulePreview(); } };
         // A whole PDF page needs more room to mark small text accurately.
-        previewHost.Height = operation.Id == "organizePDF" ? 200 : (operation.Id == "redactPDF" ? 520 : 300);
+        previewHost.Height = operation.Id == "organizePDF" ? 170 : (operation.Id == "redactPDF" ? 340 : 250);
         previewHost.Background = UiTheme.PreviewBack;
         if (Rotating)
         {
@@ -458,53 +458,11 @@ internal sealed class ToolWindow : Window
             }
             order.SelectionChanged += (_, _) => { if (loaded && VisualPreview) SchedulePreview(); };
         }
-        var previewCard = UiTheme.Card(new ScrollViewer { Content = left, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }, new Thickness(18));
-        previewCard.Margin = new Thickness(0, 0, 16, 0);
+        var previewCard = UiTheme.Card(new ScrollViewer { Content = left, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }, new Thickness(12));
+        previewCard.Margin = new Thickness(0, 0, 12, 0);
         body.Children.Add(previewCard);
         var parameters = new StackPanel();
-        parameters.Children.Add(new TextBlock { Text = L.T("Parameters"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 10) });
-        if ((operation.Fields ?? []).Length == 0)
-        {
-            var infoBorder = new Border
-            {
-                Background = UiTheme.Tint,
-                CornerRadius = new CornerRadius(8),
-                Padding = new Thickness(12, 10, 12, 10),
-                Margin = new Thickness(0, 0, 0, 14)
-            };
-            infoBorder.Child = new TextBlock
-            {
-                Text = L.F("Ready to run {0} on {1} selected file(s).", operation.Label, paths.Length),
-                Foreground = UiTheme.Accent,
-                FontWeight = FontWeights.Medium,
-                TextWrapping = TextWrapping.Wrap
-            };
-            parameters.Children.Add(infoBorder);
-
-            parameters.Children.Add(new TextBlock { Text = L.T("Quality Profile"), Margin = new Thickness(0, 6, 0, 4) });
-            var qualityCombo = new ComboBox { Margin = new Thickness(0, 0, 0, 10) };
-            qualityCombo.Items.Add(L.T("High Quality (Preserve Details)"));
-            qualityCombo.Items.Add(L.T("Balanced (Recommended)"));
-            qualityCombo.Items.Add(L.T("Maximum Compression (Small Size)"));
-            qualityCombo.SelectedIndex = 1;
-            parameters.Children.Add(qualityCombo);
-
-            parameters.Children.Add(new TextBlock { Text = L.T("Output Destination"), Margin = new Thickness(0, 6, 0, 4) });
-            var destCombo = new ComboBox { Margin = new Thickness(0, 0, 0, 10) };
-            destCombo.Items.Add(L.T("Same folder as original"));
-            destCombo.Items.Add(L.T("Desktop"));
-            destCombo.Items.Add(L.T("Downloads"));
-            destCombo.SelectedIndex = 0;
-            parameters.Children.Add(destCombo);
-
-            var metaCheck = new CheckBox
-            {
-                Content = L.T("Preserve original metadata and timestamps"),
-                IsChecked = true,
-                Margin = new Thickness(0, 8, 0, 8)
-            };
-            parameters.Children.Add(metaCheck);
-        }
+        parameters.Children.Add(new TextBlock { Text = L.T("Parameters"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8), FontSize = 12 });
         var advanced = new StackPanel();
         foreach (var field in operation.Fields ?? [])
         {
@@ -931,13 +889,13 @@ internal sealed class ToolWindow : Window
             card.Child = cardPanel;
             parameters.Children.Add(card);
         }
-        var scroll = UiTheme.Card(new ScrollViewer { Content = parameters, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }, new Thickness(18));
+        var scroll = UiTheme.Card(new ScrollViewer { Content = parameters, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }, new Thickness(12));
         Grid.SetColumn(scroll, 1);
         body.Children.Add(scroll);
-        var bottom = new Grid { Margin = new Thickness(0, 18, 0, 0) };
+        var bottom = new Grid { Margin = new Thickness(0, 10, 0, 0) };
         bottom.ColumnDefinitions.Add(new ColumnDefinition());
         bottom.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var feedback = new StackPanel { Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
+        var feedback = new StackPanel { Margin = new Thickness(0, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center };
         status.Text = L.T("Reading file information…");
         status.TextWrapping = TextWrapping.Wrap;
         status.Foreground = UiTheme.Muted;
@@ -957,7 +915,8 @@ internal sealed class ToolWindow : Window
         actions.Children.Add(cancelButton);
         replaceButton = Button(L.T("Replace in DropDial"), Replace);
         replaceButton.IsEnabled = false;
-        replaceButton.Margin = new Thickness(0, 0, 10, 0);
+        replaceButton.Margin = new Thickness(0, 0, 8, 0);
+        replaceButton.Padding = new Thickness(14, 7, 14, 7);
         replaceButton.ToolTip = L.T("Apply this edit and load the new file into DropDial for another tool or conversion");
         if (Saved != null) replaceButton.Visibility = Visibility.Collapsed;
         actions.Children.Add(replaceButton);
@@ -966,7 +925,7 @@ internal sealed class ToolWindow : Window
         saveButton.Foreground = Brushes.White;
         saveButton.Background = UiTheme.Accent;
         saveButton.BorderThickness = new Thickness(0);
-        saveButton.Padding = new Thickness(22, 10, 22, 10);
+        saveButton.Padding = new Thickness(18, 7, 18, 7);
         saveButton.ToolTip = "Ctrl + Enter";
         actions.Children.Add(saveButton);
         Grid.SetRow(bottom, 2);

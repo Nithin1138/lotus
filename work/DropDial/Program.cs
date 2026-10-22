@@ -489,7 +489,7 @@ internal sealed class Resident : IDisposable
 
     internal void ToggleWheel(WheelMode? targetMode = null)
     {
-        if ((DateTime.UtcNow - activated).TotalMilliseconds < 250)
+        if ((DateTime.UtcNow - activated).TotalMilliseconds < 180)
             return;
         activated = DateTime.UtcNow;
         if (wheel.IsVisible)
@@ -743,7 +743,7 @@ internal sealed class Resident : IDisposable
             Journal.Write("WheelModeChanged", new { reason, mode });
             return;
         }
-        if (!modifier && (DateTime.UtcNow - activated).TotalMilliseconds < 200)
+        if (!modifier && (DateTime.UtcNow - activated).TotalMilliseconds < 150)
             return;
         activated = DateTime.UtcNow;
         Native.GetCursorPos(out var point);
@@ -754,8 +754,8 @@ internal sealed class Resident : IDisposable
     private void Poll(object? sender, EventArgs e)
     {
         bool nextF8 = Native.Down(0x77), nextF9 = Native.Down(0x78), nextF10 = Native.Down(0x79), nextEscape = Native.Down(0x1B), nextMouse = Native.Down(1);
-        bool nextAlt = Native.Down(0x12) || Native.Down(0xA4) || Native.Down(0xA5), nextSpace = Native.Down(0x20);
-        bool nextCtrl = Native.Down(0x11), nextShift = Native.Down(0x10), nextL = Native.Down(0x4C);
+        bool nextAlt = Native.IsAltDown(), nextSpace = Native.Down(0x20);
+        bool nextCtrl = Native.IsCtrlDown(), nextShift = Native.IsShiftDown(), nextL = Native.Down(0x4C);
 
         bool nextAltSpace = nextAlt && nextSpace;
         bool nextCtrlShift = nextCtrl && nextShift && !nextAlt;
@@ -763,7 +763,7 @@ internal sealed class Resident : IDisposable
         bool nextCtrlShiftL = nextCtrlShift && nextL;
 
         Native.GetCursorPos(out var cursor);
-        var request = dragShortcuts.Update(nextMouse, nextShift, nextCtrl, nextAlt, cursor.X, cursor.Y, nextMouse && !mouse && Native.ShellFileWindow());
+        var request = dragShortcuts.Update(nextMouse, nextShift, nextCtrl, nextAlt, cursor.X, cursor.Y, true);
         if (nextEscape && !escape)
             dragShortcuts.Cancel();
         else if (request != DragMenuRequest.None)

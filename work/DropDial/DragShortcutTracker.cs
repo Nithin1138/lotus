@@ -42,7 +42,7 @@ internal sealed class DragShortcutTracker(int horizontalThreshold, int verticalT
         DragMenuRequest request = DragMenuRequest.None;
         if (candidate && moved && !suppressed && chord != 0)
         {
-            if (!triggered || (chord == 2 && previousChord != 2) || (chord == 3 && previousChord != 3) || (chord == 1 && previousChord == 0))
+            if (!triggered || chord != previousChord)
             {
                 triggered = true;
                 request = chord switch

@@ -583,13 +583,26 @@ internal sealed class DropWheel : Window
         int targetY = point.Y - sizeH / 2;
         int y = Math.Clamp(targetY, area.Top, Math.Max(area.Top, area.Bottom - sizeH));
 
-        Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, sizeW, sizeH, 0x0010 | 0x0040);
         Left = x / scale;
         Top = y / scale;
-        Topmost = true;
         UpdateLayout();
-        Activate();
-        Focus();
+
+        uint flags = 0x0040; // SWP_SHOWWINDOW
+        bool isDragging = Native.Down(1);
+        if (isDragging)
+            flags |= 0x0010; // SWP_NOACTIVATE only when user is currently holding the mouse dragging a file
+
+        Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, sizeW, sizeH, flags);
+        Topmost = false;
+        Topmost = true;
+
+        if (!isDragging)
+        {
+            Native.BringWindowToTop(hwnd);
+            Native.SetForegroundWindow(hwnd);
+            Activate();
+            Focus();
+        }
     }
 
     public void OpenAt(Native.POINT point, bool tools) =>
@@ -637,11 +650,14 @@ internal sealed class DropWheel : Window
         canvas.Height = size > SingleSize ? size : (SingleSize + 25);
         topBarContainer.Width = size;
         bottomStack.Width = size;
-        Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, pixelsW, pixelsH, 0x0010 | 0x0040);
         Left = x / scale;
         Top = y / scale;
-        Topmost = true;
         UpdateLayout();
+        uint resizeFlags = 0x0040;
+        if (Native.Down(1)) resizeFlags |= 0x0010;
+        Native.SetWindowPos(hwnd, new IntPtr(-1), x, y, pixelsW, pixelsH, resizeFlags);
+        Topmost = false;
+        Topmost = true;
     }
 
     public void Dismiss(string reason)
