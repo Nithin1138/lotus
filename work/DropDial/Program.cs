@@ -327,7 +327,7 @@ internal sealed class Resident : IDisposable
     private readonly Channel<QueuedJob> queue = Channel.CreateBounded<QueuedJob>(new BoundedChannelOptions(16) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
     private readonly CancellationTokenSource stopping = new();
     private readonly DragShortcutTracker dragShortcuts = new(Native.GetSystemMetrics(68), Native.GetSystemMetrics(69));
-    private bool f8, f9, f10, escape, mouse, altSpacePressed, ctrlShiftLPressed, ctrlShiftSpacePressed, ctrlShiftPressed;
+    private bool f8, f9, f10, escape, mouse, ctrl, shift, alt, altSpacePressed, ctrlShiftLPressed, ctrlShiftSpacePressed, ctrlShiftPressed;
     private DateTime activated = DateTime.MinValue;
     private string? lastOutput;
     private bool disposed;
@@ -473,17 +473,22 @@ internal sealed class Resident : IDisposable
             hotkeySource.AddHook(HwndHook);
             IntPtr handle = hotkeySource.Handle;
 
-            Native.RegisterHotKey(handle, HOTKEY_ID_F8, Native.MOD_NOREPEAT, 0x77);
-            Native.RegisterHotKey(handle, HOTKEY_ID_F9, Native.MOD_NOREPEAT, 0x78);
-            Native.RegisterHotKey(handle, HOTKEY_ID_F10, Native.MOD_NOREPEAT, 0x79);
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_F8, Native.MOD_NOREPEAT, 0x77))
+                Native.RegisterHotKey(handle, HOTKEY_ID_F8, 0, 0x77);
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_F9, Native.MOD_NOREPEAT, 0x78))
+                Native.RegisterHotKey(handle, HOTKEY_ID_F9, 0, 0x78);
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_F10, Native.MOD_NOREPEAT, 0x79))
+                Native.RegisterHotKey(handle, HOTKEY_ID_F10, 0, 0x79);
             if (!Native.RegisterHotKey(handle, HOTKEY_ID_ALTSPACE, Native.MOD_ALT | Native.MOD_NOREPEAT, 0x20))
-            {
                 Native.RegisterHotKey(handle, HOTKEY_ID_ALTSPACE, Native.MOD_ALT, 0x20);
-            }
-            Native.RegisterHotKey(handle, HOTKEY_ID_WINSHIFTL, Native.MOD_WIN | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C);
-            Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTL, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C);
-            Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTD, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x44);
-            Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTSPACE, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x20);
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_WINSHIFTL, Native.MOD_WIN | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C))
+                Native.RegisterHotKey(handle, HOTKEY_ID_WINSHIFTL, Native.MOD_WIN | Native.MOD_SHIFT, 0x4C);
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTL, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C))
+                Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTL, Native.MOD_CONTROL | Native.MOD_SHIFT, 0x4C);
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTD, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x44))
+                Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTD, Native.MOD_CONTROL | Native.MOD_SHIFT, 0x44);
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTSPACE, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x20))
+                Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTSPACE, Native.MOD_CONTROL | Native.MOD_SHIFT, 0x20);
         }
         catch { }
     }
@@ -826,6 +831,27 @@ internal sealed class Resident : IDisposable
             Activate(m, "DragModifier", true);
         }
 
+        // Mode switching when wheel is already visible:
+        // Pressing Ctrl switches to Tools mode, Shift to Convert, Alt to Actions
+        if (wheel.IsVisible)
+        {
+            if (nextCtrl && !ctrl && !nextAlt && wheel.CurrentMode != WheelMode.Tools)
+            {
+                SoundManager.PlayPop();
+                wheel.ChangeMode(WheelMode.Tools);
+            }
+            else if (nextShift && !shift && !nextCtrl && !nextAlt && wheel.CurrentMode != WheelMode.Convert)
+            {
+                SoundManager.PlayPop();
+                wheel.ChangeMode(WheelMode.Convert);
+            }
+            else if (nextAlt && !alt && !nextCtrl && !nextShift && wheel.CurrentMode != WheelMode.Actions)
+            {
+                SoundManager.PlayPop();
+                wheel.ChangeMode(WheelMode.Actions);
+            }
+        }
+
         // F8 / F9 / F10 shortcut triggers:
         // When mouse is held (dragging), they switch the drag wheel mode.
         // When mouse is NOT held, they toggle the corresponding wheel at the cursor position.
@@ -851,16 +877,13 @@ internal sealed class Resident : IDisposable
                 ToggleWheel(WheelMode.Actions);
         }
 
-        // Keyboard hotkeys when not mouse dragging (fallback when RegisterHotKey was unhandled):
-        if (!nextMouse)
-        {
-            if (nextAltSpace && !altSpacePressed)
-                ToggleWheel();
-            if (nextCtrlShiftSpace && !ctrlShiftSpacePressed)
-                ToggleWheel(WheelMode.Tools);
-            if (nextCtrlShiftL && !ctrlShiftLPressed)
-                ToggleWheel();
-        }
+        // Keyboard hotkeys (fallback when RegisterHotKey was unhandled or intercepted):
+        if (nextAltSpace && !altSpacePressed)
+            ToggleWheel();
+        if (nextCtrlShiftSpace && !ctrlShiftSpacePressed)
+            ToggleWheel(WheelMode.Tools);
+        if (nextCtrlShiftL && !ctrlShiftLPressed)
+            ToggleWheel();
 
         altSpacePressed = nextAltSpace;
         ctrlShiftSpacePressed = nextCtrlShiftSpace;
@@ -902,6 +925,9 @@ internal sealed class Resident : IDisposable
         f10 = nextF10;
         escape = nextEscape;
         mouse = nextMouse;
+        ctrl = nextCtrl;
+        shift = nextShift;
+        alt = nextAlt;
     }
 
     private void Enqueue(ConversionJob job)
