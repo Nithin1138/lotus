@@ -30,7 +30,7 @@ internal static class Catalog
     // When a single file has ten or more tools, related tools share one window. The older two-wheel layout stays
     // available (tray menu) and is used instead when chosen.
     public const string LayoutKey = "wheelLayout";
-    public static bool TwoWheels => Settings.GetString(LayoutKey) == "twoWheels";
+    public static bool TwoWheels => false;
     private static readonly Dictionary<string, (string Id, string Label, string[] Parts, bool Chain)[]> Merged = new()
     {
         ["image"] = [("merge:cropRotate", "Crop & rotate", ["cropImage", "rotateImage"], true), ("merge:sizeCompress", "Size & compress", ["resizeImage", "compress"], true),

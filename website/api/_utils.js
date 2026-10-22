@@ -443,10 +443,45 @@ function verifyRazorpayWebhookSignature(rawBody, signature) {
   return crypto.timingSafeEqual(expectedBuf, signatureBuf);
 }
 
+/**
+ * Cryptographically verifies an ECDSA P-256 DropDial license key and decodes its payload.
+ */
+function verifyLicense(licenseKey) {
+  if (!licenseKey || typeof licenseKey !== 'string') return { valid: false, error: 'Empty license key' };
+  const trimmed = licenseKey.trim();
+  if (!trimmed.startsWith('DD-')) return { valid: false, error: 'Must start with DD-' };
+
+  const parts = trimmed.slice(3).split('.');
+  if (parts.length !== 2) return { valid: false, error: 'Invalid key structure' };
+
+  try {
+    const payloadBuf = Buffer.from(parts[0].replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+    const sigBuf = Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+
+    const privKey = getPrivateKey();
+    const pubKey = crypto.createPublicKey(privKey);
+
+    const verify = crypto.createVerify('SHA256');
+    verify.update(payloadBuf);
+    const valid = verify.verify({
+      key: pubKey,
+      dsaEncoding: 'ieee-p1363'
+    }, sigBuf);
+
+    if (!valid) return { valid: false, error: 'Signature verification failed' };
+
+    const payload = JSON.parse(payloadBuf.toString('utf8'));
+    return { valid: true, payload };
+  } catch (err) {
+    return { valid: false, error: err.message };
+  }
+}
+
 module.exports = {
   b64urlEncode,
   getPrivateKey,
   generateLicense,
+  verifyLicense,
   sendResendEmail,
   sendPaymentFailedEmail,
   verifyRazorpayPaymentSignature,

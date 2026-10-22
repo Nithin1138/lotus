@@ -48,6 +48,20 @@ async function ensureSchema() {
       );
     `;
 
+    // 1b. Device Activations Table (Enforces single vs multi-device limits)
+    await sql`
+      CREATE TABLE IF NOT EXISTS license_activations (
+        id VARCHAR(64) PRIMARY KEY,
+        license_key TEXT NOT NULL,
+        device_id VARCHAR(128) NOT NULL,
+        device_name VARCHAR(255),
+        platform VARCHAR(32),
+        activated_at TIMESTAMPTZ DEFAULT NOW(),
+        last_seen TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(license_key, device_id)
+      );
+    `;
+
     // 2. Transactions Table
     await sql`
       CREATE TABLE IF NOT EXISTS transactions (

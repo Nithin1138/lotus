@@ -1,9 +1,11 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace DropDial;
@@ -141,6 +143,7 @@ internal static class LicenseManager
     private sealed class StoredLicenseState
     {
         public string? LicenseKey { get; set; }
+        public string? DeviceId { get; set; }
         public long TrialStartTime { get; set; }
         public string? DailyConversionDate { get; set; }
         public int DailyConversionCount { get; set; }
@@ -390,12 +393,70 @@ internal static class LicenseManager
         }
     }
 
-    public static (bool Success, string Message) Activate(string licenseKey)
+    public static string GetDeviceId()
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography");
+            if (key?.GetValue("MachineGuid") is string guid && !string.IsNullOrWhiteSpace(guid))
+                return guid.Trim();
+        }
+        catch { }
+
+        var state = LoadState();
+        if (string.IsNullOrWhiteSpace(state.DeviceId))
+        {
+            state.DeviceId = Guid.NewGuid().ToString("N");
+            SaveState(state);
+        }
+        return state.DeviceId;
+    }
+
+    public static async Task<(bool Success, string Message)> ActivateAsync(string licenseKey)
     {
         var (isValid, info, error) = VerifyKey(licenseKey);
         if (!isValid || info == null)
         {
             return (false, error ?? "Invalid license key");
+        }
+
+        string deviceId = GetDeviceId();
+        string deviceName = Environment.MachineName;
+
+        // Verify device limit with activation server
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            var payload = new
+            {
+                licenseKey = licenseKey.Trim(),
+                deviceId,
+                deviceName,
+                platform = "windows"
+            };
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("https://www.dropdial.app/api/activate", content);
+            if (!response.IsSuccessStatusCode)
+            {
+                string respJson = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    using var doc = JsonDocument.Parse(respJson);
+                    if (doc.RootElement.TryGetProperty("message", out var msgElem))
+                    {
+                        return (false, msgElem.GetString() ?? "Device limit reached for this license.");
+                    }
+                }
+                catch { }
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    return (false, "This license has reached its device limit. Deactivate your other device to use it here.");
+                }
+            }
+        }
+        catch
+        {
+            // If offline, cryptographic verification succeeds locally
         }
 
         var state = LoadState();
@@ -406,9 +467,30 @@ internal static class LicenseManager
         return (true, $"DropDial Pro successfully activated! Thank you, {(string.IsNullOrEmpty(info.Name) ? info.Email : info.Name)}.");
     }
 
+    public static (bool Success, string Message) Activate(string licenseKey)
+    {
+        return Task.Run(() => ActivateAsync(licenseKey)).GetAwaiter().GetResult();
+    }
+
     public static void Deactivate()
     {
         var state = LoadState();
+        string? key = state.LicenseKey;
+        string deviceId = GetDeviceId();
+        if (!string.IsNullOrEmpty(key))
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+                    var payload = new { licenseKey = key, deviceId };
+                    var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+                    await client.PostAsync("https://www.dropdial.app/api/deactivate", content);
+                }
+                catch { }
+            });
+        }
         state.LicenseKey = null;
         SaveState(state);
         RefreshStatus();

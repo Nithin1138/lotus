@@ -80,10 +80,21 @@ internal sealed class LicenseWindow : Window
             FontSize = 12,
             Foreground = UiTheme.Muted,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 4, 0, 18),
+            Margin = new Thickness(0, 4, 0, 4),
             TextAlignment = TextAlignment.Center
         };
         panel.Children.Add(statusSubtitle);
+
+        var oneTimeLabel = new TextBlock
+        {
+            Text = "One-time payment • Pay once, own forever • No subscription",
+            FontSize = 11,
+            Foreground = UiTheme.Muted,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 16),
+            TextAlignment = TextAlignment.Center
+        };
+        panel.Children.Add(oneTimeLabel);
 
         // 4. License Key Input Box (Monospaced) & Paste Button
         var keyRow = new Grid { Margin = new Thickness(0, 0, 0, 6) };
@@ -356,7 +367,7 @@ internal sealed class LicenseWindow : Window
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); } catch { }
     }
 
-    private void OnPrimaryClick()
+    private async void OnPrimaryClick()
     {
         if (LicenseManager.CurrentStatus.IsPro)
         {
@@ -378,7 +389,13 @@ internal sealed class LicenseWindow : Window
             return;
         }
 
-        var (success, msg) = LicenseManager.Activate(key);
+        primaryBtn.IsEnabled = false;
+        messageText.Text = "Verifying license and registering device...";
+        messageText.Foreground = UiTheme.Muted;
+
+        var (success, msg) = await LicenseManager.ActivateAsync(key);
+        primaryBtn.IsEnabled = true;
+
         if (success)
         {
             messageText.Text = "";
@@ -391,7 +408,7 @@ internal sealed class LicenseWindow : Window
         }
     }
 
-    private void OnActivateClick()
+    private async void OnActivateClick()
     {
         string key = keyInput.Text.Trim();
         if (key.StartsWith("\"") && key.EndsWith("\"") && key.Length >= 2)
@@ -407,7 +424,13 @@ internal sealed class LicenseWindow : Window
             return;
         }
 
-        var (success, msg) = LicenseManager.Activate(key);
+        primaryBtn.IsEnabled = false;
+        messageText.Text = "Verifying license and registering device...";
+        messageText.Foreground = UiTheme.Muted;
+
+        var (success, msg) = await LicenseManager.ActivateAsync(key);
+        primaryBtn.IsEnabled = true;
+
         if (success)
         {
             messageText.Text = msg;

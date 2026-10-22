@@ -258,8 +258,6 @@ internal sealed class WelcomeWindow : Window
         licCard.Margin = new Thickness(0, 5, 0, 0);
         panel.Children.Add(licCard);
 
-        panel.Children.Add(LayoutChoice());
-
         var hide = new CheckBox { Content = L.T("Don't show this window when DropDial starts"), IsChecked = Settings.GetBool(HideAtStartKey, false), Margin = new Thickness(0, 6, 0, 0), FontSize = 11, Foreground = UiTheme.Muted };
         hide.Click += (_, _) => Settings.Set(HideAtStartKey, hide.IsChecked == true);
         panel.Children.Add(hide);

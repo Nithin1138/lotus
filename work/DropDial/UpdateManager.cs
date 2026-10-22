@@ -96,8 +96,10 @@ internal static class UpdateManager
             {
                 if (response != null && (int)response.StatusCode == 404)
                 {
+                    bool changed = AvailableUpdate != null;
                     AvailableUpdate = null;
-                    UpdateStatusChanged?.Invoke();
+                    if (changed)
+                        UpdateStatusChanged?.Invoke();
                     if (isUserInitiated)
                         ShowUpToDateDialog();
                     return;
@@ -113,8 +115,10 @@ internal static class UpdateManager
 
             if (!root.TryGetProperty("tag_name", out var tagElem))
             {
+                bool changed = AvailableUpdate != null;
                 AvailableUpdate = null;
-                UpdateStatusChanged?.Invoke();
+                if (changed)
+                    UpdateStatusChanged?.Invoke();
                 if (isUserInitiated)
                     ShowUpToDateDialog();
                 return;
@@ -202,8 +206,10 @@ internal static class UpdateManager
 
             if (newer)
             {
+                bool changed = AvailableUpdate?.TagName != release.TagName;
                 AvailableUpdate = release;
-                UpdateStatusChanged?.Invoke();
+                if (changed)
+                    UpdateStatusChanged?.Invoke();
 
                 if (isUserInitiated || !string.Equals(_sessionDismissedVersion, tagName, StringComparison.OrdinalIgnoreCase))
                 {
@@ -212,8 +218,10 @@ internal static class UpdateManager
             }
             else
             {
+                bool changed = AvailableUpdate != null;
                 AvailableUpdate = null;
-                UpdateStatusChanged?.Invoke();
+                if (changed)
+                    UpdateStatusChanged?.Invoke();
 
                 if (isUserInitiated)
                 {

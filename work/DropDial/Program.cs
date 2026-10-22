@@ -405,14 +405,6 @@ internal sealed class Resident : IDisposable
             {
                 ToggleWheel();
             }
-            if (UpdateManager.AvailableUpdate is { } upd)
-            {
-                UpdateManager.ShowUpdatePrompt(upd);
-            }
-            else
-            {
-                _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
-            }
         };
         tray.BalloonTipClicked += (_, _) =>
         {
@@ -427,6 +419,7 @@ internal sealed class Resident : IDisposable
         };
         UpdateManager.UpdateStatusChanged += () => app.Dispatcher.InvokeAsync(() =>
         {
+            if (tray.ContextMenuStrip is { Visible: true }) return;
             BuildTrayMenu();
             if (UpdateManager.AvailableUpdate is { } upd)
             {
@@ -578,8 +571,6 @@ internal sealed class Resident : IDisposable
         welcome.Topmost = false;
         if (UpdateManager.AvailableUpdate is { } existingUpd)
             UpdateManager.ShowUpdatePrompt(existingUpd);
-        else
-            _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
     }
 
     private void WatchForSecondLaunch(EventWaitHandle showRequest)
@@ -710,12 +701,6 @@ internal sealed class Resident : IDisposable
         locationMenu.DropDownItems.AddRange([sameFolder, otherFolder]);
         items.Items.Add(locationMenu);
         items.Items.Add(L.T("Watched folders…"), null, (_, _) => ShowWatchWindow());
-        var layoutMenu = new Forms.ToolStripMenuItem(L.T("Wheel with many tools"));
-        var mergedLayout = new Forms.ToolStripMenuItem(L.T("Combine related tools"), null, (_, _) => Settings.Set(Catalog.LayoutKey, "merged")) { Checked = !Catalog.TwoWheels };
-        var twoWheelLayout = new Forms.ToolStripMenuItem(L.T("Two wheels (categories)"), null, (_, _) => Settings.Set(Catalog.LayoutKey, "twoWheels")) { Checked = Catalog.TwoWheels };
-        layoutMenu.DropDownItems.AddRange([mergedLayout, twoWheelLayout]);
-        layoutMenu.DropDownOpening += (_, _) => { mergedLayout.Checked = !Catalog.TwoWheels; twoWheelLayout.Checked = Catalog.TwoWheels; };
-        items.Items.Add(layoutMenu);
         var themeMenu = new Forms.ToolStripMenuItem(L.T("Appearance"));
         foreach (var (choice, label) in new[] { ("system", L.T("Match Windows")), ("light", L.T("Light")), ("dark", L.T("Dark")) })
             themeMenu.DropDownItems.Add(new Forms.ToolStripMenuItem(label, null, (_, _) => { UiTheme.Choose(choice); taskIndicator.ApplyTheme(); }) { Tag = choice });

@@ -1,5 +1,6 @@
 import Cocoa
 import CryptoKit
+import IOKit
 
 // MARK: - License Information Model
 struct LicenseInfo: Equatable {
@@ -401,15 +402,103 @@ final class LicenseManager {
             return (false, result.error ?? "Invalid license key")
         }
 
-        UserDefaults.standard.set(key.trimmingCharacters(in: .whitespacesAndNewlines), forKey: licenseKeyStoreKey)
-        status = .pro(info: info)
-        onStatusChanged?()
+        saveAndApply(key: key.trimmingCharacters(in: .whitespacesAndNewlines), info: info)
         return (true, "DropDial Pro successfully activated! Thank you, \(info.name.isEmpty ? info.email : info.name).")
     }
 
+    func activateOnline(key: String, completion: @escaping (Bool, String) -> Void) {
+        let result = verifyKey(key)
+        guard result.isValid, let info = result.info else {
+            completion(false, result.error ?? "Invalid license key")
+            return
+        }
+
+        let cleanKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        let deviceId = getDeviceId()
+        let deviceName = Host.current().localizedName ?? "Mac"
+
+        guard let url = URL(string: "https://www.dropdial.app/api/activate") else {
+            self.saveAndApply(key: cleanKey, info: info)
+            completion(true, "DropDial Pro successfully activated! Thank you, \(info.name.isEmpty ? info.email : info.name).")
+            return
+        }
+
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.timeoutInterval = 10.0
+
+        let bodyDict: [String: Any] = [
+            "licenseKey": cleanKey,
+            "deviceId": deviceId,
+            "deviceName": deviceName,
+            "platform": "macos"
+        ]
+
+        req.httpBody = try? JSONSerialization.data(withJSONObject: bodyDict, options: [])
+
+        URLSession.shared.dataTask(with: req) { data, response, error in
+            DispatchQueue.main.async {
+                if let httpResp = response as? HTTPURLResponse, (httpResp.statusCode == 403 || httpResp.statusCode == 400), let data = data {
+                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let msg = json["message"] as? String {
+                        completion(false, msg)
+                        return
+                    }
+                }
+
+                // If success or network unavailable, apply activation
+                self.saveAndApply(key: cleanKey, info: info)
+                completion(true, "DropDial Pro successfully activated! Thank you, \(info.name.isEmpty ? info.email : info.name).")
+            }
+        }.resume()
+    }
+
+    private func saveAndApply(key: String, info: LicenseInfo) {
+        UserDefaults.standard.set(key, forKey: licenseKeyStoreKey)
+        status = .pro(info: info)
+        onStatusChanged?()
+    }
+
     func deactivate() {
+        let key = getStoredKey()
+        let deviceId = getDeviceId()
+        if let key = key, let url = URL(string: "https://www.dropdial.app/api/deactivate") {
+            var req = URLRequest(url: url)
+            req.httpMethod = "POST"
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.timeoutInterval = 5.0
+            let bodyDict: [String: Any] = ["licenseKey": key, "deviceId": deviceId]
+            req.httpBody = try? JSONSerialization.data(withJSONObject: bodyDict, options: [])
+            URLSession.shared.dataTask(with: req).resume()
+        }
         UserDefaults.standard.removeObject(forKey: licenseKeyStoreKey)
         refreshStatus()
+    }
+
+    func getDeviceId() -> String {
+        if let hwUUID = getHardwareUUID() {
+            return hwUUID
+        }
+        let key = "DropDial_InstallationDeviceId"
+        if let saved = UserDefaults.standard.string(forKey: key), !saved.isEmpty {
+            return saved
+        }
+        let newId = UUID().uuidString
+        UserDefaults.standard.set(newId, forKey: key)
+        return newId
+    }
+
+    private func getHardwareUUID() -> String? {
+        let matching = IOServiceMatching("IOPlatformExpertDevice")
+        let platformExpert = IOServiceGetMatchingService(kIOMainPortDefault, matching)
+        guard platformExpert != 0 else { return nil }
+        defer { IOObjectRelease(platformExpert) }
+
+        if let uuidData = IORegistryEntryCreateCFProperty(platformExpert, kIOPlatformUUIDKey as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? String {
+            return uuidData.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return nil
     }
 
     func getStoredKey() -> String? {
@@ -440,6 +529,7 @@ final class LicenseWindowController: NSWindowController {
     private var iconImageView: NSImageView!
     private var titleLabel: NSTextField!
     private var statusLabel: NSTextField!
+    private var oneTimeLabel: NSTextField!
     private var keyTextField: NSTextField!
     private var pasteButton: NSButton!
     private var messageLabel: NSTextField!
@@ -450,7 +540,7 @@ final class LicenseWindowController: NSWindowController {
 
     convenience init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 280),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 296),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -500,14 +590,21 @@ final class LicenseWindowController: NSWindowController {
 
         // 3. Status / Subtitle (Clean & subtle, no tacky banners or emojis)
         statusLabel = NSTextField(labelWithString: "")
-        statusLabel.frame = NSRect(x: 20, y: 106, width: 380, height: 18)
+        statusLabel.frame = NSRect(x: 20, y: 104, width: 380, height: 18)
         statusLabel.alignment = .center
         statusLabel.font = NSFont.systemFont(ofSize: 12, weight: .regular)
         statusLabel.textColor = .secondaryLabelColor
         container.addSubview(statusLabel)
 
+        oneTimeLabel = NSTextField(labelWithString: "One-time payment • Pay once, own forever • No subscription")
+        oneTimeLabel.frame = NSRect(x: 20, y: 122, width: 380, height: 16)
+        oneTimeLabel.alignment = .center
+        oneTimeLabel.font = NSFont.systemFont(ofSize: 11, weight: .regular)
+        oneTimeLabel.textColor = .secondaryLabelColor
+        container.addSubview(oneTimeLabel)
+
         // 4. License Key Input Box (Rounded, monospaced) & Dedicated Paste Button
-        keyTextField = NSTextField(frame: NSRect(x: 45, y: 134, width: 254, height: 28))
+        keyTextField = NSTextField(frame: NSRect(x: 45, y: 146, width: 254, height: 28))
         keyTextField.bezelStyle = .roundedBezel
         keyTextField.placeholderString = "Enter license key (DD-…)"
         keyTextField.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
@@ -518,7 +615,7 @@ final class LicenseWindowController: NSWindowController {
         keyTextField.action = #selector(keyFieldSubmitted)
         container.addSubview(keyTextField)
 
-        pasteButton = NSButton(frame: NSRect(x: 307, y: 134, width: 68, height: 28))
+        pasteButton = NSButton(frame: NSRect(x: 307, y: 146, width: 68, height: 28))
         pasteButton.bezelStyle = .rounded
         pasteButton.title = "Paste"
         pasteButton.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "Paste")
@@ -531,25 +628,25 @@ final class LicenseWindowController: NSWindowController {
 
         // 5. Message / Feedback Label
         messageLabel = NSTextField(labelWithString: "")
-        messageLabel.frame = NSRect(x: 30, y: 166, width: 360, height: 16)
+        messageLabel.frame = NSRect(x: 30, y: 178, width: 360, height: 16)
         messageLabel.alignment = .center
         messageLabel.font = NSFont.systemFont(ofSize: 11, weight: .medium)
         messageLabel.lineBreakMode = .byTruncatingTail
         container.addSubview(messageLabel)
 
         // 6. Action Buttons (Balanced native macOS button row)
-        secondaryButton = NSButton(frame: NSRect(x: 45, y: 196, width: 160, height: 32))
+        secondaryButton = NSButton(frame: NSRect(x: 45, y: 208, width: 160, height: 32))
         secondaryButton.bezelStyle = .rounded
         secondaryButton.target = self
         container.addSubview(secondaryButton)
 
-        primaryButton = NSButton(frame: NSRect(x: 420 - 45 - 160, y: 196, width: 160, height: 32))
+        primaryButton = NSButton(frame: NSRect(x: 420 - 45 - 160, y: 208, width: 160, height: 32))
         primaryButton.bezelStyle = .rounded
         primaryButton.keyEquivalent = "\r"
         primaryButton.target = self
         container.addSubview(primaryButton)
 
-        dismissButton = NSButton(frame: NSRect(x: (420 - 220) / 2, y: 236, width: 220, height: 22))
+        dismissButton = NSButton(frame: NSRect(x: (420 - 220) / 2, y: 248, width: 220, height: 22))
         dismissButton.isBordered = false
         dismissButton.title = "Continue with Free (3/day)"
         dismissButton.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
@@ -748,13 +845,20 @@ final class LicenseWindowController: NSWindowController {
             return
         }
 
-        let result = LicenseManager.shared.activate(key: key)
-        if result.success {
-            messageLabel.stringValue = ""
-            updateDisplay()
-        } else {
-            messageLabel.stringValue = result.message
-            messageLabel.textColor = .systemRed
+        primaryButton.isEnabled = false
+        messageLabel.stringValue = "Verifying license and registering device..."
+        messageLabel.textColor = .secondaryLabelColor
+
+        LicenseManager.shared.activateOnline(key: key) { [weak self] success, message in
+            guard let self = self else { return }
+            self.primaryButton.isEnabled = true
+            if success {
+                self.messageLabel.stringValue = ""
+                self.updateDisplay()
+            } else {
+                self.messageLabel.stringValue = message
+                self.messageLabel.textColor = .systemRed
+            }
         }
     }
 
