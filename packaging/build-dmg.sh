@@ -79,14 +79,14 @@ APPLESCRIPT
 # Sync and unmount
 echo "Detaching layout disk image..."
 sync || true
-sleep 2
-diskutil eject "$DEV_NODE" >/dev/null 2>&1 || hdiutil detach "$DEV_NODE" -force >/dev/null 2>&1 || true
 sleep 3
+diskutil eject "$DEV_NODE" >/dev/null 2>&1 || hdiutil detach "$DEV_NODE" -force >/dev/null 2>&1 || true
+sleep 4
 
 # 6. Convert to compressed UDZO DMG
 echo "Compressing final production DMG..."
 converted=0
-for attempt in 1 2 3 4 5; do
+for attempt in 1 2 3 4 5 6 7 8; do
     if hdiutil convert "$DMG_TEMP" -format UDZO -imagekey zlib-level=9 -o "$DMG_FILE" >/dev/null 2>&1; then
         converted=1
         break
@@ -96,8 +96,12 @@ for attempt in 1 2 3 4 5; do
 done
 
 if [ "$converted" -ne 1 ]; then
-    # Fallback to direct conversion
-    hdiutil convert "$DMG_TEMP" -format UDZO -imagekey zlib-level=9 -o "$DMG_FILE" >/dev/null
+    echo "  Applying lock bypass copy..."
+    cp -f "$DMG_TEMP" "${DMG_TEMP}.unlocked.dmg" 2>/dev/null || true
+    SRC="${DMG_TEMP}.unlocked.dmg"
+    [ -f "$SRC" ] || SRC="$DMG_TEMP"
+    hdiutil convert "$SRC" -format UDZO -imagekey zlib-level=9 -o "$DMG_FILE"
+    rm -f "${DMG_TEMP}.unlocked.dmg"
 fi
 rm -f "$DMG_TEMP"
 rm -rf "$DMG_STAGE"
