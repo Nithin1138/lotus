@@ -50,7 +50,7 @@ enum LicenseStatus: Equatable {
         case .pro(let info):
             return !info.isExpired
         case .trial(let days):
-            return days >= 0
+            return days > 0 && LicenseManager.shared.trialRemainingSeconds > 0
         case .trialExpired:
             return LicenseManager.shared.getDailyConversionsRemaining() > 0
         }
@@ -209,14 +209,15 @@ final class LicenseManager {
             return
         }
 
+        let totalTrialSeconds = Double(trialDurationDays * 86400)
         let secondsElapsed = now - trialStart
-        let daysElapsed = Int(secondsElapsed / 86400.0)
-        let daysRemaining = trialDurationDays - daysElapsed
 
-        if daysRemaining >= 0 {
-            status = .trial(daysRemaining: daysRemaining)
-        } else {
+        if secondsElapsed >= totalTrialSeconds {
             status = .trialExpired
+        } else {
+            let secondsRemaining = Int(totalTrialSeconds - secondsElapsed)
+            let daysRemaining = max(1, Int(ceil(Double(secondsRemaining) / 86400.0)))
+            status = .trial(daysRemaining: daysRemaining)
         }
 
         onStatusChanged?()
@@ -286,7 +287,7 @@ final class LicenseManager {
         if status.isPro {
             return (true, nil)
         }
-        if case .trial(let days) = status, days >= 0 {
+        if case .trial(let days) = status, days > 0, trialRemainingSeconds > 0 {
             return (true, nil)
         }
 
@@ -645,7 +646,7 @@ final class LicenseWindowController: NSWindowController {
 
             messageLabel.stringValue = ""
 
-        case .trial(let days):
+        case .trial(let days) where LicenseManager.shared.trialRemainingSeconds > 0:
             titleLabel.stringValue = "DropDial Pro"
             dismissButton.isHidden = true
             if days <= 1 {
@@ -671,7 +672,7 @@ final class LicenseWindowController: NSWindowController {
             primaryButton.action = #selector(activateTapped)
             primaryButton.isEnabled = true
 
-        case .trialExpired:
+        case .trialExpired, .trial:
             titleLabel.stringValue = "Your Free Trial Has Ended"
             let rem = LicenseManager.shared.getDailyConversionsRemaining()
             if let reason = activeReason, !reason.isEmpty {

@@ -36,7 +36,7 @@ internal sealed class LicenseStatus
 
     public bool IsPro => Kind == LicenseStatusKind.Pro && (Info == null || !Info.IsExpired);
     public bool CanUseApp => (Kind == LicenseStatusKind.Pro && (Info == null || !Info.IsExpired))
-        || (Kind == LicenseStatusKind.Trial && DaysRemaining >= 0)
+        || (Kind == LicenseStatusKind.Trial && DaysRemaining > 0 && LicenseManager.TrialRemainingSeconds > 0)
         || (Kind == LicenseStatusKind.TrialExpired && LicenseManager.GetDailyConversionsRemaining() > 0);
 
     private LicenseStatus(LicenseStatusKind kind, LicenseInfo? info, int days)
@@ -197,17 +197,18 @@ internal static class LicenseManager
                 return;
             }
 
+            long totalTrialSeconds = (long)TrialDurationDays * 86400;
             long elapsedSeconds = now - state.TrialStartTime;
-            int elapsedDays = (int)(elapsedSeconds / 86400);
-            int daysRemaining = TrialDurationDays - elapsedDays;
 
-            if (daysRemaining >= 0)
+            if (elapsedSeconds >= totalTrialSeconds)
             {
-                CurrentStatus = LicenseStatus.Trial(daysRemaining);
+                CurrentStatus = LicenseStatus.Expired();
             }
             else
             {
-                CurrentStatus = LicenseStatus.Expired();
+                long remainingSeconds = totalTrialSeconds - elapsedSeconds;
+                int daysRemaining = Math.Max(1, (int)Math.Ceiling(remainingSeconds / 86400.0));
+                CurrentStatus = LicenseStatus.Trial(daysRemaining);
             }
         }
         catch
@@ -272,7 +273,7 @@ internal static class LicenseManager
     {
         RefreshStatus();
         if (CurrentStatus.IsPro) return (true, null);
-        if (CurrentStatus.Kind == LicenseStatusKind.Trial && CurrentStatus.DaysRemaining >= 0) return (true, null);
+        if (CurrentStatus.Kind == LicenseStatusKind.Trial && CurrentStatus.DaysRemaining > 0 && TrialRemainingSeconds > 0) return (true, null);
 
         if (isProTool) return (false, "Tools require DropDial Pro. Upgrade to unlock.");
         if (fileCount > 3) return (false, $"Batch conversion of {fileCount} files requires DropDial Pro.");
