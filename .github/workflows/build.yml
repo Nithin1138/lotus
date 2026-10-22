@@ -147,14 +147,23 @@ jobs:
           # 1. Full standalone offline package (includes runtime, ~250 MB)
           Compress-Archive -Path outputs/DropDial -DestinationPath outputs/DropDial-Windows-x64.zip -Force
 
-          # 2. Lightweight app-only update package (excludes runtime, ~15 MB)
+          # 2. Ultra-lightweight app update package (~2 MB instead of 70 MB)
           $updateStage = "outputs/DropDial-Update"
           if (Test-Path $updateStage) { Remove-Item -Path $updateStage -Recurse -Force }
           New-Item -ItemType Directory -Path $updateStage -Force | Out-Null
-          Copy-Item -Path "outputs/DropDial/*" -Destination $updateStage -Recurse -Force
-          if (Test-Path "$updateStage/runtime") {
-            Remove-Item -Path "$updateStage/runtime" -Recurse -Force
+
+          Copy-Item -LiteralPath "outputs/DropDial/DropDial.exe" -Destination $updateStage -Force
+          Copy-Item -LiteralPath "outputs/DropDial/DropDial.dll" -Destination $updateStage -Force
+          Copy-Item -LiteralPath "outputs/DropDial/DropDial.deps.json" -Destination $updateStage -Force
+          Copy-Item -LiteralPath "outputs/DropDial/DropDial.runtimeconfig.json" -Destination $updateStage -Force
+          Copy-Item -Path "outputs/DropDial/backend" -Destination $updateStage -Recurse -Force
+          Get-ChildItem -Path "outputs/DropDial" -Filter "*.md" | Copy-Item -Destination $updateStage -Force
+          Get-ChildItem -Path "outputs/DropDial" -Filter "*.txt" | Copy-Item -Destination $updateStage -Force
+          Get-ChildItem -Path "outputs/DropDial" -Filter "*.json" | Copy-Item -Destination $updateStage -Force
+          if (Test-Path "outputs/DropDial/validation") {
+            Copy-Item -Path "outputs/DropDial/validation" -Destination $updateStage -Recurse -Force
           }
+
           Compress-Archive -Path "$updateStage/*" -DestinationPath outputs/DropDial-Windows-Update.zip -Force
           Remove-Item -Path $updateStage -Recurse -Force
 

@@ -31,7 +31,11 @@ $running = Get-Process -Name "DropDial" -ErrorAction SilentlyContinue
 if ($running) {
     Write-Host "→ Stopping running DropDial process..." -ForegroundColor Gray
     $running | Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Milliseconds 700
+    $waitAttempts = 0
+    while ((Get-Process -Name "DropDial" -ErrorAction SilentlyContinue) -and $waitAttempts -lt 20) {
+        Start-Sleep -Milliseconds 250
+        $waitAttempts++
+    }
 }
 
 # 4. Prepare install directory
@@ -165,7 +169,16 @@ $sourceDir = if (Test-Path (Join-Path $tempExtract "DropDial\DropDial.exe")) {
 }
 
 Write-Host "→ Installing application to $installDir..." -ForegroundColor Cyan
-Copy-Item -Path "$sourceDir\*" -Destination $installDir -Recurse -Force
+try {
+    Copy-Item -Path "$sourceDir\*" -Destination $installDir -Recurse -Force
+} catch {
+    Start-Sleep -Seconds 1
+    & robocopy $sourceDir $installDir /E /IS /IT /NP /R:3 /W:1 | Out-Null
+}
+
+if (-not (Test-Path $exePath)) {
+    throw "Installation failed: DropDial.exe was not found in $installDir"
+}
 
 # Cleanup temp files
 Remove-Item -Path $tempZip -Force -ErrorAction SilentlyContinue

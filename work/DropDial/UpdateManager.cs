@@ -399,17 +399,35 @@ set SOURCE_DIR={sourceDir}
 set TARGET_DIR={targetDir}
 set EXE_PATH={targetExe}
 
-:waitloop
-tasklist /fi ""PID eq %CURRENT_PID%"" 2>NUL | find /I ""%CURRENT_PID%"" >NUL
-if not errorlevel 1 (
-    timeout /t 1 /nobreak >NUL
-    goto waitloop
+:: 1. Wait up to 5 seconds for PID to exit, then force kill to release all file locks
+for /L %%i in (1,1,10) do (
+    tasklist /fi ""PID eq %CURRENT_PID%"" 2>NUL | find /I ""%CURRENT_PID%"" >NUL
+    if errorlevel 1 (
+        goto ready
+    )
+    if %%i GEQ 4 (
+        taskkill /F /PID %CURRENT_PID% >NUL 2>&1
+        taskkill /F /IM DropDial.exe >NUL 2>&1
+    )
+    ping 127.0.0.1 -n 2 >NUL
 )
 
-timeout /t 1 /nobreak >NUL
-xcopy ""%SOURCE_DIR%\*"" ""%TARGET_DIR%\"" /E /Y /I >NUL
+:ready
+:: Brief pause to ensure OS finishes unlocking executable files
+ping 127.0.0.1 -n 2 >NUL
+
+:: 2. Robust copy using robocopy with retries, fallback to xcopy
+robocopy ""%SOURCE_DIR%"" ""%TARGET_DIR%"" /E /IS /IT /NP /R:5 /W:1 >NUL 2>&1
+if errorlevel 8 (
+    xcopy ""%SOURCE_DIR%\*"" ""%TARGET_DIR%\"" /E /Y /I /Q >NUL 2>&1
+)
+
+:: 3. Launch updated DropDial
 start """" ""%EXE_PATH%""
-del /f /q ""%~f0""
+
+:: 4. Clean up temporary staging files and self-delete batch script
+rmdir /s /q ""%SOURCE_DIR%"" >NUL 2>&1
+del /f /q ""%~f0"" >NUL 2>&1
 ";
             File.WriteAllText(batPath, batContent);
 
@@ -421,7 +439,17 @@ del /f /q ""%~f0""
             Process.Start(psi);
 
             progressForm.Close();
-            Application.Exit();
+
+            // Ensure WPF application dispatcher shuts down and process terminates immediately
+            try
+            {
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    System.Windows.Application.Current.Shutdown();
+                });
+            }
+            catch { }
+            Environment.Exit(0);
         }
         catch (OperationCanceledException)
         {
