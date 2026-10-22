@@ -134,19 +134,19 @@
 
           <ol>
             <li>
-              <strong>Command Prompt / Windows Terminal</strong>
-              <p>Open Windows Terminal or Command Prompt (cmd) and run:</p>
-              <div class="cmd-box">
-                <code id="cmd-win-cmd">powershell -Command &quot;irm https://dropdial.app/install.ps1 | iex&quot;</code>
-                <button type="button" class="copy-mini-btn" onclick="copySnippet('cmd-win-cmd', this)">Copy</button>
-              </div>
-            </li>
-            <li>
-              <strong>PowerShell</strong>
-              <p>Open Windows PowerShell and run:</p>
+              <strong>PowerShell (Recommended)</strong>
+              <p>Open Windows PowerShell (or Windows Terminal) and run:</p>
               <div class="cmd-box">
                 <code id="cmd-win-ps">irm https://dropdial.app/install.ps1 | iex</code>
                 <button type="button" class="copy-mini-btn" onclick="copySnippet('cmd-win-ps', this)">Copy</button>
+              </div>
+            </li>
+            <li>
+              <strong>Command Prompt (cmd)</strong>
+              <p>In Command Prompt, launch via PowerShell:</p>
+              <div class="cmd-box">
+                <code id="cmd-win-cmd">powershell -Command &quot;irm https://dropdial.app/install.ps1 | iex&quot;</code>
+                <button type="button" class="copy-mini-btn" onclick="copySnippet('cmd-win-cmd', this)">Copy</button>
               </div>
             </li>
           </ol>

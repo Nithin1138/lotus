@@ -1118,30 +1118,18 @@
           <!-- Windows Command Line Install Options -->
           <div class="win-cli-container">
             <div class="win-cli-tabs" role="tablist">
-              <button class="win-cli-tab active" id="tab-win-cmd" type="button" role="tab" aria-selected="true" data-target="cmd">
+              <button class="win-cli-tab active" id="tab-win-ps" type="button" role="tab" aria-selected="true" data-target="ps">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 15 12 10 7 5"/><line x1="12" y1="17" x2="17" y2="17"/></svg>
+                <span>PowerShell (Recommended)</span>
+              </button>
+              <button class="win-cli-tab" id="tab-win-cmd" type="button" role="tab" aria-selected="false" data-target="cmd">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
                 <span>Command Prompt</span>
               </button>
-              <button class="win-cli-tab" id="tab-win-ps" type="button" role="tab" aria-selected="false" data-target="ps">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 15 12 10 7 5"/><line x1="12" y1="17" x2="17" y2="17"/></svg>
-                <span>PowerShell</span>
-              </button>
             </div>
 
-            <!-- 1. Command Prompt Panel -->
-            <div class="win-cli-panel active" id="panel-win-cmd">
-              <div class="win-cli-line">
-                <span class="win-cli-prompt">&gt;</span>
-                <code class="win-cli-code" id="code-win-cmd">powershell -Command &quot;irm https://dropdial.app/install.ps1 | iex&quot;</code>
-                <button class="win-cli-copy" type="button" data-copy-target="code-win-cmd" aria-label="Copy Command Prompt install command">
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  <span>Copy</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- 2. PowerShell Panel -->
-            <div class="win-cli-panel" id="panel-win-ps">
+            <!-- 1. PowerShell Panel (Recommended Default) -->
+            <div class="win-cli-panel active" id="panel-win-ps">
               <div class="win-cli-line">
                 <span class="win-cli-prompt">PS&gt;</span>
                 <code class="win-cli-code" id="code-win-ps">irm https://dropdial.app/install.ps1 | iex</code>
@@ -1152,7 +1140,19 @@
               </div>
             </div>
 
-            <span class="dl-spec-caption">Paste in Terminal or PowerShell &amp; press Enter</span>
+            <!-- 2. Command Prompt Panel -->
+            <div class="win-cli-panel" id="panel-win-cmd">
+              <div class="win-cli-line">
+                <span class="win-cli-prompt">&gt;</span>
+                <code class="win-cli-code" id="code-win-cmd">powershell -Command &quot;irm https://dropdial.app/install.ps1 | iex&quot;</code>
+                <button class="win-cli-copy" type="button" data-copy-target="code-win-cmd" aria-label="Copy Command Prompt install command">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+            </div>
+
+            <span class="dl-spec-caption">Paste into PowerShell or Command Prompt &amp; press Enter</span>
           </div>
         </div>
 
@@ -1169,7 +1169,7 @@
             <span id="cli-platform-label">macOS</span>
           </div>
           <div class="dl-cli-content">
-            <span class="dl-cli-prompt">$</span>
+            <span class="dl-cli-prompt" id="cli-prompt-symbol">$</span>
             <code class="dl-cli-code" id="install-cmd-text">curl -fsSL https://dropdial.app/install.sh | bash</code>
           </div>
           <div class="dl-cli-actions">

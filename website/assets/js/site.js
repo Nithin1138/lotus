@@ -195,13 +195,15 @@
   let currentPlatform = isMac ? "mac" : "win";
 
   const cliDesc = $("#cli-desc-text");
-  const descMac = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>One command: automatically installs DropDial into Applications, clears the quarantine flag, and launches it instantly.</span>';
-  const descWin = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>One command: automatically installs and configures DropDial for Windows, creating desktop and start menu shortcuts.</span>';
+  const cliPrompt = $("#cli-prompt-symbol");
+  const descMac = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>One command in Terminal: automatically installs DropDial into Applications, clears the quarantine flag, and launches it instantly.</span>';
+  const descWin = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Run in Windows PowerShell: automatically installs DropDial and creates desktop shortcuts.</span>';
 
   function setCliPlatform(platform) {
     currentPlatform = platform;
     const isM = platform === "mac";
     if (cmdCode) cmdCode.textContent = isM ? cmdMac : cmdWin;
+    if (cliPrompt) cliPrompt.textContent = isM ? "$" : "PS>";
     if (deviceTag) {
       deviceTag.className = `dl-cli-device-tag ${isM ? "mac" : "win"}`;
     }
