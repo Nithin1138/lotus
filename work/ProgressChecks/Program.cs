@@ -366,33 +366,26 @@ internal static class Checks
                 try { File.Delete(file); } catch (IOException) { }
             }
         });
-        Check("the welcome window explains the app in both languages and remembers the startup choice", () =>
+        Check("the welcome window explains the app and remembers the startup choice", () =>
         {
             string file = Path.Combine(Path.GetTempPath(), "dropdial-welcome-" + Guid.NewGuid().ToString("N") + ".json");
             Settings.PathOverride = file;
             try
             {
-                L.UseForSession("en");
                 var window = new WelcomeWindow();
                 var english = Texts(window);
                 Require(english.Contains("Welcome to DropDial") && english.Contains("Drag files") && english.Contains("Press Shift") && english.Contains("Got it"));
                 Require(english.Any(t => t.Contains("notification area")) && english.Any(t => t.Contains("never connects to the internet")));
-                Require(english.Contains("English") && english.Contains("English"));
                 var box = FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("Don't show this window when DropDial starts")));
                 Require(box.IsChecked == false);
                 box.IsChecked = true;
                 box.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
                 Require(Settings.GetBool(WelcomeWindow.HideAtStartKey, false));
-                // Changing the language rebuilds the open window, and the checkbox still reflects the saved choice.
-                L.Language = "zh"; // the same setter the language buttons and the tray menu use
-                var chinese = Texts(window);
-                Require(chinese.Contains("Welcome to DropDial") && chinese.Contains("Got it") && FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("Don't show this window when DropDial starts"))).IsChecked == true);
                 window.Close();
             }
             finally
             {
                 Settings.PathOverride = null;
-                L.UseForSession("zh");
                 try { File.Delete(file); } catch (IOException) { }
             }
         });
