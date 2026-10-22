@@ -85,9 +85,11 @@ enum LicenseStatus: Equatable {
                 return "Trial: \(days)d · 10% Off (\(h)h \(m)m left)"
             }
             if days <= 0 {
-                return "Trial: Last day — Activate Pro"
+                let timeStr = LicenseManager.formatTimeRemaining(LicenseManager.shared.trialRemainingSeconds)
+                return "Trial: Last day (\(timeStr) left) — Activate Pro"
             } else if days == 1 {
-                return "Trial: 1 day left — Activate Pro"
+                let timeStr = LicenseManager.formatTimeRemaining(LicenseManager.shared.trialRemainingSeconds)
+                return "Trial: 1 day left (\(timeStr)) — Activate Pro"
             } else {
                 return "Trial: \(days) days left — Activate Pro"
             }
@@ -130,6 +132,25 @@ final class LicenseManager {
         let now = Date().timeIntervalSince1970
         let remaining = Int(86400 - (now - trialStart))
         return max(0, remaining)
+    }
+
+    var trialRemainingSeconds: Int {
+        let defaults = UserDefaults.standard
+        let trialStart = defaults.double(forKey: trialStartDateKey)
+        guard trialStart > 0 else { return trialDurationDays * 86400 }
+        let now = Date().timeIntervalSince1970
+        let remaining = Int(Double(trialDurationDays * 86400) - (now - trialStart))
+        return max(0, remaining)
+    }
+
+    static func formatTimeRemaining(_ totalSeconds: Int) -> String {
+        guard totalSeconds > 0 else { return "0s" }
+        let h = totalSeconds / 3600
+        let m = (totalSeconds % 3600) / 60
+        let s = totalSeconds % 60
+        if h > 0 { return "\(h)h \(m)m" }
+        if m > 0 { return "\(m)m \(s)s" }
+        return "\(s)s"
     }
 
     private(set) var status: LicenseStatus = .trial(daysRemaining: 3)
@@ -593,7 +614,8 @@ final class LicenseWindowController: NSWindowController {
 
         case .trial(let days):
             if days <= 1 {
-                statusLabel.stringValue = "1 day remaining in free trial"
+                let timeStr = LicenseManager.formatTimeRemaining(LicenseManager.shared.trialRemainingSeconds)
+                statusLabel.stringValue = "Last day of free trial • \(timeStr) remaining"
             } else {
                 statusLabel.stringValue = "\(days) days remaining in free trial"
             }

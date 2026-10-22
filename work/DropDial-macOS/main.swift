@@ -557,9 +557,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let m = (sec % 3600) / 60
                 licTitle = "10% Off Early Bird (\(h)h \(m)m left) • Activate..."
             } else if days <= 0 {
-                licTitle = "Activate Pro (Last day of trial)..."
+                let timeStr = LicenseManager.formatTimeRemaining(LicenseManager.shared.trialRemainingSeconds)
+                licTitle = "Activate Pro (Last day • \(timeStr) left)..."
             } else if days == 1 {
-                licTitle = "Activate Pro (1 day left)..."
+                let timeStr = LicenseManager.formatTimeRemaining(LicenseManager.shared.trialRemainingSeconds)
+                licTitle = "Activate Pro (1 day left • \(timeStr))..."
             } else {
                 licTitle = "Activate Pro (\(days) days left)..."
             }

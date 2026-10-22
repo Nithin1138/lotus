@@ -65,8 +65,8 @@ internal sealed class LicenseStatus
             $"Trial: {DaysRemaining}d · 10% Off Early Bird ({LicenseManager.First24HoursRemainingSeconds / 3600}h {(LicenseManager.First24HoursRemainingSeconds % 3600) / 60}m left)...",
         LicenseStatusKind.Trial => DaysRemaining switch
         {
-            <= 0 => "Enter License Key (Trial: Last day)...",
-            1 => "Enter License Key (Trial: 1 day left)...",
+            <= 0 => $"Enter License Key (Trial: Last day • {LicenseManager.FormatTimeRemaining(LicenseManager.TrialRemainingSeconds)} left)...",
+            1 => $"Enter License Key (Trial: 1 day left • {LicenseManager.FormatTimeRemaining(LicenseManager.TrialRemainingSeconds)})...",
             _ => $"Enter License Key (Trial: {DaysRemaining} days left)..."
         },
         _ => $"Enter License Key (Trial Expired — {LicenseManager.GetDailyConversionsRemaining()}/3 free today)..."
@@ -104,6 +104,29 @@ internal static class LicenseManager
             long rem = 86400 - (now - state.TrialStartTime);
             return (int)Math.Max(0, rem);
         }
+    }
+
+    public static int TrialRemainingSeconds
+    {
+        get
+        {
+            var state = LoadState();
+            if (state.TrialStartTime <= 0) return TrialDurationDays * 86400;
+            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            long rem = ((long)TrialDurationDays * 86400) - (now - state.TrialStartTime);
+            return (int)Math.Max(0, rem);
+        }
+    }
+
+    public static string FormatTimeRemaining(int totalSeconds)
+    {
+        if (totalSeconds <= 0) return "0s";
+        int h = totalSeconds / 3600;
+        int m = (totalSeconds % 3600) / 60;
+        int s = totalSeconds % 60;
+        if (h > 0) return $"{h}h {m}m";
+        if (m > 0) return $"{m}m {s}s";
+        return $"{s}s";
     }
 
     public static LicenseStatus CurrentStatus { get; private set; } = LicenseStatus.Trial(TrialDurationDays);

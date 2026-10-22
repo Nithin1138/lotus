@@ -273,7 +273,9 @@ internal sealed class LicenseWindow : Window
         else if (status.Kind == LicenseStatusKind.Trial)
         {
             statusSubtitle.Foreground = UiTheme.Muted;
-            statusSubtitle.Text = $"{status.DaysRemaining} day{(status.DaysRemaining == 1 ? "" : "s")} remaining in free trial";
+            statusSubtitle.Text = status.DaysRemaining <= 1
+                ? $"Last day of free trial • {LicenseManager.FormatTimeRemaining(LicenseManager.TrialRemainingSeconds)} remaining"
+                : $"{status.DaysRemaining} days remaining in free trial";
 
             keyInput.IsEnabled = true;
             pasteBtn.IsEnabled = true;
