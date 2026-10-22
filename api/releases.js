@@ -262,7 +262,7 @@ module.exports = async function handler(req, res) {
   }
 
   // Check if Neon DB has a latest_release saved by admin via 2-step verification
-  let activeTag = '1.0.1.2';
+  let activeTag = '1.0.1.3';
   try {
     const { getDb, ensureSchema } = require('./_db');
     const sql = getDb();
