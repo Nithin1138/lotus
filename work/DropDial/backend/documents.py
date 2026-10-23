@@ -34,20 +34,21 @@ def images_document(paths,fmt,params):
             doc.save(state['temp'])
     return state['output']
 
-def render_page(page):
-    # 300 DPI, reduced for oversized pages so the bitmap stays within the same 80 MP limit as images.
-    width,height=page.get_size(); scale=min(300/72,.999*(80_000_000/max(1,width*height))**.5)
+def render_page(page, target_dpi=150):
+    # Balanced DPI (150-200 DPI) renders fast with crisp text while staying well within memory limits
+    width,height=page.get_size(); scale=min(target_dpi/72,.999*(80_000_000/max(1,width*height))**.5)
     return page.render(scale=scale).to_pil()
 
 def render_pdf(path,fmt,params):
     doc=pdfium.PdfDocument(str(path),password=params.get('password') or None)
+    dpi = int(number(params, 'dpi', 200 if len(doc) <= 2 else 150))
     if len(doc)==1:
         with output_file(path,'page-1','.'+fmt) as state:
-            image=render_page(doc[0]); save_image(image,state['temp'],fmt,92)
+            image=render_page(doc[0], dpi); save_image(image,state['temp'],fmt,92)
     else:
         with output_folder(path,'pages-'+fmt) as state:
             for index in range(len(doc)):
-                image=render_page(doc[index]); save_image(image,state['temp']/f'page-{index+1:04d}.{fmt}',fmt,92)
+                image=render_page(doc[index], dpi); save_image(image,state['temp']/f'page-{index+1:04d}.{fmt}',fmt,92)
     doc.close(); return state['output']
 
 def pdf_word(path,params):

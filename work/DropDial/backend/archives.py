@@ -108,7 +108,7 @@ def pack(folder,path,fmt):
         process([SEVEN,'a','-t7z','-mx=5','-sccUTF-8','-bd',path,'*'],cwd=folder)
         return
     if fmt=='zip':
-        with zipfile.ZipFile(path,'w',zipfile.ZIP_DEFLATED,compresslevel=8) as archive:
+        with zipfile.ZipFile(path,'w',zipfile.ZIP_DEFLATED,compresslevel=5) as archive:
             for file in files:
                 archive.write(file,file.relative_to(folder).as_posix()+('/' if file.is_dir() else ''))
     elif fmt in ('tar','gz','gzip'):

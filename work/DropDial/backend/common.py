@@ -114,7 +114,8 @@ def process(args,timeout=1800,cwd=None):
     return stdout
 
 # Encodes can legitimately run for hours; the app cancels jobs on request instead of using a fixed limit.
-def ffmpeg(args,cwd=None): return process([FFMPEG,'-hide_banner','-loglevel','error','-nostdin','-y',*args],timeout=None,cwd=cwd)
+# -threads 0 ensures FFmpeg uses all CPU cores for decoders, encoders, and filters
+def ffmpeg(args,cwd=None): return process([FFMPEG,'-hide_banner','-loglevel','error','-nostdin','-threads','0','-y',*args],timeout=None,cwd=cwd)
 def probe(path): return json.loads(process([FFPROBE,'-v','error','-show_format','-show_streams','-show_chapters','-of','json',path]))
 def video_stream(info): return next(x for x in info['streams'] if x['codec_type']=='video')
 def has_audio(info): return any(s['codec_type']=='audio' for s in info['streams'])
@@ -134,19 +135,26 @@ SUFFIX={'rotateImage':'rotated','rotateVideo':'rotated','cropImage':'cropped','c
     'extractPdfImages':'images','packArchive':'packed','createAnimation':'animation','joinAudio':'joined','joinVideos':'joined','splitVideo':'clips',
     'videoSnapshots':'frames','extractArchive':'extracted','createCollage':'collage','createPDF':'combined','organizePDF':'organized'}
 
+_WRITABLE_CACHE = {}
+
 def is_dir_writable(dir_path):
-    """Checks if a directory exists and can safely be written to by this process."""
+    """Checks if a directory exists and can safely be written to by this process, cached for speed."""
     if not dir_path: return False
     try:
         p = Path(dir_path).resolve()
-        if not p.is_dir(): return False
         p_str = str(p)
+        if p_str in _WRITABLE_CACHE: return _WRITABLE_CACHE[p_str]
+        if not p.is_dir():
+            _WRITABLE_CACHE[p_str] = False
+            return False
         # Avoid macOS sandboxed/system/TCC-restricted Library paths
         if sys.platform == 'darwin':
             home = str(Path.home().resolve())
             if p_str.startswith(os.path.join(home, 'Library')) and not p_str.startswith(os.path.join(home, 'Library', 'Application Support', 'DropDial')):
+                _WRITABLE_CACHE[p_str] = False
                 return False
             if p_str.startswith(('/System', '/Library', '/usr', '/bin', '/sbin')):
+                _WRITABLE_CACHE[p_str] = False
                 return False
         elif sys.platform == 'win32':
             prog_files = os.environ.get('ProgramFiles', 'C:\\Program Files')
@@ -154,6 +162,7 @@ def is_dir_writable(dir_path):
             win_dir = os.environ.get('SystemRoot', 'C:\\Windows')
             for pf in (prog_files, prog_files_x86, win_dir):
                 if pf and p_str.lower().startswith(pf.lower()):
+                    _WRITABLE_CACHE[p_str] = False
                     return False
 
         # Attempt to create and delete a tiny test file to verify real write permission
@@ -161,8 +170,10 @@ def is_dir_writable(dir_path):
         try:
             test.touch()
             test.unlink()
+            _WRITABLE_CACHE[p_str] = True
             return True
         except (PermissionError, OSError):
+            _WRITABLE_CACHE[p_str] = False
             return False
     except Exception:
         return False
@@ -196,7 +207,6 @@ def commit(temp, path, suffix, extension):
     parent = work_dir(path)
     stem = output_stem(path, SUFFIX.get(suffix, suffix))
     
-    # Try committing to parent folder; if PermissionError/OSError occurs, fallback to Downloads/Desktop
     candidate_dirs = [parent]
     fallback = get_safe_fallback_dir()
     if fallback != parent and fallback not in candidate_dirs:
@@ -207,21 +217,26 @@ def commit(temp, path, suffix, extension):
             target = target_dir / (stem + (f'-{i}' if i else '') + extension)
             try:
                 if target.exists(): continue
-                # Use shutil.move for safe cross-filesystem and permission-resilient operations
-                shutil.move(str(temp), str(target))
-                return str(target)
+                # Instant atomic rename if on the same filesystem (0ms, zero disk copying)
+                try:
+                    os.replace(str(temp), str(target))
+                    return str(target)
+                except OSError:
+                    # Cross-filesystem or permission restriction: fallback to shutil.move
+                    shutil.move(str(temp), str(target))
+                    return str(target)
             except FileExistsError:
                 continue
             except (PermissionError, OSError):
-                # Permission restricted in this directory; try next candidate directory
                 break
     raise OSError(T('Could not save output file due to permission restrictions'))
 
 @contextmanager
 def output_file(path, suffix, extension):
-    # Staging temp file is ALWAYS created in guaranteed-writable temp dir to avoid permission errors
-    temp_dir = Path(tempfile.gettempdir())
-    temp = temp_dir / (TEMP_PREFIX + uuid.uuid4().hex + extension)
+    # Staging temp file directly in the destination folder enables instant atomic rename
+    dest_dir = work_dir(path)
+    staging_dir = dest_dir if is_dir_writable(dest_dir) else Path(tempfile.gettempdir())
+    temp = staging_dir / (f".dd_tmp_{uuid.uuid4().hex}{extension}")
     state = {'temp': temp, 'output': None}
     try:
         yield state
@@ -308,7 +323,9 @@ def save_image(image,path,fmt,quality=90,metadata=None):
         if image.mode not in ('RGBA', 'RGB'):
             image = image.convert('RGBA')
     options={'quality':int(quality)} if mode in ('JPEG','WEBP','HEIF','AVIF') else {}
-    if mode=='PNG': options={'optimize':True}
+    if mode=='JPEG': options['subsampling'] = 1
+    if mode=='WEBP': options['method'] = 3
+    if mode=='PNG': options={'compress_level': 6}
     if mode=='TIFF': options={'compression':'tiff_deflate'}
     if mode=='HEIF': options['exif']=None  # pillow_heif would otherwise copy the EXIF Pillow has cached for the image
     if mode=='ICO': options['sizes']=[(s,s) for s in (16,24,32,48,64,128,256)]

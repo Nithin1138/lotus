@@ -247,13 +247,29 @@ def tool(path,action,params):
     target=int(number(params,'targetKB',0)*1024)
     with output_file(path,action,'.'+fmt) as state:
         if action=='compress' and target:
-            for attempt in range(10):
-                best=None
-                for q in range(quality,9,-5):
-                    save_image(image,state['temp'],fmt,q)
-                    if state['temp'].stat().st_size<=target: best=q; break
-                if best is not None: break
-                image=image.resize((max(1,int(image.width*.8)),max(1,int(image.height*.8))),Image.Resampling.LANCZOS)
-            else: raise ValueError(T('Cannot reach the target file size; raise the target or reduce the dimensions'))
+            if fmt == 'png':
+                for attempt in range(6):
+                    save_image(image, state['temp'], fmt, quality)
+                    if state['temp'].stat().st_size <= target: break
+                    image = image.resize((max(1, int(image.width * 0.85)), max(1, int(image.height * 0.85))), Image.Resampling.BILINEAR)
+                else: raise ValueError(T('Cannot reach the target file size; raise the target or reduce the dimensions'))
+            else:
+                low, high = 15, quality
+                best_q = low
+                while low <= high:
+                    mid = (low + high) // 2
+                    save_image(image, state['temp'], fmt, mid)
+                    if state['temp'].stat().st_size <= target:
+                        best_q = mid
+                        low = mid + 5
+                    else:
+                        high = mid - 5
+                save_image(image, state['temp'], fmt, best_q)
+                if state['temp'].stat().st_size > target:
+                    for _ in range(5):
+                        image = image.resize((max(1, int(image.width * 0.8)), max(1, int(image.height * 0.8))), Image.Resampling.BILINEAR)
+                        save_image(image, state['temp'], fmt, best_q)
+                        if state['temp'].stat().st_size <= target: break
+                    else: raise ValueError(T('Cannot reach the target file size; raise the target or reduce the dimensions'))
         else: save_image(image,state['temp'],fmt,quality,exif)
     return state['output']

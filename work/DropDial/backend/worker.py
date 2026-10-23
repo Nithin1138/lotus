@@ -4,6 +4,11 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 from common import *
 
 def ensure_dependencies():
+    try:
+        import PIL, pypdf, pypdfium2
+        return
+    except ImportError:
+        pass
     missing = []
     try:
         import pymupdf

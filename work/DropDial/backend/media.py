@@ -2,32 +2,36 @@ from pathlib import Path
 import json
 from common import *
 
-def _detect_ogg_codec():
+_cached_ogg_codec = None
+def _get_ogg_codec():
+    global _cached_ogg_codec
+    if _cached_ogg_codec is not None: return _cached_ogg_codec
     try:
         import subprocess
         out = subprocess.run([str(FFMPEG), '-encoders'], capture_output=True, text=True, errors='ignore').stdout
-        if 'libvorbis' in out: return ['-c:a','libvorbis','-q:a','4']
-        if 'vorbis' in out: return ['-c:a','vorbis','-q:a','4','-strict','-2']
+        if 'libvorbis' in out: _cached_ogg_codec = ['-c:a','libvorbis','-q:a','4']; return _cached_ogg_codec
+        if 'vorbis' in out: _cached_ogg_codec = ['-c:a','vorbis','-q:a','4','-strict','-2']; return _cached_ogg_codec
     except Exception: pass
-    return ['-c:a','libopus','-b:a','128k']
+    _cached_ogg_codec = ['-c:a','libopus','-b:a','128k']
+    return _cached_ogg_codec
 
 AUDIO_CODECS={
     'mp3':['-c:a','libmp3lame','-b:a','192k'], 'm4a':['-c:a','aac','-b:a','160k'],
     'aac':['-c:a','aac','-b:a','160k'], 'aif':['-c:a','pcm_s16be'],
-    'wav':['-c:a','pcm_s16le'], 'flac':['-c:a','flac','-compression_level','8'],
-    'ogg':_detect_ogg_codec(), 'opus':['-c:a','libopus','-b:a','128k'],
+    'wav':['-c:a','pcm_s16le'], 'flac':['-c:a','flac','-compression_level','5'],
+    'ogg':['-c:a','libopus','-b:a','128k'], 'opus':['-c:a','libopus','-b:a','128k'],
     'aiff':['-c:a','pcm_s16be'], 'wma':['-c:a','wmav2','-b:a','160k']}
 VIDEO_CODECS={
-    'mp4':['-c:v','libx264','-preset','medium','-crf','23','-c:a','aac','-b:a','160k','-movflags','+faststart'],
-    'mov':['-c:v','libx264','-preset','medium','-crf','23','-c:a','aac','-b:a','160k'],
-    'mkv':['-c:v','libx264','-preset','medium','-crf','23','-c:a','aac','-b:a','160k'],
-    'webm':['-c:v','libvpx-vp9','-crf','32','-b:v','0','-c:a','libopus','-b:a','128k'],
+    'mp4':['-c:v','libx264','-preset','faster','-crf','23','-c:a','aac','-b:a','160k','-movflags','+faststart'],
+    'mov':['-c:v','libx264','-preset','faster','-crf','23','-c:a','aac','-b:a','160k'],
+    'mkv':['-c:v','libx264','-preset','faster','-crf','23','-c:a','aac','-b:a','160k'],
+    'webm':['-c:v','libvpx-vp9','-crf','32','-b:v','0','-deadline','realtime','-row-mt','1','-threads','0','-c:a','libopus','-b:a','128k'],
     'avi':['-c:v','mpeg4','-q:v','4','-c:a','libmp3lame','-b:a','160k'],
     'wmv':['-c:v','wmv2','-b:v','1800k','-c:a','wmav2','-b:a','128k']}
 
 def video_args(fmt): return [*VIDEO_CODECS[fmt],'-pix_fmt','yuv420p']
 def audio_args(fmt,params):
-    result=list(AUDIO_CODECS[fmt]); bitrate=params.get('bitrate','')
+    result=list(_get_ogg_codec() if fmt=='ogg' else AUDIO_CODECS[fmt]); bitrate=params.get('bitrate','')
     if bitrate and fmt not in ('wav','flac','aiff'):
         result=['-c:a',result[1],'-b:a',f'{int(float(bitrate))}k']
     return result
@@ -177,12 +181,12 @@ def video_tool(path,action,params):
     elif action=='compress':
         edge=int(number(params,'maxEdge',1280)); quality=int(number(params,'quality',28)); target=number(params,'targetKB',0)
         vf.append(fr'scale=min({edge}\,iw):-2')
-        if fmt in ('mp4','mov','mkv'): codec=['-c:v','libx264','-preset','medium','-crf',str(quality),'-c:a','aac','-b:a','128k','-pix_fmt','yuv420p']
+        if fmt in ('mp4','mov','mkv'): codec=['-c:v','libx264','-preset','faster','-crf',str(quality),'-c:a','aac','-b:a','128k','-pix_fmt','yuv420p']
         if target:
             total=target*8192/max(.1,duration(info))/1000
             audio_bitrate=max(16,min(128,int(total*.2))) if has_audio(info) else 0
             bitrate=max(4,int(total*.88-audio_bitrate-8))
-            codec=['-c:v','libx264','-b:v',f'{bitrate}k','-maxrate',f'{bitrate}k','-bufsize',f'{bitrate*2}k','-c:a','aac','-b:a',f'{max(8,audio_bitrate)}k','-pix_fmt','yuv420p']; fmt='mp4'
+            codec=['-c:v','libx264','-preset','faster','-b:v',f'{bitrate}k','-maxrate',f'{bitrate}k','-bufsize',f'{bitrate*2}k','-c:a','aac','-b:a',f'{max(8,audio_bitrate)}k','-pix_fmt','yuv420p']; fmt='mp4'
     elif action=='redactVideo':
         args+=['-filter_complex',redact_graph(info,params),'-map','[outv]','-map','0:a?']
     else: raise ValueError(T('Unknown video tool'))
