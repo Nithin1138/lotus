@@ -20,9 +20,6 @@
     { "source": "/api/status", "destination": "/api/admin?action=status" },
     { "source": "/api/payment-failed", "destination": "/api/verify-payment?action=payment-failed" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/admin", "destination": "/website/admin/index.html" },
-    { "source": "/admin/", "destination": "/website/admin/index.html" },
-    { "source": "/admin/(.*)", "destination": "/website/admin/$1" },
     { "source": "/(.*)", "destination": "/website/$1" }
   ],
   "headers": [
