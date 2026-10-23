@@ -52,6 +52,7 @@ module.exports = async function handler(req, res) {
       team: { INR: 349900, USD: 6900 }
     };
 
+    const country = (body.country || req.headers['x-vercel-ip-country'] || req.headers['cf-ipcountry'] || '').trim().toUpperCase();
     const isIndia = country === 'IN' || (body.currency || '').toUpperCase() === 'INR';
     const currency = isIndia ? 'INR' : 'USD';
     let basePricing = { INR: { subunits: 99900 }, USD: { subunits: 1900 } };
