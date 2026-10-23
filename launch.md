@@ -430,3 +430,72 @@ If you want to apply this optimal revenue strategy in your `/admin` pricing tab:
   - USD: `$89` (Strike: `$119`)
   - INR: `₹2,999` (Strike: `₹4,499`)
 * **First 24h Countdown Discount**: `10%` (Leaves Universal at $26.10 / ₹899).
+
+
+
+
+
+
+
+
+
+
+### 2. Complete Technology Stack & Architecture
+
+DropDial is architected as a hybrid native-speed desktop application with a lightweight, high-performance local processing engine and a serverless web infrastructure:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        NATIVE DESKTOP APPS                             │
+├───────────────────────────────────┬────────────────────────────────────┤
+│ Windows (C# / .NET 8 WPF)         │ macOS (Swift 5.10 / AppKit)        │
+│ • Floating Radial Wheel           │ • Floating NSPanel Wheel           │
+│ • Low-Level Mouse & Keyboard Hook │ • CGEventTap & Quartz Drag Tracker │
+│ • DirectWrite Typography          │ • Native Retina Frame Rendering    │
+│ • Win32 Shell / Explorer Interop  │ • QuickLook & AppleScript Interop  │
+└─────────────────┬─────────────────┴──────────────────┬─────────────────┘
+                  │                                    │
+                  ▼                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                     LOCAL PYTHON PROCESSING ENGINE                     │
+│                        (worker.py & common.py)                         │
+├─────────────────────────┬────────────────────────────┬─────────────────┤
+│ Media (FFmpeg / FFprobe)│ Images (Pillow / OpenCV)   │ Docs & Office   │
+│ • Video / Audio Convert │ • Convert (PNG/JPG/WEBP)   │ • PyMuPDF       │
+│ • Hardware Multi-Thread │ • Resize, Crop, Watermark  │ • pypdfium2     │
+│ • Fast Atomic Staging   │ • Denoise, Dehaze, Annotate│ • doc2pdf-mac   │
+└─────────────────────────┴────────────────────────────┴─────────────────┘
+                                   │
+                                   ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                      WEB, CLOUD & LICENSING                            │
+├──────────────────────────────┬─────────────────────────────────────────┤
+│ Frontend (lotus.technology)  │ Serverless API & DB (Vercel + Neon)     │
+│ • Vanilla HTML5 / Modern CSS │ • Node.js Serverless Functions          │
+│ • Ultra-low latency bundle   │ • PostgreSQL via Neon Serverless        │
+│ • Razorpay (UPI) + LemonSq   │ • Cryptographic Ed25519/HMAC License    │
+└──────────────────────────────┴─────────────────────────────────────────┘
+```
+
+#### Detailed Breakdown of Each Component
+
+| Layer | Technology | Exact Role & Purpose |
+| :--- | :--- | :--- |
+| **Windows App** | **C# / .NET 8 WPF** | Renders the smooth 60fps radial wheel, floating shelf, task indicators, and dark/light UI on Windows. |
+| **Windows Native APIs** | **Win32 P/Invoke & User32** | Registers global mouse hooks (`SetWindowsHookEx`), window drags, monitor DPI awareness, and Windows Explorer context menus. |
+| **macOS App** | **Swift 5.10 & AppKit** | Implements the native macOS floating panel (`NSPanel`), system menu bar icon, dark/light auto-adaptation, and trackpad gestures. |
+| **macOS Native APIs** | **CGEventTap & CoreGraphics** | Tracks drag-and-drop operations across Finder and other apps, renders Retina-resolution UI curves. |
+| **Local Runtime** | **Python 3.12 / 3.13 Embedded** | Bundled locally inside the application bundle so DropDial runs 100% offline without requiring the user to install Python. |
+| **Media Engine** | **FFmpeg & FFprobe (Multi-threaded)** | Handles all video and audio transcoding (MP4, MOV, MKV, WebM, MP3, WAV, AAC, FLAC), trimming, audio muting, normalization, waveform generation, and video-to-GIF conversion. |
+| **Image Engine** | **Pillow (PIL) & pillow-heif** | Converts and edits raster images (PNG, JPEG, WebP, AVIF, TIFF, BMP, ICO, HEIC/HEIF). Applies crops, rotations, rounded frames, and watermarks. |
+| **Computer Vision** | **OpenCV (`cv2`) & NumPy** | Powers advanced image enhancements such as colored noise reduction (`fastNlMeansDenoisingColored`), dehazing, exposure, and temperature balance. |
+| **PDF Engine** | **PyMuPDF (`fitz`) & `pypdfium2`** | High-speed PDF rendering, page extraction, PDF merging, text redaction, password encryption/decryption, and pagination stamp placement. |
+| **Archive Engine** | **7-Zip (`7zz` / `7z.exe`) & Python `zipfile`** | Creates and extracts multi-format archives (ZIP, 7Z, TAR, GZ, RAR) with optional AES-256 password encryption and volume splitting. |
+| **macOS Document Bridge** | **`doc2pdf-mac` & AppleScript** | Converts `.pages`, `.key`, `.numbers`, `.docx`, and `.rtf` into PDF without requiring Microsoft Office by utilizing macOS native Apple text engines. |
+| **Windows Office Bridge** | **Office COM Interop (`DropDial.exe`)** | Converts Word, Excel, and PowerPoint documents to PDF and images directly via installed Office applications. |
+| **Web Frontend** | **Vanilla HTML5, CSS3, ES6+ JS** | Delivers a responsive landing page, admin portal, and checkout flow with zero third-party framework overhead. |
+| **Cloud Backend** | **Vercel Serverless Functions (Node.js)** | Hosts backend endpoints for pricing (`/api/pricing`), geo-detection (`/api/geo`), order creation (`/api/create-order`), and coupon evaluation (`/api/coupons`). |
+| **Cloud Database** | **PostgreSQL on Neon Serverless** | Stores license key registrations, machine hardware UUID bindings, coupons (`FIRST24`), pricing configuration, and audit logs. |
+| **Payment Gateways** | **LemonSqueezy & Razorpay** | Processes automated global payments: LemonSqueezy handles international cards and PayPal; Razorpay handles India UPI and NetBanking. |
+| **Licensing Engine** | **HMAC-SHA256 & Cryptographic Signatures** | Validates offline licenses, enforces seat activations (Single: 1 PC, Pro: 3 PCs, Team: 10 PCs), and handles the 7-day offline grace period. |
+| **Auto-Updater** | **GitHub Releases API** | Checks for new versions, downloads verified update packages, and performs in-place upgrades. |

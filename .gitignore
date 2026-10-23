@@ -49,3 +49,6 @@ DerivedData/
 
 # Test output artifacts
 test_report.json
+
+# Local reference and wheel catalog documentation
+wheel.md

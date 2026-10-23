@@ -93,9 +93,9 @@ internal static class Catalog
     public static readonly string[] Audio = ["mp3", "m4a", "wav", "flac", "ogg", "opus", "aiff", "wma", "aac"];
     public static readonly string[] Video = ["mp4", "mov", "mkv", "webm", "avi", "wmv"];
     public static readonly string[] Archives = ["zip", "tar", "gz", "rar", "7z"];
-    public static readonly string[] OfficeSlides = ["ppt", "pptx", "pptm", "pps", "ppsx", "odp"];
-    public static readonly string[] OfficeWords = ["doc", "docx", "docm", "rtf", "odt"];
-    public static readonly string[] OfficeSheets = ["xls", "xlsx", "xlsm", "xlsb", "ods", "csv", "tsv"];
+    public static readonly string[] OfficeSlides = ["ppt", "pptx", "pptm", "pps", "ppsx", "odp", "key"];
+    public static readonly string[] OfficeWords = ["doc", "docx", "docm", "rtf", "odt", "pages"];
+    public static readonly string[] OfficeSheets = ["xls", "xlsx", "xlsm", "xlsb", "ods", "csv", "tsv", "numbers"];
     private static readonly string[] ImageTargets = ["jpg", "png", "webp", "heic", "tiff", "avif", "bmp", "pdf", "ico"];
     public static string Category(string path)
     {
@@ -105,6 +105,12 @@ internal static class Catalog
     public static bool PackingOnly(string[] paths) => paths.Length > 0 && paths.All(path => Directory.Exists(path) || Category(path) == "file");
     private static string[] Targets(string ext)
     {
+        if (ext == "pages")
+            return ["pdf", "docx", "txt"];
+        if (ext == "key")
+            return ["pdf", "pptx"];
+        if (ext == "numbers")
+            return ["pdf", "xlsx", "csv"];
         if (OfficeSlides.Contains(ext))
             return OfficeBridge.Available("PowerPoint") ? ["pdf", "jpg", "png", "pptx", "txt", "ppt", "odp"] : ["pdf", "jpg", "png", "txt"];
         if (OfficeWords.Contains(ext))
@@ -115,7 +121,7 @@ internal static class Catalog
             return ["pdf", "docx", "pages", "txt", "md", "html"];
         if (ext is "md" or "markdown")
             return ["pdf", "docx", "pages", "epub", "html", "txt"];
-        return ext is "jpg" or "png" ? [.. ImageTargets, "docx"] : Images.Contains(ext) ? ImageTargets : Audio.Contains(ext) ? Audio : Video.Contains(ext) ? [.. Video, "gif", "mp3", "m4a", "wav"] : ext == "gif" ? [.. Video, "mp4", "webm"] : ext == "pdf" ? ["docx", "pptx", "xlsx", "epub", "md", "jpg", "png", "txt"] : ext == "txt" ? ["pdf", "docx", "md", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? ["srt", "vtt", "txt"] : Archives;
+        return ext is "jpg" or "png" ? [.. ImageTargets, "docx"] : Images.Contains(ext) ? ImageTargets : Audio.Contains(ext) ? Audio : Video.Contains(ext) ? [.. Video, "gif", "mp3", "m4a", "wav"] : ext == "gif" ? [.. Video, "mp4", "webm"] : ext == "pdf" ? ["docx", "pages", "pptx", "xlsx", "epub", "md", "jpg", "png", "txt"] : ext == "txt" ? ["pdf", "docx", "md", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? ["srt", "vtt", "txt"] : Archives;
     }
     public static readonly Operation[] FileActions = [
         new("action:float", "Float", true),

@@ -51,52 +51,156 @@ def render_pdf(path,fmt,params):
                 image=render_page(doc[index], dpi); save_image(image,state['temp']/f'page-{index+1:04d}.{fmt}',fmt,92)
     doc.close(); return state['output']
 
+def _build_structured_docx_from_pdf(doc, out_path, fitz, has_text):
+    from docx import Document
+    from docx.shared import Inches, Pt, RGBColor
+    from docx.enum.table import WD_TABLE_ALIGNMENT
+    from docx.oxml import parse_xml
+    from docx.oxml.ns import nsdecls
+
+    word = Document()
+    for section in word.sections:
+        section.top_margin = Inches(0.75)
+        section.bottom_margin = Inches(0.75)
+        section.left_margin = Inches(0.75)
+        section.right_margin = Inches(0.75)
+
+    if not has_text:
+        for i, page in enumerate(doc):
+            if i > 0: word.add_page_break()
+            pix = page.get_pixmap(dpi=200)
+            word.add_picture(io.BytesIO(pix.tobytes('png')), width=Inches(6.5))
+        word.save(str(out_path))
+        return
+
+    for page_idx, page in enumerate(doc):
+        if page_idx > 0:
+            word.add_page_break()
+
+        tables = []
+        table_rects = []
+        try:
+            tabs = page.find_tables()
+            for t in tabs:
+                tables.append(t)
+                table_rects.append(fitz.Rect(t.bbox))
+        except Exception: pass
+
+        blocks = page.get_text('blocks')
+        items = []
+        for b in blocks:
+            b_rect = fitz.Rect(b[:4])
+            inside_table = any(b_rect.intersects(t_rect) and (b_rect & t_rect).get_area() > 0.5 * b_rect.get_area() for t_rect in table_rects)
+            if not inside_table and b[4].strip():
+                items.append(('block', b_rect.y0, b))
+        for t in tables:
+            t_rect = fitz.Rect(t.bbox)
+            items.append(('table', t_rect.y0, t))
+
+        items.sort(key=lambda x: x[1])
+
+        for item_type, _, item_data in items:
+            if item_type == 'table':
+                extracted = item_data.extract()
+                if not extracted: continue
+                rows_count = len(extracted)
+                cols_count = max(len(r) for r in extracted) if rows_count > 0 else 0
+                if rows_count == 0 or cols_count == 0: continue
+
+                table = word.add_table(rows=rows_count, cols=cols_count)
+                table.alignment = WD_TABLE_ALIGNMENT.CENTER
+                try: table.style = 'Table Grid'
+                except Exception: pass
+
+                for r_idx, row_data in enumerate(extracted):
+                    for c_idx, cell_value in enumerate(row_data):
+                        if c_idx < cols_count:
+                            cell = table.cell(r_idx, c_idx)
+                            cell.text = (cell_value or '').strip()
+                            if r_idx == 0:
+                                for p in cell.paragraphs:
+                                    for run in p.runs: run.bold = True
+                                shading = parse_xml(r'<w:shd {} w:fill="F2F4F7"/>'.format(nsdecls('w')))
+                                cell._tc.get_or_add_tcPr().append(shading)
+
+                p_spacer = word.add_paragraph()
+                p_spacer.paragraph_format.space_before = Pt(4)
+                p_spacer.paragraph_format.space_after = Pt(6)
+
+            elif item_type == 'block':
+                text_content = item_data[4].strip()
+                if not text_content: continue
+
+                lines = text_content.splitlines()
+                first_line = lines[0].strip() if lines else ''
+                is_bullet = bool(re.match(r'^[•◦▪‣\-\*]\s+', first_line))
+                if is_bullet:
+                    clean_text = re.sub(r'^[•◦▪‣\-\*]\s+', '', text_content)
+                    p = word.add_paragraph(clean_text, style='List Bullet')
+                    p.paragraph_format.space_after = Pt(4)
+                else:
+                    p = word.add_paragraph(text_content)
+                    p.paragraph_format.space_after = Pt(6)
+                    p.paragraph_format.line_spacing = 1.15
+
+    word.save(str(out_path))
+
+def _clean_docx_list_markers(file_path):
+    try:
+        from docx import Document
+        word_doc = Document(str(file_path))
+        modified = False
+        for p in word_doc.paragraphs:
+            p_style = (p.style.name or '').lower() if p.style else ''
+            if 'list' in p_style or 'bullet' in p_style:
+                for run in p.runs:
+                    if run.text:
+                        new_text = re.sub(r'^\s*[•◦▪‣]\s*', '', run.text)
+                        if new_text != run.text:
+                            run.text = new_text
+                            modified = True
+                            break
+        if modified:
+            word_doc.save(str(file_path))
+    except Exception: pass
+
 def pdf_word(path,params):
     fitz = get_fitz()
     from pdftools import open_pdf
     doc=open_pdf(path,params)
     with output_file(path,'converted','.docx') as state:
-        if any(page.get_text().strip() for page in doc):
+        has_text = any(page.get_text().strip() for page in doc)
+        converted = False
+
+        # 1. Primary Engine: pdf2docx with tuned table & layout detection
+        if has_text:
             try:
                 from pdf2docx import Converter
                 converter=Converter(str(path),password=params.get('password',''))
-                try: converter.convert(str(state['temp']),multi_processing=False)
-                finally: converter.close()
+                try:
+                    converter.convert(
+                        str(state['temp']),
+                        multi_processing=False,
+                        extract_stream_table=True,
+                        delete_end_line_hyphen=True,
+                        parse_lattice_table=True,
+                        parse_stream_table=True
+                    )
+                    if state['temp'].exists() and state['temp'].stat().st_size > 0:
+                        converted = True
+                finally:
+                    converter.close()
             except Exception:
-                from docx import Document
-                from docx.shared import Inches
-                word=Document()
-                for i,page in enumerate(doc):
-                    if i: word.add_page_break()
-                    image=io.BytesIO(page.get_pixmap(matrix=fitz.Matrix(2,2)).tobytes('png')); word.add_picture(image,width=Inches(6))
-                word.save(state['temp'])
-        else:
-            from docx import Document
-            from docx.shared import Inches
-            word=Document()
-            for i,page in enumerate(doc):
-                if i: word.add_page_break()
-                image=io.BytesIO(page.get_pixmap(matrix=fitz.Matrix(2,2)).tobytes('png')); word.add_picture(image,width=Inches(6))
-            word.save(state['temp'])
-        # Post-process to remove duplicate bullet characters in list paragraphs
+                pass
+
+        # 2. Structured Fallback: High-fidelity PyMuPDF -> docx table & paragraph engine
+        if not converted:
+            _build_structured_docx_from_pdf(doc, state['temp'], fitz, has_text)
+
+        # 3. Post-process to remove duplicate bullet characters in list paragraphs
         if state['temp'].exists():
-            try:
-                from docx import Document
-                word_doc = Document(str(state['temp']))
-                modified = False
-                for p in word_doc.paragraphs:
-                    p_style = (p.style.name or '').lower() if p.style else ''
-                    if 'list' in p_style or 'bullet' in p_style:
-                        for run in p.runs:
-                            if run.text:
-                                new_text = re.sub(r'^\s*[•◦▪‣]\s*', '', run.text)
-                                if new_text != run.text:
-                                    run.text = new_text
-                                    modified = True
-                                    break
-                if modified:
-                    word_doc.save(str(state['temp']))
-            except Exception: pass
+            _clean_docx_list_markers(state['temp'])
+
     doc.close(); return state['output']
 
 def text_image(text,width=1200):
@@ -118,16 +222,65 @@ def text_image(text,width=1200):
 def text_pdf(path,text,params):
     fitz = get_fitz()
     doc=fitz.open(); font=fitz.Font(fontfile=str(FONT))
-    margin=48; lines=[]
-    for paragraph in text.splitlines() or ['']:
-        current=''
-        for char in paragraph:
-            if font.text_length(current+char,fontsize=12)>499: lines.append(current); current=char
-            else: current+=char
-        lines.append(current)
-    for start in range(0,len(lines),44):
-        page=doc.new_page(width=595,height=842); page.insert_font(fontname='DocumentFont',fontfile=str(FONT))
-        for index,line in enumerate(lines[start:start+44]): page.insert_text((margin,margin+18+index*16),line,fontname='DocumentFont',fontsize=12)
+    page_w, page_h = 595, 842
+    margin = 54
+    max_w = page_w - (margin * 2)
+    font_size = 11
+    line_h = 16
+    para_space = 8
+
+    # Word-boundary wrapping to prevent awkward character splits
+    wrapped_lines = []
+    paragraphs = text.splitlines() or ['']
+    for para in paragraphs:
+        para_clean = para.strip()
+        if not para_clean:
+            wrapped_lines.append(('', True))
+            continue
+        words = para_clean.split(' ')
+        curr_line = ''
+        for w in words:
+            test = f"{curr_line} {w}".strip() if curr_line else w
+            if font.text_length(test, fontsize=font_size) <= max_w:
+                curr_line = test
+            else:
+                if curr_line:
+                    wrapped_lines.append((curr_line, False))
+                if font.text_length(w, fontsize=font_size) > max_w:
+                    sub = ''
+                    for ch in w:
+                        if font.text_length(sub + ch, fontsize=font_size) > max_w:
+                            wrapped_lines.append((sub, False))
+                            sub = ch
+                        else:
+                            sub += ch
+                    curr_line = sub
+                else:
+                    curr_line = w
+        if curr_line:
+            wrapped_lines.append((curr_line, True))
+
+    y = margin
+    page = doc.new_page(width=page_w, height=page_h)
+    page.insert_font(fontname='DocumentFont', fontfile=str(FONT))
+    page_num = 1
+
+    for line_text, is_para_end in wrapped_lines:
+        if y + line_h > page_h - margin - 20:
+            page.insert_text((page_w - margin - 30, page_h - margin + 10), str(page_num), fontname='DocumentFont', fontsize=9, color=(0.4, 0.4, 0.4))
+            page = doc.new_page(width=page_w, height=page_h)
+            page.insert_font(fontname='DocumentFont', fontfile=str(FONT))
+            page_num += 1
+            y = margin
+
+        if line_text:
+            page.insert_text((margin, y + font_size), line_text, fontname='DocumentFont', fontsize=font_size)
+            y += line_h
+        if is_para_end:
+            y += para_space
+
+    page.insert_text((page_w - margin - 30, page_h - margin + 10), str(page_num), fontname='DocumentFont', fontsize=9, color=(0.4, 0.4, 0.4))
+
     with output_file(path,'converted','.pdf') as state: doc.save(state['temp'],garbage=4,deflate=True)
     doc.close(); return state['output']
 
@@ -398,15 +551,29 @@ def pdf_to_pptx(path, params):
     if len(doc) == 0:
         doc.close()
         raise ValueError(T('PDF has no pages'))
+
+    # Set slide dimensions once based on dominant page dimensions
+    first_page = doc[0]
+    slide_w = Pt(first_page.rect.width)
+    slide_h = Pt(first_page.rect.height)
+
     prs = pptx.Presentation()
+    prs.slide_width = slide_w
+    prs.slide_height = slide_h
     blank_layout = prs.slide_layouts[6]
+
     for page in doc:
-        prs.slide_width = Pt(page.rect.width)
-        prs.slide_height = Pt(page.rect.height)
         slide = prs.slides.add_slide(blank_layout)
-        pix = page.get_pixmap(dpi=150)
+        # Use crisp 200 DPI for presentation sharpness
+        pix = page.get_pixmap(dpi=200)
         img_bytes = pix.tobytes('png')
-        slide.shapes.add_picture(io.BytesIO(img_bytes), 0, 0, width=Pt(page.rect.width), height=Pt(page.rect.height))
+        slide.shapes.add_picture(
+            io.BytesIO(img_bytes),
+            0,
+            0,
+            width=Pt(page.rect.width),
+            height=Pt(page.rect.height)
+        )
     doc.close()
     with output_file(path, 'converted', '.pptx') as state:
         prs.save(state['temp'])
@@ -415,6 +582,9 @@ def pdf_to_pptx(path, params):
 def pdf_to_excel(path, fmt, params):
     fitz = get_fitz()
     import openpyxl, csv
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
     doc = fitz.open(path)
     if len(doc) == 0:
         doc.close()
@@ -442,11 +612,59 @@ def pdf_to_excel(path, fmt, params):
                 writer = csv.writer(f)
                 writer.writerows(all_rows)
         return state['output']
+
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'Sheet1'
-    for row in all_rows:
-        ws.append(row)
+    ws.views.sheetView[0].showGridLines = True
+
+    header_fill = PatternFill(start_color="F2F4F7", end_color="F2F4F7", fill_type="solid")
+    header_font = Font(name="Segoe UI", size=11, bold=True, color="1F2328")
+    regular_font = Font(name="Segoe UI", size=10, color="1F2328")
+    thin_border = Border(
+        left=Side(style='thin', color='E1E4EA'),
+        right=Side(style='thin', color='E1E4EA'),
+        top=Side(style='thin', color='E1E4EA'),
+        bottom=Side(style='thin', color='E1E4EA')
+    )
+
+    for r_idx, row in enumerate(all_rows, start=1):
+        parsed_row = []
+        for val in row:
+            v_str = str(val).strip()
+            # Try to convert numeric strings so Excel treats them as numbers
+            if (v_str.replace(',', '').replace('.', '', 1).isdigit() and not v_str.startswith('0')) or v_str == '0':
+                try:
+                    clean_num = v_str.replace(',', '')
+                    parsed_row.append(float(clean_num) if '.' in clean_num else int(clean_num))
+                    continue
+                except ValueError: pass
+            parsed_row.append(v_str)
+
+        ws.append(parsed_row)
+
+        for c_idx in range(1, len(parsed_row) + 1):
+            cell = ws.cell(row=r_idx, column=c_idx)
+            cell.border = thin_border
+            if r_idx == 1:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(vertical="center", horizontal="left")
+            else:
+                cell.font = regular_font
+                if isinstance(cell.value, (int, float)):
+                    cell.alignment = Alignment(vertical="center", horizontal="right")
+                else:
+                    cell.alignment = Alignment(vertical="center", horizontal="left")
+
+    for col in ws.columns:
+        col_letter = get_column_letter(col[0].column)
+        max_len = 0
+        for cell in col:
+            val_len = len(str(cell.value or ''))
+            if val_len > max_len: max_len = val_len
+        ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
+
     with output_file(path, 'converted', '.xlsx') as state:
         wb.save(state['temp'])
     return state['output']
@@ -649,10 +867,21 @@ def tool(path,action,params):
                 seen.add(xref)
                 extracted=doc.extract_image(xref)
                 try:
-                    image=Image.open(io.BytesIO(extracted['image'])).convert('RGB'); image.thumbnail((edge,edge))
-                    data=io.BytesIO(); image.save(data,format='JPEG',quality=quality)
-                    if len(data.getvalue())<len(extracted['image']): page.replace_image(xref,stream=data.getvalue())
-                except (OSError,ValueError): pass
+                    raw_img = Image.open(io.BytesIO(extracted['image']))
+                    if 'A' in raw_img.getbands():
+                        bg = Image.new('RGB', raw_img.size, (255, 255, 255))
+                        if raw_img.mode != 'RGBA':
+                            raw_img = raw_img.convert('RGBA')
+                        bg.paste(raw_img, mask=raw_img.getchannel('A'))
+                        image = bg
+                    else:
+                        image = raw_img.convert('RGB')
+                    image.thumbnail((edge, edge), Image.Resampling.LANCZOS)
+                    data = io.BytesIO()
+                    image.save(data, format='JPEG', quality=quality)
+                    if len(data.getvalue()) < len(extracted['image']):
+                        page.replace_image(xref, stream=data.getvalue())
+                except (OSError, ValueError): pass
         with output_file(path,'compressed','.pdf') as state:
             doc.save(state['temp'],garbage=4,deflate=True)
             if target and state['temp'].stat().st_size>target: raise ValueError(T('Cannot reach the target size with these settings; lower the quality or size'))

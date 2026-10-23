@@ -13,65 +13,118 @@ def family(path):
 def native(path,fmt,target):
     path=Path(path).resolve()
     target=Path(target).resolve()
+
+    # Cross-platform QuickLook/Preview.pdf extraction helper for Apple formats (.pages, .key, .numbers)
+    def extract_apple_preview():
+        if zipfile.is_zipfile(path):
+            try:
+                with zipfile.ZipFile(path) as z:
+                    candidates = [n for n in z.namelist() if n.lower() in ('quicklook/preview.pdf', 'preview.pdf')]
+                    if candidates:
+                        cname = candidates[0]
+                        if fmt == 'pdf':
+                            with z.open(cname) as src, open(target, 'wb') as dst:
+                                shutil.copyfileobj(src, dst)
+                            if target.exists() and target.stat().st_size > 0:
+                                return True
+                        elif fmt in ('docx', 'doc'):
+                            temp_pdf = target.parent / f'{path.stem}_preview.pdf'
+                            with z.open(cname) as src, open(temp_pdf, 'wb') as dst:
+                                shutil.copyfileobj(src, dst)
+                            import documents
+                            docx_out = documents.pdf_word(temp_pdf, {})
+                            temp_pdf.unlink(missing_ok=True)
+                            if Path(docx_out).exists():
+                                shutil.move(docx_out, target)
+                                return True
+                        elif fmt in ('txt', 'text'):
+                            temp_pdf = target.parent / f'{path.stem}_preview.pdf'
+                            with z.open(cname) as src, open(temp_pdf, 'wb') as dst:
+                                shutil.copyfileobj(src, dst)
+                            fitz = get_fitz()
+                            doc = fitz.open(temp_pdf)
+                            text = '\n\n'.join(page.get_text() for page in doc)
+                            doc.close()
+                            temp_pdf.unlink(missing_ok=True)
+                            target.write_text(text, encoding='utf-8-sig')
+                            return True
+            except Exception: pass
+        return False
+
     if sys.platform=='darwin':
         # 0. Apple Pages (.pages) -> PDF / DOCX / TXT
         if path.suffix.lower() == '.pages':
             exp_format = 'PDF' if fmt == 'pdf' else 'Microsoft Word' if fmt in ('docx', 'doc') else 'unformatted text' if fmt == 'txt' else None
             if exp_format:
                 subprocess.run(['open', '-g', '-j', '-a', 'Pages'], capture_output=True)
-                as_code = f'set inPath to POSIX file "{path}"\nset outPath to POSIX file "{target}"\ntell application "Pages"\nset myDoc to open inPath\nexport myDoc to outPath as {exp_format}\nclose myDoc saving no\nend tell'
+                as_code = f'''
+tell application "Pages"
+    try
+        set inPath to POSIX file "{path}"
+        set outPath to POSIX file "{target}"
+        set myDoc to open inPath
+        export myDoc to outPath as {exp_format}
+        close myDoc saving no
+    end try
+end tell
+'''
                 try:
                     res = subprocess.run(['osascript', '-e', as_code], capture_output=True, timeout=45)
                     if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
                         return
                 except Exception: pass
-            # Fallback: Extract QuickLook/Preview.pdf if available
-            try:
-                if zipfile.is_zipfile(path):
-                    with zipfile.ZipFile(path) as z:
-                        if 'QuickLook/Preview.pdf' in z.namelist():
-                            if fmt == 'pdf':
-                                with z.open('QuickLook/Preview.pdf') as src, open(target, 'wb') as dst:
-                                    shutil.copyfileobj(src, dst)
-                                if target.exists() and target.stat().st_size > 0:
-                                    return
-                            elif fmt in ('docx', 'doc'):
-                                temp_pdf = target.parent / f'{path.stem}_preview.pdf'
-                                with z.open('QuickLook/Preview.pdf') as src, open(temp_pdf, 'wb') as dst:
-                                    shutil.copyfileobj(src, dst)
-                                import documents
-                                docx_out = documents.pdf_word(temp_pdf, {})
-                                temp_pdf.unlink(missing_ok=True)
-                                if Path(docx_out).exists():
-                                    shutil.move(docx_out, target)
-                                    return
-            except Exception: pass
+            if extract_apple_preview():
+                return
 
         # Apple Keynote (.key) -> PDF / PPTX
         if path.suffix.lower() == '.key':
             exp_format = 'PDF' if fmt == 'pdf' else 'Microsoft PowerPoint' if fmt in ('pptx', 'ppt') else None
             if exp_format:
                 subprocess.run(['open', '-g', '-j', '-a', 'Keynote'], capture_output=True)
-                as_code = f'set inPath to POSIX file "{path}"\nset outPath to POSIX file "{target}"\ntell application "Keynote"\nset myDoc to open inPath\nexport myDoc to outPath as {exp_format}\nclose myDoc saving no\nend tell'
+                as_code = f'''
+tell application "Keynote"
+    try
+        set inPath to POSIX file "{path}"
+        set outPath to POSIX file "{target}"
+        set myDoc to open inPath
+        export myDoc to outPath as {exp_format}
+        close myDoc saving no
+    end try
+end tell
+'''
                 try:
                     res = subprocess.run(['osascript', '-e', as_code], capture_output=True, timeout=45)
                     if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
                         return
                 except Exception: pass
+            if extract_apple_preview():
+                return
 
         # Apple Numbers (.numbers) -> PDF / XLSX / CSV
         if path.suffix.lower() == '.numbers':
             exp_format = 'PDF' if fmt == 'pdf' else 'Microsoft Excel' if fmt in ('xlsx', 'xls') else 'CSV' if fmt == 'csv' else None
             if exp_format:
                 subprocess.run(['open', '-g', '-j', '-a', 'Numbers'], capture_output=True)
-                as_code = f'set inPath to POSIX file "{path}"\nset outPath to POSIX file "{target}"\ntell application "Numbers"\nset myDoc to open inPath\nexport myDoc to outPath as {exp_format}\nclose myDoc saving no\nend tell'
+                as_code = f'''
+tell application "Numbers"
+    try
+        set inPath to POSIX file "{path}"
+        set outPath to POSIX file "{target}"
+        set myDoc to open inPath
+        export myDoc to outPath as {exp_format}
+        close myDoc saving no
+    end try
+end tell
+'''
                 try:
                     res = subprocess.run(['osascript', '-e', as_code], capture_output=True, timeout=45)
                     if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
                         return
                 except Exception: pass
+            if extract_apple_preview():
+                return
 
-        # Native textutil for RTF / RTFD / DOCX / DOC -> HTML / TXT
+        # Native textutil for RTF / RTFD / DOCX / DOC -> HTML / TXT / DOCX
         if path.suffix.lower() in ('.rtf', '.rtfd', '.docx', '.doc') and fmt in ('txt', 'html'):
             try:
                 res = subprocess.run(['textutil', '-convert', fmt, '-output', str(target), str(path)], capture_output=True, timeout=30)
@@ -89,15 +142,58 @@ def native(path,fmt,target):
         # Apple Pages for DOCX / DOC -> PAGES / EPUB
         if path.suffix.lower() in ('.docx', '.doc') and fmt in ('pages', 'epub'):
             subprocess.run(['open', '-g', '-j', '-a', 'Pages'], capture_output=True)
-            as_action = f'save front document in (POSIX file "{target}")' if fmt == 'pages' else f'export front document to (POSIX file "{target}") as EPUB'
-            as_code = f'tell application "Pages"\nopen (POSIX file "{path}")\ndelay 0.5\n{as_action}\nclose front document saving no\nend tell'
+            as_action = f'save myDoc in (POSIX file "{target}")' if fmt == 'pages' else f'export myDoc to (POSIX file "{target}") as EPUB'
+            as_code = f'''
+tell application "Pages"
+    try
+        set myDoc to open (POSIX file "{path}")
+        {as_action}
+        close myDoc saving no
+    end try
+end tell
+'''
             try:
                 res = subprocess.run(['osascript', '-e', as_code], capture_output=True, timeout=45)
                 if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
                     return
             except Exception: pass
 
-        # 1. Try LibreOffice if installed
+        # 1. Try Apple Pages via AppleScript for DOCX / DOC -> PDF (100% vector typography & perfect layout fidelity)
+        if path.suffix.lower() in ('.doc', '.docx') and fmt == 'pdf':
+            subprocess.run(['open', '-g', '-j', '-a', 'Pages'], capture_output=True)
+            as_code = f'''
+tell application "Pages"
+    try
+        set myDoc to open (POSIX file "{path}")
+        export myDoc to (POSIX file "{target}") as PDF
+        close myDoc saving no
+    end try
+end tell
+'''
+            try:
+                res = subprocess.run(['osascript', '-e', as_code], capture_output=True, timeout=45)
+                if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
+                    return
+            except Exception: pass
+
+        # 2. Try Microsoft Word via AppleScript on macOS
+        if path.suffix.lower() in ('.doc','.docx') and fmt=='pdf':
+            as_code = f'''
+tell application "Microsoft Word"
+    try
+        set myDoc to open (POSIX file "{path}")
+        save as myDoc file name "{target}" file format format PDF
+        close myDoc saving no
+    end try
+end tell
+'''
+            try:
+                res = subprocess.run(['osascript', '-e', as_code], capture_output=True, timeout=15)
+                if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
+                    return
+            except Exception: pass
+
+        # 3. Try LibreOffice if installed
         for soffice in ['/Applications/LibreOffice.app/Contents/MacOS/soffice', 'soffice']:
             if shutil.which(soffice) or Path(soffice).exists():
                 try:
@@ -107,15 +203,8 @@ def native(path,fmt,target):
                         out_name.replace(target)
                         return
                 except Exception: pass
-        # 2. Try Microsoft Word via AppleScript on macOS
-        if path.suffix.lower() in ('.doc','.docx') and fmt=='pdf':
-            as_code = f'tell application "Microsoft Word"\nopen "{path}"\nsave as active document file name "{target}" file format format PDF\nclose active document saving no\nend tell'
-            try:
-                res = subprocess.run(['osascript', '-e', as_code], capture_output=True, timeout=15)
-                if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
-                    return
-            except Exception: pass
-        # 3. High-fidelity native macOS paginated PDF converter (doc2pdf-mac)
+
+        # 4. Native macOS paginated PDF converter (doc2pdf-mac)
         if fmt=='pdf' and path.suffix.lower() in ('.doc','.docx','.rtf','.odt','.txt','.html','.htm'):
             bin_candidates = [
                 BASE / 'doc2pdf-mac',
@@ -174,6 +263,10 @@ def native(path,fmt,target):
                         if target.exists() and target.stat().st_size > 0:
                             return
             except Exception: pass
+    if path.suffix.lower() in ('.pages', '.key', '.numbers'):
+        if extract_apple_preview():
+            return
+
     exe = BASE/'DropDial.exe' if (BASE/'DropDial.exe').exists() else BASE/'DropDial.exe'
     if exe.exists():
         process([exe,'--office-export',path,fmt,target],timeout=300)
