@@ -14,13 +14,22 @@ internal sealed record LicenseInfo(string Name, string Email, string Date, strin
 {
     public bool IsExpired => ExpiresAt.HasValue && DateTimeOffset.UtcNow.ToUnixTimeSeconds() >= ExpiresAt.Value;
     public int SecondsRemaining => ExpiresAt.HasValue ? Math.Max(0, (int)(ExpiresAt.Value - DateTimeOffset.UtcNow.ToUnixTimeSeconds())) : int.MaxValue;
-    public string PlanDisplayName => (Tier?.Trim().ToLowerInvariant()) switch
+    public string PlanDisplayName
     {
-        "single" => "Single",
-        "team" => "Team",
-        "universal" => "Universal",
-        _ => "Pro"
-    };
+        get
+        {
+            var t = (Tier ?? "").Trim().ToLowerInvariant();
+            if (t.Contains("single") || t.Contains("solo") || t == "1")
+                return "Single";
+            if (t.Contains("team") || t.Contains("commercial") || t.Contains("studio") || t == "10")
+                return "Team";
+            if (t.Contains("universal"))
+                return "Universal";
+            if (t.Contains("pro"))
+                return "Pro";
+            return string.IsNullOrEmpty(t) ? "Pro" : char.ToUpper(t[0]) + t.Substring(1);
+        }
+    }
 }
 
 internal enum LicenseStatusKind
@@ -143,6 +152,7 @@ internal static class LicenseManager
     private sealed class StoredLicenseState
     {
         public string? LicenseKey { get; set; }
+        public string? Tier { get; set; }
         public string? DeviceId { get; set; }
         public long TrialStartTime { get; set; }
         public string? DailyConversionDate { get; set; }
@@ -172,6 +182,10 @@ internal static class LicenseManager
                 var (isValid, info, _) = VerifyKey(state.LicenseKey);
                 if (isValid && info != null && !info.IsExpired)
                 {
+                    if (!string.IsNullOrWhiteSpace(state.Tier))
+                    {
+                        info = info with { Tier = state.Tier };
+                    }
                     CurrentStatus = LicenseStatus.Pro(info);
                     StatusChanged?.Invoke();
                     return;
@@ -180,6 +194,7 @@ internal static class LicenseManager
                 {
                     // Expired or invalid - clear stored key
                     state.LicenseKey = null;
+                    state.Tier = null;
                     SaveState(state);
                 }
             }
@@ -464,6 +479,14 @@ internal static class LicenseManager
                     {
                         serverSuccessMsg = msgElem.GetString();
                     }
+                    if (doc.RootElement.TryGetProperty("tier", out var tierElem) && !string.IsNullOrWhiteSpace(tierElem.GetString()))
+                    {
+                        info = info with { Tier = tierElem.GetString()! };
+                    }
+                    else if (doc.RootElement.TryGetProperty("planDisplayName", out var planElem) && !string.IsNullOrWhiteSpace(planElem.GetString()))
+                    {
+                        info = info with { Tier = planElem.GetString()! };
+                    }
                 }
                 catch { }
             }
@@ -475,12 +498,13 @@ internal static class LicenseManager
 
         var state = LoadState();
         state.LicenseKey = licenseKey.Trim();
+        state.Tier = info.Tier;
         SaveState(state);
 
         RefreshStatus();
         string displayMsg = !string.IsNullOrWhiteSpace(serverSuccessMsg)
             ? serverSuccessMsg!
-            : $"DropDial Pro successfully activated! Thank you, {(string.IsNullOrEmpty(info.Name) ? info.Email : info.Name)}.";
+            : $"DropDial {info.PlanDisplayName} successfully activated! Thank you, {(string.IsNullOrEmpty(info.Name) ? info.Email : info.Name)}.";
         return (true, displayMsg);
     }
 
@@ -509,6 +533,7 @@ internal static class LicenseManager
             });
         }
         state.LicenseKey = null;
+        state.Tier = null;
         SaveState(state);
         RefreshStatus();
     }

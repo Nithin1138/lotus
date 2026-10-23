@@ -65,14 +65,17 @@ module.exports = async function handler(req, res) {
 
     // Determine device limit based on license plan tier
     let maxDevices = 3;
-    let planDisplayName = 'Universal Pro';
+    let planDisplayName = 'Universal';
+    let canonicalTier = 'universal';
     if (tier.includes('single') || tier.includes('solo') || tier === '1') {
       maxDevices = 1;
-      planDisplayName = 'Single Platform';
+      planDisplayName = 'Single';
+      canonicalTier = 'single';
     } else if (tier.includes('team') || tier.includes('commercial') || tier.includes('studio') || tier === '10') {
       const match = tier.match(/\d+/);
       maxDevices = match ? parseInt(match[0], 10) : 10;
-      planDisplayName = 'Team License';
+      planDisplayName = 'Team';
+      canonicalTier = 'team';
     }
 
     // 2. Connect to Database & Enforce Device Limits
@@ -82,12 +85,12 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         success: true,
         activated: true,
-        tier,
+        tier: canonicalTier,
         planDisplayName,
         maxDevices,
         currentDevices: 1,
         remainingDevices: Math.max(0, maxDevices - 1),
-        message: `Offline license signature validated (${planDisplayName}).`
+        message: `DropDial ${planDisplayName} Plan successfully validated offline.`
       });
     }
 
@@ -117,11 +120,16 @@ module.exports = async function handler(req, res) {
           const dbTier = dbLic.tier.toLowerCase();
           if (dbTier.includes('single')) {
             maxDevices = 1;
-            planDisplayName = 'Single Platform';
+            planDisplayName = 'Single';
+            canonicalTier = 'single';
           } else if (dbTier.includes('team')) {
             const match = dbTier.match(/\d+/);
             maxDevices = match ? parseInt(match[0], 10) : 10;
-            planDisplayName = 'Team License';
+            planDisplayName = 'Team';
+            canonicalTier = 'team';
+          } else if (dbTier.includes('universal')) {
+            planDisplayName = 'Universal';
+            canonicalTier = 'universal';
           }
         }
       }
@@ -202,12 +210,12 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       success: true,
       activated: true,
-      tier,
+      tier: canonicalTier,
       planDisplayName,
       currentDevices: newActiveCount,
       maxDevices,
       remainingDevices,
-      message: `DropDial ${planDisplayName} successfully activated on this device (${newActiveCount}/${maxDevices} used, ${remainingDevices} remaining).`
+      message: `DropDial ${planDisplayName} Plan successfully activated on this device (${newActiveCount}/${maxDevices} used, ${remainingDevices} remaining).`
     });
   } catch (err) {
     console.error('[Activate License Error]:', err.message);

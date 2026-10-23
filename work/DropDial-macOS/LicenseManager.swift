@@ -11,15 +11,18 @@ struct LicenseInfo: Equatable {
     let expiresAt: Double? // Unix epoch seconds, nil if lifetime
 
     var planDisplayName: String {
-        switch tier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
-        case "single":
+        let t = tier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if t.contains("single") || t.contains("solo") || t == "1" {
             return "Single"
-        case "team":
+        } else if t.contains("team") || t.contains("commercial") || t.contains("studio") || t == "10" {
             return "Team"
-        case "universal":
+        } else if t.contains("universal") {
             return "Universal"
-        default:
+        } else if t.contains("pro") {
             return "Pro"
+        } else {
+            let cap = t.capitalized
+            return cap.isEmpty ? "Pro" : cap
         }
     }
 
@@ -114,6 +117,7 @@ final class LicenseManager {
 
     // UserDefaults Keys
     private let licenseKeyStoreKey = "DROPDIAL_LICENSE_KEY"
+    private let licenseTierStoreKey = "DROPDIAL_LICENSE_TIER"
     private let trialStartDateKey = "DROPDIAL_TRIAL_START_TIME"
     private let trialDurationDays = 3
 
@@ -183,13 +187,17 @@ final class LicenseManager {
         // 1. Check if a valid license key is stored
         if let storedKey = defaults.string(forKey: licenseKeyStoreKey), !storedKey.isEmpty {
             let result = verifyKey(storedKey)
-            if result.isValid, let info = result.info {
+            if result.isValid, var info = result.info {
+                if let storedTier = defaults.string(forKey: licenseTierStoreKey), !storedTier.isEmpty {
+                    info = LicenseInfo(name: info.name, email: info.email, date: info.date, tier: storedTier, expiresAt: info.expiresAt)
+                }
                 status = .pro(info: info)
                 onStatusChanged?()
                 return
             } else {
                 // Key has expired or is invalid! Clear stored key so status reverts
                 defaults.removeObject(forKey: licenseKeyStoreKey)
+                defaults.removeObject(forKey: licenseTierStoreKey)
             }
         }
 
@@ -448,8 +456,15 @@ final class LicenseManager {
                 }
 
                 // If success or network unavailable, apply activation
-                self.saveAndApply(key: cleanKey, info: info)
-                var successMsg = "DropDial Pro successfully activated! Thank you, \(info.name.isEmpty ? info.email : info.name)."
+                var activeInfo = info
+                if let data = data,
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if let srvTier = (json["tier"] as? String) ?? (json["planDisplayName"] as? String), !srvTier.isEmpty {
+                        activeInfo = LicenseInfo(name: info.name, email: info.email, date: info.date, tier: srvTier, expiresAt: info.expiresAt)
+                    }
+                }
+                self.saveAndApply(key: cleanKey, info: activeInfo)
+                var successMsg = "DropDial \(activeInfo.planDisplayName) successfully activated! Thank you, \(activeInfo.name.isEmpty ? activeInfo.email : activeInfo.name)."
                 if let data = data,
                    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let msg = json["message"] as? String, !msg.isEmpty {
@@ -462,6 +477,7 @@ final class LicenseManager {
 
     private func saveAndApply(key: String, info: LicenseInfo) {
         UserDefaults.standard.set(key, forKey: licenseKeyStoreKey)
+        UserDefaults.standard.set(info.tier, forKey: licenseTierStoreKey)
         status = .pro(info: info)
         onStatusChanged?()
     }
@@ -479,6 +495,7 @@ final class LicenseManager {
             URLSession.shared.dataTask(with: req).resume()
         }
         UserDefaults.standard.removeObject(forKey: licenseKeyStoreKey)
+        UserDefaults.standard.removeObject(forKey: licenseTierStoreKey)
         refreshStatus()
     }
 
@@ -708,9 +725,9 @@ final class LicenseWindowController: NSWindowController {
 
         switch status {
         case .pro(let info):
-            titleLabel.stringValue = "DropDial Pro"
-            dismissButton.isHidden = true
             let plan = info.planDisplayName
+            titleLabel.stringValue = "DropDial \(plan)"
+            dismissButton.isHidden = true
             let nameStr = info.name.isEmpty ? info.email : info.name
             if let _ = info.expiresAt {
                 let sec = info.secondsRemaining

@@ -304,7 +304,7 @@ internal sealed class LicenseWindow : Window
 
             primaryBtn.Content = "Done";
             messageText.Text = "";
-            titleText.Text = "DropDial Pro";
+            titleText.Text = $"DropDial {plan}";
             dismissBtn.Visibility = Visibility.Collapsed;
         }
         else if (status.Kind == LicenseStatusKind.Trial && LicenseManager.TrialRemainingSeconds > 0)

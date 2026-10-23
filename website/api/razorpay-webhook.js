@@ -86,9 +86,13 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ status: 'ignored_no_email' });
       }
 
-      // 1. Generate Signed License Key
-      const licenseKey = generateLicense(email, name, 'pro');
-      console.log(`[Razorpay Webhook] Issued license for: ${email} -> ${licenseKey.slice(0, 20)}...`);
+      // 1. Determine Plan Tier & Generate Signed License Key
+      const rawTier = (notes.tier || notes.product || '').toLowerCase();
+      const tier = rawTier.includes('single') ? 'single'
+        : rawTier.includes('team') ? 'team'
+        : 'universal';
+      const licenseKey = generateLicense(email, name, tier);
+      console.log(`[Razorpay Webhook] Issued ${tier} license for: ${email} -> ${licenseKey.slice(0, 20)}...`);
 
       // 2. Dispatch Email via Resend
       const emailResult = await sendResendEmail({

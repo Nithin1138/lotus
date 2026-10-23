@@ -77,8 +77,13 @@ module.exports = async function handler(req, res) {
       console.log('[Verify Payment] Simulated or sandbox payment confirmation for:', email);
     }
 
+    const rawTier = (body.tier || 'universal').toLowerCase();
+    const cleanTier = rawTier.includes('single') ? 'single'
+      : rawTier.includes('team') ? 'team'
+      : 'universal';
+
     // 1. Generate Cryptographically Signed License Key (ECDSA P-256)
-    const licenseKey = generateLicense(email, name, tier);
+    const licenseKey = generateLicense(email, name, cleanTier);
 
     // 2. Persist to Neon DB (if configured)
     try {
@@ -89,7 +94,7 @@ module.exports = async function handler(req, res) {
         const licId = `lic_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
         await sql`
           INSERT INTO licenses (id, customer_name, email, license_key, tier, status, created_at)
-          VALUES (${licId}, ${name}, ${email}, ${licenseKey}, ${tier || 'Pro Lifetime'}, 'active', NOW())
+          VALUES (${licId}, ${name}, ${email}, ${licenseKey}, ${cleanTier}, 'active', NOW())
           ON CONFLICT (id) DO NOTHING;
         `;
         const txAmount = Number(body.amount) || (body.currency === 'USD' ? 19 : 999);

@@ -1225,7 +1225,7 @@
                 razorpay_signature: response.razorpay_signature,
                 email: email,
                 name: name,
-                tier: (TIERS[selectedTier] ? TIERS[selectedTier].name : 'Universal Pro Lifetime'),
+                tier: selectedTier || 'universal',
                 amount: activePrice.amount,
                 currency: selectedCurrency,
                 couponCode: appliedCoupon ? appliedCoupon.code : null,

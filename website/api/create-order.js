@@ -117,7 +117,8 @@ module.exports = async function handler(req, res) {
         notes: {
           email,
           name,
-          product: 'DropDial Pro Lifetime',
+          tier,
+          product: `DropDial ${tier === 'single' ? 'Single' : tier === 'team' ? 'Team' : 'Universal'} Plan`,
           coupon: appliedCoupon ? appliedCoupon.code : 'none',
           discount: appliedCoupon ? appliedCoupon.discountDisplay : 'none'
         }
