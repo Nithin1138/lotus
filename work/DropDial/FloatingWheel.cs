@@ -70,17 +70,18 @@ internal sealed class DropWheel : Window
     private readonly TextBlock hubFileMode = new() { FontSize = 7.5, FontWeight = FontWeights.Medium, Foreground = Solid("#FF6208"), TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 1, 0, 0) };
     private readonly Border hubClearBtn = new()
     {
-        Width = 16,
-        Height = 16,
-        CornerRadius = new CornerRadius(8),
+        Width = 18,
+        Height = 18,
+        CornerRadius = new CornerRadius(9),
         Background = Solid("#353A40"),
         BorderBrush = Solid("#60FFFFFF"),
         BorderThickness = new Thickness(1),
         HorizontalAlignment = HorizontalAlignment.Center,
         VerticalAlignment = VerticalAlignment.Top,
-        Margin = new Thickness(0, 6, 0, 0),
+        Margin = new Thickness(0, 4, 0, 0),
         Cursor = Cursors.Hand,
-        Visibility = Visibility.Collapsed
+        Visibility = Visibility.Collapsed,
+        ToolTip = L.T("Clear file")
     };
 
     private readonly StackPanel hubIdlePanel = new() { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
@@ -263,21 +264,37 @@ internal sealed class DropWheel : Window
         var clearX = new TextBlock
         {
             Text = "✕",
-            FontSize = 8.5,
+            FontSize = 9.5,
             FontWeight = FontWeights.Bold,
             Foreground = Brushes.White,
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
+            IsHitTestVisible = false
         };
         hubClearBtn.Child = clearX;
-        hubClearBtn.MouseEnter += (_, _) => hubClearBtn.Background = Solid("#E53E3E");
-        hubClearBtn.MouseLeave += (_, _) => hubClearBtn.Background = Solid("#353A40");
+        hubClearBtn.MouseEnter += (_, _) =>
+        {
+            hubClearBtn.Background = Solid("#E53E3E");
+            hubClearBtn.BorderBrush = Brushes.White;
+        };
+        hubClearBtn.MouseLeave += (_, _) =>
+        {
+            hubClearBtn.Background = Solid("#353A40");
+            hubClearBtn.BorderBrush = Solid("#60FFFFFF");
+        };
+        hubClearBtn.PreviewMouseLeftButtonUp += (_, e) =>
+        {
+            e.Handled = true;
+            SoundManager.PlayPop();
+            LoadFiles(Array.Empty<string>(), mode);
+        };
         hubClearBtn.MouseLeftButtonUp += (_, e) =>
         {
             e.Handled = true; // Prevents mode cycling on center click!
             SoundManager.PlayPop();
             LoadFiles(Array.Empty<string>(), mode);
         };
+        Panel.SetZIndex(hubClearBtn, 50);
         hubGrid.Children.Add(hubClearBtn);
 
         center.Child = hubGrid;
@@ -422,6 +439,7 @@ internal sealed class DropWheel : Window
             hubSlicePanel.Visibility = Visibility.Visible;
             hubFilePanel.Visibility = Visibility.Collapsed;
             hubIdlePanel.Visibility = Visibility.Collapsed;
+            hubClearBtn.Visibility = Visibility.Collapsed;
             hubModeBadge.Text = mode switch
             {
                 WheelMode.Convert => "CONVERT",
@@ -437,6 +455,7 @@ internal sealed class DropWheel : Window
             hubSlicePanel.Visibility = Visibility.Visible;
             hubFilePanel.Visibility = Visibility.Collapsed;
             hubIdlePanel.Visibility = Visibility.Collapsed;
+            hubClearBtn.Visibility = Visibility.Collapsed;
             hubModeBadge.Text = "TOOL";
             hubSliceTitle.Text = groups[openGroup].Items[second.Highlighted].Label;
             hubSliceTitle.Foreground = UiTheme.Ink;
@@ -1137,8 +1156,27 @@ internal sealed class DropWheel : Window
 
         if (dist <= HubRadius)
         {
-            e.Handled = true;
-            OnHubClicked();
+            // Check if clicking the clear button (cross X) in the middle file
+            if (hubClearBtn.Visibility == Visibility.Visible)
+            {
+                var ptInClear = e.GetPosition(hubClearBtn);
+                bool insideClear = hubClearBtn.IsMouseOver ||
+                    (ptInClear.X >= -4 && ptInClear.X <= hubClearBtn.ActualWidth + 4 &&
+                     ptInClear.Y >= -4 && ptInClear.Y <= hubClearBtn.ActualHeight + 4);
+                if (insideClear)
+                {
+                    e.Handled = true;
+                    SoundManager.PlayPop();
+                    LoadFiles(Array.Empty<string>(), mode);
+                    return;
+                }
+            }
+
+            if (!movedWindow)
+            {
+                e.Handled = true;
+                OnHubClicked();
+            }
             return;
         }
         int tool = openGroup >= 0 ? Hit(second, point, OuterRingInner, OuterRingOuter + 10) : -1;
