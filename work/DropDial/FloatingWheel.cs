@@ -27,6 +27,7 @@ internal sealed class DropWheel : Window
         public int Highlighted = -1;
     }
     private readonly Action<string[], Operation> submit;
+    public event Action? Dismissed;
     private readonly Grid stage = new();
     private readonly Canvas canvas = new() { Width = SingleSize, Height = SingleSize + 25 };
     private readonly Ring first = new(), second = new();
@@ -667,6 +668,7 @@ internal sealed class DropWheel : Window
         eligible = false;
         entered = false;
         Journal.Write("WheelDismissed", new { reason });
+        Dismissed?.Invoke();
     }
 
     protected override void OnClosed(EventArgs e)

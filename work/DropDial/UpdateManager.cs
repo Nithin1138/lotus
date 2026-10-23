@@ -28,6 +28,22 @@ internal static class UpdateManager
 
     private static bool _isShowingPrompt = false;
     private static string? _sessionDismissedVersion = null;
+    public static bool HasPendingPrompt { get; private set; }
+
+    public static void PromptIfPending()
+    {
+        if (!HasPendingPrompt || AvailableUpdate == null)
+            return;
+
+        if (string.Equals(_sessionDismissedVersion, AvailableUpdate.TagName, StringComparison.OrdinalIgnoreCase))
+        {
+            HasPendingPrompt = false;
+            return;
+        }
+
+        HasPendingPrompt = false;
+        ShowUpdatePrompt(AvailableUpdate);
+    }
 
     public static string FormatVersion(string raw)
     {
@@ -211,13 +227,24 @@ internal static class UpdateManager
                 if (changed)
                     UpdateStatusChanged?.Invoke();
 
-                if (isUserInitiated || !string.Equals(_sessionDismissedVersion, tagName, StringComparison.OrdinalIgnoreCase))
+                if (isUserInitiated)
                 {
+                    HasPendingPrompt = false;
                     ShowUpdatePrompt(release);
+                }
+                else
+                {
+                    // Do not interrupt user while working in other apps.
+                    // Mark pending so the update prompt appears only when the user opens the wheel / interacts with DropDial.
+                    if (!string.Equals(_sessionDismissedVersion, tagName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        HasPendingPrompt = true;
+                    }
                 }
             }
             else
             {
+                HasPendingPrompt = false;
                 bool changed = AvailableUpdate != null;
                 AvailableUpdate = null;
                 if (changed)
@@ -326,6 +353,7 @@ internal static class UpdateManager
 
             if (choice == DialogResult.Yes)
             {
+                HasPendingPrompt = false;
                 _sessionDismissedVersion = null;
                 if (release.IsZip && !string.IsNullOrEmpty(release.DownloadUrl))
                 {
@@ -342,6 +370,7 @@ internal static class UpdateManager
             }
             else
             {
+                HasPendingPrompt = false;
                 _sessionDismissedVersion = release.TagName;
             }
         }

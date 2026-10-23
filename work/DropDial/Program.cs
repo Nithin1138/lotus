@@ -379,6 +379,17 @@ internal sealed class Resident : IDisposable
         StartupManager.RefreshPortablePath();
         Journal.Prune();
         wheel = new DropWheel(BeginOperation);
+        wheel.Dismissed += () =>
+        {
+            if (UpdateManager.HasPendingPrompt)
+            {
+                _ = app.Dispatcher.InvokeAsync(async () =>
+                {
+                    await Task.Delay(250);
+                    UpdateManager.PromptIfPending();
+                });
+            }
+        };
         FloatShelfWindow.Instance.OnExecuteOperation = (files, op) => BeginOperation(files, op);
         WelcomeWindow.ToggleWheelAction = () => ToggleWheel();
         WelcomeWindow.ToggleModeAction = mode => ToggleWheel(mode);
@@ -424,10 +435,6 @@ internal sealed class Resident : IDisposable
         {
             if (tray.ContextMenuStrip is { Visible: true }) return;
             BuildTrayMenu();
-            if (UpdateManager.AvailableUpdate is { } upd)
-            {
-                Notify(L.T("DropDial Update Available"), string.Format(L.T("DropDial {0} is ready. Click here to update now."), upd.TagName));
-            }
         });
         _ = Task.Run(async () =>
         {
@@ -638,8 +645,8 @@ internal sealed class Resident : IDisposable
         welcome.Topmost = true;
         welcome.Activate();
         welcome.Topmost = false;
-        if (UpdateManager.AvailableUpdate is { } existingUpd)
-            UpdateManager.ShowUpdatePrompt(existingUpd);
+        if (UpdateManager.HasPendingPrompt)
+            UpdateManager.PromptIfPending();
     }
 
     private void WatchForSecondLaunch(EventWaitHandle showRequest)
@@ -857,6 +864,16 @@ internal sealed class Resident : IDisposable
         Native.GetCursorPos(out var point);
         wheel.OpenAt(point, mode);
         Journal.Write("WheelOpened", new { reason, mode, mouseDown = Native.Down(1), point.X, point.Y });
+
+        // If an update was detected in the background, prompt the user now that they opened the wheel
+        if (UpdateManager.HasPendingPrompt && !Native.Down(1))
+        {
+            _ = app.Dispatcher.InvokeAsync(async () =>
+            {
+                await Task.Delay(350);
+                UpdateManager.PromptIfPending();
+            });
+        }
     }
 
     private void Poll(object? sender, EventArgs e)
