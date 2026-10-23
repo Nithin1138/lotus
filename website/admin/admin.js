@@ -506,11 +506,11 @@
         if (diff <= 0) {
           statusBadge = `<span class="status-pill inactive" style="background: rgba(239,68,68,0.15); color: #ef4444;">Expired</span>`;
         } else if (diff < 60) {
-          statusBadge = `<span class="status-pill" style="background: rgba(245,158,11,0.15); color: #f59e0b;">⚡ ${diff}s left</span>`;
+          statusBadge = `<span class="status-pill" style="background: rgba(245,158,11,0.15); color: #f59e0b;">${diff}s left</span>`;
         } else if (diff < 3600) {
-          statusBadge = `<span class="status-pill" style="background: rgba(245,158,11,0.15); color: #f59e0b;">⚡ ${Math.round(diff / 60)}m left</span>`;
+          statusBadge = `<span class="status-pill" style="background: rgba(245,158,11,0.15); color: #f59e0b;">${Math.round(diff / 60)}m left</span>`;
         } else {
-          statusBadge = `<span class="status-pill" style="background: rgba(245,158,11,0.15); color: #f59e0b;">⚡ ${Math.round(diff / 3600)}h left</span>`;
+          statusBadge = `<span class="status-pill" style="background: rgba(245,158,11,0.15); color: #f59e0b;">${Math.round(diff / 3600)}h left</span>`;
         }
       }
 
@@ -2585,7 +2585,7 @@ ${escapeHtml(cleanBody)}
         throw new Error(data.error || 'Failed to rollback release');
       }
 
-      showToast(`⏮ Successfully rolled back active production to ${targetVersion}!`, 'success');
+      showToast(`Successfully rolled back active production to ${targetVersion}!`, 'success');
       closeRevertModal();
       await loadReleases(false);
     } catch (err) {

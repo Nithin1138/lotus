@@ -7,7 +7,7 @@
  * Events: payment.captured, order.paid
  */
 
-const { generateLicense, sendResendEmail, sendPaymentFailedEmail, verifyRazorpayWebhookSignature } = require('./_utils');
+const { generateLicense, sendResendEmail, sendPaymentFailedEmail, verifyRazorpayWebhookSignature, sanitizeEmail, sanitizeName } = require('./_utils');
 
 // Helper to buffer request body for HMAC verification
 function getRawBody(req) {
@@ -30,6 +30,8 @@ function getRawBody(req) {
 }
 
 module.exports = async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -37,7 +39,7 @@ module.exports = async function handler(req, res) {
   try {
     const rawBody = await getRawBody(req);
     const signature = req.headers['x-razorpay-signature'];
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const webhookSecret = (process.env.RAZORPAY_WEBHOOK_SECRET || '').trim();
 
     if (webhookSecret) {
       if (!signature) {
@@ -45,13 +47,24 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'Missing webhook signature' });
       }
 
-      const isValid = verifyRazorpayWebhookSignature(rawBody, signature);
+      let isValid = false;
+      try {
+        isValid = verifyRazorpayWebhookSignature(rawBody, signature);
+      } catch (err) {
+        console.error('[Razorpay Webhook] Signature verification error:', err.message);
+        return res.status(400).json({ error: 'Invalid webhook signature' });
+      }
+
       if (!isValid) {
         console.error('[Razorpay Webhook] Signature mismatch.');
         return res.status(400).json({ error: 'Invalid webhook signature' });
       }
     } else {
-      console.warn('[Razorpay Webhook] RAZORPAY_WEBHOOK_SECRET not set. Skipping signature validation (DEV mode).');
+      if (process.env.NODE_ENV === 'production') {
+        console.error('[Razorpay Webhook] RAZORPAY_WEBHOOK_SECRET must be configured in production.');
+        return res.status(500).json({ error: 'Webhook secret is not configured' });
+      }
+      console.warn('[Razorpay Webhook] RAZORPAY_WEBHOOK_SECRET not set. Skipping signature validation (DEV mode only).');
     }
 
     const eventData = JSON.parse(rawBody);

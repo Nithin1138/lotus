@@ -1252,7 +1252,7 @@
                 amountRaw: activePrice.amount,
                 currency: selectedCurrency,
                 method: 'Razorpay Gateway',
-                country: isIndia ? 'IN 🇮🇳' : `${currentCountry}`,
+                country: isIndia ? 'IN' : `${currentCountry}`,
                 coupon: appliedCoupon ? appliedCoupon.code : 'None',
                 status: 'Captured',
                 timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19)

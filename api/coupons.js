@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { checkRateLimit } = require('./_rateLimit');
 
 // Default active promotional coupons
 let couponsStore = [
@@ -388,9 +389,25 @@ module.exports = async function handler(req, res) {
 
   // PUBLIC: Validate a coupon code for checkout
   if (action === 'validate') {
-    const code = req.query.code || req.body?.code;
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+
+    const rateLimit = checkRateLimit(req, 'coupon-eval', 20, 60000);
+    if (!rateLimit.allowed) {
+      return res.status(429).json({
+        valid: false,
+        error: 'Too many coupon attempts. Please wait a moment.',
+        retryAfterSeconds: Math.ceil(rateLimit.resetMs / 1000)
+      });
+    }
+
+    const rawCode = (req.query.code || req.body?.code || '').trim().slice(0, 32);
+    if (!/^[a-zA-Z0-9_\-]{2,32}$/.test(rawCode)) {
+      return res.status(400).json({ valid: false, error: 'Invalid coupon format.' });
+    }
+
+    const code = rawCode.toUpperCase();
     const currency = (req.query.currency || req.body?.currency || 'USD').toUpperCase();
-    const email = (req.query.email || req.body?.email || '').trim().toLowerCase();
+    const email = (req.query.email || req.body?.email || '').trim().toLowerCase().slice(0, 254);
     const baseSubunits = currency === 'INR' ? 99900 : 1900;
 
     const result = await evaluateCouponAsync(code, currency, baseSubunits, email);
