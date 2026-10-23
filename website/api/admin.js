@@ -473,7 +473,7 @@ module.exports = async function handler(req, res) {
     const repo = process.env.GITHUB_REPO || 'lotus';
 
     if (!ghToken) {
-      let currentVersion = '1.0.1.7';
+      let currentVersion = '1.0.1.8';
       try {
         const { getDb, ensureSchema } = require('./_db');
         const sql = getDb();
@@ -488,8 +488,8 @@ module.exports = async function handler(req, res) {
 
       const availableReleases = [
         {
-          tag_name: '1.0.1.7',
-          name: 'DropDial 1.0.1.7',
+          tag_name: '1.0.1.8',
+          name: 'DropDial 1.0.1.8',
           published_at: new Date().toISOString(),
           status: 'Active Production',
           assets: [
