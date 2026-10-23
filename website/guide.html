@@ -145,7 +145,7 @@
               <strong>Command Prompt (cmd)</strong>
               <p>In Command Prompt, launch via PowerShell:</p>
               <div class="cmd-box">
-                <code id="cmd-win-cmd">powershell -Command &quot;irm https://dropdial.app/install.ps1 | iex&quot;</code>
+                <code id="cmd-win-cmd">powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;irm https://dropdial.app/install.ps1 | iex&quot;</code>
                 <button type="button" class="copy-mini-btn" onclick="copySnippet('cmd-win-cmd', this)">Copy</button>
               </div>
             </li>
