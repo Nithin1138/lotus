@@ -444,7 +444,7 @@ internal sealed class Resident : IDisposable
         updateTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(15) };
         updateTimer.Tick += (_, _) => _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
         updateTimer.Start();
-        timer = new DispatcherTimer(DispatcherPriority.Input) { Interval = TimeSpan.FromMilliseconds(25) };
+        timer = new DispatcherTimer(DispatcherPriority.Normal) { Interval = TimeSpan.FromMilliseconds(20) };
         timer.Tick += Poll;
         timer.Start();
         _ = WorkQueue();
@@ -471,10 +471,21 @@ internal sealed class Resident : IDisposable
     {
         try
         {
-            // 1. Install Low-Level Keyboard Hook for 100% reliable shortcut capture across Windows
-            // This captures Alt+Space, Ctrl+Shift+D, Ctrl+Shift+Space, and F8/F9/F10 system-wide without conflict
+            // 1. Install Low-Level Keyboard Hook with valid module handle for reliable global capture across all Windows builds
             keyboardHookProc = LowLevelKeyboardHook;
-            keyboardHook = Native.SetWindowsHookEx(Native.WH_KEYBOARD_LL, keyboardHookProc, IntPtr.Zero, 0);
+            IntPtr hMod = IntPtr.Zero;
+            try
+            {
+                using var curProcess = System.Diagnostics.Process.GetCurrentProcess();
+                using var curModule = curProcess.MainModule;
+                if (curModule != null)
+                    hMod = Native.GetModuleHandle(curModule.ModuleName);
+            }
+            catch { }
+            if (hMod == IntPtr.Zero)
+                hMod = Native.GetModuleHandle(null);
+
+            keyboardHook = Native.SetWindowsHookEx(Native.WH_KEYBOARD_LL, keyboardHookProc, hMod, 0);
 
             // 2. Also register standard Win32 Hotkeys as secondary backup
             var parameters = new HwndSourceParameters("DropDialHotkeySink") { WindowStyle = 0 };
@@ -482,16 +493,33 @@ internal sealed class Resident : IDisposable
             hotkeySource.AddHook(HwndHook);
             IntPtr handle = hotkeySource.Handle;
 
+            // Alt + Space
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_ALTSPACE, Native.MOD_ALT | Native.MOD_NOREPEAT, 0x20))
+                Native.RegisterHotKey(handle, HOTKEY_ID_ALTSPACE, Native.MOD_ALT, 0x20);
+
+            // Ctrl + Shift + D
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTD, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x44))
+                Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTD, Native.MOD_CONTROL | Native.MOD_SHIFT, 0x44);
+
+            // Ctrl + Shift + L
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTL, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C))
+                Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTL, Native.MOD_CONTROL | Native.MOD_SHIFT, 0x4C);
+
+            // Ctrl + Shift + Space
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTSPACE, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x20))
+                Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTSPACE, Native.MOD_CONTROL | Native.MOD_SHIFT, 0x20);
+
+            // Win + Shift + L
+            if (!Native.RegisterHotKey(handle, HOTKEY_ID_WINSHIFTL, Native.MOD_WIN | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x4C))
+                Native.RegisterHotKey(handle, HOTKEY_ID_WINSHIFTL, Native.MOD_WIN | Native.MOD_SHIFT, 0x4C);
+
+            // F8, F9, F10
             if (!Native.RegisterHotKey(handle, HOTKEY_ID_F8, Native.MOD_NOREPEAT, 0x77))
                 Native.RegisterHotKey(handle, HOTKEY_ID_F8, 0, 0x77);
             if (!Native.RegisterHotKey(handle, HOTKEY_ID_F9, Native.MOD_NOREPEAT, 0x78))
                 Native.RegisterHotKey(handle, HOTKEY_ID_F9, 0, 0x78);
             if (!Native.RegisterHotKey(handle, HOTKEY_ID_F10, Native.MOD_NOREPEAT, 0x79))
                 Native.RegisterHotKey(handle, HOTKEY_ID_F10, 0, 0x79);
-            if (!Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTD, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x44))
-                Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTD, Native.MOD_CONTROL | Native.MOD_SHIFT, 0x44);
-            if (!Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTSPACE, Native.MOD_CONTROL | Native.MOD_SHIFT | Native.MOD_NOREPEAT, 0x20))
-                Native.RegisterHotKey(handle, HOTKEY_ID_CTRLSHIFTSPACE, Native.MOD_CONTROL | Native.MOD_SHIFT, 0x20);
         }
         catch { }
     }
@@ -519,8 +547,8 @@ internal sealed class Resident : IDisposable
                         return (IntPtr)1; // Consume so default Windows system menu does not open
                     }
 
-                    // 2. Ctrl + Shift + D or Ctrl + Shift + L
-                    if ((vk == 0x44 || vk == 0x4C) && isCtrl && isShift && !isAlt && !isWin)
+                    // 2. Ctrl + Shift + D or Ctrl + Shift + L or Win + Shift + L
+                    if ((vk == 0x44 || vk == 0x4C) && ((isCtrl && isShift && !isAlt && !isWin) || (isWin && isShift && !isCtrl && !isAlt)))
                     {
                         app.Dispatcher.InvokeAsync(() => ToggleWheel());
                         return (IntPtr)1;

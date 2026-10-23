@@ -11,9 +11,25 @@
       "source": "/downloads/DropDial-Windows-x64.zip",
       "destination": "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.7/DropDial-Windows-x64.zip",
       "permanent": false
+    },
+    {
+      "source": "/download/win",
+      "destination": "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.7/DropDial-Windows-x64.zip",
+      "permanent": false
+    },
+    {
+      "source": "/download/windows",
+      "destination": "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.7/DropDial-Windows-x64.zip",
+      "permanent": false
+    },
+    {
+      "source": "/download/mac",
+      "destination": "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.7/DropDial.dmg",
+      "permanent": false
     }
   ],
   "rewrites": [
+    { "source": "/download/(.*)", "destination": "/api/download?os=$1" },
     { "source": "/download", "destination": "/api/download" },
     { "source": "/api/releases/latest", "destination": "/api/releases" },
     { "source": "/api/deactivate", "destination": "/api/activate?action=deactivate" },
