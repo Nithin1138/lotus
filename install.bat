@@ -22,11 +22,19 @@ taskkill /F /IM DropDial.exe >nul 2>&1
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 if not exist "%TEMP_DIR%" mkdir "%TEMP_DIR%"
 
-echo -^> Downloading DropDial for Windows via curl...
-curl -fL --progress-bar "https://dropdial.app/download/win" -o "%TEMP_ZIP%"
-if errorlevel 1 (
-    echo -^> Trying fallback release endpoint...
-    curl -fL --progress-bar "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.6/DropDial-Windows-x64.zip" -o "%TEMP_ZIP%"
+echo -^> Downloading DropDial for Windows...
+where curl >nul 2>&1
+if not errorlevel 1 (
+    curl -fL --progress-bar "https://dropdial.app/download/win" -o "%TEMP_ZIP%"
+    if errorlevel 1 (
+        echo -^> Trying fallback release endpoint...
+        curl -fL --progress-bar "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.7/DropDial-Windows-x64.zip" -o "%TEMP_ZIP%"
+    )
+)
+
+if not exist "%TEMP_ZIP%" (
+    echo -^> Downloading via PowerShell...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; try { (New-Object System.Net.WebClient).DownloadFile('https://dropdial.app/download/win', '%TEMP_ZIP%') } catch { (New-Object System.Net.WebClient).DownloadFile('https://github.com/Nithin1138/lotus/releases/download/v1.0.1.7/DropDial-Windows-x64.zip', '%TEMP_ZIP%') }"
 )
 
 if not exist "%TEMP_ZIP%" (

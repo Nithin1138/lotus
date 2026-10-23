@@ -467,16 +467,7 @@ internal sealed class Resident : IDisposable
             // 1. Install Low-Level Keyboard Hook for 100% reliable shortcut capture across Windows
             // This captures Alt+Space, Ctrl+Shift+D, Ctrl+Shift+Space, and F8/F9/F10 system-wide without conflict
             keyboardHookProc = LowLevelKeyboardHook;
-            IntPtr modHandle = IntPtr.Zero;
-            try
-            {
-                using var curProcess = Process.GetCurrentProcess();
-                using var curModule = curProcess.MainModule;
-                if (curModule?.ModuleName != null)
-                    modHandle = Native.GetModuleHandle(curModule.ModuleName);
-            }
-            catch { }
-            keyboardHook = Native.SetWindowsHookEx(Native.WH_KEYBOARD_LL, keyboardHookProc, modHandle, 0);
+            keyboardHook = Native.SetWindowsHookEx(Native.WH_KEYBOARD_LL, keyboardHookProc, IntPtr.Zero, 0);
 
             // 2. Also register standard Win32 Hotkeys as secondary backup
             var parameters = new HwndSourceParameters("DropDialHotkeySink") { WindowStyle = 0 };
@@ -500,63 +491,67 @@ internal sealed class Resident : IDisposable
 
     private IntPtr LowLevelKeyboardHook(int nCode, IntPtr wParam, IntPtr lParam)
     {
-        if (nCode >= 0)
+        try
         {
-            int msg = wParam.ToInt32();
-            if (msg is Native.WM_KEYDOWN or Native.WM_SYSKEYDOWN)
+            if (nCode >= 0)
             {
-                int vk = Marshal.ReadInt32(lParam);
-                int flags = Marshal.ReadInt32(lParam, 8);
-                bool isAlt = (flags & 0x20) != 0 || Native.IsAltDown();
-                bool isCtrl = Native.IsCtrlDown();
-                bool isShift = Native.IsShiftDown();
-                bool isWin = Native.Down(0x5B) || Native.Down(0x5C);
+                int msg = (int)(long)wParam;
+                if (msg is Native.WM_KEYDOWN or Native.WM_SYSKEYDOWN)
+                {
+                    int vk = Marshal.ReadInt32(lParam);
+                    int flags = Marshal.ReadInt32(lParam, 8);
+                    bool isAlt = (flags & 0x20) != 0 || Native.IsAltDown();
+                    bool isCtrl = Native.IsCtrlDown();
+                    bool isShift = Native.IsShiftDown();
+                    bool isWin = Native.Down(0x5B) || Native.Down(0x5C);
 
-                // 1. Alt + Space (Global shortcut to toggle DropDial)
-                if (vk == 0x20 && isAlt && !isCtrl && !isShift && !isWin)
-                {
-                    app.Dispatcher.InvokeAsync(() => ToggleWheel());
-                    return (IntPtr)1; // Consume so default Windows system menu does not open
-                }
+                    // 1. Alt + Space (Global shortcut to toggle DropDial)
+                    if (vk == 0x20 && isAlt && !isCtrl && !isShift && !isWin)
+                    {
+                        app.Dispatcher.InvokeAsync(() => ToggleWheel());
+                        return (IntPtr)1; // Consume so default Windows system menu does not open
+                    }
 
-                // 2. Ctrl + Shift + D or Ctrl + Shift + L
-                if ((vk == 0x44 || vk == 0x4C) && isCtrl && isShift && !isAlt && !isWin)
-                {
-                    app.Dispatcher.InvokeAsync(() => ToggleWheel());
-                    return (IntPtr)1;
-                }
+                    // 2. Ctrl + Shift + D or Ctrl + Shift + L
+                    if ((vk == 0x44 || vk == 0x4C) && isCtrl && isShift && !isAlt && !isWin)
+                    {
+                        app.Dispatcher.InvokeAsync(() => ToggleWheel());
+                        return (IntPtr)1;
+                    }
 
-                // 3. Ctrl + Shift + Space
-                if (vk == 0x20 && isCtrl && isShift && !isAlt && !isWin)
-                {
-                    app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Tools));
-                    return (IntPtr)1;
-                }
-
-                // 4. Function keys F8, F9, F10
-                if (vk == 0x77 && !isAlt && !isCtrl && !isShift) // F8
-                {
-                    if (Native.Down(1))
-                        app.Dispatcher.InvokeAsync(() => Activate(WheelMode.Convert, "DragFunctionKey", true));
-                    else
-                        app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Convert));
-                }
-                else if (vk == 0x78 && !isAlt && !isCtrl && !isShift) // F9
-                {
-                    if (Native.Down(1))
-                        app.Dispatcher.InvokeAsync(() => Activate(WheelMode.Tools, "DragFunctionKey", true));
-                    else
+                    // 3. Ctrl + Shift + Space
+                    if (vk == 0x20 && isCtrl && isShift && !isAlt && !isWin)
+                    {
                         app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Tools));
-                }
-                else if (vk == 0x79 && !isAlt && !isCtrl && !isShift) // F10
-                {
-                    if (Native.Down(1))
-                        app.Dispatcher.InvokeAsync(() => Activate(WheelMode.Actions, "DragFunctionKey", true));
-                    else
-                        app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Actions));
+                        return (IntPtr)1;
+                    }
+
+                    // 4. Function keys F8, F9, F10
+                    if (vk == 0x77 && !isAlt && !isCtrl && !isShift) // F8
+                    {
+                        if (Native.Down(1))
+                            app.Dispatcher.InvokeAsync(() => Activate(WheelMode.Convert, "DragFunctionKey", true));
+                        else
+                            app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Convert));
+                    }
+                    else if (vk == 0x78 && !isAlt && !isCtrl && !isShift) // F9
+                    {
+                        if (Native.Down(1))
+                            app.Dispatcher.InvokeAsync(() => Activate(WheelMode.Tools, "DragFunctionKey", true));
+                        else
+                            app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Tools));
+                    }
+                    else if (vk == 0x79 && !isAlt && !isCtrl && !isShift) // F10
+                    {
+                        if (Native.Down(1))
+                            app.Dispatcher.InvokeAsync(() => Activate(WheelMode.Actions, "DragFunctionKey", true));
+                        else
+                            app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Actions));
+                    }
                 }
             }
         }
+        catch { }
         return Native.CallNextHookEx(keyboardHook, nCode, wParam, lParam);
     }
 

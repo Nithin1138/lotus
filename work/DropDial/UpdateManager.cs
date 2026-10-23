@@ -457,10 +457,10 @@ internal static class UpdateManager
 
             string batPath = Path.Combine(Path.GetTempPath(), $"apply_update_{Guid.NewGuid():N}.bat");
             string batContent = $@"@echo off
-set CURRENT_PID={currentPid}
-set SOURCE_DIR={sourceDir}
-set TARGET_DIR={targetDir}
-set EXE_PATH={targetExe}
+set ""CURRENT_PID={currentPid}""
+set ""SOURCE_DIR={sourceDir}""
+set ""TARGET_DIR={targetDir}""
+set ""EXE_PATH={targetExe}""
 
 :: 1. Wait up to 5 seconds for PID to exit, then force kill to release all file locks
 for /L %%i in (1,1,10) do (
@@ -468,7 +468,7 @@ for /L %%i in (1,1,10) do (
     if errorlevel 1 (
         goto ready
     )
-    if %%i GEQ 4 (
+    if %%i GEQ 3 (
         taskkill /F /PID %CURRENT_PID% >NUL 2>&1
         taskkill /F /IM DropDial.exe >NUL 2>&1
     )
@@ -476,17 +476,18 @@ for /L %%i in (1,1,10) do (
 )
 
 :ready
-:: Brief pause to ensure OS finishes unlocking executable files
-ping 127.0.0.1 -n 2 >NUL
+:: Ensure all DropDial instances and file locks are completely released
+taskkill /F /IM DropDial.exe >NUL 2>&1
+ping 127.0.0.1 -n 3 >NUL
 
 :: 2. Robust copy using robocopy with retries, fallback to xcopy
-robocopy ""%SOURCE_DIR%"" ""%TARGET_DIR%"" /E /IS /IT /NP /R:5 /W:1 >NUL 2>&1
+robocopy ""%SOURCE_DIR%"" ""%TARGET_DIR%"" /E /IS /IT /NP /R:10 /W:1 >NUL 2>&1
 if errorlevel 8 (
-    xcopy ""%SOURCE_DIR%\*"" ""%TARGET_DIR%\"" /E /Y /I /Q >NUL 2>&1
+    xcopy ""%SOURCE_DIR%\*"" ""%TARGET_DIR%\"" /E /Y /I /Q /K /R /H >NUL 2>&1
 )
 
-:: 3. Launch updated DropDial
-start """" ""%EXE_PATH%""
+:: 3. Launch updated DropDial with proper working directory
+start """" /D ""%TARGET_DIR%"" ""%EXE_PATH%""
 
 :: 4. Clean up temporary staging files and self-delete batch script
 rmdir /s /q ""%SOURCE_DIR%"" >NUL 2>&1
@@ -494,7 +495,7 @@ del /f /q ""%~f0"" >NUL 2>&1
 ";
             File.WriteAllText(batPath, batContent);
 
-            var psi = new ProcessStartInfo("cmd.exe", $"/c \"{batPath}\"")
+            var psi = new ProcessStartInfo("cmd.exe", $"/s /c \"\"{batPath}\"\"")
             {
                 CreateNoWindow = true,
                 UseShellExecute = false

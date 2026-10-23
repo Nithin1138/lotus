@@ -142,10 +142,10 @@
               </div>
             </li>
             <li>
-              <strong>Command Prompt (curl)</strong>
-              <p>In Command Prompt, run via curl:</p>
+              <strong>Command Prompt</strong>
+              <p>In Command Prompt, run via PowerShell wrapper:</p>
               <div class="cmd-box">
-                <code id="cmd-win-cmd">curl -sL https://dropdial.app/install.bat -o install.bat &amp;&amp; install.bat</code>
+                <code id="cmd-win-cmd">powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;irm https://dropdial.app/install.ps1 | iex&quot;</code>
                 <button type="button" class="copy-mini-btn" onclick="copySnippet('cmd-win-cmd', this)">Copy</button>
               </div>
             </li>

@@ -153,7 +153,7 @@ jobs:
           New-Item -ItemType Directory -Path $updateStage -Force | Out-Null
 
           Copy-Item -LiteralPath "outputs/DropDial/DropDial.exe" -Destination $updateStage -Force
-          Copy-Item -LiteralPath "outputs/DropDial/DropDial.dll" -Destination $updateStage -Force
+          Get-ChildItem -Path "outputs/DropDial" -Filter "*.dll" | Copy-Item -Destination $updateStage -Force
           Copy-Item -LiteralPath "outputs/DropDial/DropDial.deps.json" -Destination $updateStage -Force
           Copy-Item -LiteralPath "outputs/DropDial/DropDial.runtimeconfig.json" -Destination $updateStage -Force
           Copy-Item -Path "outputs/DropDial/backend" -Destination $updateStage -Recurse -Force
