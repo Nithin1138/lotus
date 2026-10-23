@@ -114,9 +114,25 @@ def ffmpeg_runtime():
     folder.mkdir(exist_ok=True, parents=True)
     if (folder / 'ffmpeg.exe').exists() and (folder / 'ffprobe.exe').exists():
         return
-    url = 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip'
-    package = CACHE / 'ffmpeg-release-essentials.zip'
-    fetch(url, package)
+    candidates = [
+        'https://github.com/GyanD/codexffmpeg/releases/download/7.1/ffmpeg-7.1-essentials_build.zip',
+        'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip',
+        'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip'
+    ]
+    package = None
+    for url in candidates:
+        try:
+            pkg_name = CACHE / Path(urllib.parse.urlparse(url).path).name
+            fetch(url, pkg_name)
+            if pkg_name.exists() and pkg_name.stat().st_size > 10_000_000:
+                package = pkg_name
+                break
+        except Exception as e:
+            print(f'Failed to fetch FFmpeg from {url}: {e}', flush=True)
+
+    if not package or not package.exists():
+        raise RuntimeError('FFmpeg download failed from all candidate sources.')
+
     with zipfile.ZipFile(package) as archive:
         for name in archive.namelist():
             leaf = Path(name).name
@@ -124,7 +140,7 @@ def ffmpeg_runtime():
                 (folder / leaf).write_bytes(archive.read(name))
     if not ((folder / 'ffmpeg.exe').is_file() and (folder / 'ffprobe.exe').is_file()):
         raise RuntimeError('FFmpeg archive did not contain the expected tools.')
-    (folder / 'SOURCE.txt').write_text(f'Binary source: {url}\nOfficial source and license: https://ffmpeg.org/\nBuild configuration: run ffmpeg.exe -version\n', encoding='utf8')
+    (folder / 'SOURCE.txt').write_text(f'Binary source: {package.name}\nOfficial source and license: https://ffmpeg.org/\nBuild configuration: run ffmpeg.exe -version\n', encoding='utf8')
     print('FFmpeg ready', flush=True)
 
 def sevenzip_runtime(directory):
