@@ -6,6 +6,19 @@ PRESENTATIONS={'.ppt','.pptx','.pptm','.pps','.ppsx','.odp','.key'}
 WORDS={'.doc','.docx','.docm','.rtf','.odt','.pages'}
 SHEETS={'.xls','.xlsx','.xlsm','.xlsb','.ods','.csv','.tsv','.numbers'}
 
+_cached_doc2pdf_bin = None
+def _get_doc2pdf_bin():
+    global _cached_doc2pdf_bin
+    if _cached_doc2pdf_bin is not None:
+        return _cached_doc2pdf_bin or None
+    for bin_path in [BASE / 'doc2pdf-mac', Path(__file__).parent / 'doc2pdf-mac', Path('/Applications/DropDial.app/Contents/backend/doc2pdf-mac')]:
+        if bin_path.exists() and os.access(str(bin_path), os.X_OK):
+            _cached_doc2pdf_bin = str(bin_path)
+            return _cached_doc2pdf_bin
+    _cached_doc2pdf_bin = False
+    return None
+
+
 def family(path):
     ext=Path(path).suffix.lower()
     return 'presentation' if ext in PRESENTATIONS else 'word' if ext in WORDS else 'sheet'
@@ -206,18 +219,13 @@ end tell
 
         # 4. Native macOS paginated PDF converter (doc2pdf-mac)
         if fmt=='pdf' and path.suffix.lower() in ('.doc','.docx','.rtf','.odt','.txt','.html','.htm'):
-            bin_candidates = [
-                BASE / 'doc2pdf-mac',
-                Path(__file__).parent / 'doc2pdf-mac',
-                Path('/Applications/DropDial.app/Contents/backend/doc2pdf-mac')
-            ]
-            for bin_path in bin_candidates:
-                if bin_path.exists() and os.access(str(bin_path), os.X_OK):
-                    try:
-                        res = subprocess.run([str(bin_path), str(path), str(target)], capture_output=True, timeout=30)
-                        if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
-                            return
-                    except Exception: pass
+            bin_path = _get_doc2pdf_bin()
+            if bin_path:
+                try:
+                    res = subprocess.run([bin_path, str(path), str(target)], capture_output=True, timeout=30)
+                    if res.returncode == 0 and target.exists() and target.stat().st_size > 0:
+                        return
+                except Exception: pass
             # Fallback to swift runner
             swift_script_path = Path(__file__).parent / 'doc2pdf-mac.swift'
             if swift_script_path.exists():
@@ -251,17 +259,12 @@ end tell
                 html_parts.append('</body></html>')
                 temp_html = target.parent / f'{path.stem}_table.html'
                 temp_html.write_text(''.join(html_parts), encoding='utf-8')
-                bin_candidates = [
-                    BASE / 'doc2pdf-mac',
-                    Path(__file__).parent / 'doc2pdf-mac',
-                    Path('/Applications/DropDial.app/Contents/backend/doc2pdf-mac')
-                ]
-                for bin_path in bin_candidates:
-                    if bin_path.exists() and os.access(str(bin_path), os.X_OK):
-                        subprocess.run([str(bin_path), str(temp_html), str(target)], capture_output=True, timeout=30)
-                        temp_html.unlink(missing_ok=True)
-                        if target.exists() and target.stat().st_size > 0:
-                            return
+                bin_path = _get_doc2pdf_bin()
+                if bin_path:
+                    subprocess.run([bin_path, str(temp_html), str(target)], capture_output=True, timeout=30)
+                    temp_html.unlink(missing_ok=True)
+                    if target.exists() and target.stat().st_size > 0:
+                        return
             except Exception: pass
     if path.suffix.lower() in ('.pages', '.key', '.numbers'):
         if extract_apple_preview():

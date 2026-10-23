@@ -1,9 +1,11 @@
 from pathlib import Path
 from contextlib import contextmanager
 import io, json, os, re, shutil, subprocess, sys, tempfile, time, uuid
+from functools import lru_cache
 
 BASE=Path(__file__).resolve().parent.parent
 
+@lru_cache(maxsize=8)
 def _find_binary(name):
     for cand in [BASE/f'runtime/ffmpeg/{name}.exe', BASE/f'runtime/ffmpeg/bin/{name}.exe', BASE/f'runtime/ffmpeg/{name}']:
         if cand.is_file(): return cand
@@ -42,36 +44,39 @@ VIDEO_EXT={'.mp4','.mov','.mkv','.webm','.avi','.wmv','.gif'}
 AUDIO_EXT={'.mp3','.m4a','.wav','.flac','.ogg','.opus','.aiff','.aif','.wma','.aac'}
 # Interface language for messages, chosen in the app and passed to each worker. Chinese strings double as keys.
 from translations import EN
+_LANG = os.environ.get('DROPDIAL_LANG', 'zh')
 def T(text):
-    lang = os.environ.get('DROPDIAL_LANG', os.environ.get('DROPDIAL_LANG', 'zh'))
-    return EN.get(text, text) if lang == 'en' else text
+    return EN.get(text, text) if _LANG == 'en' else text
 
 # Staged outputs carry the app's job id, so cancelling one job never removes another job's files.
-JOB=re.sub(r'[^0-9A-Za-z]','',os.environ.get('DROPDIAL_JOB', os.environ.get('DROPDIAL_JOB','')))[:32]
+JOB=re.sub(r'[^0-9A-Za-z]','',os.environ.get('DROPDIAL_JOB', ''))[:32]
 TEMP_PREFIX='.dropdial-'+(JOB+'-' if JOB else '')
 _FONTS=['C:/Windows/Fonts/msyh.ttc','C:/Windows/Fonts/arial.ttf','C:/Windows/Fonts/simsun.ttc'] if os.name=='nt' else [
     '/System/Library/Fonts/PingFang.ttc','/System/Library/Fonts/Supplemental/Arial.ttf','/Library/Fonts/Arial.ttf','/System/Library/Fonts/Helvetica.ttc']
 FONT=next((Path(x) for x in _FONTS if Path(x).exists()),None)
 
+# O(1) extension -> category lookup table (faster than repeated set-in checks)
+_CATEGORY_MAP = {}
+for _ext in IMAGE_EXT: _CATEGORY_MAP[_ext] = 'image'
+for _ext in VIDEO_EXT: _CATEGORY_MAP[_ext] = 'video'
+for _ext in AUDIO_EXT: _CATEGORY_MAP[_ext] = 'audio'
+for _ext in ('.ppt','.pptx','.pptm','.pps','.ppsx','.odp','.doc','.docx','.docm','.rtf','.rtfd','.odt','.xls','.xlsx','.xlsm','.xlsb','.ods','.csv','.tsv','.pages','.key','.numbers'): _CATEGORY_MAP[_ext] = 'office'
+for _ext in ('.pdf','.txt','.srt','.vtt','.md','.markdown','.epub'): _CATEGORY_MAP[_ext] = 'document'
+
 def category(path):
-    p=Path(path); ext=p.suffix.lower()
-    if ext in IMAGE_EXT: return 'image'
-    if ext in VIDEO_EXT: return 'video'
-    if ext in AUDIO_EXT: return 'audio'
-    if ext in {'.ppt','.pptx','.pptm','.pps','.ppsx','.odp','.doc','.docx','.docm','.rtf','.rtfd','.odt','.xls','.xlsx','.xlsm','.xlsb','.ods','.csv','.tsv','.pages','.key','.numbers'}:return 'office'
-    if ext in {'.pdf','.txt','.srt','.vtt','.md','.markdown','.epub'}: return 'document'
-    return 'archive'
+    ext = Path(path).suffix.lower()
+    return _CATEGORY_MAP.get(ext, 'archive')
 
 def number(params,name,default=0):
     value=params.get(name,default)
     if value in ('',None): return float(default)
+    if isinstance(value, (int, float)): return float(value)
     s=str(value).strip()
     if ':' in s:
         parts=s.split(':'); return sum(float(x)*60**i for i,x in enumerate(reversed(parts)))
     try:
         return float(s)
     except ValueError:
-        import re
         m=re.search(r'[-+]?\d*\.?\d+', s)
         if m: return float(m.group(0))
         return float(default)
@@ -136,6 +141,16 @@ SUFFIX={'rotateImage':'rotated','rotateVideo':'rotated','cropImage':'cropped','c
     'videoSnapshots':'frames','extractArchive':'extracted','createCollage':'collage','createPDF':'combined','organizePDF':'organized'}
 
 _WRITABLE_CACHE = {}
+# Pre-resolve platform-specific restricted prefixes once at module load
+_RESTRICTED_PREFIXES = []
+if sys.platform == 'darwin':
+    _home = str(Path.home().resolve())
+    _RESTRICTED_PREFIXES = [('/System',), ('/Library',), ('/usr',), ('/bin',), ('/sbin',)]
+    _RESTRICTED_LIB = os.path.join(_home, 'Library')
+    _ALLOWED_LIB = os.path.join(_home, 'Library', 'Application Support', 'DropDial')
+elif sys.platform == 'win32':
+    _RESTRICTED_PREFIXES = [(os.environ.get(k, d).lower(),) for k, d in
+        [('ProgramFiles', 'C:\\Program Files'), ('ProgramFiles(x86)', 'C:\\Program Files (x86)'), ('SystemRoot', 'C:\\Windows')]]
 
 def is_dir_writable(dir_path):
     """Checks if a directory exists and can safely be written to by this process, cached for speed."""
@@ -143,30 +158,33 @@ def is_dir_writable(dir_path):
     try:
         p = Path(dir_path).resolve()
         p_str = str(p)
-        if p_str in _WRITABLE_CACHE: return _WRITABLE_CACHE[p_str]
+        cached = _WRITABLE_CACHE.get(p_str)
+        if cached is not None: return cached
         if not p.is_dir():
             _WRITABLE_CACHE[p_str] = False
             return False
         # Avoid macOS sandboxed/system/TCC-restricted Library paths
         if sys.platform == 'darwin':
-            home = str(Path.home().resolve())
-            if p_str.startswith(os.path.join(home, 'Library')) and not p_str.startswith(os.path.join(home, 'Library', 'Application Support', 'DropDial')):
+            if p_str.startswith(_RESTRICTED_LIB) and not p_str.startswith(_ALLOWED_LIB):
                 _WRITABLE_CACHE[p_str] = False
                 return False
-            if p_str.startswith(('/System', '/Library', '/usr', '/bin', '/sbin')):
-                _WRITABLE_CACHE[p_str] = False
-                return False
+            for prefix_tuple in _RESTRICTED_PREFIXES:
+                if p_str.startswith(prefix_tuple[0]):
+                    _WRITABLE_CACHE[p_str] = False
+                    return False
         elif sys.platform == 'win32':
-            prog_files = os.environ.get('ProgramFiles', 'C:\\Program Files')
-            prog_files_x86 = os.environ.get('ProgramFiles(x86)', 'C:\\Program Files (x86)')
-            win_dir = os.environ.get('SystemRoot', 'C:\\Windows')
-            for pf in (prog_files, prog_files_x86, win_dir):
-                if pf and p_str.lower().startswith(pf.lower()):
+            p_lower = p_str.lower()
+            for prefix_tuple in _RESTRICTED_PREFIXES:
+                if p_lower.startswith(prefix_tuple[0]):
                     _WRITABLE_CACHE[p_str] = False
                     return False
 
+        # Use os.access for a fast kernel-level permission check before the heavier touch+unlink
+        if not os.access(p_str, os.W_OK):
+            _WRITABLE_CACHE[p_str] = False
+            return False
         # Attempt to create and delete a tiny test file to verify real write permission
-        test = p / f".dd_write_test_{uuid.uuid4().hex}"
+        test = p / f".dd_write_test_{uuid.uuid4().hex[:12]}"
         try:
             test.touch()
             test.unlink()
@@ -263,12 +281,18 @@ def output_folder(path, suffix, allow_empty=False):
             try: shutil.rmtree(temp)
             except Exception: pass
 
+_heif_registered = False
+_srgb_profile = None
+
 def open_image(path,frame=None):
     from PIL import Image,ImageOps,ImageCms
-    try:
-        import pillow_heif
-        pillow_heif.register_heif_opener()
-    except Exception: pass
+    global _heif_registered, _srgb_profile
+    if not _heif_registered:
+        try:
+            import pillow_heif
+            pillow_heif.register_heif_opener()
+        except Exception: pass
+        _heif_registered = True
     if Path(path).suffix.lower()=='.svg':
         try:
             import resvg_py
@@ -297,10 +321,15 @@ def open_image(path,frame=None):
     profile=image.info.get('icc_profile')
     if profile:
         try:
-            # The converted picture starts with empty info; keep the EXIF and XMP so metadata can still be read and edited.
-            info={k:v for k,v in image.info.items() if k!='icc_profile'}
-            image=ImageCms.profileToProfile(image,ImageCms.ImageCmsProfile(io.BytesIO(profile)),ImageCms.createProfile('sRGB'),outputMode='RGBA' if 'A' in image.getbands() else 'RGB')
-            image.info={**info,**image.info}
+            src_profile = ImageCms.ImageCmsProfile(io.BytesIO(profile))
+            desc = ImageCms.getProfileDescription(src_profile).strip().lower()
+            # Skip conversion if the embedded profile is already sRGB (common case)
+            if 'srgb' not in desc:
+                if _srgb_profile is None:
+                    _srgb_profile = ImageCms.createProfile('sRGB')
+                info={k:v for k,v in image.info.items() if k!='icc_profile'}
+                image=ImageCms.profileToProfile(image,src_profile,_srgb_profile,outputMode='RGBA' if 'A' in image.getbands() else 'RGB')
+                image.info={**info,**image.info}
         except (ValueError,OSError): pass
     image.load(); result=image.copy(); image.close()
     result.info['source_frames']=frames; result.info['source_frame']=selected

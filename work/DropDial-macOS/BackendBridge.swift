@@ -6,8 +6,11 @@ final class BackendBridge {
     private init() {}
 
     private var cachedPython: String?
+    private var cachedWorker: String?
+    private var cachedPythonPaths: [String: String] = [:]
 
     func getPythonPaths(backendDir: String) -> String {
+        if let cached = cachedPythonPaths[backendDir] { return cached }
         let bundleURL = Bundle.main.bundleURL
         let repoRoot = bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 
@@ -33,11 +36,19 @@ final class BackendBridge {
             paths.append(envPyPath)
         }
 
-        return paths.joined(separator: ":")
+        let result = paths.joined(separator: ":")
+        cachedPythonPaths[backendDir] = result
+        return result
     }
 
     func findPython() -> String {
         if let cached = cachedPython { return cached }
+
+        if let saved = UserDefaults.standard.string(forKey: "kCachedPythonPath"),
+           FileManager.default.isExecutableFile(atPath: saved) {
+            cachedPython = saved
+            return saved
+        }
 
         let bundleURL = Bundle.main.bundleURL
         let repoRoot = bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -62,8 +73,9 @@ final class BackendBridge {
         // First pass: test each candidate to ensure it can import essential packages (PIL, pypdfium2)
         for path in candidates {
             guard FileManager.default.isExecutableFile(atPath: path) else { continue }
-            if verifyPython(path) {
+            if path.contains("Contents/runtime/python") || verifyPython(path) {
                 cachedPython = path
+                UserDefaults.standard.set(path, forKey: "kCachedPythonPath")
                 return path
             }
         }
@@ -72,6 +84,7 @@ final class BackendBridge {
         for path in candidates {
             if FileManager.default.isExecutableFile(atPath: path) {
                 cachedPython = path
+                UserDefaults.standard.set(path, forKey: "kCachedPythonPath")
                 return path
             }
         }
@@ -178,25 +191,31 @@ final class BackendBridge {
     }
 
     func findWorkerScript() -> String {
+        if let cached = cachedWorker { return cached }
+
         let bundleURL = Bundle.main.bundleURL
         let bundleBackend = bundleURL.appendingPathComponent("Contents/backend/worker.py").path
         if FileManager.default.fileExists(atPath: bundleBackend) {
+            cachedWorker = bundleBackend
             return bundleBackend
         }
 
         let insideResources = Bundle.main.resourceURL?.appendingPathComponent("backend/worker.py").path
         if let path = insideResources, FileManager.default.fileExists(atPath: path) {
+            cachedWorker = path
             return path
         }
         
         let repoRoot = bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let localPath = repoRoot.appendingPathComponent("work/DropDial/backend/worker.py").path
         if FileManager.default.fileExists(atPath: localPath) {
+            cachedWorker = localPath
             return localPath
         }
 
         let currentDirScript = FileManager.default.currentDirectoryPath + "/work/DropDial/backend/worker.py"
         if FileManager.default.fileExists(atPath: currentDirScript) {
+            cachedWorker = currentDirScript
             return currentDirScript
         }
 

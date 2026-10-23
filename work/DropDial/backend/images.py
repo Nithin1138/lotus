@@ -4,6 +4,8 @@ from PIL import Image,ImageOps,ImageEnhance,ImageFilter,ImageDraw,ImageFont,Exif
 from common import *
 import imagetools
 
+_FMT_NORMALIZE = {'svg':'png','heif':'png','jpeg':'jpg','tif':'tiff'}
+
 def convert(path,fmt,params):
     if fmt == 'ico':
         return imagetools.make_icon(path, {'iconKind': 'ico'})
@@ -207,9 +209,7 @@ def tool(path,action,params):
     if action=='makeIcon': return imagetools.make_icon(path,params)
     image=open_image(path,params.get('imageFrame'))
     fmt=Path(path).suffix.lstrip('.').lower()
-    if fmt in ('svg','heif'): fmt='png'
-    if fmt=='jpeg': fmt='jpg'
-    if fmt=='tif': fmt='tiff'
+    fmt = _FMT_NORMALIZE.get(fmt, fmt)
     if action=='cropImage':
         image=crop(image,params)
         rot=str(params.get('rotation',''))
@@ -261,9 +261,9 @@ def tool(path,action,params):
                     save_image(image, state['temp'], fmt, mid)
                     if state['temp'].stat().st_size <= target:
                         best_q = mid
-                        low = mid + 5
+                        low = mid + 8  # wider steps = fewer iterations
                     else:
-                        high = mid - 5
+                        high = mid - 8
                 save_image(image, state['temp'], fmt, best_q)
                 if state['temp'].stat().st_size > target:
                     for _ in range(5):

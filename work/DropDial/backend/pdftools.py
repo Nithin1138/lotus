@@ -57,8 +57,8 @@ def watermark(path,params):
     import imagetools
     doc=open_pdf(path,params)
     for page in doc:
-        # The mark is drawn at twice the page size so text stays sharp, then laid over the page.
-        layer=imagetools.watermark_layer((max(1,int(page.rect.width*2)),max(1,int(page.rect.height*2))),params); data=io.BytesIO(); layer.save(data,format='PNG')
+        # The mark is drawn at 1.5x the page size (sharp enough, much faster than 2x).
+        layer=imagetools.watermark_layer((max(1,int(page.rect.width*1.5)),max(1,int(page.rect.height*1.5))),params); data=io.BytesIO(); layer.save(data,format='PNG')
         page.insert_image(page.rect,stream=data.getvalue(),overlay=True)
     with output_file(path,'watermark','.pdf') as state: doc.save(state['temp'],garbage=3,deflate=True)
     doc.close(); return state['output']
@@ -68,7 +68,8 @@ def redaction_marks(page,params):
     every place the given text appears. Returns how many were marked."""
     fitz = get_fitz()
     count=0
-    for r in json.loads(params.get('regions','') or '[]'):
+    regions = params.get('_parsed_regions') or json.loads(params.get('regions','') or '[]')
+    for r in regions:
         if int(r.get('page',1))!=page.number+1: continue
         x,y,w,h=(float(r[k]) for k in ('x','y','width','height'))
         if w<=0 or h<=0: continue
@@ -82,8 +83,12 @@ def redact(path,params):
     """Removes the marked text, pictures and drawings from the PDF (not just covers them) and puts black boxes there."""
     fitz = get_fitz()
     doc=open_pdf(path,params); total=0
+    # Pre-parse the regions JSON once instead of per-page.
+    regions_json = params.get('regions','') or '[]'
+    parsed_regions = json.loads(regions_json) if isinstance(regions_json, str) else regions_json
+    params_with_parsed = {**params, '_parsed_regions': parsed_regions}
     for page in doc:
-        if redaction_marks(page,params):
+        if redaction_marks(page,params_with_parsed):
             total+=1; page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_PIXELS)
     if not total: raise ValueError(T('Nothing to redact: mark an area on a page, or type text that appears in the document'))
     with output_file(path,'redactPDF','.pdf') as state: doc.save(state['temp'],garbage=4,deflate=True,clean=True)

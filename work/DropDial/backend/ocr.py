@@ -34,12 +34,13 @@ def create_text_pdf(pages,target,keep_background=False,source_images=None):
     """Creates a PDF. By default: pure white background with visible, crisp vector text."""
     fitz = get_fitz()
     doc=fitz.open()
-    font_name='DocFont' if FONT and FONT.exists() else 'helv'
+    font_file=str(FONT) if FONT and FONT.exists() else None
+    font_name='DocFont' if font_file else 'helv'
     for idx,p in enumerate(pages):
         pw=p['width']*0.75; ph=p['height']*0.75
         page=doc.new_page(width=pw,height=ph)
-        if font_name=='DocFont':
-            page.insert_font(fontname='DocFont',fontfile=str(FONT))
+        if font_file:
+            page.insert_font(fontname='DocFont',fontfile=font_file)
         if keep_background and source_images and idx<len(source_images):
             page.insert_image(page.rect,filename=str(source_images[idx]))
             for line in p['lines']:

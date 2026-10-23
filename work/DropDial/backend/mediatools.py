@@ -82,7 +82,7 @@ def contact_sheet(path,params):
             moment=min(total*(index+.5)/count,max(0,total-.25)); frame=Path(temp)/f'{index}.png'
             ffmpeg(['-ss',moment,'-i',path,'-frames:v','1','-vf',f'scale={width}:{height}',frame])
             picture=Image.open(frame).convert('RGB'); draw=ImageDraw.Draw(picture); label=f'{int(moment//60):02}:{moment%60:04.1f}'
-            draw.rectangle((0,height-22,70,height),fill=(0,0,0)); draw.text((5,height-20),label,font=font,fill='white'); thumbs.append(picture.copy())
+            draw.rectangle((0,height-22,70,height),fill=(0,0,0)); draw.text((5,height-20),label,font=font,fill='white'); thumbs.append(picture)
     rows=-(-count//columns); gap=8; sheet=Image.new('RGB',(columns*width+(columns+1)*gap,rows*height+(rows+1)*gap),(17,17,17))
     for index,picture in enumerate(thumbs): sheet.paste(picture,(gap+(index%columns)*(width+gap),gap+(index//columns)*(height+gap)))
     with output_file(path,'videoSnapshots','.png') as state: sheet.save(state['temp'])
@@ -112,7 +112,7 @@ def audio_effects(path,params):
     return state['output']
 
 def join_audio(paths,params):
-    infos=[probe(path) for path in paths]; first=Path(paths[0]).suffix.lstrip('.').lower(); fmt='aiff' if first=='aif' else first
+    first=Path(paths[0]).suffix.lstrip('.').lower(); fmt='aiff' if first=='aif' else first
     fmt=fmt if fmt in media.AUDIO_CODECS else 'mp3'; args=[]; graph=[]
     for index,path in enumerate(paths):
         args+=['-i',path]; graph.append(f'[{index}:a:0]aformat=sample_rates=48000:channel_layouts=stereo[a{index}]')

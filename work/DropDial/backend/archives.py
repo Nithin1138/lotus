@@ -28,18 +28,19 @@ def rar_header(stream,body):
 def stored_rar(folder,path):
     # RAR 5.0 store method, matching Tangerine's uncompressed RAR export.
     # Structure follows https://www.rarlab.com/technote.htm.
+    BUF = 1<<22  # 4 MB read buffer for faster I/O
     with open(path,'wb') as output:
         output.write(b'Rar!\x1a\x07\x01\x00');rar_header(output,vint(1)+vint(0)+vint(0))
         for file in sorted(folder.rglob('*')):
             directory=file.is_dir();size=0 if directory else file.stat().st_size;crc=0
             if not directory:
                 with open(file,'rb') as source:
-                    for block in iter(lambda:source.read(1<<20),b''):crc=zlib.crc32(block,crc)
+                    for block in iter(lambda:source.read(BUF),b''):crc=zlib.crc32(block,crc)
             name=file.relative_to(folder).as_posix().encode('utf8');flags=6|(1 if directory else 0)
             body=vint(2)+vint(2)+vint(size)+vint(flags)+vint(size)+vint(16 if directory else 32)+struct.pack('<I',int(file.stat().st_mtime)&0xffffffff)+struct.pack('<I',crc&0xffffffff)+vint(0)+vint(0)+vint(len(name))+name
             rar_header(output,body)
             if not directory:
-                with open(file,'rb') as source:shutil.copyfileobj(source,output)
+                with open(file,'rb') as source:shutil.copyfileobj(source,output,length=BUF)
         rar_header(output,vint(5)+vint(0)+vint(0))
 
 MAX_ENTRIES=20000
@@ -71,9 +72,9 @@ def extract_to(path,folder,params=None):
             archive.extractall(folder,filter='data')
     elif suffix in ('.gz','.gzip'):
         # gzip has no trustworthy size header, so enforce the limit while decompressing.
-        written=0
+        written=0; BUF=1<<22  # 4 MB buffer
         with gzip.open(path,'rb') as source,open(folder/path.stem,'wb') as target:
-            for block in iter(lambda:source.read(1<<20),b''):
+            for block in iter(lambda:source.read(BUF),b''):
                 written+=len(block); check_scale(1,written); target.write(block)
     elif suffix in ('.rar','.7z','.zip'):
         if not SEVEN.exists(): raise ValueError(T('Extracting RAR needs 7-Zip'))

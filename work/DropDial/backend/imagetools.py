@@ -1,7 +1,12 @@
 from pathlib import Path
-import tempfile
+import tempfile, functools
 from PIL import Image,ImageOps,ImageFont,ImageDraw,ImageColor
 from common import *
+
+@functools.lru_cache(maxsize=32)
+def _get_font(path, size):
+    return ImageFont.truetype(path, size)
+
 
 def resize(image,params):
     width,height=image.size; mode=params.get('mode', 'size' if (params.get('width') or params.get('height')) else 'percent')
@@ -32,7 +37,7 @@ def watermark_mark(size,params):
     if text:
         raw_size = number(params, 'textSize', number(params, 'fontSize', 5))
         font_size = int(raw_size if raw_size > 20 else max(8, int(min(width, height) * raw_size / 100)))
-        font = ImageFont.truetype(str(FONT), font_size)
+        font = _get_font(str(FONT), font_size)
         box = font.getbbox(text)
         layer = Image.new('RGBA', (box[2] + 16, box[3] + 16), (0, 0, 0, 0))
         draw = ImageDraw.Draw(layer)
@@ -110,9 +115,11 @@ def make_icon(path,params):
         with output_file(path,'makeIcon','.ico') as state: square.save(state['temp'],format='ICO',sizes=[(s,s) for s in (16,24,32,48,64,128,256)])
         return state['output']
     with output_folder(path,'makeIcon') as state:
-        for s in (16,32,48,64,192,512): square.resize((s,s),Image.Resampling.LANCZOS).save(state['temp']/f'icon-{s}.png')
-        square.resize((180,180),Image.Resampling.LANCZOS).save(state['temp']/'apple-touch-icon.png')
-        square.save(state['temp']/'favicon.ico',format='ICO',sizes=[(16,16),(32,32),(48,48)])
+        base = square.resize((512,512),Image.Resampling.LANCZOS) if side>512 else square
+        for s in (16,32,48,64,192,512):
+            (base if s<=512 else square).resize((s,s),Image.Resampling.LANCZOS).save(state['temp']/f'icon-{s}.png')
+        base.resize((180,180),Image.Resampling.LANCZOS).save(state['temp']/'apple-touch-icon.png')
+        base.save(state['temp']/'favicon.ico',format='ICO',sizes=[(16,16),(32,32),(48,48)])
         (state['temp']/'favicon-snippet.html').write_text('<link rel="icon" href="/favicon.ico" sizes="any">\n<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n',encoding='utf8')
     return state['output']
 
@@ -128,6 +135,6 @@ def animation(paths,params):
             ImageOps.pad(background.convert('RGB'),size,color='white').save(Path(temp)/f'frame-{index:04d}.png')
         pattern=str(Path(temp)/'frame-%04d.png'); rate=f'1/{seconds}'
         with output_file(paths[0],'createAnimation','.mp4' if fmt=='mp4' else '.gif') as state:
-            if fmt=='mp4': ffmpeg(['-framerate',rate,'-i',pattern,'-r','30','-c:v','libx264','-pix_fmt','yuv420p','-crf','20','-movflags','+faststart',state['temp']])
+            if fmt=='mp4': ffmpeg(['-framerate',rate,'-i',pattern,'-r','30','-c:v','libx264','-preset','faster','-pix_fmt','yuv420p','-crf','20','-movflags','+faststart',state['temp']])
             else: ffmpeg(['-framerate',rate,'-i',pattern,'-filter_complex','[0:v]split[a][b];[a]palettegen[p];[b][p]paletteuse','-loop','0' if truth(params.get('loop','true')) else '-1',state['temp']])
     return state['output']

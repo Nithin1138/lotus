@@ -1,6 +1,20 @@
 from pathlib import Path
-import json
+import json, sys
 from common import *
+
+# Detect hardware video encoder availability at module load (one-time cost).
+_hw_encoder = None
+def _detect_hw_encoder():
+    global _hw_encoder
+    if _hw_encoder is not None: return _hw_encoder
+    _hw_encoder = ''
+    try:
+        if sys.platform == 'darwin':
+            out = subprocess.run([str(FFMPEG), '-encoders'], capture_output=True, text=True, errors='ignore', timeout=5).stdout
+            if 'h264_videotoolbox' in out:
+                _hw_encoder = 'h264_videotoolbox'
+    except Exception: pass
+    return _hw_encoder
 
 _cached_ogg_codec = None
 def _get_ogg_codec():
@@ -29,7 +43,13 @@ VIDEO_CODECS={
     'avi':['-c:v','mpeg4','-q:v','4','-c:a','libmp3lame','-b:a','160k'],
     'wmv':['-c:v','wmv2','-b:v','1800k','-c:a','wmav2','-b:a','128k']}
 
-def video_args(fmt): return [*VIDEO_CODECS[fmt],'-pix_fmt','yuv420p']
+def video_args(fmt):
+    hw = _detect_hw_encoder()
+    if hw == 'h264_videotoolbox' and fmt in ('mp4', 'mov', 'mkv'):
+        base = ['-c:v', 'h264_videotoolbox', '-q:v', '65', '-c:a', 'aac', '-b:a', '160k']
+        if fmt == 'mp4': base += ['-movflags', '+faststart']
+        return [*base, '-pix_fmt', 'yuv420p']
+    return [*VIDEO_CODECS[fmt],'-pix_fmt','yuv420p']
 def audio_args(fmt,params):
     result=list(_get_ogg_codec() if fmt=='ogg' else AUDIO_CODECS[fmt]); bitrate=params.get('bitrate','')
     if bitrate and fmt not in ('wav','flac','aiff'):
@@ -181,7 +201,10 @@ def video_tool(path,action,params):
     elif action=='compress':
         edge=int(number(params,'maxEdge',1280)); quality=int(number(params,'quality',28)); target=number(params,'targetKB',0)
         vf.append(fr'scale=min({edge}\,iw):-2')
-        if fmt in ('mp4','mov','mkv'): codec=['-c:v','libx264','-preset','faster','-crf',str(quality),'-c:a','aac','-b:a','128k','-pix_fmt','yuv420p']
+        hw = _detect_hw_encoder()
+        if hw == 'h264_videotoolbox' and fmt in ('mp4','mov','mkv'):
+            codec=['-c:v','h264_videotoolbox','-q:v',str(min(100, max(30, quality * 2))),'-c:a','aac','-b:a','128k','-pix_fmt','yuv420p']
+        elif fmt in ('mp4','mov','mkv'): codec=['-c:v','libx264','-preset','faster','-crf',str(quality),'-c:a','aac','-b:a','128k','-pix_fmt','yuv420p']
         if target:
             total=target*8192/max(.1,duration(info))/1000
             audio_bitrate=max(16,min(128,int(total*.2))) if has_audio(info) else 0

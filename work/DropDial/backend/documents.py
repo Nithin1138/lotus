@@ -20,7 +20,9 @@ def images_document(paths,fmt,params):
         image=open_image(path)
         if 'A' in image.getbands():
             white=Image.new('RGB',image.size,'white');white.paste(image,mask=image.getchannel('A'));image=white
-        images.append(image.convert('RGB'))
+        elif image.mode != 'RGB':
+            image = image.convert('RGB')
+        images.append(image)
     with output_file(paths[0],'combined' if len(paths)>1 else 'converted','.'+fmt) as state:
         if fmt=='pdf': images[0].save(state['temp'],format='PDF',save_all=True,append_images=images[1:],resolution=150)
         else:
@@ -35,8 +37,14 @@ def images_document(paths,fmt,params):
     return state['output']
 
 def render_page(page, target_dpi=150):
-    # Balanced DPI (150-200 DPI) renders fast with crisp text while staying well within memory limits
-    width,height=page.get_size(); scale=min(target_dpi/72,.999*(80_000_000/max(1,width*height))**.5)
+    # Pre-compute the safe scale factor once.
+    width,height=page.get_size()
+    max_pixels = 80_000_000
+    pixel_count = max(1, width * height)
+    scale = target_dpi / 72.0
+    # Clamp scale to stay within memory limits.
+    if width * scale * height * scale > max_pixels:
+        scale = min(scale, 0.999 * (max_pixels / pixel_count) ** 0.5)
     return page.render(scale=scale).to_pil()
 
 def render_pdf(path,fmt,params):

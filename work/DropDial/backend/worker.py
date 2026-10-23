@@ -4,31 +4,25 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 from common import *
 
 def ensure_dependencies():
+    # Skip the check entirely when running from a bundled app with its own Python runtime.
+    runtime_python = BASE / 'runtime' / 'python'
+    if runtime_python.is_dir():
+        return
     try:
         import PIL, pypdf, pypdfium2
         return
     except ImportError:
         pass
     missing = []
-    try:
-        import pymupdf
-    except ImportError:
+    for mod, pkg in [('pymupdf', 'pymupdf'), ('PIL', 'pillow'), ('pypdf', 'pypdf'), ('pypdfium2', 'pypdfium2')]:
         try:
-            import fitz
+            __import__(mod)
         except ImportError:
-            missing.append('pymupdf')
-    try:
-        import PIL
-    except ImportError:
-        missing.append('pillow')
-    try:
-        import pypdf
-    except ImportError:
-        missing.append('pypdf')
-    try:
-        import pypdfium2
-    except ImportError:
-        missing.append('pypdfium2')
+            if mod == 'pymupdf':
+                try: __import__('fitz')
+                except ImportError: missing.append(pkg)
+            else:
+                missing.append(pkg)
     if missing:
         try:
             subprocess.run([sys.executable, '-m', 'pip', 'install', '--disable-pip-version-check', *missing], capture_output=True, timeout=120)
@@ -45,47 +39,34 @@ def one(path,action,params):
     if action.startswith('convert:'):
         fmt=action.split(':',1)[1]
         if kind=='image':
-            import images
-            return images.convert(path,fmt,params)
+            import images; return images.convert(path,fmt,params)
         if kind in ('video','audio'):
-            import media
-            return media.convert(path,fmt,params)
+            import media; return media.convert(path,fmt,params)
         if kind=='document':
-            import documents
-            return documents.convert(path,fmt,params)
+            import documents; return documents.convert(path,fmt,params)
         if kind=='office':
-            import office
-            return office.convert(path,fmt,params)
-        import archives
-        return archives.convert([path],fmt,params)
+            import office; return office.convert(path,fmt,params)
+        import archives; return archives.convert([path],fmt,params)
     if action=='flow': return run_flow(path,params)
     if action=='packArchive':
-        import archives
-        return archives.convert([path], params.get('format', 'zip'), {**params, '_pack': True})
+        import archives; return archives.convert([path], params.get('format', 'zip'), {**params, '_pack': True})
     if action=='extractArchive':
-        import archives
-        return archives.extract(path,params)
+        import archives; return archives.extract(path,params)
     if action=='location':
-        import location
-        return location.run(path,params)
+        import location; return location.run(path,params)
     if action in ('ocrImage','ocrPDF'):
-        import ocr
-        return ocr.run(path,action,params)
+        import ocr; return ocr.run(path,action,params)
     if kind=='office':
         import office
         return office.edit_metadata(path,params) if action=='removeMetadata' else office.selected_pdf(path,params)
     if kind=='image':
-        import images
-        return images.tool(path,action,params)
+        import images; return images.tool(path,action,params)
     if kind=='video':
-        import media
-        return media.video_tool(path,action,params)
+        import media; return media.video_tool(path,action,params)
     if kind=='audio':
-        import media
-        return media.audio_tool(path,action,params)
+        import media; return media.audio_tool(path,action,params)
     if kind=='document':
-        import documents
-        return documents.tool(path,action,params)
+        import documents; return documents.tool(path,action,params)
     raise ValueError(T('This file does not support the selected tool'))
 
 def run_flow(path,params):
@@ -104,42 +85,43 @@ def run_flow(path,params):
         raise
     return current
 
+# Dispatch table for grouped (multi-file) actions — avoids if-chain overhead.
+_GROUP_ACTIONS = {}
+def _init_group_dispatch():
+    # Lazy-populate on first use so imports stay deferred.
+    if _GROUP_ACTIONS: return
+    def _office_merge(p, pr): import office; return office.merge(p, pr)
+    def _join_audio(p, pr): import mediatools; return mediatools.join_audio(p, pr)
+    def _animation(p, pr): import imagetools; return imagetools.animation(p, pr)
+    def _pack(p, pr): import archives; return archives.pack_archive(p, pr)
+    def _collage(p, pr): import images; return images.collage(p, pr)
+    def _create_pdf(p, pr): import documents; return documents.images_document(p, 'pdf', pr)
+    def _merge_pdf(p, pr): import documents; return documents.merge(p, pr)
+    def _join_videos(p, pr): import media; return media.join(p, pr)
+    _GROUP_ACTIONS.update({'officeMergePDF':_office_merge,'joinAudio':_join_audio,'createAnimation':_animation,
+        'packArchive':_pack,'createCollage':_collage,'createPDF':_create_pdf,'mergePDF':_merge_pdf,'joinVideos':_join_videos})
+
 def execute(job,result_path):
     paths=job['Paths']; action=job['Action']; params=job.get('Parameters') or {}
     if params.get('_outputDir'):
         os.environ['DROPDIAL_OUTPUT_DIR']=params['_outputDir']
-        os.environ['DROPDIAL_OUTPUT_DIR']=params['_outputDir']  # backwards compatibility
     files=[]
     grouped=action.startswith('pack:') or action in ('createPDF','createCollage','mergePDF','joinVideos','officeMergePDF','joinAudio','createAnimation','packArchive') or action.startswith('convert:') and len(paths)>1 and all(category(p)=='archive' and Path(p).suffix.lower() not in ('.zip','.tar','.gz','.tgz','.rar') for p in paths)
     total=1 if grouped else len(paths)
+    progress_target=Path(str(result_path)+'.progress');progress_temp=Path(str(progress_target)+'.tmp')
     def progress(phase,processed,current=None):
-        # Progress is best-effort: the app may be reading the file at the moment we replace it.
-        target=Path(str(result_path)+'.progress');temp=Path(str(target)+'.tmp')
-        try:temp.write_text(json.dumps({'Phase':phase,'Processed':processed,'Total':total,'Current':current},ensure_ascii=False),encoding='utf8');temp.replace(target)
+        try:progress_temp.write_text(json.dumps({'Phase':phase,'Processed':processed,'Total':total,'Current':current},ensure_ascii=False),encoding='utf8');progress_temp.replace(progress_target)
         except OSError:pass
     progress('processing',0,Path(paths[0]).name)
     if grouped:
-        def _call_together(act, pths, prms):
-            if act == 'officeMergePDF':
-                import office; return office.merge(pths, prms)
-            if act == 'joinAudio':
-                import mediatools; return mediatools.join_audio(pths, prms)
-            if act == 'createAnimation':
-                import imagetools; return imagetools.animation(pths, prms)
-            if act == 'packArchive':
-                import archives; return archives.pack_archive(pths, prms)
-            if act == 'createCollage':
-                import images; return images.collage(pths, prms)
-            if act == 'createPDF':
-                import documents; return documents.images_document(pths, 'pdf', prms)
-            if act == 'mergePDF':
-                import documents; return documents.merge(pths, prms)
-            if act == 'joinVideos':
-                import media; return media.join(pths, prms)
-            import archives
-            return archives.convert(pths, act.split(':')[1], {**prms, '_pack': act.startswith('pack:')})
+        _init_group_dispatch()
         try:
-            output = _call_together(action, paths, params)
+            handler = _GROUP_ACTIONS.get(action)
+            if handler:
+                output = handler(paths, params)
+            else:
+                import archives
+                output = archives.convert(paths, action.split(':')[1], {**params, '_pack': action.startswith('pack:')})
             files.append({'Input': paths[0], 'Output': output, 'Error': None})
         except Exception as error:
             files.append({'Input': paths[0], 'Output': None, 'Error': str(error)})
