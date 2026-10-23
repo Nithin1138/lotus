@@ -256,6 +256,16 @@ module.exports = async function handler(req, res) {
             }))
           : canonicalAssets;
 
+        // Guarantee macOS release assets are always present so Mac never falls back to Windows archives
+        if (!releaseAssets.some(a => a.name.toLowerCase().includes('mac') && a.name.toLowerCase().endsWith('.zip'))) {
+          const macZip = canonicalAssets.find(a => a.name === 'DropDial-macOS.zip');
+          if (macZip) releaseAssets.push(macZip);
+        }
+        if (!releaseAssets.some(a => a.name.toLowerCase().endsWith('.dmg'))) {
+          const macDmg = canonicalAssets.find(a => a.name === 'DropDial.dmg');
+          if (macDmg) releaseAssets.push(macDmg);
+        }
+
         return res.status(200).json({
           tag_name: effectiveTag,
           version: effectiveTag,

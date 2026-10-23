@@ -216,24 +216,23 @@ jobs:
             NOTES_FILE="docs/releases/${CLEAN_TAG}.md"
           fi
 
-          # Collect all available assets from mac and windows jobs
-          ASSETS=$(find release_assets/ -type f)
-
+          # Ensure release is created or updated
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG exists. Uploading assets..."
+            echo "Release $TAG exists. Updating release metadata..."
             if [ -n "$NOTES_FILE" ]; then
               gh release edit "$TAG" --notes-file "$NOTES_FILE" --title "DropDial $TAG" --draft=false --latest || true
             else
               gh release edit "$TAG" --draft=false --latest || true
             fi
-            gh release upload "$TAG" $ASSETS --clobber
           else
             echo "Creating release $TAG..."
-            CMD="gh release create \"$TAG\" $ASSETS --title \"DropDial $TAG\" --draft=false --latest"
             if [ -n "$NOTES_FILE" ]; then
-              CMD="$CMD --notes-file \"$NOTES_FILE\""
+              gh release create "$TAG" --notes-file "$NOTES_FILE" --title "DropDial $TAG" --draft=false --latest
             else
-              CMD="$CMD --generate-notes"
+              gh release create "$TAG" --generate-notes --title "DropDial $TAG" --draft=false --latest
             fi
-            eval "$CMD"
           fi
+
+          # Upload each asset individually to avoid shell word-splitting or newline issues
+          echo "Uploading release assets..."
+          find release_assets/ -type f -exec gh release upload "$TAG" {} --clobber \;

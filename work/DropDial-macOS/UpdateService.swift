@@ -142,21 +142,28 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
             var downloadUrl: String?
             var isZip = false
             if let assets = json["assets"] as? [[String: Any]] {
+                // Priority 1: Specifically find macOS zip archive (e.g. DropDial-macOS.zip)
                 for a in assets {
                     if let name = a["name"] as? String,
                        let urlStr = a["browser_download_url"] as? String {
-                        if name.lowercased().hasSuffix(".zip") && (name.lowercased().contains("mac") || name.lowercased().contains("dropdial")) {
+                        let lower = name.lowercased()
+                        let isMac = lower.contains("mac") || lower.contains("darwin") || lower.contains("apple") || lower == "dropdial.zip"
+                        let isWindows = lower.contains("win") || lower.contains("setup") || lower.hasSuffix(".exe")
+                        if lower.hasSuffix(".zip") && isMac && !isWindows {
                             downloadUrl = urlStr
                             isZip = true
                             break
                         }
                     }
                 }
+                // Priority 2: Fallback to macOS DMG (e.g. DropDial.dmg)
                 if downloadUrl == nil {
                     for a in assets {
                         if let name = a["name"] as? String,
                            let urlStr = a["browser_download_url"] as? String {
-                            if name.lowercased().hasSuffix(".dmg") {
+                            let lower = name.lowercased()
+                            let isWindows = lower.contains("win") || lower.contains("setup") || lower.hasSuffix(".exe")
+                            if lower.hasSuffix(".dmg") && !isWindows {
                                 downloadUrl = urlStr
                                 isZip = false
                                 break
