@@ -33,7 +33,7 @@ internal sealed class DropWheel : Window
     private readonly Border center;
 
     // Top Floating Pill Bar & Close Button
-    private const double TopBarHeight = 44;
+    private const double TopBarHeight = 36;
     private readonly Grid topBarContainer = new() { Height = TopBarHeight, HorizontalAlignment = HorizontalAlignment.Stretch, Background = Brushes.Transparent };
     private readonly Border floatBar = new() { Height = 32, CornerRadius = new CornerRadius(16), Padding = new Thickness(3, 2, 4, 2) };
     private readonly Border closeSep = new() { Width = 1, Height = 14, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 0, 3, 0) };
@@ -83,7 +83,7 @@ internal sealed class DropWheel : Window
     };
 
     private readonly StackPanel hubIdlePanel = new() { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
-    private readonly TextBlock hubBrand = new() { Text = "Lotus", FontSize = 12.5, FontWeight = FontWeights.Bold, Foreground = Solid("#FF6208"), TextAlignment = TextAlignment.Center };
+    private readonly TextBlock hubBrand = new() { Text = "DropDial", FontSize = 11.5, FontWeight = FontWeights.Bold, Foreground = Solid("#FF6208"), TextAlignment = TextAlignment.Center };
     private readonly TextBlock hubIdleSub = new() { Text = L.T("Drop files\nor click"), FontSize = 7.5, FontWeight = FontWeights.Medium, Foreground = UiTheme.Muted, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 2, 0, 0) };
 
     // Bottom pagination dots and hint label stacked vertically to guarantee no overlap
@@ -145,7 +145,7 @@ internal sealed class DropWheel : Window
     public DropWheel(Action<string[], Operation> submit)
     {
         this.submit = submit;
-        Title = L.T("Lotus DropDial");
+        Title = L.T("DropDial");
         Icon = AppIcon.Window;
         Width = SingleSize;
         Height = SingleSize + TopBarHeight + 25;
