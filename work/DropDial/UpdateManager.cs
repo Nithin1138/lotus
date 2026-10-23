@@ -59,7 +59,7 @@ internal static class UpdateManager
     public static string CurrentVersion =>
         FormatVersion(typeof(UpdateManager).Assembly.GetName().Version is { } v
             ? (v.Revision > 0 ? $"{v.Major}.{v.Minor}.{v.Build}.{v.Revision}" : $"{v.Major}.{v.Minor}.{v.Build}")
-            : "1.0.1.8");
+            : "1.0.1.9");
 
     public static ReleaseInfo? AvailableUpdate { get; private set; }
     public static event Action? UpdateStatusChanged;
