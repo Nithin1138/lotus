@@ -23,8 +23,8 @@ internal sealed class ReleaseInfo
 
 internal static class UpdateManager
 {
-    public const string ReleasesApiUrl = "https://www.dropdial.app/api/releases/latest";
-    public const string FallbackReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest";
+    public const string ReleasesApiUrl = "https://dropdial.app/api/releases";
+    public const string FallbackReleasesApiUrl = "https://dropdial.app/api/releases/latest";
 
     private static bool _isShowingPrompt = false;
     private static string? _sessionDismissedVersion = null;
@@ -206,6 +206,17 @@ internal static class UpdateManager
                     downloadUrl = exeUrl;
                     isZip = false;
                 }
+            }
+
+            if (!string.IsNullOrEmpty(downloadUrl) && downloadUrl.Contains("github.com", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var fileName = Path.GetFileName(new Uri(downloadUrl).AbsolutePath);
+                    if (!string.IsNullOrEmpty(fileName))
+                        downloadUrl = $"https://dropdial.app/downloads/{fileName}";
+                }
+                catch { }
             }
 
             var release = new ReleaseInfo

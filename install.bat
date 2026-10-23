@@ -59,7 +59,7 @@ if exist "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" (
 
 echo -^> Downloading DropDial for Windows...
 if defined CURL_CMD (
-    "%CURL_CMD%" -fL --progress-bar "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.7/DropDial-Windows-x64.zip" -o "%TEMP_ZIP%"
+    "%CURL_CMD%" -fL --progress-bar "https://dropdial.app/downloads/DropDial-Windows-x64.zip" -o "%TEMP_ZIP%"
     if errorlevel 1 (
         echo -^> Trying fallback release endpoint...
         "%CURL_CMD%" -fL --progress-bar "https://dropdial.app/download/win" -o "%TEMP_ZIP%"
@@ -69,7 +69,7 @@ if defined CURL_CMD (
 if not exist "%TEMP_ZIP%" (
     if defined PS_CMD (
         echo -^> Downloading via PowerShell...
-        "%PS_CMD%" -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; try { (New-Object System.Net.WebClient).DownloadFile('https://github.com/Nithin1138/lotus/releases/download/v1.0.1.7/DropDial-Windows-x64.zip', '%TEMP_ZIP%') } catch { (New-Object System.Net.WebClient).DownloadFile('https://dropdial.app/download/win', '%TEMP_ZIP%') }"
+        "%PS_CMD%" -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; try { (New-Object System.Net.WebClient).DownloadFile('https://dropdial.app/downloads/DropDial-Windows-x64.zip', '%TEMP_ZIP%') } catch { (New-Object System.Net.WebClient).DownloadFile('https://dropdial.app/download/win', '%TEMP_ZIP%') }"
     )
 )
 

@@ -44,21 +44,15 @@ if (-not (Test-Path $installDir)) {
 }
 
 # 5. Resolve Release Asset URL
-$downloadUrl = "https://github.com/Nithin1138/lotus/releases/download/v1.0.1.7/DropDial-Windows-x64.zip"
+$downloadUrl = "https://dropdial.app/downloads/DropDial-Windows-x64.zip"
 $isLightweightUpdate = $false
 
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
     $releaseInfo = $null
     try {
-        $releaseInfo = Invoke-RestMethod -Uri "https://dropdial.app/api/releases/latest" -Headers @{ "User-Agent" = "DropDial-Installer" } -TimeoutSec 6 -ErrorAction SilentlyContinue
+        $releaseInfo = Invoke-RestMethod -Uri "https://dropdial.app/api/releases" -Headers @{ "User-Agent" = "DropDial-Installer" } -TimeoutSec 6 -ErrorAction SilentlyContinue
     } catch {}
-
-    if (-not $releaseInfo -or -not $releaseInfo.assets) {
-        try {
-            $releaseInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/Nithin1138/lotus/releases/latest" -Headers @{ "User-Agent" = "DropDial-Installer" } -TimeoutSec 6 -ErrorAction SilentlyContinue
-        } catch {}
-    }
 
     if ($releaseInfo -and $releaseInfo.assets) {
         $updateAsset = $releaseInfo.assets | Where-Object { $_.name -like "*update*.zip" } | Select-Object -First 1
@@ -75,6 +69,11 @@ try {
     }
 } catch {
     # Fallback to default endpoint
+}
+
+# Ensure download URL always uses official dropdial.app domain
+if ($downloadUrl -match "/([^/]+\.zip)$") {
+    $downloadUrl = "https://dropdial.app/downloads/$($Matches[1])"
 }
 
 $tempZip = Join-Path $env:TEMP ("DropDial-Setup-" + [System.Guid]::NewGuid().ToString("N") + ".zip")
