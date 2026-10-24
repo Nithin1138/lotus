@@ -250,25 +250,25 @@
     if (!e.target.closest("a, button, code, .win-cli-container")) setCliPlatform("win");
   });
 
-  // Windows Command Line Install Tab Switching & Copying
-  const winTabs = $$(".win-cli-tab");
-  const winPanels = $$(".win-cli-panel");
-  winTabs.forEach(tab => {
+  // In-Card Command Line Install Tab Switching & Copying
+  const cliTabs = $$(".card-cli-tab, .win-cli-tab");
+  const cliPanels = $$(".card-cli-panel, .win-cli-panel");
+  cliTabs.forEach(tab => {
     tab.addEventListener("click", (e) => {
       e.stopPropagation();
       const target = tab.getAttribute("data-target");
-      winTabs.forEach(t => {
+      cliTabs.forEach(t => {
         const isActive = t === tab;
         t.classList.toggle("active", isActive);
         t.setAttribute("aria-selected", isActive ? "true" : "false");
       });
-      winPanels.forEach(p => {
+      cliPanels.forEach(p => {
         p.classList.toggle("active", p.id === `panel-win-${target}`);
       });
     });
   });
 
-  $$(".win-cli-copy").forEach(btn => {
+  $$(".card-cli-copy, .win-cli-copy").forEach(btn => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
       const targetId = btn.getAttribute("data-copy-target");

@@ -199,154 +199,31 @@ Here is the complete breakdown of DropDial's **business model, plans, benefits, 
 3. **Offline Air-Gap Compatibility**:
    - Because licenses are ECDSA signed by the backend private key and verified with the embedded public key, **customers can activate and run DropDial completely offline in air-gapped secure corporate environments** without internet access.
 
-\Viewed launch.md:58-82
+---
 
+## 6. Competitive Landscape Validation Matrix
 
-
-
-
-
-
-
-### DropDial vs. Competitors
-
-| Feature | **DropDial** | **Tangerine** | **ZestDrop** | **Filee** | **Cloud Converters** <br>*(CloudConvert/Zamzar)* |
+| Feature | **DropDial** | **Tangerine** | **ZestDrop** | **Filee** | **Cloud Converters** <br>*(CloudConvert / Zamzar)* |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Platforms** | **macOS + Windows** | macOS only | Windows only | macOS, Win, Linux | Web Browser |
-| **Architecture** | **100% Pure Native** <br>*(Swift & WPF)* | Native Swift | Tray Script | Hybrid / Web wrapper | Cloud Server |
-| **Memory / CPU** | **Low (~45 MB)** | Low (~50 MB) | Medium (~90 MB) | Heavy (~220 MB) | High (Browser tab) |
-| **Multi-File Staging Shelf** | **Included** | No | No | No | No |
-| **Offline Privacy** | **100% Air-Gapped** | 100% Offline | 100% Offline | 100% Offline | **Files Uploaded** |
-| **Native Apple Vision OCR** | **Included** | Basic | No | Slower Tesseract | Cloud API |
-| **Formats Supported** | **333+ Formats** | ~60 Formats | ~70 Formats | ~255 Formats | ~200 Formats |
-| **Free Model** | **3-Day Trial + 3/day forever** | Locks after 20 files | Free Open Source | Free Open Source | 10–25/day + size caps |
-| **License Portability** | **1 Key for Mac + Windows** | Mac App Store only | N/A | N/A | Monthly Subscription |
-| **Price** | **₹799–₹999 / $15–$19** <br>*(Pay once, own forever)* | ~$15–$20 one-time | Free | Free | $9–$25 / month |
+| **Platforms** | **macOS + Windows** | macOS only | Windows only | macOS, Win, Linux | Web Browser (Any OS) |
+| **Architecture** | **100% Pure Native** <br>*(Swift AppKit & C# WPF)* | Native Swift | Tray Script | Hybrid / Shell Wrapper | Remote Cloud Servers |
+| **Memory Footprint** | **Low (~45 MB)** | Low (~50 MB) | Medium (~90 MB) | Heavy (~220 MB) | High (300MB–1GB Browser Tab) |
+| **Multi-File Staging Shelf** | **Included (Floating Shelf)** | No | No | No | No |
+| **Offline Privacy** | **100% Air-Gapped** | 100% Offline | 100% Offline | 100% Offline | **Files Uploaded to 3rd-Party** |
+| **Native Apple Vision OCR** | **Included (GPU-accelerated)** | Basic | No | Slower Tesseract | Cloud OCR API (Paywalled) |
+| **Formats Supported** | **333+ Formats** (5 Categories) | ~60 Formats | ~70 Formats | ~255 Formats | ~200 Formats |
+| **Free Model** | **3-Day Trial + 3/day forever** | Hard Lock after 20 files | Free Open Source | Free Open Source | 10–25/day + 50MB file size caps |
+| **License Portability** | **1 Key for Mac + Windows** | Mac App Store only | N/A | N/A | Account Subscription |
+| **Price** | **₹799–₹999 / $15–$19** <br>*(Pay once, own forever)* | ~$15–$20 one-time | Free | Free | $9–$25 / month recurring |
 
 ---
 
-### In 3 Bullet Points:
-- **Tangerine (`tangerineformac.com`)**: Locked to Mac, has no staging shelf, and permanently bricks after just 20 files.
-- **ZestDrop (`zestdrop.org`)**: Windows-only with no Mac client and no OCR.
-- **DropDial**: True dual-native (Swift on Mac + WPF on Windows), 1 key for both OS, a multi-file floating shelf, native Apple Vision OCR, and 3 free conversions every day even after the trial ends.
-
-
-
-
-
-
-
-
-Viewed LicenseManager.cs:60-140
-Viewed LicenseManager.cs:250-350
-Viewed LicenseManager.cs:350-450
-Searched for "license"
-Searched for "generateLicense"
-Viewed _utils.js:80-140
-Searched for "activate"
-Viewed package.json:1-25
-Searched for "neondatabase"
-Viewed _db.js:1-80
-Viewed _db.js:80-121
-Listed directory api
-Viewed verify-payment.js:1-60
-Viewed verify-payment.js:60-110
-Searched for "data-license-devices"
-Viewed checkout.js:480-540
-Viewed checkout.js:30-75
-Viewed LicenseWindow.cs:50-120
-Searched for "Your Free Trial Has Ended"
-Viewed LicenseManager.swift:650-730
-Viewed LicenseManager.swift:570-650
-Viewed LicenseManager.swift:500-570
-Ran command: `diff -rq api/ website/api/`
-Viewed vercel.json:1-23
-Viewed _db.js:40-60
-Edited _db.js
-Viewed _db.js:1-10
-Edited _db.js
-Searched for "verifyLicense"
-Viewed _utils.js:50-85
-Viewed _utils.js:1-50
-Viewed _utils.js:400-417
-Ran command: `node -e "
-const { generateLicense } = require('./api/_utils');
-const crypto = require('crypto');
-const key = generateLicense('test@example.com', 'Test User', 'single');
-console.log('Generated key:', key);
-const parts = key.slice(3).split('.');
-const payloadBuf = Buffer.from(parts[0].replace(/-/g, '+').replace(/_/g, '/'), 'base64');
-const sigBuf = Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64');
-const { getPrivateKey } = require('./api/_utils');
-const pubKey = crypto.createPublicKey(getPrivateKey());
-const verify = crypto.createVerify('SHA256');
-verify.update(payloadBuf);
-const valid = verify.verify({ key: pubKey, dsaEncoding: 'ieee-p1363' }, sigBuf);
-console.log('Valid signature:', valid, 'Payload:', JSON.parse(payloadBuf.toString()));
-"`
-Edited _utils.js
-Viewed _utils.js:430-455
-Edited _utils.js
-Created activate.js
-Created activate.js
-Created deactivate.js
-Created deactivate.js
-Viewed LicenseManager.cs:1-50
-Searched for "class StoredLicenseState"
-Viewed LicenseManager.cs:140-170
-Viewed LicenseWindow.cs:75-130
-Viewed LicenseWindow.cs:270-330
-Viewed LicenseWindow.cs:360-420
-Edited LicenseManager.cs
-Viewed LicenseManager.cs:140-155
-Viewed LicenseManager.cs:390-425
-Edited LicenseManager.cs
-Edited LicenseManager.cs
-Viewed LicenseWindow.cs:75-90
-Viewed LicenseWindow.cs:360-425
-Edited LicenseWindow.cs
-Viewed LicenseManager.swift:340-410
-Viewed LicenseManager.swift:410-435
-Viewed LicenseManager.swift:490-565
-Viewed LicenseManager.swift:470-495
-Viewed LicenseManager.swift:740-780
-Viewed LicenseManager.swift:395-445
-Viewed LicenseManager.swift:440-475
-Viewed LicenseManager.swift:1-25
-Edited LicenseManager.swift
-Ran command: `git status`
-Ran command: `git diff work/DropDial/Program.cs`
-Searched for "CheckForUpdatesAsync"
-Viewed Program.cs:405-445
-Viewed Program.cs:570-600
-Viewed Program.cs:720-765
-Viewed Program.cs:690-725
-Viewed UpdateManager.cs:1-60
-Viewed UpdateManager.cs:120-190
-Edited Program.cs
-Viewed Program.cs:565-585
-Viewed Program.cs:700-725
-Edited Program.cs
-Edited Program.cs
-Ran command: `./build-mac.sh`
-Used tool: manage_task
-Used tool: manage_task
-Used tool: manage_task
-Used tool: manage_task
-Used tool: manage_task
-Used tool: manage_task
-Used tool: manage_task
-Used tool: manage_task
-Used tool: manage_task
-Ran command: `git status`
-Ran command: `git diff work/DropDial/Catalog.cs work/DropDial/WelcomeWindow.cs`
-Ran command: `git diff work/DropDial/LicenseWindow.cs work/DropDial/LicenseManager.cs`
-Ran command: `dotnet build work/DropDial/DropDial.csproj`
-Ran command: `git status`
-Ran command: `git add -A && git commit -m "Enforce single plan device limits, add one-time payment badge, disable 2-wheels on Windows, and fix tray menu blink"`
-Ran command: `git push origin main && git tag -f v1.0.1.6 && git push origin v1.0.1.6 -f`
-
-All requested updates and fixes have been implemented, built, committed, and pushed to `main` with the tag `v1.0.1.6` updated.
+### Key Competitive Differentiators Validated:
+1. **Tangerine (`tangerineformac.com`)**: macOS-only utility with clean UI, but lacks a multi-file staging shelf, has no Windows companion, and permanently locks up after converting 20 files unless purchased immediately.
+2. **ZestDrop (`zestdrop.org`)**: Windows-only utility implemented as a basic system tray script; lacks macOS support, floating radial gesture dial, and OCR capabilities.
+3. **Filee / File Converter**: Free open-source context-menu shell utility, but relies on heavier background wrappers (~220 MB RAM), lacks floating staging shelf, and lacks modern Apple Vision / OCR workflows.
+4. **Cloud Converters (CloudConvert / Zamzar / Convertio)**: Require uploading sensitive files across the public internet (violating corporate NDAs and enterprise security policies), throttle queue speeds on large files, and force users into $108–$300/year recurring subscriptions.
+5. **DropDial Advantage**: Dual-native performance (Swift on Mac + WPF on Windows), true 1-key cross-platform portability across 3 machines, a dedicated floating shelf (`FloatShelfWindow.swift`), zero-latency radial dial at the cursor, hardware-accelerated Apple Vision OCR, and a generous utility model (3 free daily conversions forever even after trial expiration).
 
 ---
 

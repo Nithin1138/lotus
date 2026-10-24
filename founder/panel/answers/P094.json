@@ -1,0 +1,13 @@
+{
+  "id": "P094",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "convenience",
+  "reason": "Clean, fast, and does exactly what I need without opening heavy software.",
+  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "would_change_my_mind": "",
+  "price_too_cheap": 4.69,
+  "price_cheap": 13.47,
+  "price_expensive": 32.06,
+  "price_too_expensive": 45.96
+}

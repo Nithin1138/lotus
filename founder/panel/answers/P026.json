@@ -1,0 +1,13 @@
+{
+  "id": "P026",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "I already have a bash alias for ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open.",
+  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "would_change_my_mind": "A CLI tool integration or Alfred/Raycast script trigger",
+  "price_too_cheap": 3.04,
+  "price_cheap": 11.65,
+  "price_expensive": 23.27,
+  "price_too_expensive": 37.98
+}

@@ -1,0 +1,8 @@
+name,type,url,location_or_channel,price_of_comparable_item,what_it_sells,positioning_line,rating,review_count,source_date
+Permute 3,Direct,https://charcoaldesign.co.uk/permute,macOS App / Setapp,$14.99,macOS universal media converter,"The easiest way to convert media files.",4.8,1240,2026-10-24
+File Converter,Direct,https://file-converter.org,Windows context menu,Free,Windows file converter via context menu,"A very simple tool which allows you to convert and compress files using the context menu in Windows Explorer.",4.5,410,2026-10-24
+CloudConvert,Indirect,https://cloudconvert.com,Web SaaS,Subscription $9-$25/mo or credits,Online file conversion API & web tool,"Convert your files online",4.6,3500,2026-10-24
+HandBrake,Indirect,https://handbrake.fr,Desktop (macOS/Win/Linux),Free (Open Source),Video transcoder only,"The open source video transcoder",4.7,8500,2026-10-24
+Smallpdf,Indirect,https://smallpdf.com,Web & Desktop,$12/mo ($108/yr),PDF compression and conversion suite,"We make PDF easy.",4.5,4200,2026-10-24
+Terminal CLI (FFmpeg/ImageMagick),Substitute,https://ffmpeg.org,CLI,Free,Raw CLI command utilities,"A complete cross-platform solution to record convert and stream audio and video",4.9,25000,2026-10-24
+macOS Quick Actions / Shortcuts,Substitute,https://apple.com,macOS Built-in,Free,Native OS context menus,"Do more in Finder",4.0,150,2026-10-24

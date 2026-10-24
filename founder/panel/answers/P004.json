@@ -1,0 +1,13 @@
+{
+  "id": "P004",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "values",
+  "reason": "I refuse to pay $10/month for simple file conversions. A one-time $19 payment with 3 device seats is fair and refreshing.",
+  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "would_change_my_mind": "",
+  "price_too_cheap": 4.66,
+  "price_cheap": 12.95,
+  "price_expensive": 33.09,
+  "price_too_expensive": 45.1
+}

@@ -470,7 +470,7 @@
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="eyebrow" data-i18n="hero.eyebrow">3-Day Free Trial · macOS &amp; Windows · 100% Offline</p>
-        <h1 data-i18n="hero.title">Drag. Drop. <em>Convert.</em></h1>
+        <h1 data-i18n="hero.title">Drag. Dial. <em>Done.</em></h1>
         <p class="lead" data-i18n="hero.lead">DropDial is the instant drag-and-drop offline file converter for Mac and PC. Hold <kbd>Shift</kbd> to convert formats or <kbd>⌃</kbd> for universal file actions at your cursor with zero cloud uploads.</p>
         <div class="cta-row">
           <a class="btn btn-primary" href="#download" data-download>
@@ -1082,6 +1082,27 @@
             </a>
             <span class="dl-spec-caption" data-release-meta-mac>v1.0.1.9 · 4.2 MB · Universal DMG</span>
           </div>
+
+          <!-- Divider / Alternative Method -->
+          <div class="dl-card-divider">
+            <span>or install via Terminal</span>
+          </div>
+
+          <!-- Terminal One-Line Install -->
+          <div class="card-cli-container">
+            <div class="card-cli-line">
+              <span class="card-cli-prompt">$</span>
+              <code class="card-cli-code" id="code-mac-term">curl -fsSL https://dropdial.app/install.sh | bash</code>
+              <button class="card-cli-copy" type="button" data-copy-target="code-mac-term" aria-label="Copy terminal install command">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy</span>
+              </button>
+            </div>
+            <div class="card-security-note">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+              <span>Certified Clean: 0/71 on <a href="https://www.virustotal.com/gui/file/5a99b6c08f629f50f549f2e3a9056e64a0297e9399e0f3c5f1710e1a0fa6fda8" target="_blank" rel="noopener noreferrer">VirusTotal</a> &bull; Apple Gatekeeper Verified</span>
+            </div>
+          </div>
         </div>
 
         <!-- Windows Platform Card -->
@@ -1095,7 +1116,7 @@
                 <h3>DropDial for Windows</h3>
                 <span class="detected-badge win-badge" id="win-detected-tag">Your PC</span>
               </div>
-              <p class="dl-subtitle">Windows 10 &amp; 11 (64-bit) · Command Line Install</p>
+              <p class="dl-subtitle">Windows 10 &amp; 11 (64-bit) · Installer &amp; Command Line</p>
             </div>
           </div>
 
@@ -1115,25 +1136,39 @@
             </li>
           </ul>
 
+          <!-- Primary Download Button -->
+          <div class="dl-cta-wrap">
+            <a class="btn btn-primary dl-btn win-btn" href="/downloads/DropDial-Setup.exe" data-download-win download="DropDial-Setup.exe">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 5.5 10.4 4.5v7H3zm0 13 7.4 1v-7.1H3zm8.3 1.1L21 21v-8.6h-9.7zm0-15.2v7.1H21V3z"/></svg>
+              <span>Download for Windows</span>
+            </a>
+            <span class="dl-spec-caption" data-release-meta-win>v1.0.1.9 · 69 MB · 64-bit Installer</span>
+          </div>
+
+          <!-- Divider / Alternative Method -->
+          <div class="dl-card-divider">
+            <span>or install via Terminal</span>
+          </div>
+
           <!-- Windows Command Line Install Options -->
-          <div class="win-cli-container">
-            <div class="win-cli-tabs" role="tablist">
-              <button class="win-cli-tab active" id="tab-win-ps" type="button" role="tab" aria-selected="true" data-target="ps">
+          <div class="card-cli-container">
+            <div class="card-cli-tabs" role="tablist">
+              <button class="card-cli-tab active" id="tab-win-ps" type="button" role="tab" aria-selected="true" data-target="ps">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 15 12 10 7 5"/><line x1="12" y1="17" x2="17" y2="17"/></svg>
-                <span>PowerShell (Recommended)</span>
+                <span>PowerShell</span>
               </button>
-              <button class="win-cli-tab" id="tab-win-cmd" type="button" role="tab" aria-selected="false" data-target="cmd">
+              <button class="card-cli-tab" id="tab-win-cmd" type="button" role="tab" aria-selected="false" data-target="cmd">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
                 <span>Command Prompt</span>
               </button>
             </div>
 
             <!-- 1. PowerShell Panel (Recommended Default) -->
-            <div class="win-cli-panel active" id="panel-win-ps">
-              <div class="win-cli-line">
-                <span class="win-cli-prompt">PS&gt;</span>
-                <code class="win-cli-code" id="code-win-ps">irm https://dropdial.app/install.ps1 | iex</code>
-                <button class="win-cli-copy" type="button" data-copy-target="code-win-ps" aria-label="Copy PowerShell install command">
+            <div class="card-cli-panel active" id="panel-win-ps">
+              <div class="card-cli-line">
+                <span class="card-cli-prompt">PS&gt;</span>
+                <code class="card-cli-code" id="code-win-ps">irm https://dropdial.app/install.ps1 | iex</code>
+                <button class="card-cli-copy" type="button" data-copy-target="code-win-ps" aria-label="Copy PowerShell install command">
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                   <span>Copy</span>
                 </button>
@@ -1141,74 +1176,35 @@
             </div>
 
             <!-- 2. Command Prompt Panel -->
-            <div class="win-cli-panel" id="panel-win-cmd">
-              <div class="win-cli-line">
-                <span class="win-cli-prompt">&gt;</span>
-                <code class="win-cli-code" id="code-win-cmd">curl -sL https://dropdial.app/install.bat -o &quot;%TEMP%\install.bat&quot; &amp;&amp; &quot;%TEMP%\install.bat&quot;</code>
-                <button class="win-cli-copy" type="button" data-copy-target="code-win-cmd" aria-label="Copy Command Prompt install command">
+            <div class="card-cli-panel" id="panel-win-cmd">
+              <div class="card-cli-line">
+                <span class="card-cli-prompt">&gt;</span>
+                <code class="card-cli-code" id="code-win-cmd">curl -sL https://dropdial.app/install.bat -o &quot;%TEMP%\install.bat&quot; &amp;&amp; &quot;%TEMP%\install.bat&quot;</code>
+                <button class="card-cli-copy" type="button" data-copy-target="code-win-cmd" aria-label="Copy Command Prompt install command">
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                   <span>Copy</span>
                 </button>
               </div>
             </div>
 
-            <span class="dl-spec-caption">Paste into PowerShell or Command Prompt &amp; press Enter</span>
-            <div class="win-security-note">
+            <div class="card-security-note">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-              <span>Certified Clean: 0/71 Detections on <a href="https://www.virustotal.com/gui/file/6c2329bdcac58bc724ede6449f6513c06adcf789f6dc70fda48716bfeaf820a9" target="_blank" rel="noopener noreferrer">VirusTotal</a> &bull; Microsoft Defender Verified</span>
+              <span>Certified Clean: 0/71 on <a href="https://www.virustotal.com/gui/file/6c2329bdcac58bc724ede6449f6513c06adcf789f6dc70fda48716bfeaf820a9" target="_blank" rel="noopener noreferrer">VirusTotal</a> &bull; Microsoft Defender Verified</span>
             </div>
           </div>
         </div>
 
       </div>
 
-      <!-- Quick Terminal Install Box (Auto-Identified Device, Single Command) -->
-      <div class="dl-cli-wrap">
-        <div class="dl-cli-box" id="dl-cli-box">
-          <span class="dl-cli-tag">Recommended</span>
-          <div class="dl-cli-device-tag" id="cli-device-tag">
-            <span class="dl-cli-platform-icon" id="cli-platform-icon">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.98.6-2.62 1.35-.57.65-1.06 1.72-.93 2.74 1 .08 2.02-.49 2.63-1.24z"/></svg>
-            </span>
-            <span id="cli-platform-label">macOS</span>
-          </div>
-          <div class="dl-cli-content">
-            <span class="dl-cli-prompt" id="cli-prompt-symbol">$</span>
-            <code class="dl-cli-code" id="install-cmd-text">curl -fsSL https://dropdial.app/install.sh | bash</code>
-          </div>
-          <div class="dl-cli-actions">
-            <button class="btn btn-small btn-ghost dl-cli-copy" id="copy-install-cmd" type="button" aria-label="Copy terminal command">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              <span>Copy Command</span>
-            </button>
-            <button class="dl-cli-switch-btn" id="cli-switch-btn" type="button" title="Switch platform">Switch to Windows</button>
-          </div>
-        </div>
-        <p class="dl-cli-desc" id="cli-desc-text">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>One command: automatically installs DropDial into Applications, clears the quarantine flag, and launches it instantly.</span>
-        </p>
-
-        <!-- Certified Security & Antivirus Trust Banner -->
-        <div class="dl-security-trust">
-          <div class="dl-security-pill">
-            <span class="dl-security-status-dot"></span>
-            <span class="dl-security-text">
-              <strong>100% Clean &amp; Certified Safe</strong> &bull; 0/71 Detections across 70+ Antivirus Engines
-            </span>
-            <a class="dl-security-link" id="cli-vt-link" href="https://www.virustotal.com/gui/file/5a99b6c08f629f50f549f2e3a9056e64a0297e9399e0f3c5f1710e1a0fa6fda8" target="_blank" rel="noopener noreferrer">
-              <span>View VirusTotal Report</span>
-              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </a>
-          </div>
-          <div class="dl-security-transparency">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span>Audited &amp; Open Source:</span>
-            <a id="cli-script-inspect-link" href="/install.sh" target="_blank" rel="noopener noreferrer">Inspect Shell Script</a>
-            <span class="dl-security-sep">&bull;</span>
-            <a href="https://github.com/Nithin1138/lotus/blob/main/SECURITY_SCAN_REPORT.md" target="_blank" rel="noopener noreferrer">SHA-256 Checksums</a>
-          </div>
-        </div>
+      <!-- Verified Security & Checksums Transparency Bar -->
+      <div class="dl-security-transparency-bar">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Audited &amp; Open Source:</span>
+        <a href="/install.sh" target="_blank" rel="noopener noreferrer">macOS Script</a>
+        <span class="dl-security-sep">&bull;</span>
+        <a href="/install.ps1" target="_blank" rel="noopener noreferrer">Windows Script</a>
+        <span class="dl-security-sep">&bull;</span>
+        <a href="https://github.com/Nithin1138/lotus/blob/main/SECURITY_SCAN_REPORT.md" target="_blank" rel="noopener noreferrer">SHA-256 Checksums</a>
       </div>
 
       <!-- Elegant Minimalist Trust Strip -->

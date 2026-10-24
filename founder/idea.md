@@ -1,0 +1,7 @@
+# DropDial
+
+- What it is: A privacy-first, lightning-fast desktop utility for macOS and Windows that converts, compresses, edits, OCRs, and transforms media files (images, videos, audio, PDFs, and archives) directly from the menu bar / system tray via instant drag-and-drop or keyboard shortcuts, running 100% locally with zero cloud uploads.
+- Who it is for: Designers, software developers, content creators, researchers, and productivity-focused professionals who handle diverse file formats daily and are tired of ad-heavy online converters, subscription fatigue, slow browser uploads, and corporate privacy/security leaks.
+- What it sells, at what price: Lifetime software license with 1 year of updates and 3 device activations ($19 USD Global / ₹999 INR India Standard Universal license; $14 Single OS, $79 Team pack).
+- Where and how: Sold directly on https://dropdial.app, distributed via direct installer downloads (DMG, ZIP, MSIX), GitHub Releases, and one-line terminal installer scripts; payment via Razorpay / Stripe, automated license key generation, and instant delivery via Resend transactional email.
+- Budget and constraints: Bootstrapped founder; tech stack is native Swift (macOS) and C# .NET 8 (Windows) backed by an optimized, self-contained Python engine (Apple Vision OCR, FFmpeg, ImageMagick, PyMuPDF, 7-Zip); near-zero marginal server costs (Vercel serverless + Neon serverless Postgres + Resend).

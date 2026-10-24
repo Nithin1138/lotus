@@ -1,0 +1,13 @@
+{
+  "id": "P084",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "trust",
+  "reason": "I cannot risk client NDAs with web uploaders like CloudConvert. $19 for an offline tool is a complete no-brainer.",
+  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "would_change_my_mind": "",
+  "price_too_cheap": 4.73,
+  "price_cheap": 12.38,
+  "price_expensive": 33.5,
+  "price_too_expensive": 46.09
+}

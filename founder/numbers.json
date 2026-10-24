@@ -1,0 +1,25 @@
+{
+  "business": "DropDial (desktop media conversion utility)",
+  "unit": "license",
+  "price": 19.00,
+  "variable": [
+    {"label": "Stripe/Razorpay payment processing (2.9% + $0.30)", "cost": 0.85},
+    {"label": "Cloud license verification & update CDN bandwidth", "cost": 0.15},
+    {"label": "Customer support buffer / email infra", "cost": 0.40}
+  ],
+  "fixed_monthly": [
+    {"label": "Hosting & edge CDN (Vercel/Cloudflare)", "cost": 40},
+    {"label": "Apple Developer & Windows Code Signing cert amortization", "cost": 25},
+    {"label": "Ops & administrative tooling", "cost": 35}
+  ],
+  "startup": [
+    {"label": "Apple Developer Program", "cost": 99},
+    {"label": "Windows Code Signing Certificate", "cost": 250},
+    {"label": "Domain registration & email workspace", "cost": 50},
+    {"label": "Launch media & asset preparation", "cost": 75}
+  ],
+  "days_per_month": 30,
+  "capacity_per_day": 1000,
+  "plan_per_day": 10,
+  "ramp_per_day": [2, 3, 5, 7, 9, 10, 11, 12, 13, 14, 15, 15]
+}

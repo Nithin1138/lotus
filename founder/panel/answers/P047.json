@@ -1,0 +1,13 @@
+{
+  "id": "P047",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "I only convert a file once a month. Free web tools or Apple Preview are good enough for my occasional use.",
+  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "would_change_my_mind": "A free tier with basic image formats",
+  "price_too_cheap": 3.37,
+  "price_cheap": 9.98,
+  "price_expensive": 22.05,
+  "price_too_expensive": 30.82
+}

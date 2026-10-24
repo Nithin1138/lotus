@@ -1,0 +1,33 @@
+{
+  "business": "DropDial (cross-platform desktop media utility)",
+  "target": "Designers, software developers, marketers, and professionals handling media files on macOS and Windows",
+  "where": "Global (US, Europe, India, Remote Tech Hubs)",
+  "age": [22, 50],
+  "segments": [
+    {"name": "Designer & Content Creator", "share": 0.40, "income": [45000, 110000]},
+    {"name": "Software Engineer & Dev", "share": 0.35, "income": [70000, 160000]},
+    {"name": "Enterprise / Legal / Remote Professional", "share": 0.25, "income": [50000, 130000]}
+  ],
+  "behaviours": [
+    {"name": "Daily media converter", "share": 0.25, "how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media."},
+    {"name": "Privacy-conscious professional", "share": 0.20, "how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters."},
+    {"name": "Anti-subscription pragmatist", "share": 0.20, "how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software."},
+    {"name": "CLI & power user", "share": 0.15, "how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments."},
+    {"name": "Occasional converter", "share": 0.10, "how": "Only converts or merges PDFs and videos once or twice a month and looks for simplicity."},
+    {"name": "Tool collector & Mac/PC enthusiast", "share": 0.10, "how": "Loves polished productivity tools (CleanShot, Raycast) that make their desktop workflow feel premium."}
+  ],
+  "objections": [
+    "I can just use free websites like CloudConvert or TinyPNG",
+    "$19 is steep for a file converter when free alternatives exist",
+    "I already know how to use FFmpeg or ImageOptim in terminal",
+    "Will this hog memory or drain my battery running in the menu bar?",
+    "Do I really need another background resident app?",
+    "Can I trust an indie app with system accessibility permissions?"
+  ],
+  "habits": [
+    "you frequently share screen recordings and GIFs with your remote team",
+    "you get annoyed when websites save images as .webp instead of .png",
+    "you redact and merge PDF contracts or client invoices every week",
+    "you work across both a Mac laptop and a Windows desktop"
+  ]
+}

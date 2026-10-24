@@ -839,11 +839,10 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 .dl-features-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 24px 0;
+  margin: 0 0 20px 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  flex-grow: 1;
+  gap: 11px;
 }
 .dl-features-list li {
   display: flex;
@@ -861,13 +860,13 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 
 /* Primary CTA Button */
 .dl-cta-wrap {
-  margin-top: auto;
+  margin-top: 4px;
 }
 .dl-btn {
   width: 100%;
   font-size: 0.98rem;
   font-weight: 700;
-  padding: 14px 20px;
+  padding: 13px 20px;
   border-radius: 12px;
   background: var(--accent);
   color: #fff;
@@ -897,20 +896,45 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
 }
 .dl-spec-caption {
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.77rem;
   color: var(--muted);
   text-align: center;
-  margin-top: 9px;
+  margin-top: 8px;
   line-height: 1.3;
 }
 
-/* Windows Command-Line Installation Card */
+/* In-Card Divider for Alternative Install */
+.dl-card-divider {
+  display: flex;
+  align-items: center;
+  margin: 18px 0 14px;
+  text-align: center;
+}
+.dl-card-divider::before,
+.dl-card-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--line);
+}
+.dl-card-divider span {
+  padding: 0 12px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+/* In-Card Command-Line Installation Box (Both Mac & Windows) */
+.card-cli-container,
 .win-cli-container {
   margin-top: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+.card-cli-tabs,
 .win-cli-tabs {
   display: flex;
   gap: 4px;
@@ -919,9 +943,11 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   border-radius: 8px;
   border: 1px solid var(--line);
 }
+[data-theme="light"] .card-cli-tabs,
 [data-theme="light"] .win-cli-tabs {
   background: rgba(0, 0, 0, 0.04);
 }
+.card-cli-tab,
 .win-cli-tab {
   flex: 1;
   display: inline-flex;
@@ -933,14 +959,16 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   border: 1px solid transparent;
   background: transparent;
   color: var(--muted);
-  font: 500 0.78rem var(--font);
+  font: 550 0.78rem var(--font);
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
+.card-cli-tab:hover,
 .win-cli-tab:hover {
   color: var(--ink);
 }
+.card-cli-tab.active,
 .win-cli-tab.active {
   background: var(--surface);
   color: var(--ink);
@@ -948,18 +976,22 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   border-color: var(--line);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 }
+[data-theme="light"] .card-cli-tab.active,
 [data-theme="light"] .win-cli-tab.active {
   background: #ffffff;
   color: var(--ink);
   border-color: rgba(0, 0, 0, 0.1);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
+.card-cli-panel,
 .win-cli-panel {
   display: none;
 }
+.card-cli-panel.active,
 .win-cli-panel.active {
   display: block;
 }
+.card-cli-line,
 .win-cli-line {
   display: flex;
   align-items: center;
@@ -974,17 +1006,21 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   transition: border-color 0.15s ease;
 }
+.card-cli-line:hover,
 .win-cli-line:hover {
   border-color: rgba(255, 255, 255, 0.18);
 }
+[data-theme="light"] .card-cli-line,
 [data-theme="light"] .win-cli-line {
   background: #f8fafc;
   border-color: #e2e8f0;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
 }
+[data-theme="light"] .card-cli-line:hover,
 [data-theme="light"] .win-cli-line:hover {
   border-color: #cbd5e1;
 }
+.card-cli-prompt,
 .win-cli-prompt {
   color: var(--muted);
   font-weight: 600;
@@ -992,10 +1028,12 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   flex-shrink: 0;
   opacity: 0.7;
 }
+[data-theme="light"] .card-cli-prompt,
 [data-theme="light"] .win-cli-prompt {
   color: #64748b;
   opacity: 1;
 }
+.card-cli-code,
 .win-cli-code {
   flex: 1 1 auto;
   min-width: 0;
@@ -1009,9 +1047,11 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   border: none;
   padding: 0;
 }
+.card-cli-code::-webkit-scrollbar,
 .win-cli-code::-webkit-scrollbar {
   display: none;
 }
+.card-cli-copy,
 .win-cli-copy {
   flex-shrink: 0;
   white-space: nowrap;
@@ -1028,20 +1068,45 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   cursor: pointer;
   transition: all 0.15s ease;
 }
+.card-cli-copy:hover,
 .win-cli-copy:hover {
   background: rgba(255, 255, 255, 0.12);
   color: var(--ink);
   border-color: rgba(255, 255, 255, 0.2);
 }
+[data-theme="light"] .card-cli-copy,
 [data-theme="light"] .win-cli-copy {
   background: #ffffff;
   color: #475569;
   border-color: #e2e8f0;
 }
+[data-theme="light"] .card-cli-copy:hover,
 [data-theme="light"] .win-cli-copy:hover {
   background: #f1f5f9;
   color: #0f172a;
   border-color: #cbd5e1;
+}
+.card-security-note,
+.win-security-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #10b981;
+  margin-top: 8px;
+  background: rgba(16, 185, 129, 0.06);
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  line-height: 1.3;
+}
+.card-security-note a,
+.win-security-note a {
+  color: #10b981;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* Terminal Install Box with Platform Tabs & Same-Line Copy */
@@ -1198,120 +1263,33 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   }
 }
 
-/* Terminal Subnote */
-.dl-cli-wrap {
-  margin-top: 24px;
-}
-.dl-cli-wrap .dl-cli-box {
-  margin-top: 0;
-}
-.dl-cli-desc {
+/* Verified Security & Checksums Transparency Bar */
+.dl-security-transparency-bar {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 0.81rem;
-  color: var(--muted);
-  margin: 10px 0 0 0;
-  text-align: center;
-  line-height: 1.4;
-}
-.dl-cli-desc svg {
-  color: #10b981;
-  flex-shrink: 0;
-}
-
-/* Certified Security & Clean Verification Strip */
-.dl-security-trust {
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-.dl-security-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.28);
-  border-radius: 9999px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 24px;
+}
+.dl-security-transparency-bar svg {
   color: #10b981;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.05);
-}
-.dl-security-pill:hover {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.45);
-  transform: translateY(-1px);
-}
-.dl-security-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
   flex-shrink: 0;
 }
-.dl-security-text {
-  color: #cbd5e1;
-  font-weight: 400;
-}
-.dl-security-text strong {
-  color: #10b981;
-  font-weight: 600;
-}
-.dl-security-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: #10b981;
-  font-weight: 600;
-  margin-left: 4px;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.dl-security-transparency {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.77rem;
-  color: var(--muted);
-}
-.dl-security-transparency a {
+.dl-security-transparency-bar a {
   color: var(--muted);
   text-decoration: underline;
   text-underline-offset: 2px;
   transition: color 0.15s ease;
 }
-.dl-security-transparency a:hover {
-  color: var(--text);
+.dl-security-transparency-bar a:hover {
+  color: var(--ink);
 }
 .dl-security-sep {
   opacity: 0.4;
   user-select: none;
-}
-.win-security-note {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 0.77rem;
-  color: #10b981;
-  margin-top: 10px;
-  background: rgba(16, 185, 129, 0.06);
-  padding: 5px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(16, 185, 129, 0.18);
-}
-.win-security-note a {
-  color: #10b981;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
 }
 
 

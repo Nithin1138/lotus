@@ -1,0 +1,13 @@
+{
+  "id": "P014",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "I already have a bash alias for ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open.",
+  "objection": "Do I really need another background resident app?",
+  "would_change_my_mind": "A CLI tool integration or Alfred/Raycast script trigger",
+  "price_too_cheap": 3.46,
+  "price_cheap": 7.16,
+  "price_expensive": 19.89,
+  "price_too_expensive": 31.21
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P005",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "convenience",
+  "reason": "Clean, fast, and does exactly what I need without opening heavy software.",
+  "objection": "Do I really need another background resident app?",
+  "would_change_my_mind": "",
+  "price_too_cheap": 6.09,
+  "price_cheap": 11.7,
+  "price_expensive": 26.55,
+  "price_too_expensive": 59.36
+}
