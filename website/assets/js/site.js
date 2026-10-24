@@ -379,10 +379,11 @@
       if (winAsset) {
         releaseWin.url = winAsset.browser_download_url;
         releaseWin.tag = activeTag;
-        $$("[data-download-win]").forEach(a => { a.href = "/#download-win"; });
-        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · Windows Command Line Install`; });
+        const winSizeFormatted = formatSize(winAsset.size);
+        $$("[data-download-win]").forEach(a => { a.href = releaseWin.url; });
+        $$("[data-release-meta-win]").forEach(el => { el.textContent = `(${releaseWin.tag} · ${winSizeFormatted || '69 MB'})`; });
       } else if (latestTag) {
-        $$("[data-release-meta-win]").forEach(el => { el.textContent = `${releaseWin.tag} · Windows Command Line Install`; });
+        $$("[data-release-meta-win]").forEach(el => { el.textContent = `(${releaseWin.tag} · 69 MB)`; });
       }
 
       if (macAsset) {
@@ -390,9 +391,9 @@
         releaseMac.tag = activeTag;
         const macSizeFormatted = formatSize(macAsset.size);
         $$("[data-download-mac]").forEach(a => { a.href = releaseMac.url; });
-        $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${releaseMac.tag} · ${macSizeFormatted} · Universal Mach-O DMG`; });
+        $$("[data-release-meta-mac]").forEach(el => { el.textContent = `(${releaseMac.tag} · ${macSizeFormatted || '4.2 MB'})`; });
       } else if (latestTag) {
-        $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${releaseMac.tag} · ${releaseMac.size} · Universal Mach-O DMG`; });
+        $$("[data-release-meta-mac]").forEach(el => { el.textContent = `(${releaseMac.tag} · ${releaseMac.size})`; });
       }
     })
     .catch(() => {});
