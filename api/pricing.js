@@ -210,6 +210,41 @@ module.exports = async function handler(req, res) {
     return res.status(200).end();
   }
 
+  const queryAction = ((req.query && req.query.action) || '').toLowerCase();
+  const reqUrl = req.url || '';
+  if (queryAction === 'payment-config' || reqUrl.includes('payment-config')) {
+    const { getPaymentSettings } = require('./_paymentSettings');
+    const { getDb } = require('./_db');
+    try {
+      const sql = getDb();
+      const settings = await getPaymentSettings(sql);
+      const country = (req.headers['x-vercel-ip-country'] || req.headers['cf-ipcountry'] || '').trim().toUpperCase();
+      const isIndia = country === 'IN';
+      const activeGatewayForVisitor = isIndia ? settings.indiaGateway : settings.intlGateway;
+
+      return res.status(200).json({
+        success: true,
+        mode: settings.mode,
+        indiaGateway: settings.indiaGateway,
+        intlGateway: settings.intlGateway,
+        activeGateway: activeGatewayForVisitor,
+        detectedCountry: country || null,
+        isIndia,
+        dodoConfigured: settings.envStatus.dodoConfigured,
+        dodoMode: settings.envStatus.dodoMode,
+        razorpayConfigured: settings.envStatus.razorpayConfigured,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error('[Payment Config API Error]', err);
+      return res.status(500).json({
+        error: 'Failed to retrieve payment gateway configuration',
+        indiaGateway: 'dodo',
+        intlGateway: 'dodo'
+      });
+    }
+  }
+
   const { getDb, ensureSchema } = require('./_db');
   const sql = getDb();
   if (sql) {

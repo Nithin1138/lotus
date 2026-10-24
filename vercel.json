@@ -35,6 +35,10 @@
     { "source": "/api/deactivate", "destination": "/api/activate?action=deactivate" },
     { "source": "/api/status", "destination": "/api/admin?action=status" },
     { "source": "/api/payment-failed", "destination": "/api/verify-payment?action=payment-failed" },
+    { "source": "/api/dodo-webhook", "destination": "/api/webhooks?provider=dodo" },
+    { "source": "/api/razorpay-webhook", "destination": "/api/webhooks?provider=razorpay" },
+    { "source": "/api/dodo-checkout", "destination": "/api/create-order?gateway=dodo" },
+    { "source": "/api/payment-config", "destination": "/api/pricing?action=payment-config" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/website/$1" }
   ],

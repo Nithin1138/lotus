@@ -99,9 +99,9 @@ module.exports = async function handler(req, res) {
       sql
     });
 
-    if (activeGateway === 'dodo') {
+    if (activeGateway === 'dodo' || body.gateway === 'dodo' || (req.query && req.query.gateway === 'dodo')) {
       try {
-        const dodoHandler = require('./dodo-checkout');
+        const dodoHandler = require('./_dodoCheckout');
         return await dodoHandler(req, res);
       } catch (dodoErr) {
         console.error('[create-order Dodo Delegation Error]', dodoErr);
