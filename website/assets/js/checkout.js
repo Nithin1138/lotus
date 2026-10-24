@@ -12,7 +12,7 @@
 
   // Currency configuration
   const PRICING = {
-    INR: { code: 'INR', symbol: '₹', amount: 1499, display: '₹1,499', strikeAmount: 1499, strikeDisplay: '₹1,499' },
+    INR: { code: 'INR', symbol: '₹', amount: 999, display: '₹999', strikeAmount: 1499, strikeDisplay: '₹1,499' },
     USD: { code: 'USD', symbol: '$', amount: 19, display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
     strikethrough: {
       enabled: false,
@@ -55,7 +55,7 @@
       badge: "RECOMMENDED",
       devices: "Up to 3 Devices (Mac & PC)",
       strikeEnabled: false,
-      INR: { amount: 1499, display: "₹1,499", strikeAmount: 1499, strikeDisplay: "₹1,499" },
+      INR: { amount: 999, display: "₹999", strikeAmount: 1499, strikeDisplay: "₹1,499" },
       USD: { amount: 19, display: "$19", strikeAmount: 29, strikeDisplay: "$29" },
       features: ["3 Devices (Mac & Windows)", "Unlimited Batch & Pro Tools", "Lifetime Free Updates"]
     },
@@ -139,22 +139,29 @@
         amount: base.amount,
         display: base.display,
         oldPrice: null,
-        discountTag: null
+        discountTag: null,
+        actualDiscount: 0
       };
     }
 
     let discountAmount = 0;
     if (appliedCoupon.type === 'percent') {
-      discountAmount = Math.round(base.amount * (appliedCoupon.value / 100));
+      discountAmount = Math.round(base.amount * (Number(appliedCoupon.value) / 100));
     } else {
-      discountAmount = isIndia ? (appliedCoupon.valueInr || 200) : (appliedCoupon.valueUsd || 4);
+      if (selectedCurrency === 'INR') {
+        discountAmount = Number(appliedCoupon.valueInr) || (appliedCoupon.discountSubunits ? Math.round(appliedCoupon.discountSubunits / 100) : 0) || Number(appliedCoupon.discountAmount) || Number(appliedCoupon.value) || 0;
+      } else {
+        discountAmount = Number(appliedCoupon.valueUsd) || (appliedCoupon.discountSubunits ? Math.round(appliedCoupon.discountSubunits / 100) : 0) || Number(appliedCoupon.discountAmount) || Number(appliedCoupon.value) || 0;
+      }
     }
 
+    // Minimum price is 1 unit (₹1 or $1)
     const finalAmount = Math.max(1, base.amount - discountAmount);
-    const finalDisplay = `${selectedCurrency === 'INR' ? '₹' : '$'}${finalAmount}`;
+    const actualDiscount = Math.max(0, base.amount - finalAmount);
+    const finalDisplay = `${selectedCurrency === 'INR' ? '₹' : '$'}${finalAmount.toLocaleString(isIndia ? 'en-IN' : 'en-US')}`;
     const discountTag = appliedCoupon.type === 'percent'
-      ? `-${appliedCoupon.value}%`
-      : `-${selectedCurrency === 'INR' ? '₹' : '$'}${discountAmount}`;
+      ? `${appliedCoupon.value}% OFF`
+      : `SAVE ${selectedCurrency === 'INR' ? '₹' : '$'}${actualDiscount.toLocaleString(isIndia ? 'en-IN' : 'en-US')}`;
 
     return {
       tier: selectedTier,
@@ -162,7 +169,8 @@
       amount: finalAmount,
       display: finalDisplay,
       oldPrice: base.display,
-      discountTag: discountTag
+      discountTag: discountTag,
+      actualDiscount: actualDiscount
     };
   }
 
@@ -411,7 +419,7 @@
           <div class="cko-price-group">
             <span class="cko-price-old">${priceConfig.oldPrice}</span>
             <span class="cko-price-new">${priceConfig.display}</span>
-            <span class="cko-price-badge">${priceConfig.discountTag} OFF</span>
+            <span class="cko-price-badge">${priceConfig.discountTag}</span>
           </div>
         `;
       } else if (activeTierStrikeEnabled) {
@@ -431,6 +439,8 @@
     if (payLabel) {
       payLabel.textContent = `Proceed to Payment (${priceConfig.display})`;
     }
+
+    updateCouponFeedback();
 
     // 4. Landing Page Buttons & Pricing Card (base pricing)
     const headerBuy = document.getElementById('nav-header-buy-btn');
@@ -1049,11 +1059,24 @@
     applyPricing(isIndia, currentCountry);
   }
 
+  function updateCouponFeedback() {
+    if (!appliedCoupon || !couponFeedback || couponFeedback.style.display === 'none') return;
+    const priceConfig = getActivePriceConfig();
+    const discountText = (appliedCoupon.type === 'percent')
+      ? `${appliedCoupon.value}% off applied`
+      : `${selectedCurrency === 'INR' ? '₹' : '$'}${priceConfig.actualDiscount.toLocaleString(isIndia ? 'en-IN' : 'en-US')} off applied`;
+    const span = couponFeedback.querySelector('.cko-coupon-pill span');
+    if (span) {
+      span.innerHTML = `<strong>${appliedCoupon.code}</strong> — ${discountText}`;
+    }
+  }
+
   function showCouponSuccess(code, discountDisplay) {
     couponFeedback.className = 'cko-coupon-feedback success';
+    const priceConfig = getActivePriceConfig();
     const discountText = (appliedCoupon && appliedCoupon.type === 'percent')
       ? `${appliedCoupon.value}% off applied`
-      : `${discountDisplay || ''} off applied`;
+      : `${selectedCurrency === 'INR' ? '₹' : '$'}${priceConfig.actualDiscount.toLocaleString(isIndia ? 'en-IN' : 'en-US')} off applied`;
 
     couponFeedback.innerHTML = `
       <div class="cko-coupon-pill">
@@ -1091,7 +1114,11 @@
     try {
       const emailVal = (emailInput?.value || '').trim();
       const emailQuery = emailVal ? `&email=${encodeURIComponent(emailVal)}` : '';
-      const res = await fetch(`/api/coupons?code=${encodeURIComponent(code)}&currency=${selectedCurrency}${emailQuery}`);
+      const currentTier = TIERS[selectedTier] || TIERS.universal;
+      const base = currentTier[selectedCurrency] || currentTier.USD;
+      const tierQuery = `&tier=${encodeURIComponent(selectedTier)}`;
+      const amountQuery = `&amount=${encodeURIComponent(base.amount)}`;
+      const res = await fetch(`/api/coupons?code=${encodeURIComponent(code)}&currency=${selectedCurrency}${tierQuery}${amountQuery}${emailQuery}`);
       const data = await res.json();
 
       if (res.ok && data.valid) {

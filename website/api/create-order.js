@@ -55,15 +55,20 @@ module.exports = async function handler(req, res) {
     const country = (body.country || req.headers['x-vercel-ip-country'] || req.headers['cf-ipcountry'] || '').trim().toUpperCase();
     const isIndia = country === 'IN' || (body.currency || '').toUpperCase() === 'INR';
     const currency = isIndia ? 'INR' : 'USD';
-    let basePricing = { INR: { subunits: 99900 }, USD: { subunits: 1900 } };
+
     try {
       const { getActivePricing } = require('./pricing');
       if (typeof getActivePricing === 'function') {
-        basePricing = getActivePricing();
+        const p = getActivePricing();
+        if (p?.tiers) {
+          if (p.tiers.single) tierPricing.single = { INR: (p.tiers.single.INR?.amount || 799) * 100, USD: (p.tiers.single.USD?.amount || 15) * 100 };
+          if (p.tiers.universal) tierPricing.universal = { INR: (p.tiers.universal.INR?.amount || 999) * 100, USD: (p.tiers.universal.USD?.amount || 19) * 100 };
+          if (p.tiers.team) tierPricing.team = { INR: (p.tiers.team.INR?.amount || 3499) * 100, USD: (p.tiers.team.USD?.amount || 69) * 100 };
+        }
       }
     } catch (e) {}
 
-    let amountInSubunits = (tierPricing[tier] ? (isIndia ? tierPricing[tier].INR : tierPricing[tier].USD) : (isIndia ? (basePricing.INR?.subunits || 99900) : (basePricing.USD?.subunits || 1900)));
+    let amountInSubunits = isIndia ? tierPricing[tier].INR : tierPricing[tier].USD;
     let appliedCoupon = null;
 
     // Apply coupon discount if provided

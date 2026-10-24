@@ -189,23 +189,29 @@ function evaluateCoupon(code, currency, baseSubunits) {
     }
   } else if (coupon.type === 'flat') {
     if (currency === 'INR') {
-      discountSubunits = (Number(coupon.valueInr || coupon.value_inr) || 200) * 100;
+      const val = Number(coupon.valueInr || coupon.value_inr) || Number(coupon.value) || 200;
+      discountSubunits = val * 100;
     } else {
-      discountSubunits = (Number(coupon.valueUsd || coupon.value_usd) || 4) * 100;
+      const val = Number(coupon.valueUsd || coupon.value_usd) || Number(coupon.value) || 4;
+      discountSubunits = val * 100;
     }
   }
 
   // Ensure minimum price of at least 1 unit (100 subunits = ₹1 or $1)
   const finalSubunits = Math.max(100, baseSubunits - discountSubunits);
-  const finalDisplay = currency === 'INR' ? `₹${Math.round(finalSubunits / 100)}` : `$${Math.round(finalSubunits / 100)}`;
-  const discountDisplay = currency === 'INR' ? `₹${Math.round(discountSubunits / 100)}` : `$${Math.round(discountSubunits / 100)}`;
+  const actualDiscountSubunits = Math.max(0, baseSubunits - finalSubunits);
+  const finalDisplay = currency === 'INR' ? `₹${Math.round(finalSubunits / 100).toLocaleString('en-IN')}` : `$${Math.round(finalSubunits / 100)}`;
+  const discountDisplay = currency === 'INR' ? `₹${Math.round(actualDiscountSubunits / 100).toLocaleString('en-IN')}` : `$${Math.round(actualDiscountSubunits / 100)}`;
 
   return {
     valid: true,
     code: coupon.code,
     type: coupon.type,
-    value: Number(coupon.value),
-    discountSubunits,
+    value: Number(coupon.value) || 0,
+    valueInr: Number(coupon.valueInr || coupon.value_inr || 0),
+    valueUsd: Number(coupon.valueUsd || coupon.value_usd || 0),
+    discountAmount: Math.round(actualDiscountSubunits / 100),
+    discountSubunits: actualDiscountSubunits,
     finalSubunits,
     discountDisplay,
     finalDisplay,
@@ -331,22 +337,28 @@ async function evaluateCouponAsync(code, currency, baseSubunits, userEmail = '')
     }
   } else if (coupon.type === 'flat') {
     if (currency === 'INR') {
-      discountSubunits = (Number(coupon.valueInr || coupon.value_inr) || 200) * 100;
+      const val = Number(coupon.valueInr || coupon.value_inr) || Number(coupon.value) || 200;
+      discountSubunits = val * 100;
     } else {
-      discountSubunits = (Number(coupon.valueUsd || coupon.value_usd) || 4) * 100;
+      const val = Number(coupon.valueUsd || coupon.value_usd) || Number(coupon.value) || 4;
+      discountSubunits = val * 100;
     }
   }
 
   const finalSubunits = Math.max(100, baseSubunits - discountSubunits);
-  const finalDisplay = currency === 'INR' ? `₹${Math.round(finalSubunits / 100)}` : `$${Math.round(finalSubunits / 100)}`;
-  const discountDisplay = currency === 'INR' ? `₹${Math.round(discountSubunits / 100)}` : `$${Math.round(discountSubunits / 100)}`;
+  const actualDiscountSubunits = Math.max(0, baseSubunits - finalSubunits);
+  const finalDisplay = currency === 'INR' ? `₹${Math.round(finalSubunits / 100).toLocaleString('en-IN')}` : `$${Math.round(finalSubunits / 100)}`;
+  const discountDisplay = currency === 'INR' ? `₹${Math.round(actualDiscountSubunits / 100).toLocaleString('en-IN')}` : `$${Math.round(actualDiscountSubunits / 100)}`;
 
   return {
     valid: true,
     code: coupon.code,
     type: coupon.type,
-    value: Number(coupon.value),
-    discountSubunits,
+    value: Number(coupon.value) || 0,
+    valueInr: Number(coupon.valueInr || coupon.value_inr || 0),
+    valueUsd: Number(coupon.valueUsd || coupon.value_usd || 0),
+    discountAmount: Math.round(actualDiscountSubunits / 100),
+    discountSubunits: actualDiscountSubunits,
     finalSubunits,
     discountDisplay,
     finalDisplay,
@@ -408,7 +420,22 @@ module.exports = async function handler(req, res) {
     const code = rawCode.toUpperCase();
     const currency = (req.query.currency || req.body?.currency || 'USD').toUpperCase();
     const email = (req.query.email || req.body?.email || '').trim().toLowerCase().slice(0, 254);
-    const baseSubunits = currency === 'INR' ? 99900 : 1900;
+
+    let baseSubunits = currency === 'INR' ? 99900 : 1900;
+    const reqAmount = Number(req.query.amount || req.body?.amount);
+    if (reqAmount > 0) {
+      baseSubunits = Math.round(reqAmount * 100);
+    } else {
+      const reqTier = (req.query.tier || req.body?.tier || '').toLowerCase();
+      const tierPricing = {
+        single: { INR: 79900, USD: 1500 },
+        universal: { INR: 99900, USD: 1900 },
+        team: { INR: 349900, USD: 6900 }
+      };
+      if (tierPricing[reqTier]) {
+        baseSubunits = currency === 'INR' ? tierPricing[reqTier].INR : tierPricing[reqTier].USD;
+      }
+    }
 
     const result = await evaluateCouponAsync(code, currency, baseSubunits, email);
     if (!result.valid) {
