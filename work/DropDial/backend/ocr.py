@@ -36,11 +36,12 @@ def create_text_pdf(pages,target,keep_background=False,source_images=None):
     doc=fitz.open()
     font_file=str(FONT) if FONT and FONT.exists() else None
     font_name='DocFont' if font_file else 'helv'
+    font_buf = Path(font_file).read_bytes() if font_file else None
     for idx,p in enumerate(pages):
         pw=p['width']*0.75; ph=p['height']*0.75
         page=doc.new_page(width=pw,height=ph)
-        if font_file:
-            page.insert_font(fontname='DocFont',fontfile=font_file)
+        if font_buf:
+            page.insert_font(fontname='DocFont',fontbuffer=font_buf)
         if keep_background and source_images and idx<len(source_images):
             page.insert_image(page.rect,filename=str(source_images[idx]))
             for line in p['lines']:
@@ -57,7 +58,7 @@ def create_text_pdf(pages,target,keep_background=False,source_images=None):
                 x=line['x']*0.75
                 y=line['y']*0.75+size*0.85
                 page.insert_text((x,y),text,fontname=font_name,fontsize=size,color=(0.07,0.07,0.07))
-    doc.save(str(target),garbage=3,deflate=True)
+    doc.save(str(target),garbage=0,deflate=True)
     doc.close()
 
 def run(path,action,params):

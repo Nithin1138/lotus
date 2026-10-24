@@ -56,10 +56,13 @@ final class BackendBridge {
         if let cached = cachedPython { return cached }
 
         if let saved = UserDefaults.standard.string(forKey: "kCachedPythonPath"),
-           FileManager.default.isExecutableFile(atPath: saved),
-           verifyPython(saved) {
-            cachedPython = saved
-            return saved
+           FileManager.default.isExecutableFile(atPath: saved) {
+            let isVerified = UserDefaults.standard.bool(forKey: "kCachedPythonVerified")
+            if isVerified || verifyPython(saved) {
+                UserDefaults.standard.set(true, forKey: "kCachedPythonVerified")
+                cachedPython = saved
+                return saved
+            }
         }
 
         let bundleURL = Bundle.main.bundleURL
@@ -91,6 +94,7 @@ final class BackendBridge {
             if path.contains("Contents/runtime/python") || verifyPython(path) {
                 cachedPython = path
                 UserDefaults.standard.set(path, forKey: "kCachedPythonPath")
+                UserDefaults.standard.set(true, forKey: "kCachedPythonVerified")
                 return path
             }
         }

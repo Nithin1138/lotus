@@ -76,11 +76,12 @@ def contact_sheet(path,params):
     info=probe(path); total=duration(info); count=int(number(params,'sheetCount',12)); columns=int(number(params,'sheetColumns',4))
     if not 1<=count<=60 or not 1<=columns<=10: raise ValueError(T('Use 1–60 thumbnails and 1–10 columns'))
     stream=video_stream(info); width=320; height=max(2,round(width*int(stream['height'])/int(stream['width'])))
-    font=ImageFont.truetype(str(FONT),14) if FONT else ImageFont.load_default(); thumbs=[]
+    import imagetools
+    font=imagetools._get_font(str(FONT),14) if FONT else ImageFont.load_default(); thumbs=[]
     with tempfile.TemporaryDirectory(prefix='dropdial-sheet-') as temp:
         for index in range(count):
             moment=min(total*(index+.5)/count,max(0,total-.25)); frame=Path(temp)/f'{index}.png'
-            ffmpeg(['-ss',moment,'-i',path,'-frames:v','1','-vf',f'scale={width}:{height}',frame])
+            ffmpeg(['-ss',moment,'-i',path,'-frames:v','1','-an','-sn','-dn','-vf',f'scale={width}:{height}',frame])
             picture=Image.open(frame).convert('RGB'); draw=ImageDraw.Draw(picture); label=f'{int(moment//60):02}:{moment%60:04.1f}'
             draw.rectangle((0,height-22,70,height),fill=(0,0,0)); draw.text((5,height-20),label,font=font,fill='white'); thumbs.append(picture)
     rows=-(-count//columns); gap=8; sheet=Image.new('RGB',(columns*width+(columns+1)*gap,rows*height+(rows+1)*gap),(17,17,17))
@@ -117,7 +118,7 @@ def join_audio(paths,params):
     for index,path in enumerate(paths):
         args+=['-i',path]; graph.append(f'[{index}:a:0]aformat=sample_rates=48000:channel_layouts=stereo[a{index}]')
     graph.append(''.join(f'[a{i}]' for i in range(len(paths)))+f'concat=n={len(paths)}:v=0:a=1[out]')
-    with output_file(paths[0],'joinAudio','.'+fmt) as state: ffmpeg([*args,'-filter_complex',';'.join(graph),'-map','[out]',*media.audio_args(fmt,params),state['temp']])
+    with output_file(paths[0],'joinAudio','.'+fmt) as state: ffmpeg([*args,'-vn','-filter_complex',';'.join(graph),'-map','[out]',*media.audio_args(fmt,params),state['temp']])
     return state['output']
 
 def ringtone(path,params):

@@ -55,7 +55,8 @@ def watermark_mark(size,params):
         opacity = raw_opacity
     else:
         opacity = min(100, max(0, raw_opacity)) / 100.0
-    mark.putalpha(mark.getchannel('A').point(lambda a: int(a * opacity)))
+    lut = [int(a * opacity) for a in range(256)]
+    mark.putalpha(mark.getchannel('A').point(lut))
     return mark
 
 def watermark_layer(size,params):
@@ -112,7 +113,8 @@ def make_icon(path,params):
     if factor>1: image=image.resize((round(image.width*factor),round(image.height*factor)),Image.Resampling.LANCZOS)
     side=max(image.size); square=Image.new('RGBA',(side,side),(0,0,0,0)); square.paste(image,((side-image.width)//2,(side-image.height)//2))
     if params.get('iconKind','ico')=='ico':
-        with output_file(path,'makeIcon','.ico') as state: square.save(state['temp'],format='ICO',sizes=[(s,s) for s in (16,24,32,48,64,128,256)])
+        ico_base = square.resize((256, 256), Image.Resampling.LANCZOS) if side > 256 else square
+        with output_file(path,'makeIcon','.ico') as state: ico_base.save(state['temp'],format='ICO',sizes=[(s,s) for s in (16,24,32,48,64,128,256)])
         return state['output']
     with output_folder(path,'makeIcon') as state:
         base = square.resize((512,512),Image.Resampling.LANCZOS) if side>512 else square
@@ -135,6 +137,10 @@ def animation(paths,params):
             ImageOps.pad(background.convert('RGB'),size,color='white').save(Path(temp)/f'frame-{index:04d}.png')
         pattern=str(Path(temp)/'frame-%04d.png'); rate=f'1/{seconds}'
         with output_file(paths[0],'createAnimation','.mp4' if fmt=='mp4' else '.gif') as state:
-            if fmt=='mp4': ffmpeg(['-framerate',rate,'-i',pattern,'-r','30','-c:v','libx264','-preset','faster','-pix_fmt','yuv420p','-crf','20','-movflags','+faststart',state['temp']])
+            if fmt=='mp4':
+                import media
+                hw = media._detect_hw_encoder() if hasattr(media, '_detect_hw_encoder') else ''
+                codec = ['-c:v', 'h264_videotoolbox', '-q:v', '65'] if hw == 'h264_videotoolbox' else ['-c:v', 'libx264', '-preset', 'faster', '-crf', '20']
+                ffmpeg(['-framerate',rate,'-i',pattern,'-r','30',*codec,'-pix_fmt','yuv420p','-movflags','+faststart',state['temp']])
             else: ffmpeg(['-framerate',rate,'-i',pattern,'-filter_complex','[0:v]split[a][b];[a]palettegen[p];[b][p]paletteuse','-loop','0' if truth(params.get('loop','true')) else '-1',state['temp']])
     return state['output']

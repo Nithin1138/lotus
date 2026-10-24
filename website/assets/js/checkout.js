@@ -701,6 +701,14 @@
           setTimeout(() => openModal(selectedTier), 350);
         }
       }
+      if (urlParams.get('payment_status') === 'success') {
+        const returnEmail = urlParams.get('email') || '';
+        const returnTier = urlParams.get('tier') || 'universal';
+        setTimeout(function () {
+          openModal(returnTier);
+          showSuccess('Your DropDial ' + (TIERS[returnTier]?.name || 'Pro') + ' license has been generated and dispatched to ' + (returnEmail || 'your email') + '! Please check your inbox (and spam/promotions folder).', returnEmail);
+        }, 300);
+      }
     } catch (_) {}
   }
 
@@ -1240,7 +1248,36 @@
 
       const orderData = await orderRes.json();
       if (!orderRes.ok || orderData.error) {
-        throw new Error(orderData.error || 'Unable to initiate order with Razorpay.');
+        throw new Error(orderData.error || 'Unable to initiate order.');
+      }
+
+      // Handle Dodo Payments (Merchant of Record: Apple Pay, Cards, Global Tax Handled)
+      if (orderData.gateway === 'dodo' || orderData.checkoutUrl) {
+        payBtn.innerHTML = `<span>Opening Secure Checkout…</span>`;
+        if (window.DodoPaymentsCheckout && window.DodoPaymentsCheckout.DodoPayments) {
+          try {
+            window.DodoPaymentsCheckout.DodoPayments.Initialize({
+              mode: orderData.sandbox ? 'test' : 'live',
+              displayType: 'overlay',
+              onEvent: function (event) {
+                if (event && (event.type === 'checkout.succeeded' || event.type === 'payment.succeeded')) {
+                  showSuccess('Dispatched to ' + email + '! Check your inbox shortly.', email);
+                }
+              }
+            });
+            window.DodoPaymentsCheckout.DodoPayments.Checkout.open({
+              checkoutUrl: orderData.checkoutUrl
+            });
+            payBtn.disabled = false;
+            payBtn.innerHTML = originalBtnText;
+            return;
+          } catch (overlayErr) {
+            console.warn('[Dodo Overlay Checkout fallback to redirect]', overlayErr);
+          }
+        }
+        // Direct redirect fallback
+        window.location.href = orderData.checkoutUrl;
+        return;
       }
 
       if (typeof Razorpay === 'undefined') {

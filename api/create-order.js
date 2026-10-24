@@ -87,6 +87,27 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    const { resolveActiveGateway } = require('./_paymentSettings');
+    const { getDb } = require('./_db');
+    const sql = getDb();
+
+    // Dynamically resolve whether to route through Dodo Payments or Razorpay
+    // based on Admin dashboard configuration and environment readiness
+    const activeGateway = await resolveActiveGateway({
+      isIndia,
+      requestedGateway: body.gateway,
+      sql
+    });
+
+    if (activeGateway === 'dodo') {
+      try {
+        const dodoHandler = require('./dodo-checkout');
+        return await dodoHandler(req, res);
+      } catch (dodoErr) {
+        console.error('[create-order Dodo Delegation Error]', dodoErr);
+      }
+    }
+
     const keyId = (process.env.RAZORPAY_KEY_ID || '').trim();
     const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
 

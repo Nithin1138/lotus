@@ -148,7 +148,7 @@ async function sendResendEmail({ to, name, licenseKey, tier = 'universal', payme
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your DropDial Pro License Key</title>
+  <title>Your DropDial ${planLabel} License Key</title>
   <style>
     body { margin: 0; padding: 0; background-color: #0d0f12; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e6e8eb; }
     .wrapper { max-width: 580px; margin: 30px auto; background-color: #16181d; border: 1px solid #282c35; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
@@ -459,6 +459,67 @@ function verifyRazorpayWebhookSignature(rawBody, signature) {
 }
 
 /**
+ * Validates Dodo Payments Standard Webhook Signature:
+ * Headers: webhook-id, webhook-timestamp, webhook-signature
+ * Signed content: `${webhook-id}.${webhook-timestamp}.${rawBody}`
+ * Secret: Starts with "whsec_" (base64 encoded bytes) or raw utf8 string
+ */
+function verifyDodoWebhookSignature(rawBody, headers = {}, secretOverride = null) {
+  const secret = (secretOverride || process.env.DODO_PAYMENTS_WEBHOOK_KEY || process.env.DODO_WEBHOOK_SECRET || '').trim();
+  if (!secret) {
+    throw new Error('DODO_PAYMENTS_WEBHOOK_KEY is not configured on server.');
+  }
+
+  const msgId = headers['webhook-id'] || headers['Webhook-Id'];
+  const msgTimestamp = headers['webhook-timestamp'] || headers['Webhook-Timestamp'];
+  const msgSignature = headers['webhook-signature'] || headers['Webhook-Signature'];
+
+  if (!msgId || !msgTimestamp || !msgSignature || !rawBody) {
+    return false;
+  }
+
+  // Tolerance check (5 minutes)
+  const FIVE_MINUTES = 5 * 60;
+  const currentTime = Math.floor(Date.now() / 1000);
+  const ts = parseInt(msgTimestamp, 10);
+  if (isNaN(ts) || Math.abs(currentTime - ts) > FIVE_MINUTES) {
+    console.warn('[Dodo Webhook] Timestamp out of tolerance:', ts, currentTime);
+    return false;
+  }
+
+  const signedContent = `${msgId}.${msgTimestamp}.${rawBody}`;
+  const secretBytes = secret.startsWith('whsec_')
+    ? Buffer.from(secret.slice(6), 'base64')
+    : Buffer.from(secret, 'utf-8');
+
+  const computedSignature = crypto
+    .createHmac('sha256', secretBytes)
+    .update(signedContent)
+    .digest('base64');
+
+  const signatures = String(msgSignature).trim().split(' ');
+  for (const versionedSig of signatures) {
+    const parts = versionedSig.split(',');
+    const version = parts[0];
+    const signature = parts.slice(1).join(',');
+    if (version === 'v1' && signature) {
+      try {
+        const computedBuf = Buffer.from(computedSignature, 'utf8');
+        const receivedBuf = Buffer.from(signature, 'utf8');
+        if (
+          computedBuf.length === receivedBuf.length &&
+          crypto.timingSafeEqual(computedBuf, receivedBuf)
+        ) {
+          return true;
+        }
+      } catch (_) {}
+    }
+  }
+
+  return false;
+}
+
+/**
  * Cryptographically verifies an ECDSA P-256 DropDial license key and decodes its payload.
  */
 function verifyLicense(licenseKey) {
@@ -635,6 +696,7 @@ module.exports = {
   sendDeviceActivationEmail,
   verifyRazorpayPaymentSignature,
   verifyRazorpayWebhookSignature,
+  verifyDodoWebhookSignature,
   sanitizeEmail,
   sanitizeName
 };

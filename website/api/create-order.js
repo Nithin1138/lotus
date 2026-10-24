@@ -55,20 +55,15 @@ module.exports = async function handler(req, res) {
     const country = (body.country || req.headers['x-vercel-ip-country'] || req.headers['cf-ipcountry'] || '').trim().toUpperCase();
     const isIndia = country === 'IN' || (body.currency || '').toUpperCase() === 'INR';
     const currency = isIndia ? 'INR' : 'USD';
-
+    let basePricing = { INR: { subunits: 99900 }, USD: { subunits: 1900 } };
     try {
       const { getActivePricing } = require('./pricing');
       if (typeof getActivePricing === 'function') {
-        const p = getActivePricing();
-        if (p?.tiers) {
-          if (p.tiers.single) tierPricing.single = { INR: (p.tiers.single.INR?.amount || 799) * 100, USD: (p.tiers.single.USD?.amount || 15) * 100 };
-          if (p.tiers.universal) tierPricing.universal = { INR: (p.tiers.universal.INR?.amount || 999) * 100, USD: (p.tiers.universal.USD?.amount || 19) * 100 };
-          if (p.tiers.team) tierPricing.team = { INR: (p.tiers.team.INR?.amount || 3499) * 100, USD: (p.tiers.team.USD?.amount || 69) * 100 };
-        }
+        basePricing = getActivePricing();
       }
     } catch (e) {}
 
-    let amountInSubunits = isIndia ? tierPricing[tier].INR : tierPricing[tier].USD;
+    let amountInSubunits = (tierPricing[tier] ? (isIndia ? tierPricing[tier].INR : tierPricing[tier].USD) : (isIndia ? (basePricing.INR?.subunits || 99900) : (basePricing.USD?.subunits || 1900)));
     let appliedCoupon = null;
 
     // Apply coupon discount if provided
@@ -89,6 +84,27 @@ module.exports = async function handler(req, res) {
       } catch (couponErr) {
         console.warn('[Coupon Evaluation Warning]', couponErr);
         return res.status(400).json({ error: 'Failed to validate coupon code. Please verify and try again.' });
+      }
+    }
+
+    const { resolveActiveGateway } = require('./_paymentSettings');
+    const { getDb } = require('./_db');
+    const sql = getDb();
+
+    // Dynamically resolve whether to route through Dodo Payments or Razorpay
+    // based on Admin dashboard configuration and environment readiness
+    const activeGateway = await resolveActiveGateway({
+      isIndia,
+      requestedGateway: body.gateway,
+      sql
+    });
+
+    if (activeGateway === 'dodo') {
+      try {
+        const dodoHandler = require('./dodo-checkout');
+        return await dodoHandler(req, res);
+      } catch (dodoErr) {
+        console.error('[create-order Dodo Delegation Error]', dodoErr);
       }
     }
 

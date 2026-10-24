@@ -146,6 +146,11 @@ module.exports = async function handler(req, res) {
       status: 'operational',
       timestamp: new Date().toISOString(),
       config: {
+        dodoPayments: {
+          apiKeyConfigured: Boolean(process.env.DODO_PAYMENTS_API_KEY),
+          webhookKeyConfigured: Boolean(process.env.DODO_PAYMENTS_WEBHOOK_KEY || process.env.DODO_WEBHOOK_SECRET),
+          productIdConfigured: Boolean(process.env.DODO_PRODUCT_UNIVERSAL || process.env.DODO_PRODUCT_ID)
+        },
         razorpay: {
           keyIdConfigured: Boolean(process.env.RAZORPAY_KEY_ID),
           keySecretConfigured: Boolean(process.env.RAZORPAY_KEY_SECRET),
@@ -244,12 +249,21 @@ module.exports = async function handler(req, res) {
 
   // 1. STATS & SYSTEM HEALTH
   if (action === 'stats' || action === 'health') {
+    const dodoKey = (process.env.DODO_PAYMENTS_API_KEY || '').trim();
+    const dodoWebhookKey = (process.env.DODO_PAYMENTS_WEBHOOK_KEY || process.env.DODO_WEBHOOK_SECRET || '').trim();
+    const dodoProduct = (process.env.DODO_PRODUCT_UNIVERSAL || process.env.DODO_PRODUCT_ID || '').trim();
     const razorpayKey = (process.env.RAZORPAY_KEY_ID || '').trim();
     const razorpaySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
     const resendKey = (process.env.RESEND_API_KEY || '').trim();
     const privateKey = getPrivateKey();
 
     const health = {
+      dodoPayments: {
+        configured: Boolean(dodoKey && dodoProduct),
+        keyPrefix: dodoKey ? dodoKey.slice(0, 8) + '...' : 'Not set',
+        webhookConfigured: Boolean(dodoWebhookKey),
+        mode: dodoKey.startsWith('test_') ? 'TEST (Sandbox)' : dodoKey ? 'LIVE (Production)' : 'Mock / Unset'
+      },
       razorpay: {
         configured: Boolean(razorpayKey && razorpaySecret),
         keyIdPrefix: razorpayKey ? razorpayKey.slice(0, 8) + '...' : 'Not set',
@@ -287,6 +301,12 @@ module.exports = async function handler(req, res) {
       console.warn('[Admin Stats Neon DB Warning]:', dbErr.message);
     }
 
+    let paymentGateways = null;
+    try {
+      const { getPaymentSettings } = require('./_paymentSettings');
+      paymentGateways = await getPaymentSettings(sql);
+    } catch (_) {}
+
     return res.status(200).json({
       success: true,
       razorpay: Boolean(razorpayKey && razorpaySecret),
@@ -299,6 +319,7 @@ module.exports = async function handler(req, res) {
           status: dbConfigured ? 'CONNECTED' : 'NOT_CONFIGURED'
         }
       },
+      paymentGateways,
       licenses: dbLicenses,
       transactions: dbTransactions,
       metrics: {
@@ -309,6 +330,55 @@ module.exports = async function handler(req, res) {
       },
       serverlessStats
     });
+  }
+
+  // 1b. PAYMENT GATEWAY CONFIGURATION & ROUTING (Dodo Payments vs Razorpay)
+  if (action === 'get_payment_settings' || action === 'payment-settings') {
+    try {
+      const { getPaymentSettings } = require('./_paymentSettings');
+      const settings = await getPaymentSettings(sql);
+
+      const dodoKey = (process.env.DODO_PAYMENTS_API_KEY || '').trim();
+      const dodoProduct = (process.env.DODO_PRODUCT_UNIVERSAL || process.env.DODO_PRODUCT_ID || '').trim();
+      const razorpayKey = (process.env.RAZORPAY_KEY_ID || '').trim();
+      const razorpaySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+
+      const health = {
+        dodoPayments: {
+          configured: Boolean(dodoKey && dodoProduct),
+          keyPrefix: dodoKey ? dodoKey.slice(0, 8) + '...' : 'Not set',
+          mode: dodoKey.startsWith('test_') ? 'TEST (Sandbox)' : dodoKey ? 'LIVE (Production)' : 'Mock / Unset'
+        },
+        razorpay: {
+          configured: Boolean(razorpayKey && razorpaySecret),
+          keyIdPrefix: razorpayKey ? razorpayKey.slice(0, 8) + '...' : 'Not set',
+          mode: razorpayKey.startsWith('rzp_live') ? 'LIVE (Production)' : razorpayKey.startsWith('rzp_test') ? 'TEST (Sandbox)' : 'Mock / Unset'
+        }
+      };
+
+      return res.status(200).json({ ok: true, success: true, settings, health });
+    } catch (err) {
+      console.error('[Admin get_payment_settings Error]', err);
+      return res.status(500).json({ error: err.message || 'Failed to read payment settings' });
+    }
+  }
+
+  if (action === 'update_payment_settings' || action === 'save_payment_settings') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' });
+    try {
+      const { savePaymentSettings } = require('./_paymentSettings');
+      const payload = body.settings || body;
+      const updated = await savePaymentSettings(payload, sql);
+      return res.status(200).json({
+        ok: true,
+        success: true,
+        message: 'Payment gateway configuration updated successfully',
+        settings: updated
+      });
+    } catch (err) {
+      console.error('[Admin update_payment_settings Error]', err);
+      return res.status(500).json({ error: err.message || 'Failed to update payment settings' });
+    }
   }
 
   // 2. ISSUE PRO LICENSE MANUALLY (Accepts 'issue-license' or 'generate-key')

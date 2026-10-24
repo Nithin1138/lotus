@@ -114,7 +114,7 @@ function generateLicense(email, name, tier = 'pro', expiresInSeconds = 0) {
 /**
  * Sends a branded, high-conversion license activation email using Resend API.
  */
-async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = '' }) {
+async function sendResendEmail({ to, name, licenseKey, tier = 'universal', paymentId = '', amount = '' }) {
   const apiKey = (process.env.RESEND_API_KEY || '').trim();
   if (!apiKey) {
     console.warn(`[Resend] RESEND_API_KEY is not configured. Email to ${to} skipped.`);
@@ -127,13 +127,28 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
   }
   const customerName = name || 'DropDial Pro User';
 
+  // Derive tier-specific display values
+  const tierLower = (tier || 'universal').toLowerCase();
+  let planLabel = 'Universal Pro Lifetime';
+  let deviceCount = 3;
+  let deviceLabel = 'up to 3 personal devices (Mac and Windows)';
+  if (tierLower.includes('single') || tierLower === '1') {
+    planLabel = 'Single Pro Lifetime';
+    deviceCount = 1;
+    deviceLabel = '1 device (Mac or Windows PC)';
+  } else if (tierLower.includes('team') || tierLower === '10') {
+    planLabel = 'Team Pro License';
+    deviceCount = 10;
+    deviceLabel = 'up to 10 devices / seats (Mac and Windows)';
+  }
+
   const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your DropDial Pro License Key</title>
+  <title>Your DropDial ${planLabel} License Key</title>
   <style>
     body { margin: 0; padding: 0; background-color: #0d0f12; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e6e8eb; }
     .wrapper { max-width: 580px; margin: 30px auto; background-color: #16181d; border: 1px solid #282c35; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
@@ -159,7 +174,7 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
 <body>
   <div class="wrapper">
     <div class="header">
-      <div class="logo-badge">DropDial Pro</div>
+      <div class="logo-badge">DropDial ${planLabel}</div>
       <h1 class="title">Welcome to DropDial Pro!</h1>
       <p class="subtitle">Thank you for your purchase, ${customerName}.</p>
     </div>
@@ -191,7 +206,7 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
 
     <div class="footer">
       DropDial • Fast, Private Desktop File Tools<br>
-      Lifetime License for up to 3 personal devices.<br>
+      ${planLabel} &bull; Lifetime License for ${deviceLabel}.<br>
       Need assistance? Reply directly to this email or visit <a href="https://dropdial.app">dropdial.app</a>.
     </div>
   </div>
@@ -209,7 +224,7 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
       body: JSON.stringify({
         from: fromEmail,
         to: [to],
-        subject: 'Your DropDial Pro License Key',
+        subject: `Your DropDial ${planLabel} License Key`,
         html: htmlContent,
         text: `Welcome to DropDial Pro!\n\nHi ${customerName},\n\nThank you for purchasing DropDial Pro. Here is your lifetime license key:\n\n${licenseKey}\n\nTo activate:\n1. Open DropDial on your Mac or Windows PC.\n2. Click the DropDial icon in the menu bar / system tray.\n3. Click 'Activate DropDial Pro...'.\n4. Paste your key and click Activate.\n\nEnjoy lifetime offline conversion!\nDropDial Team`
       })
@@ -444,6 +459,67 @@ function verifyRazorpayWebhookSignature(rawBody, signature) {
 }
 
 /**
+ * Validates Dodo Payments Standard Webhook Signature:
+ * Headers: webhook-id, webhook-timestamp, webhook-signature
+ * Signed content: `${webhook-id}.${webhook-timestamp}.${rawBody}`
+ * Secret: Starts with "whsec_" (base64 encoded bytes) or raw utf8 string
+ */
+function verifyDodoWebhookSignature(rawBody, headers = {}, secretOverride = null) {
+  const secret = (secretOverride || process.env.DODO_PAYMENTS_WEBHOOK_KEY || process.env.DODO_WEBHOOK_SECRET || '').trim();
+  if (!secret) {
+    throw new Error('DODO_PAYMENTS_WEBHOOK_KEY is not configured on server.');
+  }
+
+  const msgId = headers['webhook-id'] || headers['Webhook-Id'];
+  const msgTimestamp = headers['webhook-timestamp'] || headers['Webhook-Timestamp'];
+  const msgSignature = headers['webhook-signature'] || headers['Webhook-Signature'];
+
+  if (!msgId || !msgTimestamp || !msgSignature || !rawBody) {
+    return false;
+  }
+
+  // Tolerance check (5 minutes)
+  const FIVE_MINUTES = 5 * 60;
+  const currentTime = Math.floor(Date.now() / 1000);
+  const ts = parseInt(msgTimestamp, 10);
+  if (isNaN(ts) || Math.abs(currentTime - ts) > FIVE_MINUTES) {
+    console.warn('[Dodo Webhook] Timestamp out of tolerance:', ts, currentTime);
+    return false;
+  }
+
+  const signedContent = `${msgId}.${msgTimestamp}.${rawBody}`;
+  const secretBytes = secret.startsWith('whsec_')
+    ? Buffer.from(secret.slice(6), 'base64')
+    : Buffer.from(secret, 'utf-8');
+
+  const computedSignature = crypto
+    .createHmac('sha256', secretBytes)
+    .update(signedContent)
+    .digest('base64');
+
+  const signatures = String(msgSignature).trim().split(' ');
+  for (const versionedSig of signatures) {
+    const parts = versionedSig.split(',');
+    const version = parts[0];
+    const signature = parts.slice(1).join(',');
+    if (version === 'v1' && signature) {
+      try {
+        const computedBuf = Buffer.from(computedSignature, 'utf8');
+        const receivedBuf = Buffer.from(signature, 'utf8');
+        if (
+          computedBuf.length === receivedBuf.length &&
+          crypto.timingSafeEqual(computedBuf, receivedBuf)
+        ) {
+          return true;
+        }
+      } catch (_) {}
+    }
+  }
+
+  return false;
+}
+
+/**
  * Cryptographically verifies an ECDSA P-256 DropDial license key and decodes its payload.
  */
 function verifyLicense(licenseKey) {
@@ -620,6 +696,7 @@ module.exports = {
   sendDeviceActivationEmail,
   verifyRazorpayPaymentSignature,
   verifyRazorpayWebhookSignature,
+  verifyDodoWebhookSignature,
   sanitizeEmail,
   sanitizeName
 };
