@@ -196,7 +196,7 @@ module.exports = async function handler(req, res) {
     {
       id: 1,
       name: 'DropDial-Setup.exe',
-      size: 69321891,
+      size: 69517865,
       content_type: 'application/x-msdownload',
       browser_download_url: `${baseUrl}/downloads/DropDial-Setup.exe`
     },
@@ -241,7 +241,7 @@ module.exports = async function handler(req, res) {
     if (token) {
       const release = await fetchLatestRelease(token);
       if (release && release.tag_name) {
-        const effectiveTag = (release.tag_name === 'v1.0.1.0' || release.tag_name === '1.0.1.0') ? '1.0.1.1' : release.tag_name;
+        const effectiveTag = release.tag_name.startsWith('v') ? release.tag_name.slice(1) : release.tag_name;
         const releaseAssets = (release.assets && release.assets.length > 0)
           ? release.assets.map(a => ({
               id: a.id,
@@ -263,10 +263,10 @@ module.exports = async function handler(req, res) {
         }
 
         return res.status(200).json({
-          tag_name: effectiveTag,
+          tag_name: release.tag_name,
           version: effectiveTag,
           latest_version: effectiveTag,
-          name: release.name ? release.name.replace('1.0.1.0', '1.0.1.1') : `DropDial ${effectiveTag}`,
+          name: release.name || `DropDial ${effectiveTag}`,
           body: sanitizeReleaseBody(release.body),
           published_at: release.published_at,
           html_url: `${baseUrl}/#download`,
