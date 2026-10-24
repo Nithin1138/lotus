@@ -140,6 +140,7 @@ module.exports = async function handler(req, res) {
         to: email,
         name,
         licenseKey,
+        tier: cleanTier,
         paymentId: razorpay_payment_id || 'manual'
       });
     } catch (emailErr) {

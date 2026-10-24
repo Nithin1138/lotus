@@ -114,7 +114,7 @@ function generateLicense(email, name, tier = 'pro', expiresInSeconds = 0) {
 /**
  * Sends a branded, high-conversion license activation email using Resend API.
  */
-async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = '' }) {
+async function sendResendEmail({ to, name, licenseKey, tier = 'universal', paymentId = '', amount = '' }) {
   const apiKey = (process.env.RESEND_API_KEY || '').trim();
   if (!apiKey) {
     console.warn(`[Resend] RESEND_API_KEY is not configured. Email to ${to} skipped.`);
@@ -126,6 +126,21 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
     fromEmail = 'DropDial Pro <onboarding@resend.dev>';
   }
   const customerName = name || 'DropDial Pro User';
+
+  // Derive tier-specific display values
+  const tierLower = (tier || 'universal').toLowerCase();
+  let planLabel = 'Universal Pro Lifetime';
+  let deviceCount = 3;
+  let deviceLabel = 'up to 3 personal devices (Mac and Windows)';
+  if (tierLower.includes('single') || tierLower === '1') {
+    planLabel = 'Single Pro Lifetime';
+    deviceCount = 1;
+    deviceLabel = '1 device (Mac or Windows PC)';
+  } else if (tierLower.includes('team') || tierLower === '10') {
+    planLabel = 'Team Pro License';
+    deviceCount = 10;
+    deviceLabel = 'up to 10 devices / seats (Mac and Windows)';
+  }
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -159,7 +174,7 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
 <body>
   <div class="wrapper">
     <div class="header">
-      <div class="logo-badge">DropDial Pro</div>
+      <div class="logo-badge">DropDial ${planLabel}</div>
       <h1 class="title">Welcome to DropDial Pro!</h1>
       <p class="subtitle">Thank you for your purchase, ${customerName}.</p>
     </div>
@@ -191,7 +206,7 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
 
     <div class="footer">
       DropDial • Fast, Private Desktop File Tools<br>
-      Lifetime License for up to 3 personal devices.<br>
+      ${planLabel} &bull; Lifetime License for ${deviceLabel}.<br>
       Need assistance? Reply directly to this email or visit <a href="https://dropdial.app">dropdial.app</a>.
     </div>
   </div>
@@ -209,7 +224,7 @@ async function sendResendEmail({ to, name, licenseKey, paymentId = '', amount = 
       body: JSON.stringify({
         from: fromEmail,
         to: [to],
-        subject: 'Your DropDial Pro License Key',
+        subject: `Your DropDial ${planLabel} License Key`,
         html: htmlContent,
         text: `Welcome to DropDial Pro!\n\nHi ${customerName},\n\nThank you for purchasing DropDial Pro. Here is your lifetime license key:\n\n${licenseKey}\n\nTo activate:\n1. Open DropDial on your Mac or Windows PC.\n2. Click the DropDial icon in the menu bar / system tray.\n3. Click 'Activate DropDial Pro...'.\n4. Paste your key and click Activate.\n\nEnjoy lifetime offline conversion!\nDropDial Team`
       })
