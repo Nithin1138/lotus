@@ -492,6 +492,31 @@
     if (univSub) {
       univSub.textContent = `${devices} Devices`;
     }
+
+    // 6. Dynamic FAQ Pro Selling Price
+    const currentProPrice = (TIERS.universal[selectedCurrency] && TIERS.universal[selectedCurrency].display)
+      || (PRICING[selectedCurrency] && PRICING[selectedCurrency].display)
+      || (selectedCurrency === 'INR' ? '₹1,499' : '$19');
+
+    const inrProPrice = (TIERS.universal.INR && TIERS.universal.INR.display) || PRICING.INR.display || '₹1,499';
+    const usdProPrice = (TIERS.universal.USD && TIERS.universal.USD.display) || PRICING.USD.display || '$19';
+
+    document.querySelectorAll('[data-pro-price], [data-faq-price]').forEach(el => {
+      const fmt = el.getAttribute('data-format');
+      if (fmt === 'both') {
+        el.textContent = `${usdProPrice} / ${inrProPrice}`;
+      } else if (fmt === 'full') {
+        el.textContent = isIndia
+          ? `${inrProPrice} (${usdProPrice} USD)`
+          : `${usdProPrice} (${inrProPrice} INR)`;
+      } else {
+        el.textContent = currentProPrice;
+      }
+    });
+
+    document.querySelectorAll('[data-pro-price-both]').forEach(el => {
+      el.textContent = `${usdProPrice} / ${inrProPrice}`;
+    });
   }
 
   const PRICING_CACHE_KEY = 'dropdial_pricing_cache_v4';
@@ -636,8 +661,14 @@
     createModalDOM();
     bindEvents();
 
-    // 3. Sync pricing with modal DOM
+    // 3. Sync pricing with modal DOM and landing page
     applyPricing(isIndia, currentCountry);
+
+    if (window.DD && typeof window.DD.onLanguage === 'function') {
+      window.DD.onLanguage(function () {
+        applyPricing(isIndia, currentCountry);
+      });
+    }
 
     // 4. Start urgency countdown timer immediately (stays hidden unless enabled)
     initCountdownTimer(PRICING.countdown);
