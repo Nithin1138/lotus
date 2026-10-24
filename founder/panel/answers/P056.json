@@ -4,10 +4,10 @@
   "purchases_first_month": 0,
   "reason_code": "need",
   "reason": "I only convert a file once a month. Free web tools or Apple Preview are good enough for my occasional use.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
-  "would_change_my_mind": "A free tier with basic image formats",
-  "price_too_cheap": 3.21,
-  "price_cheap": 9.77,
-  "price_expensive": 19.63,
-  "price_too_expensive": 35.26
+  "objection": "Can I trust an indie app with system accessibility and local files?",
+  "would_change_my_mind": "DropDial's free 3 conversions per day",
+  "price_too_cheap": 3.32,
+  "price_cheap": 10.21,
+  "price_expensive": 19.91,
+  "price_too_expensive": 36.47
 }

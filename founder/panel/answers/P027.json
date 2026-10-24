@@ -3,11 +3,11 @@
   "buys": true,
   "purchases_first_month": 1,
   "reason_code": "trust",
-  "reason": "I cannot risk client NDAs with web uploaders like CloudConvert. $19 for an offline tool is a complete no-brainer.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "reason": "Cloud converters like CloudConvert upload my confidential files to external servers. $19 for an air-gapped offline tool is essential for client NDAs.",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "would_change_my_mind": "",
-  "price_too_cheap": 4.17,
-  "price_cheap": 14.39,
-  "price_expensive": 34.47,
-  "price_too_expensive": 46.28
+  "price_too_cheap": 5.17,
+  "price_cheap": 15.39,
+  "price_expensive": 35.42,
+  "price_too_expensive": 46.71
 }

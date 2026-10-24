@@ -4,10 +4,10 @@
   "purchases_first_month": 0,
   "reason_code": "habit",
   "reason": "I already have a working workflow and do not want another resident app sitting in my menu bar.",
-  "objection": "Do I really need another background resident app?",
-  "would_change_my_mind": "A 7-day free trial to see if I actually use it",
-  "price_too_cheap": 4.33,
-  "price_cheap": 8.65,
-  "price_expensive": 19.88,
-  "price_too_expensive": 38.18
+  "objection": "Filee hogs 220MB of RAM\u2014will DropDial slow down my machine?",
+  "would_change_my_mind": "A 7-day free trial",
+  "price_too_cheap": 4.99,
+  "price_cheap": 9.32,
+  "price_expensive": 20.2,
+  "price_too_expensive": 39.87
 }

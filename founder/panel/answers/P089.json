@@ -3,11 +3,11 @@
   "buys": false,
   "purchases_first_month": 0,
   "reason_code": "habit",
-  "reason": "I already have a bash alias for ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
-  "would_change_my_mind": "A CLI tool integration or Alfred/Raycast script trigger",
-  "price_too_cheap": 4.98,
-  "price_cheap": 9.98,
-  "price_expensive": 23.7,
-  "price_too_expensive": 38.7
+  "reason": "I already use bash aliases with ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open.",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
+  "would_change_my_mind": "DropDial CLI integration or Raycast extension",
+  "price_too_cheap": 5.96,
+  "price_cheap": 10.38,
+  "price_expensive": 24.65,
+  "price_too_expensive": 40.48
 }

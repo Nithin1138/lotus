@@ -44,7 +44,7 @@
    {
     "name": "Privacy-conscious professional",
     "share": 0.2,
-    "how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters."
+    "how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert."
    },
    {
     "name": "Anti-subscription pragmatist",
@@ -68,12 +68,12 @@
    }
   ],
   "objections": [
-   "I can just use free websites like CloudConvert or TinyPNG",
-   "$19 is steep for a file converter when free alternatives exist",
-   "I already know how to use FFmpeg or ImageOptim in terminal",
-   "Will this hog memory or drain my battery running in the menu bar?",
-   "Do I really need another background resident app?",
-   "Can I trust an indie app with system accessibility permissions?"
+   "I can just use free web tools like CloudConvert or Zamzar",
+   "I already use Tangerine on my Mac, why switch to DropDial?",
+   "Why pay $15-$19 when Filee or ZestDrop are free open source?",
+   "Tangerine locked me out after 20 files—will DropDial brick my files too?",
+   "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
+   "Can I trust an indie app with system accessibility and local files?"
   ],
   "habits": [
    "you frequently share screen recordings and GIFs with your remote team",
@@ -82,5 +82,5 @@
    "you work across both a Mac laptop and a Windows desktop"
   ]
  },
- "pitch": "# DropDial\n\nDropDial is a native, offline desktop utility for macOS and Windows that lives silently in your menu bar or system tray. Whenever you need to convert, crop, compress, redact, OCR, or transform a file, simply drag it from Finder or Explorer directly onto the dial or use a global shortcut. \n\nIt handles 5 core media categories: Images, Videos, Audio, PDFs, and Archives. Everything runs 100% locally on your computer—zero cloud uploads, zero latency, and zero data leakage.\n\nPriced at a fair, one-time lifetime license of $19 (or ₹999 in India) for 3 devices across Mac and Windows, with 1 year of updates and an unconditional 14-day money-back guarantee. No monthly subscription fees."
+ "pitch": "# DropDial: Pure Native Offline Media Utility (Mac + Windows)\n\nDropDial is a lightweight, pure native utility (Swift for macOS, WPF for Windows, ~45 MB RAM) that lives silently at your cursor and menu bar. Whenever you need to convert, compress, redact, OCR, or transform media, simply drag files onto the radial dial or staging shelf.\n\nUnlike single-platform tools (Tangerine is Mac-only and bricks after 20 files; ZestDrop is Windows-only with no OCR) or heavy hybrid apps (Filee consumes 220 MB RAM), DropDial gives you:\n- **True Dual-Native Speed:** Built natively for Apple Silicon & Windows Media Foundation.\n- **Multi-File Staging Shelf:** Queue and batch-process files without opening separate windows.\n- **100% Air-Gapped Offline Privacy:** Zero files or metadata ever leave your computer.\n- **333+ Formats & Native Apple Vision OCR:** Studio-quality conversions in under 2 seconds.\n- **Generous Free Model:** 3-day full trial plus 3 free conversions every day forever.\n- **Universal Lifetime Ownership:** One license ($15–$19 / ₹799–₹999) covers up to 3 devices across Mac and Windows with zero monthly subscription fees."
 }

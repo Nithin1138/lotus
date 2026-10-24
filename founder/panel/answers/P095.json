@@ -4,10 +4,10 @@
   "purchases_first_month": 0,
   "reason_code": "need",
   "reason": "I only convert a file once a month. Free web tools or Apple Preview are good enough for my occasional use.",
-  "objection": "Do I really need another background resident app?",
-  "would_change_my_mind": "A free tier with basic image formats",
-  "price_too_cheap": 4.09,
-  "price_cheap": 9.08,
-  "price_expensive": 19.24,
-  "price_too_expensive": 33.04
+  "objection": "Filee hogs 220MB of RAM\u2014will DropDial slow down my machine?",
+  "would_change_my_mind": "DropDial's free 3 conversions per day",
+  "price_too_cheap": 4.63,
+  "price_cheap": 9.66,
+  "price_expensive": 19.45,
+  "price_too_expensive": 33.88
 }

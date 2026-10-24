@@ -4,10 +4,10 @@
   "purchases_first_month": 0,
   "reason_code": "need",
   "reason": "I only convert a file once a month. Free web tools or Apple Preview are good enough for my occasional use.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
-  "would_change_my_mind": "A free tier with basic image formats",
-  "price_too_cheap": 3.34,
-  "price_cheap": 10.65,
-  "price_expensive": 18.98,
-  "price_too_expensive": 32.55
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
+  "would_change_my_mind": "DropDial's free 3 conversions per day",
+  "price_too_cheap": 3.51,
+  "price_cheap": 10.92,
+  "price_expensive": 19.14,
+  "price_too_expensive": 33.31
 }

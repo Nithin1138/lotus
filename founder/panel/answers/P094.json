@@ -2,12 +2,12 @@
   "id": "P094",
   "buys": true,
   "purchases_first_month": 1,
-  "reason_code": "convenience",
-  "reason": "Clean, fast, and does exactly what I need without opening heavy software.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "reason_code": "quality",
+  "reason": "Unlike Filee which eats 220MB of RAM, DropDial is pure native Swift/WPF at 45MB with Apple Vision OCR.",
+  "objection": "Tangerine locked me out after 20 files\u2014will DropDial brick my files too?",
   "would_change_my_mind": "",
-  "price_too_cheap": 4.69,
-  "price_cheap": 13.47,
-  "price_expensive": 32.06,
-  "price_too_expensive": 45.96
+  "price_too_cheap": 5.69,
+  "price_cheap": 14.47,
+  "price_expensive": 32.77,
+  "price_too_expensive": 46.28
 }

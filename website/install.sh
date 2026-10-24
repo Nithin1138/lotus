@@ -17,7 +17,7 @@ RESET="\033[0m"
 echo -e "${CYAN}${BOLD}"
 echo "  ╔════════════════════════════════════════════════════════════════════╗"
 echo "  ║                       DropDial for macOS                           ║"
-echo "  ║            Drag. Drop. Convert. • Universal Desktop Actions        ║"
+echo "  ║            Drag. Dial. Done. • Universal Desktop Actions           ║"
 echo "  ╚════════════════════════════════════════════════════════════════════╝"
 echo -e "${RESET}"
 

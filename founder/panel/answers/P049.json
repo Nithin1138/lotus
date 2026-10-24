@@ -3,11 +3,11 @@
   "buys": true,
   "purchases_first_month": 1,
   "reason_code": "convenience",
-  "reason": "I convert webp to png and make gifs five times a day. Having it right on the cursor dial saves me ten minutes every single day.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "reason": "Tangerine locked me out after 20 conversions. DropDial's staging shelf and instant radial dial save me time on every single export.",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "would_change_my_mind": "",
-  "price_too_cheap": 5.75,
-  "price_cheap": 12.61,
-  "price_expensive": 34.35,
-  "price_too_expensive": 48.06
+  "price_too_cheap": 6.75,
+  "price_cheap": 13.61,
+  "price_expensive": 35.28,
+  "price_too_expensive": 49.09
 }

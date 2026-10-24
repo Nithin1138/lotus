@@ -3,11 +3,11 @@
   "buys": true,
   "purchases_first_month": 1,
   "reason_code": "trust",
-  "reason": "I cannot risk client NDAs with web uploaders like CloudConvert. $19 for an offline tool is a complete no-brainer.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "reason": "Cloud converters like CloudConvert upload my confidential files to external servers. $19 for an air-gapped offline tool is essential for client NDAs.",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "would_change_my_mind": "",
-  "price_too_cheap": 6.78,
-  "price_cheap": 14.24,
-  "price_expensive": 26.66,
-  "price_too_expensive": 52.28
+  "price_too_cheap": 7.78,
+  "price_cheap": 15.24,
+  "price_expensive": 26.83,
+  "price_too_expensive": 54.71
 }

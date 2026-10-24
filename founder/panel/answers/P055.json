@@ -3,11 +3,11 @@
   "buys": true,
   "purchases_first_month": 1,
   "reason_code": "trust",
-  "reason": "I cannot risk client NDAs with web uploaders like CloudConvert. $19 for an offline tool is a complete no-brainer.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "reason": "Cloud converters like CloudConvert upload my confidential files to external servers. $19 for an air-gapped offline tool is essential for client NDAs.",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "would_change_my_mind": "",
-  "price_too_cheap": 4.9,
-  "price_cheap": 13.32,
-  "price_expensive": 34.39,
-  "price_too_expensive": 47.01
+  "price_too_cheap": 5.9,
+  "price_cheap": 14.32,
+  "price_expensive": 35.33,
+  "price_too_expensive": 47.69
 }

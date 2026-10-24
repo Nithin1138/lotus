@@ -10,7 +10,7 @@ $ProgressPreference = 'SilentlyContinue'
 Write-Host ""
 Write-Host "  ╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║                     DropDial for Windows                           ║" -ForegroundColor Cyan
-Write-Host "  ║          Drag. Drop. Convert. • Universal Desktop Actions          ║" -ForegroundColor Cyan
+Write-Host "  ║          Drag. Dial. Done. • Universal Desktop Actions             ║" -ForegroundColor Cyan
 Write-Host "  ╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 

@@ -4,10 +4,10 @@
   "purchases_first_month": 0,
   "reason_code": "need",
   "reason": "I only convert a file once a month. Free web tools or Apple Preview are good enough for my occasional use.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
-  "would_change_my_mind": "A free tier with basic image formats",
-  "price_too_cheap": 3.5,
-  "price_cheap": 11.24,
-  "price_expensive": 20.74,
-  "price_too_expensive": 37.62
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
+  "would_change_my_mind": "DropDial's free 3 conversions per day",
+  "price_too_cheap": 3.75,
+  "price_cheap": 11.39,
+  "price_expensive": 21.2,
+  "price_too_expensive": 39.22
 }

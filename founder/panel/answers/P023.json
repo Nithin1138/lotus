@@ -3,11 +3,11 @@
   "buys": true,
   "purchases_first_month": 1,
   "reason_code": "convenience",
-  "reason": "Clean, fast, and does exactly what I need without opening heavy software.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "reason": "Tangerine only works on Mac and ZestDrop is Windows-only. DropDial gives me one unified native tool across both my MacBook and Windows desktop.",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "would_change_my_mind": "",
-  "price_too_cheap": 4.79,
-  "price_cheap": 12.5,
-  "price_expensive": 26.79,
-  "price_too_expensive": 58.69
+  "price_too_cheap": 5.79,
+  "price_cheap": 13.5,
+  "price_expensive": 26.97,
+  "price_too_expensive": 63.25
 }

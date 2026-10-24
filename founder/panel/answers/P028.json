@@ -3,11 +3,11 @@
   "buys": true,
   "purchases_first_month": 1,
   "reason_code": "convenience",
-  "reason": "I convert webp to png and make gifs five times a day. Having it right on the cursor dial saves me ten minutes every single day.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "reason": "Tangerine locked me out after 20 conversions. DropDial's staging shelf and instant radial dial save me time on every single export.",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "would_change_my_mind": "",
-  "price_too_cheap": 4.21,
-  "price_cheap": 13.8,
-  "price_expensive": 32.66,
-  "price_too_expensive": 46.93
+  "price_too_cheap": 5.21,
+  "price_cheap": 14.8,
+  "price_expensive": 33.42,
+  "price_too_expensive": 47.57
 }

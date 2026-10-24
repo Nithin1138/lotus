@@ -6,8 +6,8 @@
   "segment": "Designer & Content Creator",
   "income": 106000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -18,7 +18,7 @@
   "income": 46000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -28,8 +28,8 @@
   "segment": "Enterprise / Legal / Remote Professional",
   "income": 110000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -40,7 +40,7 @@
   "income": 66000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -51,7 +51,7 @@
   "income": 67000,
   "behaviour": "Tool collector & Mac/PC enthusiast",
   "behaviour_how": "Loves polished productivity tools (CleanShot, Raycast) that make their desktop workflow feel premium.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -62,7 +62,7 @@
   "income": 97000,
   "behaviour": "Tool collector & Mac/PC enthusiast",
   "behaviour_how": "Loves polished productivity tools (CleanShot, Raycast) that make their desktop workflow feel premium.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -73,7 +73,7 @@
   "income": 54000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -83,8 +83,8 @@
   "segment": "Enterprise / Legal / Remote Professional",
   "income": 87000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "Do I really need another background resident app?",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -95,7 +95,7 @@
   "income": 123000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -106,7 +106,7 @@
   "income": 55000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -117,7 +117,7 @@
   "income": 74000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -128,7 +128,7 @@
   "income": 97000,
   "behaviour": "Occasional converter",
   "behaviour_how": "Only converts or merges PDFs and videos once or twice a month and looks for simplicity.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -139,7 +139,7 @@
   "income": 126000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -150,7 +150,7 @@
   "income": 131000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -161,7 +161,7 @@
   "income": 95000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -172,7 +172,7 @@
   "income": 87000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -183,7 +183,7 @@
   "income": 74000,
   "behaviour": "Tool collector & Mac/PC enthusiast",
   "behaviour_how": "Loves polished productivity tools (CleanShot, Raycast) that make their desktop workflow feel premium.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -193,8 +193,8 @@
   "segment": "Software Engineer & Dev",
   "income": 99000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "Do I really need another background resident app?",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -204,8 +204,8 @@
   "segment": "Enterprise / Legal / Remote Professional",
   "income": 72000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "Do I really need another background resident app?",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -216,7 +216,7 @@
   "income": 125000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -227,7 +227,7 @@
   "income": 150000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -237,8 +237,8 @@
   "segment": "Designer & Content Creator",
   "income": 72000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -249,7 +249,7 @@
   "income": 77000,
   "behaviour": "Tool collector & Mac/PC enthusiast",
   "behaviour_how": "Loves polished productivity tools (CleanShot, Raycast) that make their desktop workflow feel premium.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -260,7 +260,7 @@
   "income": 59000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -270,8 +270,8 @@
   "segment": "Designer & Content Creator",
   "income": 96000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -282,7 +282,7 @@
   "income": 93000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -292,8 +292,8 @@
   "segment": "Designer & Content Creator",
   "income": 94000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -304,7 +304,7 @@
   "income": 77000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -314,8 +314,8 @@
   "segment": "Designer & Content Creator",
   "income": 91000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "Do I really need another background resident app?",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -326,7 +326,7 @@
   "income": 84000,
   "behaviour": "Occasional converter",
   "behaviour_how": "Only converts or merges PDFs and videos once or twice a month and looks for simplicity.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -337,7 +337,7 @@
   "income": 135000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -348,7 +348,7 @@
   "income": 111000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -359,7 +359,7 @@
   "income": 100000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -370,7 +370,7 @@
   "income": 156000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -381,7 +381,7 @@
   "income": 58000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -392,7 +392,7 @@
   "income": 122000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -403,7 +403,7 @@
   "income": 82000,
   "behaviour": "Occasional converter",
   "behaviour_how": "Only converts or merges PDFs and videos once or twice a month and looks for simplicity.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -414,7 +414,7 @@
   "income": 62000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -425,7 +425,7 @@
   "income": 99000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -436,7 +436,7 @@
   "income": 90000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -446,8 +446,8 @@
   "segment": "Designer & Content Creator",
   "income": 106000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -458,7 +458,7 @@
   "income": 71000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -469,7 +469,7 @@
   "income": 62000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -480,7 +480,7 @@
   "income": 101000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -490,8 +490,8 @@
   "segment": "Designer & Content Creator",
   "income": 85000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -502,7 +502,7 @@
   "income": 108000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -513,7 +513,7 @@
   "income": 88000,
   "behaviour": "Occasional converter",
   "behaviour_how": "Only converts or merges PDFs and videos once or twice a month and looks for simplicity.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -524,7 +524,7 @@
   "income": 94000,
   "behaviour": "Tool collector & Mac/PC enthusiast",
   "behaviour_how": "Loves polished productivity tools (CleanShot, Raycast) that make their desktop workflow feel premium.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -535,7 +535,7 @@
   "income": 130000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -546,7 +546,7 @@
   "income": 51000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -557,7 +557,7 @@
   "income": 72000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -568,7 +568,7 @@
   "income": 113000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -578,8 +578,8 @@
   "segment": "Software Engineer & Dev",
   "income": 144000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -590,7 +590,7 @@
   "income": 99000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -600,8 +600,8 @@
   "segment": "Enterprise / Legal / Remote Professional",
   "income": 67000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -612,7 +612,7 @@
   "income": 145000,
   "behaviour": "Occasional converter",
   "behaviour_how": "Only converts or merges PDFs and videos once or twice a month and looks for simplicity.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -623,7 +623,7 @@
   "income": 109000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -634,7 +634,7 @@
   "income": 76000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -645,7 +645,7 @@
   "income": 85000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -656,7 +656,7 @@
   "income": 90000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -667,7 +667,7 @@
   "income": 96000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -678,7 +678,7 @@
   "income": 94000,
   "behaviour": "Tool collector & Mac/PC enthusiast",
   "behaviour_how": "Loves polished productivity tools (CleanShot, Raycast) that make their desktop workflow feel premium.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -689,7 +689,7 @@
   "income": 108000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -699,8 +699,8 @@
   "segment": "Designer & Content Creator",
   "income": 47000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -711,7 +711,7 @@
   "income": 65000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -722,7 +722,7 @@
   "income": 76000,
   "behaviour": "Occasional converter",
   "behaviour_how": "Only converts or merges PDFs and videos once or twice a month and looks for simplicity.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -733,7 +733,7 @@
   "income": 90000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -744,7 +744,7 @@
   "income": 98000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -755,7 +755,7 @@
   "income": 48000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -766,7 +766,7 @@
   "income": 86000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -777,7 +777,7 @@
   "income": 121000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -787,8 +787,8 @@
   "segment": "Enterprise / Legal / Remote Professional",
   "income": 76000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -799,7 +799,7 @@
   "income": 108000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -810,7 +810,7 @@
   "income": 116000,
   "behaviour": "Tool collector & Mac/PC enthusiast",
   "behaviour_how": "Loves polished productivity tools (CleanShot, Raycast) that make their desktop workflow feel premium.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -820,8 +820,8 @@
   "segment": "Designer & Content Creator",
   "income": 91000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "Do I really need another background resident app?",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -832,7 +832,7 @@
   "income": 94000,
   "behaviour": "Tool collector & Mac/PC enthusiast",
   "behaviour_how": "Loves polished productivity tools (CleanShot, Raycast) that make their desktop workflow feel premium.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -843,7 +843,7 @@
   "income": 132000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -854,7 +854,7 @@
   "income": 52000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -865,7 +865,7 @@
   "income": 104000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -876,7 +876,7 @@
   "income": 72000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -887,7 +887,7 @@
   "income": 71000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -898,7 +898,7 @@
   "income": 106000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -909,7 +909,7 @@
   "income": 79000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -919,8 +919,8 @@
   "segment": "Software Engineer & Dev",
   "income": 143000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -931,7 +931,7 @@
   "income": 138000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -941,8 +941,8 @@
   "segment": "Designer & Content Creator",
   "income": 100000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -953,7 +953,7 @@
   "income": 64000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -964,7 +964,7 @@
   "income": 84000,
   "behaviour": "Occasional converter",
   "behaviour_how": "Only converts or merges PDFs and videos once or twice a month and looks for simplicity.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -975,7 +975,7 @@
   "income": 137000,
   "behaviour": "CLI & power user",
   "behaviour_how": "Knows FFmpeg and ImageMagick, but finds terminal syntax tedious for quick 5-second file adjustments.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -986,7 +986,7 @@
   "income": 76000,
   "behaviour": "Occasional converter",
   "behaviour_how": "Only converts or merges PDFs and videos once or twice a month and looks for simplicity.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -996,8 +996,8 @@
   "segment": "Software Engineer & Dev",
   "income": 79000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -1008,7 +1008,7 @@
   "income": 134000,
   "behaviour": "Tool collector & Mac/PC enthusiast",
   "behaviour_how": "Loves polished productivity tools (CleanShot, Raycast) that make their desktop workflow feel premium.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -1019,7 +1019,7 @@
   "income": 75000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -1030,7 +1030,7 @@
   "income": 158000,
   "behaviour": "Tool collector & Mac/PC enthusiast",
   "behaviour_how": "Loves polished productivity tools (CleanShot, Raycast) that make their desktop workflow feel premium.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -1041,7 +1041,7 @@
   "income": 75000,
   "behaviour": "Occasional converter",
   "behaviour_how": "Only converts or merges PDFs and videos once or twice a month and looks for simplicity.",
-  "objection": "Do I really need another background resident app?",
+  "objection": "Filee hogs 220MB of RAM—will DropDial slow down my machine?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  },
  {
@@ -1052,7 +1052,7 @@
   "income": 70000,
   "behaviour": "Occasional converter",
   "behaviour_how": "Only converts or merges PDFs and videos once or twice a month and looks for simplicity.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
   "habit": "you frequently share screen recordings and GIFs with your remote team"
  },
  {
@@ -1063,7 +1063,7 @@
   "income": 57000,
   "behaviour": "Anti-subscription pragmatist",
   "behaviour_how": "Refuses monthly SaaS subscriptions for basic utility tools; happily pays once for solid lifetime software.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -1073,8 +1073,8 @@
   "segment": "Software Engineer & Dev",
   "income": 82000,
   "behaviour": "Privacy-conscious professional",
-  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
+  "behaviour_how": "Handles sensitive client files, designs, or contracts and cannot upload to third-party web converters like CloudConvert.",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
   "habit": "you redact and merge PDF contracts or client invoices every week"
  },
  {
@@ -1085,7 +1085,7 @@
   "income": 52000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
   "habit": "you get annoyed when websites save images as .webp instead of .png"
  },
  {
@@ -1096,7 +1096,7 @@
   "income": 151000,
   "behaviour": "Daily media converter",
   "behaviour_how": "Converts screenshots, webp images, and mp4 clips multiple times a day for Slack, GitHub, or social media.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "objection": "Tangerine locked me out after 20 files—will DropDial brick my files too?",
   "habit": "you work across both a Mac laptop and a Windows desktop"
  }
 ]

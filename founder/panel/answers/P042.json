@@ -3,11 +3,11 @@
   "buys": false,
   "purchases_first_month": 0,
   "reason_code": "habit",
-  "reason": "I already have a bash alias for ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open.",
-  "objection": "Do I really need another background resident app?",
-  "would_change_my_mind": "A CLI tool integration or Alfred/Raycast script trigger",
-  "price_too_cheap": 3.8,
-  "price_cheap": 7.29,
-  "price_expensive": 20.27,
-  "price_too_expensive": 39.82
+  "reason": "I already use bash aliases with ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open.",
+  "objection": "Filee hogs 220MB of RAM\u2014will DropDial slow down my machine?",
+  "would_change_my_mind": "DropDial CLI integration or Raycast extension",
+  "price_too_cheap": 4.2,
+  "price_cheap": 8.23,
+  "price_expensive": 20.65,
+  "price_too_expensive": 41.79
 }

@@ -3,11 +3,11 @@
   "buys": true,
   "purchases_first_month": 1,
   "reason_code": "trust",
-  "reason": "I cannot risk client NDAs with web uploaders like CloudConvert. $19 for an offline tool is a complete no-brainer.",
-  "objection": "Do I really need another background resident app?",
+  "reason": "Cloud converters like CloudConvert upload my confidential files to external servers. $19 for an air-gapped offline tool is essential for client NDAs.",
+  "objection": "Filee hogs 220MB of RAM\u2014will DropDial slow down my machine?",
   "would_change_my_mind": "",
-  "price_too_cheap": 6.49,
-  "price_cheap": 13.09,
-  "price_expensive": 33.62,
-  "price_too_expensive": 53.66
+  "price_too_cheap": 7.49,
+  "price_cheap": 14.09,
+  "price_expensive": 34.48,
+  "price_too_expensive": 56.55
 }

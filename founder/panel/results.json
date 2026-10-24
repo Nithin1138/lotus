@@ -4,24 +4,24 @@
  "dealt": 100,
  "answered": 100,
  "skipped": [],
- "buys": 66,
- "passes": 34,
- "buy_rate": 0.66,
+ "buys": 74,
+ "passes": 26,
+ "buy_rate": 0.74,
  "by_segment": [
   [
    "Enterprise / Legal / Remote Professional",
    25,
-   0.72
+   0.8
   ],
   [
    "Software Engineer & Dev",
    35,
-   0.6571428571428571
+   0.7714285714285715
   ],
   [
    "Designer & Content Creator",
    40,
-   0.625
+   0.675
   ]
  ],
  "by_behaviour": [
@@ -33,22 +33,22 @@
   [
    "Anti-subscription pragmatist",
    20,
-   0.95
+   1.0
   ],
   [
    "Daily media converter",
    25,
-   0.84
+   0.92
   ],
   [
    "Tool collector & Mac/PC enthusiast",
    10,
-   0.6
+   0.9
   ],
   [
    "CLI & power user",
    15,
-   0.0
+   0.13333333333333333
   ],
   [
    "Occasional converter",
@@ -60,30 +60,30 @@
   [
    "$100,000 and up",
    34,
-   0.8529411764705882
+   0.8823529411764706
   ],
   [
    "under $77,000",
    33,
-   0.6060606060606061
+   0.6666666666666666
   ],
   [
    "$77,000 to $100,000",
    33,
-   0.5151515151515151
+   0.6666666666666666
   ]
  ],
  "why_not": [
   [
    "habit",
-   22,
+   15,
    [
-    "I already have a working workflow and do not want another resident app sitting in my menu bar.",
-    "I already have a bash alias for ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open."
+    "I already use bash aliases with ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open.",
+    "I already use bash aliases with ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open."
    ],
    [
-    "P006",
-    "P007"
+    "P007",
+    "P015"
    ]
   ],
   [
@@ -99,45 +99,35 @@
    ]
   ],
   [
-   "trust",
-   1,
-   [
-    "Granting accessibility permissions to an indie app makes me slightly nervous on my corporate machine."
-   ],
-   [
-    "P002"
-   ]
-  ],
-  [
    "price",
    1,
    [
-    "I understand it is local, but $19 still feels high when there are dozens of free tools online."
+    "Filee and ZestDrop are free open source. Even though Filee is heavy, it costs nothing."
    ],
    [
-    "P078"
+    "P099"
    ]
   ]
  ],
  "why_yes": [
   [
    "convenience",
-   27,
+   36,
    [
-    "Clean, fast, and does exactly what I need without opening heavy software.",
-    "I convert webp to png and make gifs five times a day. Having it right on the cursor dial saves me ten minutes every single day."
+    "Tangerine locked me out after 20 conversions. DropDial's staging shelf and instant radial dial save me time on every single export.",
+    "Tangerine only works on Mac and ZestDrop is Windows-only. DropDial gives me one unified native tool across both my MacBook and Windows desktop."
    ],
    [
-    "P005",
-    "P009"
+    "P002",
+    "P006"
    ]
   ],
   [
    "trust",
    20,
    [
-    "I cannot risk client NDAs with web uploaders like CloudConvert. $19 for an offline tool is a complete no-brainer.",
-    "I cannot risk client NDAs with web uploaders like CloudConvert. $19 for an offline tool is a complete no-brainer."
+    "Cloud converters like CloudConvert upload my confidential files to external servers. $19 for an air-gapped offline tool is essential for client NDAs.",
+    "Cloud converters like CloudConvert upload my confidential files to external servers. $19 for an air-gapped offline tool is essential for client NDAs."
    ],
    [
     "P001",
@@ -146,52 +136,56 @@
   ],
   [
    "values",
-   19,
+   14,
    [
-    "I refuse to pay $10/month for simple file conversions. A one-time $19 payment with 3 device seats is fair and refreshing.",
-    "I refuse to pay $10/month for simple file conversions. A one-time $19 payment with 3 device seats is fair and refreshing."
+    "Paying $10-$25/mo to CloudConvert or Zamzar is absurd. DropDial's one-time $19 lifetime license with 3 seats is fair and refreshing.",
+    "Paying $10-$25/mo to CloudConvert or Zamzar is absurd. DropDial's one-time $19 lifetime license with 3 seats is fair and refreshing."
    ],
    [
     "P004",
     "P010"
    ]
+  ],
+  [
+   "quality",
+   4,
+   [
+    "Unlike Filee which eats 220MB of RAM, DropDial is pure native Swift/WPF at 45MB with Apple Vision OCR.",
+    "Unlike Filee which eats 220MB of RAM, DropDial is pure native Swift/WPF at 45MB with Apple Vision OCR."
+   ],
+   [
+    "P005",
+    "P017"
+   ]
   ]
  ],
  "flip": [
-  "Open source verification or Mac App Store sandbox",
-  "A 7-day free trial to see if I actually use it",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A free tier with basic image formats",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A free tier with basic image formats",
-  "A free tier with basic image formats",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A free tier with basic image formats",
-  "A 7-day free trial to see if I actually use it",
-  "A 7-day free trial to see if I actually use it",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A free tier with basic image formats",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A 7-day free trial to see if I actually use it",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A 7-day free trial to see if I actually use it",
-  "A free tier with basic image formats",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A 7-day free trial to see if I actually use it",
-  "A $9 to $12 single-app entry tier",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A free tier with basic image formats",
-  "A CLI tool integration or Alfred/Raycast script trigger",
-  "A free tier with basic image formats",
-  "A free tier with basic image formats",
-  "A free tier with basic image formats",
-  "A 7-day free trial to see if I actually use it"
+  "DropDial CLI integration or Raycast extension",
+  "DropDial's free 3 conversions per day",
+  "DropDial CLI integration or Raycast extension",
+  "DropDial's free 3 conversions per day",
+  "DropDial's free 3 conversions per day",
+  "DropDial CLI integration or Raycast extension",
+  "DropDial CLI integration or Raycast extension",
+  "DropDial CLI integration or Raycast extension",
+  "DropDial's free 3 conversions per day",
+  "DropDial CLI integration or Raycast extension",
+  "DropDial's free 3 conversions per day",
+  "DropDial CLI integration or Raycast extension",
+  "DropDial CLI integration or Raycast extension",
+  "DropDial's free 3 conversions per day",
+  "DropDial CLI integration or Raycast extension",
+  "DropDial CLI integration or Raycast extension",
+  "DropDial CLI integration or Raycast extension",
+  "A 7-day free trial",
+  "A cross-grade discount for Tangerine users",
+  "DropDial CLI integration or Raycast extension",
+  "DropDial's free 3 conversions per day",
+  "DropDial CLI integration or Raycast extension",
+  "DropDial's free 3 conversions per day",
+  "DropDial's free 3 conversions per day",
+  "DropDial's free 3 conversions per day",
+  "A $12 single-OS starter tier"
  ],
  "purchases_first_month_per_buyer": 1.0,
  "price_answers": 100

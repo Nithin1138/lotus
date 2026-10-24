@@ -1,13 +1,13 @@
 {
   "id": "P050",
-  "buys": false,
-  "purchases_first_month": 0,
-  "reason_code": "habit",
-  "reason": "I already have a working workflow and do not want another resident app sitting in my menu bar.",
-  "objection": "I already know how to use FFmpeg or ImageOptim in terminal",
-  "would_change_my_mind": "A 7-day free trial to see if I actually use it",
-  "price_too_cheap": 3.48,
-  "price_cheap": 8.98,
-  "price_expensive": 22.03,
-  "price_too_expensive": 31.6
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "convenience",
+  "reason": "Tangerine locked me out after 20 conversions. DropDial's staging shelf and instant radial dial save me time on every single export.",
+  "objection": "Why pay $15-$19 when Filee or ZestDrop are free open source?",
+  "would_change_my_mind": "",
+  "price_too_cheap": 5.72,
+  "price_cheap": 12.98,
+  "price_expensive": 32.39,
+  "price_too_expensive": 51.0
 }

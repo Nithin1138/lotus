@@ -3,11 +3,11 @@
   "buys": true,
   "purchases_first_month": 1,
   "reason_code": "trust",
-  "reason": "I cannot risk client NDAs with web uploaders like CloudConvert. $19 for an offline tool is a complete no-brainer.",
-  "objection": "Will this hog memory or drain my battery running in the menu bar?",
+  "reason": "Cloud converters like CloudConvert upload my confidential files to external servers. $19 for an air-gapped offline tool is essential for client NDAs.",
+  "objection": "Tangerine locked me out after 20 files\u2014will DropDial brick my files too?",
   "would_change_my_mind": "",
-  "price_too_cheap": 6.64,
-  "price_cheap": 11.85,
-  "price_expensive": 26.58,
-  "price_too_expensive": 57.51
+  "price_too_cheap": 7.64,
+  "price_cheap": 12.85,
+  "price_expensive": 26.74,
+  "price_too_expensive": 61.67
 }

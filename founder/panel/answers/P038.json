@@ -3,11 +3,11 @@
   "buys": true,
   "purchases_first_month": 1,
   "reason_code": "convenience",
-  "reason": "I convert webp to png and make gifs five times a day. Having it right on the cursor dial saves me ten minutes every single day.",
-  "objection": "Do I really need another background resident app?",
+  "reason": "Tangerine only works on Mac and ZestDrop is Windows-only. DropDial gives me one unified native tool across both my MacBook and Windows desktop.",
+  "objection": "Filee hogs 220MB of RAM\u2014will DropDial slow down my machine?",
   "would_change_my_mind": "",
-  "price_too_cheap": 6.59,
-  "price_cheap": 11.24,
-  "price_expensive": 26.9,
-  "price_too_expensive": 51.73
+  "price_too_cheap": 7.59,
+  "price_cheap": 12.24,
+  "price_expensive": 27.09,
+  "price_too_expensive": 53.97
 }

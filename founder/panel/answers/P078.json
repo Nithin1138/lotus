@@ -2,12 +2,12 @@
   "id": "P078",
   "buys": false,
   "purchases_first_month": 0,
-  "reason_code": "price",
-  "reason": "I understand it is local, but $19 still feels high when there are dozens of free tools online.",
-  "objection": "$19 is steep for a file converter when free alternatives exist",
-  "would_change_my_mind": "A $9 to $12 single-app entry tier",
-  "price_too_cheap": 3.25,
-  "price_cheap": 9.1,
-  "price_expensive": 23.64,
-  "price_too_expensive": 36.13
+  "reason_code": "habit",
+  "reason": "I already paid for Tangerine on my Mac, so I hesitate to buy another converter unless I need Windows.",
+  "objection": "I already use Tangerine on my Mac, why switch to DropDial?",
+  "would_change_my_mind": "A cross-grade discount for Tangerine users",
+  "price_too_cheap": 3.38,
+  "price_cheap": 9.68,
+  "price_expensive": 24.58,
+  "price_too_expensive": 37.48
 }

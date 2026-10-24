@@ -3,11 +3,11 @@
   "buys": false,
   "purchases_first_month": 0,
   "reason_code": "habit",
-  "reason": "I already have a bash alias for ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open.",
-  "objection": "I can just use free websites like CloudConvert or TinyPNG",
-  "would_change_my_mind": "A CLI tool integration or Alfred/Raycast script trigger",
-  "price_too_cheap": 3.46,
-  "price_cheap": 7.12,
-  "price_expensive": 19.16,
-  "price_too_expensive": 31.94
+  "reason": "I already use bash aliases with ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open.",
+  "objection": "I can just use free web tools like CloudConvert or Zamzar",
+  "would_change_my_mind": "DropDial CLI integration or Raycast extension",
+  "price_too_cheap": 3.68,
+  "price_cheap": 8.09,
+  "price_expensive": 19.35,
+  "price_too_expensive": 32.6
 }

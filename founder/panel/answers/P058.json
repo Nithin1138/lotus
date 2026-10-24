@@ -3,11 +3,11 @@
   "buys": false,
   "purchases_first_month": 0,
   "reason_code": "habit",
-  "reason": "I already have a bash alias for ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open.",
-  "objection": "Can I trust an indie app with system accessibility permissions?",
-  "would_change_my_mind": "A CLI tool integration or Alfred/Raycast script trigger",
-  "price_too_cheap": 4.69,
-  "price_cheap": 7.46,
-  "price_expensive": 20.54,
-  "price_too_expensive": 31.32
+  "reason": "I already use bash aliases with ffmpeg and imagemagick. It is hard to justify spending $19 when my terminal is always open.",
+  "objection": "Can I trust an indie app with system accessibility and local files?",
+  "would_change_my_mind": "DropDial CLI integration or Raycast extension",
+  "price_too_cheap": 5.54,
+  "price_cheap": 8.37,
+  "price_expensive": 20.97,
+  "price_too_expensive": 31.87
 }
