@@ -379,6 +379,11 @@ internal sealed class Resident : IDisposable
         StartupManager.RefreshPortablePath();
         Journal.Prune();
         wheel = new DropWheel(BeginOperation);
+        UpdateManager.DismissWheelAction = () =>
+        {
+            if (wheel.IsVisible)
+                wheel.Dismiss("UpdatePrompt");
+        };
         wheel.Dismissed += () =>
         {
             if (UpdateManager.HasPendingPrompt || (UpdateManager.AvailableUpdate != null && !UpdateManager.IsSessionDismissed(UpdateManager.AvailableUpdate.TagName)))
@@ -894,18 +899,29 @@ internal sealed class Resident : IDisposable
         wheel.OpenAt(point, mode);
         Journal.Write("WheelOpened", new { reason, mode, mouseDown = Native.Down(1), point.X, point.Y });
 
-        // Check for updates if not yet checked
+        // Check for updates if not yet checked or prompt pending update
+        bool isDragging = Native.Down(1) || wheel.HasFileDrag;
         if (UpdateManager.AvailableUpdate == null)
         {
-            _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
+            _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false, autoPromptOnWheelOpen: !isDragging);
         }
-        else if ((UpdateManager.HasPendingPrompt || !UpdateManager.IsSessionDismissed(UpdateManager.AvailableUpdate.TagName)) && !Native.Down(1))
+        else if (!UpdateManager.IsSessionDismissed(UpdateManager.AvailableUpdate.TagName))
         {
-            _ = app.Dispatcher.InvokeAsync(async () =>
+            if (isDragging)
             {
-                await Task.Delay(350);
-                UpdateManager.PromptIfPending();
-            });
+                UpdateManager.SetPendingPrompt(true);
+            }
+            else
+            {
+                _ = app.Dispatcher.InvokeAsync(async () =>
+                {
+                    await Task.Delay(200);
+                    if (wheel.IsVisible && !Native.Down(1))
+                    {
+                        UpdateManager.PromptIfPending();
+                    }
+                });
+            }
         }
     }
 
@@ -1025,7 +1041,7 @@ internal sealed class Resident : IDisposable
             }
         }
 
-        if (mouse && !nextMouse && (UpdateManager.HasPendingPrompt || (UpdateManager.AvailableUpdate != null && !UpdateManager.IsSessionDismissed(UpdateManager.AvailableUpdate.TagName))))
+        if (mouse && !nextMouse && UpdateManager.HasPendingPrompt)
         {
             _ = app.Dispatcher.InvokeAsync(async () =>
             {

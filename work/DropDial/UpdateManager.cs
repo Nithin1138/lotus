@@ -27,12 +27,16 @@ internal static class UpdateManager
     public const string FallbackReleasesApiUrl = "https://www.dropdial.app/api/releases/latest";
     public const string GitHubReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest";
 
+    public static Action? DismissWheelAction;
     private static bool _isShowingPrompt = false;
     private static string? _sessionDismissedVersion = null;
     public static bool HasPendingPrompt { get; private set; }
 
+    public static void SetPendingPrompt(bool pending) => HasPendingPrompt = pending;
+
     public static bool IsSessionDismissed(string tagName) =>
-        string.Equals(_sessionDismissedVersion, tagName, StringComparison.OrdinalIgnoreCase);
+        !string.IsNullOrEmpty(_sessionDismissedVersion) &&
+        string.Equals(FormatVersion(_sessionDismissedVersion), FormatVersion(tagName), StringComparison.OrdinalIgnoreCase);
 
     public static void PromptIfPending()
     {
@@ -100,7 +104,7 @@ internal static class UpdateManager
         return client;
     }
 
-    public static async Task CheckForUpdatesAsync(bool isUserInitiated)
+    public static async Task CheckForUpdatesAsync(bool isUserInitiated, bool autoPromptOnWheelOpen = false)
     {
         try
         {
@@ -263,16 +267,19 @@ internal static class UpdateManager
                 if (changed)
                     UpdateStatusChanged?.Invoke();
 
-                if (isUserInitiated)
+                if (isUserInitiated || autoPromptOnWheelOpen)
                 {
-                    HasPendingPrompt = false;
-                    ShowUpdatePrompt(release);
+                    if (!IsSessionDismissed(release.TagName))
+                    {
+                        HasPendingPrompt = false;
+                        ShowUpdatePrompt(release);
+                    }
                 }
                 else
                 {
                     // Do not interrupt user while working in other apps.
                     // Mark pending so the update prompt appears only when the user opens the wheel / interacts with DropDial.
-                    if (!string.Equals(_sessionDismissedVersion, tagName, StringComparison.OrdinalIgnoreCase))
+                    if (!IsSessionDismissed(release.TagName))
                     {
                         HasPendingPrompt = true;
                     }
@@ -314,6 +321,7 @@ internal static class UpdateManager
 
         try
         {
+            DismissWheelAction?.Invoke();
             string current = FormatVersion(CurrentVersion);
             string available = FormatVersion(release.TagName);
 
