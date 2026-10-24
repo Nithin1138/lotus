@@ -177,20 +177,16 @@ module.exports = async function handler(req, res) {
       res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-macOS.zip` });
       return res.end();
     }
-    if (lower.includes('setup.exe')) {
-      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Setup.exe` });
-      return res.end();
-    }
     if (lower.includes('update')) {
       res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Windows-Update.zip` });
       return res.end();
     }
-    if (lower.includes('windows') || lower.includes('win')) {
+    if (lower.includes('.zip') && (lower.includes('windows') || lower.includes('win'))) {
       res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Windows-x64.zip` });
       return res.end();
     }
-    if (lower.endsWith('.exe')) {
-      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial.exe` });
+    if (lower.includes('setup') || lower.includes('windows') || lower.includes('win') || lower.endsWith('.exe')) {
+      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Setup.exe` });
       return res.end();
     }
   }
