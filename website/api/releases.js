@@ -196,7 +196,7 @@ module.exports = async function handler(req, res) {
     {
       id: 1,
       name: 'DropDial-Setup.exe',
-      size: 69517865,
+      size: 69511165,
       content_type: 'application/x-msdownload',
       browser_download_url: `${baseUrl}/downloads/DropDial-Setup.exe`
     },
@@ -279,7 +279,7 @@ module.exports = async function handler(req, res) {
   }
 
   // Check if Neon DB has a latest_release saved by admin via 2-step verification
-  let activeTag = '1.0.1.9';
+  let activeTag = '1.0.2.0';
   try {
     const { getDb, ensureSchema } = require('./_db');
     const sql = getDb();

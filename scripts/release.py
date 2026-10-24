@@ -94,6 +94,18 @@ def bump_api_admin(new_ver):
             p.write_text(content, encoding="utf-8")
             print(f"  [✓] Updated {adm_file} to {new_ver}")
 
+def bump_installer_nsi(new_ver):
+    nsi_path = ROOT_DIR / "installer.nsi"
+    if nsi_path.exists():
+        content = nsi_path.read_text(encoding="utf-8")
+        content = re.sub(
+            r'("DisplayVersion"\s+)"[\d\.]+"',
+            rf'\1"{new_ver}"',
+            content
+        )
+        nsi_path.write_text(content, encoding="utf-8")
+        print(f"  [✓] Updated {nsi_path.relative_to(ROOT_DIR)} DisplayVersion to {new_ver}")
+
 def bump_website(curr_ver, new_ver):
     for html_file in ["website/index.html", "website/guide.html"]:
         p = ROOT_DIR / html_file
@@ -103,7 +115,8 @@ def bump_website(curr_ver, new_ver):
         content = content.replace(f'"softwareVersion": "{curr_ver}"', f'"softwareVersion": "{new_ver}"')
         content = content.replace(f'v{curr_ver} Universal', f'v{new_ver} Universal')
         content = content.replace(f'v{curr_ver} Stable', f'v{new_ver} Stable')
-        content = re.sub(rf"v{re.escape(curr_ver)}\s*·\s*[\d\.]+\s*MB", f"v{new_ver} · 4.2 MB", content)
+        content = re.sub(rf"\(v{re.escape(curr_ver)}\s*·\s*([\d\.]+\s*MB)\)", rf"(v{new_ver} · \1)", content)
+        content = re.sub(rf"v{re.escape(curr_ver)}\s*·\s*([\d\.]+\s*MB)", rf"v{new_ver} · \1", content)
         content = re.sub(rf"v{re.escape(curr_ver)}\s*·\s*Standalone", f"v{new_ver} · Standalone", content)
         p.write_text(content, encoding="utf-8")
         print(f"  [✓] Updated {html_file} badges from v{curr_ver} to v{new_ver}")
@@ -179,6 +192,20 @@ def build_macos():
     if dmg_file.exists() and web_dmg.exists():
         print(f"  [✓] macOS DMG ready: {dmg_file.stat().st_size // 1024} KB")
 
+def build_windows():
+    print("\n--- 🔨 Building Windows Installer (DropDial-Setup.exe) ---")
+    run_cmd("makensis installer.nsi")
+    setup_path = ROOT_DIR / "website" / "downloads" / "DropDial-Setup.exe"
+    if setup_path.exists():
+        size_bytes = setup_path.stat().st_size
+        print(f"  [✓] Windows Setup compiled: {size_bytes // 1024} KB ({size_bytes} bytes)")
+        for rel_file in ["api/releases.js", "website/api/releases.js"]:
+            p = ROOT_DIR / rel_file
+            if p.exists():
+                content = p.read_text(encoding="utf-8")
+                content = re.sub(r"(name:\s*'DropDial-Setup\.exe',\s*size:\s*)\d+", rf"\g<1>{size_bytes}", content)
+                p.write_text(content, encoding="utf-8")
+
 def publish_release(new_ver, notes_file):
     tag = f"v{new_ver}"
     print(f"\n--- 🚀 Publishing Release {tag} ---")
@@ -205,11 +232,12 @@ def publish_release(new_ver, notes_file):
     assets = []
     mac_zip = ROOT_DIR / "outputs" / "DropDial-macOS" / "DropDial-macOS.zip"
     mac_dmg = ROOT_DIR / "outputs" / "DropDial-macOS" / "DropDial.dmg"
+    win_setup = ROOT_DIR / "website" / "downloads" / "DropDial-Setup.exe"
     win_zip = ROOT_DIR / "outputs" / "DropDial-Windows-x64.zip"
     win_update_zip = ROOT_DIR / "outputs" / "DropDial-Windows-Update.zip"
     win_exe = ROOT_DIR / "outputs" / "DropDial.exe"
 
-    for candidate in [mac_zip, mac_dmg, win_zip, win_update_zip, win_exe]:
+    for candidate in [mac_zip, mac_dmg, win_setup, win_zip, win_update_zip, win_exe]:
         if candidate.exists():
             assets.append(str(candidate))
         else:
@@ -261,6 +289,7 @@ def main():
     bump_plist(new_ver)
     bump_csproj(new_ver)
     bump_csharp_update_manager(new_ver)
+    bump_installer_nsi(new_ver)
     bump_api_releases(new_ver)
     bump_api_admin(new_ver)
     bump_redirects_and_scripts(new_ver)
@@ -270,6 +299,7 @@ def main():
 
     if not args.skip_build:
         build_macos()
+        build_windows()
 
     if args.publish:
         publish_release(new_ver, notes_file)

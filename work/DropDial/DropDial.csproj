@@ -4,9 +4,9 @@
     <AssemblyName>DropDial</AssemblyName>
     <RootNamespace>DropDial</RootNamespace>
     <Product>DropDial</Product>
-    <Version>1.0.1.9</Version>
-    <AssemblyVersion>1.0.1.9</AssemblyVersion>
-    <FileVersion>1.0.1.9</FileVersion>
+    <Version>1.0.2.0</Version>
+    <AssemblyVersion>1.0.2.0</AssemblyVersion>
+    <FileVersion>1.0.2.0</FileVersion>
     <Title>DropDial</Title>
     <Description>Drag. Drop. Convert. Desktop file tools for Windows.</Description>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
