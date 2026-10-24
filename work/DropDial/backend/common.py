@@ -5,16 +5,42 @@ from functools import lru_cache
 
 BASE=Path(__file__).resolve().parent.parent
 
-@lru_cache(maxsize=8)
+_BIN_CACHE = {}
 def _find_binary(name):
-    for cand in [BASE/f'runtime/ffmpeg/{name}.exe', BASE/f'runtime/ffmpeg/bin/{name}.exe', BASE/f'runtime/ffmpeg/{name}']:
-        if cand.is_file(): return cand
+    if name in _BIN_CACHE:
+        return _BIN_CACHE[name]
+    ext = '.exe' if os.name == 'nt' else ''
+    direct = BASE / f'runtime/ffmpeg/{name}{ext}'
+    if direct.is_file():
+        _BIN_CACHE[name] = direct
+        return direct
+    bin_cand = BASE / f'runtime/ffmpeg/bin/{name}{ext}'
+    if bin_cand.is_file():
+        _BIN_CACHE[name] = bin_cand
+        return bin_cand
     found = shutil.which(name)
-    if found: return Path(found)
-    return BASE/f'runtime/ffmpeg/{name}.exe' if os.name=='nt' else BASE/f'runtime/ffmpeg/{name}'
+    res = Path(found) if found else direct
+    _BIN_CACHE[name] = res
+    return res
 
-FFMPEG=_find_binary('ffmpeg')
-FFPROBE=_find_binary('ffprobe')
+class _LazyBinary:
+    __slots__ = ('_name', '_cached')
+    def __init__(self, name):
+        self._name = name
+        self._cached = None
+    def _resolve(self):
+        if self._cached is None:
+            self._cached = _find_binary(self._name)
+        return self._cached
+    def __str__(self):
+        return str(self._resolve())
+    def __fspath__(self):
+        return str(self._resolve())
+    def __repr__(self):
+        return str(self)
+
+FFMPEG = _LazyBinary('ffmpeg')
+FFPROBE = _LazyBinary('ffprobe')
 
 def get_fitz():
     try:
@@ -26,16 +52,6 @@ def get_fitz():
         import fitz
         return fitz
     except ImportError:
-        pass
-    try:
-        subprocess.run([sys.executable, '-m', 'pip', 'install', '--disable-pip-version-check', 'pymupdf'], capture_output=True, timeout=120)
-        try:
-            import pymupdf as fitz
-            return fitz
-        except ImportError:
-            import fitz
-            return fitz
-    except Exception:
         pass
     raise ImportError(T('PyMuPDF is required for document and PDF operations. Run: pip install pymupdf'))
 

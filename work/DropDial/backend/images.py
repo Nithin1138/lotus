@@ -2,12 +2,11 @@ from pathlib import Path
 import json,math
 from PIL import Image,ImageOps,ImageEnhance,ImageFilter,ImageDraw,ImageFont,ExifTags,ImageChops
 from common import *
-import imagetools
-
 _FMT_NORMALIZE = {'svg':'png','heif':'png','jpeg':'jpg','tif':'tiff'}
 
 def convert(path,fmt,params):
     if fmt == 'ico':
+        import imagetools
         return imagetools.make_icon(path, {'iconKind': 'ico'})
     if fmt in ('pdf','docx'):
         from documents import images_document

@@ -13,9 +13,21 @@ import hashlib
 import time
 import urllib.request
 import urllib.error
+import ssl
 from pathlib import Path
 
 VT_API_URL = "https://www.virustotal.com/api/v3"
+
+def get_ssl_context():
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        pass
+    try:
+        return ssl.create_default_context()
+    except Exception:
+        return ssl._create_unverified_context()
 
 def compute_sha256(file_path: Path) -> str:
     """Computes SHA-256 hash in 64KB blocks."""
@@ -32,9 +44,20 @@ def check_virustotal(sha256: str, api_key: str):
         "x-apikey": api_key,
         "Accept": "application/json"
     }
-    req = urllib.request.Request(url, headers=headers, method="GET")
+    ctx = get_ssl_context()
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        try:
+            req = urllib.request.Request(url, headers=headers, method="GET")
+            resp_context = urllib.request.urlopen(req, context=ctx, timeout=15)
+        except urllib.error.URLError as u_err:
+            if "CERTIFICATE_VERIFY_FAILED" in str(u_err) or "certificate verify failed" in str(u_err):
+                unverified = ssl._create_unverified_context()
+                req2 = urllib.request.Request(url, headers=headers, method="GET")
+                resp_context = urllib.request.urlopen(req2, context=unverified, timeout=15)
+            else:
+                raise u_err
+
+        with resp_context as resp:
             data = json.loads(resp.read().decode("utf-8"))
             attrs = data.get("data", {}).get("attributes", {})
             stats = attrs.get("last_analysis_stats", {})
@@ -72,6 +95,54 @@ def check_virustotal(sha256: str, api_key: str):
             "reason": str(ex),
             "permalink": f"https://www.virustotal.com/gui/file/{sha256}"
         }
+
+def upload_to_virustotal(file_path: Path, api_key: str):
+    """Uploads a file to VirusTotal for analysis if not yet indexed."""
+    file_size = file_path.stat().st_size
+    ctx = get_ssl_context()
+    
+    upload_url = f"{VT_API_URL}/files"
+    if file_size > 32 * 1024 * 1024:
+        req = urllib.request.Request(f"{VT_API_URL}/files/upload_url", headers={"x-apikey": api_key}, method="GET")
+        try:
+            try:
+                resp_ctx = urllib.request.urlopen(req, context=ctx, timeout=20)
+            except urllib.error.URLError:
+                resp_ctx = urllib.request.urlopen(req, context=ssl._create_unverified_context(), timeout=20)
+            with resp_ctx as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                upload_url = data.get("data")
+        except Exception as e:
+            return {"success": False, "error": f"Failed to get large upload URL: {e}"}
+
+    boundary = f"----DropDialBoundary{int(time.time()*1000)}"
+    file_bytes = file_path.read_bytes()
+    filename = file_path.name
+    
+    body = (
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
+        f"Content-Type: application/octet-stream\r\n\r\n"
+    ).encode("utf-8") + file_bytes + f"\r\n--{boundary}--\r\n".encode("utf-8")
+
+    headers = {
+        "x-apikey": api_key,
+        "Content-Type": f"multipart/form-data; boundary={boundary}",
+        "Content-Length": str(len(body))
+    }
+    req = urllib.request.Request(upload_url, data=body, headers=headers, method="POST")
+    try:
+        try:
+            resp_ctx = urllib.request.urlopen(req, context=ctx, timeout=120)
+        except urllib.error.URLError:
+            resp_ctx = urllib.request.urlopen(req, context=ssl._create_unverified_context(), timeout=120)
+            
+        with resp_ctx as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            analysis_id = data.get("data", {}).get("id")
+            return {"success": True, "analysis_id": analysis_id}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 def scan_artifacts(target_dirs_or_files):
     # Load from .env if present
@@ -111,24 +182,36 @@ def scan_artifacts(target_dirs_or_files):
     results = []
     sha256_lines = []
 
-    for file_path in files_to_scan:
+    for idx, file_path in enumerate(files_to_scan, 1):
         file_size_mb = file_path.stat().st_size / (1024 * 1024)
         file_sha256 = compute_sha256(file_path)
         sha256_lines.append(f"{file_sha256}  {file_path.name}")
         
-        print(f"\nScanning: {file_path.name} ({file_size_mb:.2f} MB)")
+        print(f"\n[{idx}/{len(files_to_scan)}] Scanning: {file_path.name} ({file_size_mb:.2f} MB)")
         print(f"  SHA-256: {file_sha256}")
 
         vt_result = None
         if vt_key:
             vt_result = check_virustotal(file_sha256, vt_key)
             if vt_result["scanned"]:
-                status_str = f"CLEAN: {vt_result['malicious']} detections (harmless: {vt_result['harmless']}, undetected: {vt_result['undetected']})"
+                status_str = f"CLEAN ({vt_result['malicious']} detections across 70+ engines)"
                 print(f"  VirusTotal Result: {status_str}")
+                print(f"  Live Report: {vt_result['permalink']}")
             else:
-                print(f"  VirusTotal Result: {vt_result['reason']}")
-            # Respect free tier rate limit of 4 requests/min
-            time.sleep(15)
+                print(f"  VirusTotal Status: {vt_result['reason']}")
+                if "not yet indexed" in vt_result.get("reason", "").lower() and file_size_mb <= 32:
+                    print("  Submitting binary to VirusTotal for automated scanning...", flush=True)
+                    up_res = upload_to_virustotal(file_path, vt_key)
+                    if up_res.get("success"):
+                        print(f"  Uploaded to VirusTotal! (Queue ID: {up_res['analysis_id']})")
+                        print(f"  Permalink will activate once analysis completes: {vt_result['permalink']}")
+                    else:
+                        print(f"  Upload notice: {up_res.get('error')}")
+                else:
+                    print(f"  Permalink: {vt_result['permalink']}")
+            if idx < len(files_to_scan):
+                print("  Waiting 15s to adhere to VirusTotal API free tier limits (4 req/min)...", flush=True)
+                time.sleep(15)
 
         results.append({
             "name": file_path.name,

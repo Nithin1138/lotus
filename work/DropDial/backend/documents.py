@@ -59,17 +59,155 @@ def render_pdf(path,fmt,params):
                 image=render_page(doc[index], dpi); save_image(image,state['temp']/f'page-{index+1:04d}.{fmt}',fmt,92)
     doc.close(); return state['output']
 
+def _extract_page_tables(page, fitz):
+    drawings = page.get_drawings()
+    h_lines = []
+    v_lines = []
+    fills = []
+    
+    for d in drawings:
+        r = fitz.Rect(d['rect'])
+        t = d.get('type')
+        if t in ('s', 'fs'):
+            if r.width >= 60 and r.height <= 3.5:
+                col = d.get('color')
+                hex_col = '{:02X}{:02X}{:02X}'.format(int(col[0]*255), int(col[1]*255), int(col[2]*255)) if col else 'D0D5DD'
+                h_lines.append({'rect': r, 'color': hex_col, 'y': (r.y0 + r.y1) / 2})
+            elif r.height >= 20 and r.width <= 3.5:
+                col = d.get('color')
+                hex_col = '{:02X}{:02X}{:02X}'.format(int(col[0]*255), int(col[1]*255), int(col[2]*255)) if col else 'D0D5DD'
+                v_lines.append({'rect': r, 'color': hex_col, 'x': (r.x0 + r.x1) / 2})
+        elif t in ('f', 'fs'):
+            fill = d.get('fill')
+            if fill and not (fill[0] > 0.98 and fill[1] > 0.98 and fill[2] > 0.98) and r.width >= 15 and r.height >= 8:
+                hex_col = '{:02X}{:02X}{:02X}'.format(int(fill[0]*255), int(fill[1]*255), int(fill[2]*255))
+                fills.append({'rect': r, 'hex': hex_col})
+
+    h_lines.sort(key=lambda l: l['y'])
+    words = page.get_text('words')
+    
+    tables = []
+    
+    # 1. Grid tables from PyMuPDF
+    try:
+        tabs = page.find_tables()
+        for t in tabs:
+            if t.row_count >= 1 and t.col_count >= 1:
+                tables.append({'bbox': fitz.Rect(t.bbox), 'grid_tab': t, 'type': 'grid'})
+    except Exception: pass
+
+    # 2. Horizontal bordered tables
+    i = 0
+    while i < len(h_lines):
+        line = h_lines[i]
+        group = [line]
+        j = i + 1
+        while j < len(h_lines):
+            prev = group[-1]
+            curr = h_lines[j]
+            dy = curr['y'] - prev['y']
+            same_x = abs(curr['rect'].x0 - prev['rect'].x0) <= 10 and abs(curr['rect'].x1 - prev['rect'].x1) <= 10
+            if same_x and 12 <= dy <= 160:
+                group.append(curr)
+                j += 1
+            else:
+                break
+        
+        if len(group) >= 2:
+            table_x0 = min(l['rect'].x0 for l in group)
+            table_x1 = max(l['rect'].x1 for l in group)
+            
+            valid_rows = []
+            for r_idx in range(len(group) - 1):
+                r_top = group[r_idx]['y']
+                r_bot = group[r_idx+1]['y']
+                r_box = fitz.Rect(table_x0, r_top, table_x1, r_bot)
+                r_fills = [f for f in fills if r_box.intersects(f['rect']) and (r_box & f['rect']).get_area() > 0.35 * f['rect'].get_area()]
+                r_words = [w for w in words if r_top <= (w[1]+w[3])/2 <= r_bot and table_x0 - 4 <= w[0] <= table_x1 + 4]
+                
+                is_table_row = bool(r_fills)
+                if not is_table_row and r_words:
+                    xs = sorted([(w[0], w[2]) for w in r_words])
+                    max_gap = 0
+                    for k in range(len(xs) - 1):
+                        gap = xs[k+1][0] - xs[k][1]
+                        if gap > max_gap: max_gap = gap
+                    if max_gap >= 22:
+                        is_table_row = True
+                
+                if is_table_row:
+                    valid_rows.append((r_top, r_bot, r_fills, r_words))
+
+            if valid_rows:
+                cur_t_rows = [valid_rows[0]]
+                for vr in valid_rows[1:]:
+                    if abs(vr[0] - cur_t_rows[-1][1]) <= 2.0:
+                        cur_t_rows.append(vr)
+                    else:
+                        t_y0 = cur_t_rows[0][0]
+                        t_y1 = cur_t_rows[-1][1]
+                        tables.append({
+                            'bbox': fitz.Rect(table_x0, t_y0, table_x1, t_y1),
+                            'rows': cur_t_rows,
+                            'border_color': group[0]['color'],
+                            'type': 'h_rule'
+                        })
+                        cur_t_rows = [vr]
+                if cur_t_rows:
+                    t_y0 = cur_t_rows[0][0]
+                    t_y1 = cur_t_rows[-1][1]
+                    tables.append({
+                        'bbox': fitz.Rect(table_x0, t_y0, table_x1, t_y1),
+                        'rows': cur_t_rows,
+                        'border_color': group[0]['color'],
+                        'type': 'h_rule'
+                    })
+            i = j
+        else:
+            i += 1
+
+    return tables
+
 def _build_structured_docx_from_pdf(doc, out_path, fitz, has_text):
     from docx import Document
     from docx.shared import Inches, Pt, RGBColor
-    from docx.enum.table import WD_TABLE_ALIGNMENT
-    from docx.oxml import parse_xml
-    from docx.oxml.ns import nsdecls
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+    from docx.oxml import parse_xml, OxmlElement
+    from docx.oxml.ns import nsdecls, qn
+
+    def set_cell_margins(cell, top=100, bottom=100, left=140, right=140):
+        tcPr = cell._tc.get_or_add_tcPr()
+        tcMar = OxmlElement('w:tcMar')
+        for m, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
+            node = OxmlElement(f'w:{m}')
+            node.set(qn('w:w'), str(val))
+            node.set(qn('w:type'), 'dxa')
+            tcMar.append(node)
+        tcPr.append(tcMar)
+
+    def set_cell_shading(cell, color_hex):
+        shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{color_hex}"/>')
+        cell._tc.get_or_add_tcPr().append(shd)
+
+    def set_table_borders(table, color_hex='E3D6B8'):
+        tblPr = table._tbl.tblPr
+        borders = parse_xml(f'''
+            <w:tblBorders {nsdecls("w")}>
+                <w:top w:val="single" w:sz="6" w:space="0" w:color="{color_hex}"/>
+                <w:bottom w:val="single" w:sz="6" w:space="0" w:color="{color_hex}"/>
+                <w:insideH w:val="single" w:sz="6" w:space="0" w:color="{color_hex}"/>
+                <w:left w:val="none"/>
+                <w:right w:val="none"/>
+                <w:insideV w:val="none"/>
+            </w:tblBorders>
+        ''')
+        tblPr.append(borders)
 
     word = Document()
     for section in word.sections:
-        section.top_margin = Inches(0.75)
-        section.bottom_margin = Inches(0.75)
+        section.top_margin = Inches(0.7)
+        section.bottom_margin = Inches(0.7)
         section.left_margin = Inches(0.75)
         section.right_margin = Inches(0.75)
 
@@ -85,71 +223,262 @@ def _build_structured_docx_from_pdf(doc, out_path, fitz, has_text):
         if page_idx > 0:
             word.add_page_break()
 
-        tables = []
-        table_rects = []
-        try:
-            tabs = page.find_tables()
-            for t in tabs:
-                tables.append(t)
-                table_rects.append(fitz.Rect(t.bbox))
-        except Exception: pass
+        tables = _extract_page_tables(page, fitz)
+        occupied_table_rects = [t['bbox'] for t in tables]
 
-        blocks = page.get_text('blocks')
-        items = []
-        for b in blocks:
-            b_rect = fitz.Rect(b[:4])
-            inside_table = any(b_rect.intersects(t_rect) and (b_rect & t_rect).get_area() > 0.5 * b_rect.get_area() for t_rect in table_rects)
-            if not inside_table and b[4].strip():
-                items.append(('block', b_rect.y0, b))
+        # Collect vector bullet dots (small circles, dots, squares drawn as paths)
+        bullet_dots = [d['rect'] for d in page.get_drawings() if (d['rect'].x1 - d['rect'].x0) < 14 and (d['rect'].y1 - d['rect'].y0) < 14 and d.get('type') in ('f', 'fs', 's')]
+
+        # Collect page elements in reading order
+        elements = []
         for t in tables:
-            t_rect = fitz.Rect(t.bbox)
-            items.append(('table', t_rect.y0, t))
+            elements.append(('table', t['bbox'].y0, t))
 
-        items.sort(key=lambda x: x[1])
+        page_dict = page.get_text('dict')
+        for b in page_dict.get('blocks', []):
+            b_rect = fitz.Rect(b['bbox'])
+            inside = any(b_rect.intersects(ob) and (b_rect & ob).get_area() > 0.4 * b_rect.get_area() for ob in occupied_table_rects)
+            if not inside:
+                if b.get('type') == 0: # text block
+                    elements.append(('block', b_rect.y0, b))
+                elif b.get('type') == 1 and b.get('image'): # image block
+                    elements.append(('image', b_rect.y0, b))
 
-        for item_type, _, item_data in items:
-            if item_type == 'table':
-                extracted = item_data.extract()
-                if not extracted: continue
-                rows_count = len(extracted)
-                cols_count = max(len(r) for r in extracted) if rows_count > 0 else 0
-                if rows_count == 0 or cols_count == 0: continue
+        elements.sort(key=lambda x: x[1])
 
-                table = word.add_table(rows=rows_count, cols=cols_count)
-                table.alignment = WD_TABLE_ALIGNMENT.CENTER
-                try: table.style = 'Table Grid'
+        for el_type, y_pos, el_data in elements:
+            if el_type == 'image':
+                try:
+                    img_data = el_data.get('image')
+                    if img_data:
+                        w_pt = el_data['bbox'][2] - el_data['bbox'][0]
+                        w_in = min(max(w_pt / 72.0, 1.0), 6.5)
+                        word.add_picture(io.BytesIO(img_data), width=Inches(w_in))
                 except Exception: pass
 
-                for r_idx, row_data in enumerate(extracted):
-                    for c_idx, cell_value in enumerate(row_data):
-                        if c_idx < cols_count:
-                            cell = table.cell(r_idx, c_idx)
-                            cell.text = (cell_value or '').strip()
-                            if r_idx == 0:
-                                for p in cell.paragraphs:
-                                    for run in p.runs: run.bold = True
-                                shading = parse_xml(r'<w:shd {} w:fill="F2F4F7"/>'.format(nsdecls('w')))
-                                cell._tc.get_or_add_tcPr().append(shading)
+            elif el_type == 'block':
+                lines = el_data.get('lines', [])
+                if not lines: continue
+                full_text = '\n'.join(''.join(s.get('text', '') for s in l.get('spans', [])) for l in lines).strip()
+                if not full_text: continue
+                
+                full_text = full_text.replace('\u200b', '').replace('\ufeff', '')
+                
+                b_rect = fitz.Rect(el_data['bbox'])
+                first_line_top = lines[0]['bbox'][1] if lines else b_rect.y0
+                matched_dots = [dot for dot in bullet_dots if abs(dot.y0 - first_line_top) < 16 and dot.x1 <= b_rect.x0 + 8]
+                has_vector_dot = bool(matched_dots)
+                is_char_bullet = bool(re.match(r'^[•◦▪‣\-\*\u25a1\u25a0□]\s*', full_text))
+                is_bullet = has_vector_dot or is_char_bullet
+                is_nested = is_bullet and (has_vector_dot and (matched_dots[0].x0 > 68 or b_rect.x0 > 72))
+                is_num_list = bool(re.match(r'^(\d+|[a-zA-Z])[\.\)\]]\s+', full_text))
+                
+                first_span = lines[0]['spans'][0] if (lines and lines[0].get('spans')) else {}
+                span_font = (first_span.get('font') or '').lower()
+                is_bold = bool(first_span.get('flags', 0) & 16 or 'bold' in span_font)
+                span_size = first_span.get('size', 10.5)
+                span_color = first_span.get('color', 0)
+                
+                is_heading = (not is_bullet and not is_num_list and len(lines) <= 2 and (
+                    span_size >= 14.0 or
+                    full_text.isupper() or
+                    (len(full_text) < 55 and is_bold and not full_text.endswith('.'))
+                ))
 
-                p_spacer = word.add_paragraph()
-                p_spacer.paragraph_format.space_before = Pt(4)
-                p_spacer.paragraph_format.space_after = Pt(6)
-
-            elif item_type == 'block':
-                text_content = item_data[4].strip()
-                if not text_content: continue
-
-                lines = text_content.splitlines()
-                first_line = lines[0].strip() if lines else ''
-                is_bullet = bool(re.match(r'^[•◦▪‣\-\*]\s+', first_line))
                 if is_bullet:
-                    clean_text = re.sub(r'^[•◦▪‣\-\*]\s+', '', text_content)
-                    p = word.add_paragraph(clean_text, style='List Bullet')
-                    p.paragraph_format.space_after = Pt(4)
-                else:
-                    p = word.add_paragraph(text_content)
-                    p.paragraph_format.space_after = Pt(6)
+                    p = word.add_paragraph(style='List Bullet')
+                    if is_nested:
+                        p.paragraph_format.left_indent = Inches(0.5)
+                    p.paragraph_format.space_after = Pt(3.5)
                     p.paragraph_format.line_spacing = 1.15
+                    
+                    first_run = True
+                    for l_idx, line in enumerate(lines):
+                        if l_idx > 0 and not full_text.endswith('-'):
+                            p.add_run(' ')
+                        spans = line.get('spans', [])
+                        for s_idx, span in enumerate(spans):
+                            txt = span.get('text', '').replace('\u200b', '').replace('\ufeff', '')
+                            if not txt: continue
+                            
+                            # Check gap between spans to avoid squished words
+                            if s_idx > 0:
+                                prev_s = spans[s_idx - 1]
+                                gap = span.get('bbox', [0,0,0,0])[0] - prev_s.get('bbox', [0,0,0,0])[2]
+                                prev_txt = prev_s.get('text', '')
+                                if gap >= 2.0 and not prev_txt.endswith(' ') and not txt.startswith(' '):
+                                    p.add_run(' ')
+                                    
+                            if first_run:
+                                txt = re.sub(r'^[•◦▪‣\-\*\u25a1\u25a0□]\s*', '', txt)
+                                if not txt.strip(): continue
+                                
+                            r = p.add_run(txt)
+                            f_name = (span.get('font') or '').lower()
+                            r.bold = bool(span.get('flags', 0) & 16 or 'bold' in f_name)
+                            r.italic = bool(span.get('flags', 0) & 2 or 'italic' in f_name)
+                            r.font.size = Pt(min(max(span.get('size', 10.0), 8.5), 13.0))
+                            sc = span.get('color', 0)
+                            if sc and sc != 0 and sc != 0xFFFFFF:
+                                r.font.color.rgb = RGBColor((sc >> 16) & 0xFF, (sc >> 8) & 0xFF, sc & 0xFF)
+                            if txt.strip():
+                                first_run = False
+
+                elif is_num_list:
+                    p = word.add_paragraph(style='List Number')
+                    p.paragraph_format.space_after = Pt(3.5)
+                    p.paragraph_format.line_spacing = 1.15
+                    clean_text = re.sub(r'^(\d+|[a-zA-Z])[\.\)\]]\s+', '', full_text).strip()
+                    r = p.add_run(clean_text)
+                    r.font.size = Pt(min(max(span_size, 9.0), 12.0))
+
+                elif is_heading:
+                    p = word.add_paragraph()
+                    p.paragraph_format.space_before = Pt(11)
+                    p.paragraph_format.space_after = Pt(4)
+                    p.paragraph_format.keep_with_next = True
+                    r = p.add_run(full_text)
+                    r.bold = True
+                    r.font.size = Pt(max(span_size, 11.5))
+                    if span_color and span_color != 0 and span_color != 0xFFFFFF:
+                        r.font.color.rgb = RGBColor((span_color >> 16) & 0xFF, (span_color >> 8) & 0xFF, span_color & 0xFF)
+                    else:
+                        r.font.color.rgb = RGBColor(0x1F, 0x2A, 0x37)
+
+                else:
+                    p = word.add_paragraph()
+                    p.paragraph_format.space_after = Pt(5)
+                    p.paragraph_format.line_spacing = 1.15
+                    for l_idx, line in enumerate(lines):
+                        if l_idx > 0 and not full_text.endswith('-'):
+                            p.add_run(' ')
+                        spans = line.get('spans', [])
+                        for s_idx, span in enumerate(spans):
+                            txt = span.get('text', '').replace('\u200b', '').replace('\ufeff', '')
+                            if not txt: continue
+                            
+                            # Check gap between spans to avoid squished words
+                            if s_idx > 0:
+                                prev_s = spans[s_idx - 1]
+                                gap = span.get('bbox', [0,0,0,0])[0] - prev_s.get('bbox', [0,0,0,0])[2]
+                                prev_txt = prev_s.get('text', '')
+                                if gap >= 2.0 and not prev_txt.endswith(' ') and not txt.startswith(' '):
+                                    p.add_run(' ')
+
+                            r = p.add_run(txt)
+                            f_name = (span.get('font') or '').lower()
+                            r.bold = bool(span.get('flags', 0) & 16 or 'bold' in f_name)
+                            r.italic = bool(span.get('flags', 0) & 2 or 'italic' in f_name)
+                            r.font.size = Pt(min(max(span.get('size', 10.0), 8.5), 14.0))
+                            sc = span.get('color', 0)
+                            if sc and sc != 0 and sc != 0xFFFFFF:
+                                r.font.color.rgb = RGBColor((sc >> 16) & 0xFF, (sc >> 8) & 0xFF, sc & 0xFF)
+
+            elif el_type == 'table':
+                t_info = el_data
+                if t_info.get('type') == 'grid':
+                    grid_tab = t_info['grid_tab']
+                    extracted = grid_tab.extract()
+                    if not extracted: continue
+                    r_cnt = len(extracted)
+                    c_cnt = max(len(r) for r in extracted) if r_cnt > 0 else 0
+                    if r_cnt == 0 or c_cnt == 0: continue
+                    tbl = word.add_table(rows=r_cnt, cols=c_cnt)
+                    tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
+                    set_table_borders(tbl, 'D0D5DD')
+                    for r_idx, r_data in enumerate(extracted):
+                        for c_idx, val in enumerate(r_data):
+                            if c_idx < c_cnt:
+                                cell = tbl.cell(r_idx, c_idx)
+                                cell.text = (val or '').strip().replace('\u200b', '').replace('\ufeff', '')
+                                set_cell_margins(cell)
+                                if r_idx == 0:
+                                    set_cell_shading(cell, 'F2F4F7')
+                                    for p in cell.paragraphs:
+                                        for run in p.runs: run.bold = True
+                    p_sp = word.add_paragraph()
+                    p_sp.paragraph_format.space_after = Pt(6)
+
+                elif t_info.get('type') == 'h_rule':
+                    rows_data = t_info['rows']
+                    r_cnt = len(rows_data)
+                    if r_cnt == 0: continue
+                    
+                    # Determine column splits dynamically (supports 2, 3, 4, N columns)
+                    col_x_bounds = set()
+                    col_x_bounds.add(t_info['bbox'].x0)
+                    col_x_bounds.add(t_info['bbox'].x1)
+                    
+                    for _, _, r_fills, _ in rows_data:
+                        for f in r_fills:
+                            col_x_bounds.add(f['rect'].x0)
+                            col_x_bounds.add(f['rect'].x1)
+                    
+                    all_r_words = [w for _, _, _, r_words in rows_data for w in r_words]
+                    if len(col_x_bounds) <= 2 and all_r_words:
+                        x_intervals = sorted([(w[0], w[2]) for w in all_r_words], key=lambda x: x[0])
+                        merged = []
+                        for start, end in x_intervals:
+                            if not merged or start > merged[-1][1] + 12:
+                                merged.append([start, end])
+                            else:
+                                merged[-1][1] = max(merged[-1][1], end)
+                        if len(merged) > 1:
+                            for k in range(len(merged) - 1):
+                                col_x_bounds.add((merged[k][1] + merged[k+1][0]) / 2.0)
+                    
+                    sorted_splits = sorted(col_x_bounds)
+                    clean_splits = [sorted_splits[0]]
+                    for s in sorted_splits[1:]:
+                        if s - clean_splits[-1] >= 25:
+                            clean_splits.append(s)
+                    if len(clean_splits) < 2:
+                        clean_splits = [t_info['bbox'].x0, t_info['bbox'].x1]
+                    
+                    c_cnt = len(clean_splits) - 1
+                    if c_cnt <= 0: c_cnt = 1
+                    
+                    tbl = word.add_table(rows=r_cnt, cols=c_cnt)
+                    tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
+                    set_table_borders(tbl, t_info.get('border_color', 'E3D6B8'))
+
+                    for r_idx, (r_top, r_bot, r_fills, r_words) in enumerate(rows_data):
+                        for c_idx in range(c_cnt):
+                            x_left = clean_splits[c_idx]
+                            x_right = clean_splits[c_idx+1]
+                            col_w_in = (x_right - x_left) / 72.0
+                            
+                            c_words = [w for w in r_words if x_left - 4 <= (w[0]+w[2])/2 < x_right + 4]
+                            
+                            def words_to_lines(ws):
+                                lines_dict = {}
+                                for w in ws:
+                                    l_key = (w[5], w[6])
+                                    lines_dict.setdefault(l_key, []).append(w)
+                                sorted_lines = sorted(lines_dict.values(), key=lambda line_ws: line_ws[0][1])
+                                return [' '.join(w[4] for w in l).replace('\u200b', '').replace('\ufeff', '') for l in sorted_lines]
+
+                            cell_text = '\n'.join(words_to_lines(c_words)).strip()
+                            cell = tbl.cell(r_idx, c_idx)
+                            cell.width = Inches(col_w_in)
+                            set_cell_margins(cell, top=90, bottom=90, left=120, right=120)
+
+                            cell_box = fitz.Rect(x_left, r_top, x_right, r_bot)
+                            c_fill = [f for f in r_fills if cell_box.intersects(f['rect']) and (cell_box & f['rect']).get_area() > 0.3 * cell_box.get_area()]
+                            if c_fill:
+                                set_cell_shading(cell, c_fill[0]['hex'])
+
+                            cell.text = cell_text
+                            for p in cell.paragraphs:
+                                p.paragraph_format.space_after = Pt(2)
+                                p.paragraph_format.line_spacing = 1.15
+                                for run in p.runs:
+                                    run.font.size = Pt(10)
+                                    if c_idx == 0 or r_idx == 0:
+                                        run.bold = True
+
+                    p_sp = word.add_paragraph()
+                    p_sp.paragraph_format.space_after = Pt(6)
 
     word.save(str(out_path))
 
@@ -158,16 +487,38 @@ def _clean_docx_list_markers(file_path):
         from docx import Document
         word_doc = Document(str(file_path))
         modified = False
+
+        def clean_text_str(s):
+            return s.replace('\u200b', '').replace('\ufeff', '')
+
         for p in word_doc.paragraphs:
             p_style = (p.style.name or '').lower() if p.style else ''
-            if 'list' in p_style or 'bullet' in p_style:
-                for run in p.runs:
-                    if run.text:
-                        new_text = re.sub(r'^\s*[•◦▪‣]\s*', '', run.text)
-                        if new_text != run.text:
-                            run.text = new_text
-                            modified = True
-                            break
+            is_list = 'list' in p_style or 'bullet' in p_style
+            first_run = True
+            for run in p.runs:
+                if run.text:
+                    orig = run.text
+                    clean = clean_text_str(orig)
+                    if is_list and first_run:
+                        clean = re.sub(r'^\s*[•◦▪‣\-\*\u25a1\u25a0□]\s*', '', clean)
+                    if clean != orig:
+                        run.text = clean
+                        modified = True
+                    if clean.strip():
+                        first_run = False
+
+        for table in word_doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for p in cell.paragraphs:
+                        for run in p.runs:
+                            if run.text:
+                                orig = run.text
+                                clean = clean_text_str(orig)
+                                if clean != orig:
+                                    run.text = clean
+                                    modified = True
+
         if modified:
             word_doc.save(str(file_path))
     except Exception: pass
@@ -180,8 +531,17 @@ def pdf_word(path,params):
         has_text = any(page.get_text().strip() for page in doc)
         converted = False
 
-        # 1. Primary Engine: pdf2docx with tuned table & layout detection
+        # 1. Primary Engine: Structured PyMuPDF Engine (100% fidelity on tables, bullets, headings, and spaces)
         if has_text:
+            try:
+                _build_structured_docx_from_pdf(doc, state['temp'], fitz, has_text)
+                if state['temp'].exists() and state['temp'].stat().st_size > 0:
+                    converted = True
+            except Exception:
+                pass
+
+        # 2. General Fallback: pdf2docx with safe table settings
+        if not converted and has_text:
             try:
                 from pdf2docx import Converter
                 converter=Converter(str(path),password=params.get('password',''))
@@ -189,10 +549,10 @@ def pdf_word(path,params):
                     converter.convert(
                         str(state['temp']),
                         multi_processing=False,
-                        extract_stream_table=True,
+                        extract_stream_table=False,
                         delete_end_line_hyphen=True,
                         parse_lattice_table=True,
-                        parse_stream_table=True
+                        parse_stream_table=False
                     )
                     if state['temp'].exists() and state['temp'].stat().st_size > 0:
                         converted = True
@@ -201,11 +561,11 @@ def pdf_word(path,params):
             except Exception:
                 pass
 
-        # 2. Structured Fallback: High-fidelity PyMuPDF -> docx table & paragraph engine
+        # 3. Final Fallback: structured image generator if all else failed
         if not converted:
             _build_structured_docx_from_pdf(doc, state['temp'], fitz, has_text)
 
-        # 3. Post-process to remove duplicate bullet characters in list paragraphs
+        # 4. Post-process to remove duplicate bullet characters and zero-width spaces
         if state['temp'].exists():
             _clean_docx_list_markers(state['temp'])
 
@@ -599,12 +959,33 @@ def pdf_to_excel(path, fmt, params):
         raise ValueError(T('PDF has no pages'))
     all_rows = []
     for page in doc:
-        tables = page.find_tables()
+        tabs = _extract_page_tables(page, fitz)
         found = False
-        for tab in tables:
+        for t in tabs:
             found = True
-            for r in tab.extract():
-                all_rows.append([c if c is not None else '' for c in r])
+            if t.get('type') == 'grid':
+                for r in t['grid_tab'].extract():
+                    all_rows.append([c if c is not None else '' for c in r])
+            elif t.get('type') == 'h_rule':
+                split_x = None
+                for _, _, r_fills, _ in t['rows']:
+                    if r_fills:
+                        split_x = r_fills[0]['rect'].x1
+                        break
+                if split_x is None:
+                    split_x = t['bbox'].x0 + (t['bbox'].x1 - t['bbox'].x0) * 0.35
+                for _, _, _, r_words in t['rows']:
+                    col1_words = [w for w in r_words if (w[0]+w[2])/2 < split_x]
+                    col2_words = [w for w in r_words if (w[0]+w[2])/2 >= split_x]
+                    def words_to_str(ws):
+                        lines_dict = {}
+                        for w in ws:
+                            lines_dict.setdefault((w[5], w[6]), []).append(w)
+                        sorted_lines = sorted(lines_dict.values(), key=lambda lw: lw[0][1])
+                        return ' '.join(' '.join(w[4] for w in l) for l in sorted_lines).replace('\u200b', '').strip()
+                    c1 = words_to_str(col1_words)
+                    c2 = words_to_str(col2_words)
+                    all_rows.append([c1, c2])
         if not found:
             text = page.get_text()
             for line in text.splitlines():
@@ -700,10 +1081,12 @@ def pdf_to_pages(path, params):
             subprocess.run(['open', '-g', '-j', '-a', 'Pages'], capture_output=True)
             as_code = f'''
 tell application "Pages"
-    open (POSIX file "{docx_out}")
-    delay 0.5
-    save front document in (POSIX file "{state['temp']}")
-    close front document saving no
+    try
+        set myDoc to open (POSIX file "{docx_out}")
+        delay 0.5
+        save myDoc in (POSIX file "{state['temp']}")
+        close myDoc saving no
+    end try
 end tell
 '''
             try:

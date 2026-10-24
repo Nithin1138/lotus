@@ -381,7 +381,7 @@ internal sealed class Resident : IDisposable
         wheel = new DropWheel(BeginOperation);
         wheel.Dismissed += () =>
         {
-            if (UpdateManager.HasPendingPrompt)
+            if (UpdateManager.HasPendingPrompt || (UpdateManager.AvailableUpdate != null && !UpdateManager.IsSessionDismissed(UpdateManager.AvailableUpdate.TagName)))
             {
                 _ = app.Dispatcher.InvokeAsync(async () =>
                 {
@@ -440,6 +440,7 @@ internal sealed class Resident : IDisposable
         {
             await Task.Delay(1000);
             await UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
+            Backend.EnsureEnvironment();
         });
         updateTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(15) };
         updateTimer.Tick += (_, _) => _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
@@ -893,8 +894,12 @@ internal sealed class Resident : IDisposable
         wheel.OpenAt(point, mode);
         Journal.Write("WheelOpened", new { reason, mode, mouseDown = Native.Down(1), point.X, point.Y });
 
-        // If an update was detected in the background, prompt the user now that they opened the wheel
-        if (UpdateManager.HasPendingPrompt && !Native.Down(1))
+        // Check for updates if not yet checked
+        if (UpdateManager.AvailableUpdate == null)
+        {
+            _ = UpdateManager.CheckForUpdatesAsync(isUserInitiated: false);
+        }
+        else if ((UpdateManager.HasPendingPrompt || !UpdateManager.IsSessionDismissed(UpdateManager.AvailableUpdate.TagName)) && !Native.Down(1))
         {
             _ = app.Dispatcher.InvokeAsync(async () =>
             {
@@ -1019,6 +1024,16 @@ internal sealed class Resident : IDisposable
                 }
             }
         }
+
+        if (mouse && !nextMouse && (UpdateManager.HasPendingPrompt || (UpdateManager.AvailableUpdate != null && !UpdateManager.IsSessionDismissed(UpdateManager.AvailableUpdate.TagName))))
+        {
+            _ = app.Dispatcher.InvokeAsync(async () =>
+            {
+                await Task.Delay(300);
+                UpdateManager.PromptIfPending();
+            });
+        }
+
         f8 = nextF8;
         f9 = nextF9;
         f10 = nextF10;

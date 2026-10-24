@@ -57,8 +57,11 @@ internal static class Backend
         }
     }
 
+    private static string? _cachedPythonExe;
+
     public static string FindPythonExecutable()
     {
+        if (_cachedPythonExe != null) return _cachedPythonExe;
         string baseDir = AppContext.BaseDirectory;
         string[] candidates = [
             Path.Combine(baseDir, "runtime", "python", "python.exe"),
@@ -71,9 +74,14 @@ internal static class Backend
         ];
         foreach (var c in candidates)
         {
-            if (File.Exists(c)) return c;
+            if (File.Exists(c))
+            {
+                _cachedPythonExe = c;
+                return c;
+            }
         }
-        return "python.exe";
+        _cachedPythonExe = "python.exe";
+        return _cachedPythonExe;
     }
 
     public static ProcessStartInfo StartInfo(params string[] arguments)
@@ -100,11 +108,12 @@ internal static class Backend
 
         // Messages from the engine (errors, page headings in text exports) follow the app's language.
         info.Environment["DROPDIAL_LANG"] = L.Language;
-        // The Store installs the app into a read-only folder, so Python must not write bytecode caches next to its libraries.
-        // Without any cache every job recompiles them (1–2 s slower), so keep the cache in the user's profile instead.
-        info.Environment["PYTHONPYCACHEPREFIX"] = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DropDial", "pycache");
-        // A copy of the user's environment is inherited; if it asks Python not to write bytecode, the cache above would stay empty.
-        info.Environment.Remove("PYTHONDONTWRITEBYTECODE");
+        // Optimized pycache directory to allow fast module import
+        string pyCache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DropDial", "pycache");
+        try { Directory.CreateDirectory(pyCache); } catch { }
+        info.Environment["PYTHONPYCACHEPREFIX"] = pyCache;
+        info.Environment["PYTHONOPTIMIZE"] = "1";
+        info.Environment["PYTHONDONTWRITEBYTECODE"] = "0";
         // Results go where the user chose (tray menu); an empty value means next to the source file.
         info.Environment["DROPDIAL_OUTPUT_DIR"] = OutputFolder.Current ?? "";
         foreach (string arg in arguments)
@@ -114,7 +123,6 @@ internal static class Backend
     // jobToken tags the worker's staging files, so cleaning up after a cancel touches only this job's files.
     public static async Task Run(string[] arguments, CancellationToken cancellation = default, Action<Process>? onStart = null, IProgress<JobProgress>? progress = null, string? jobToken = null)
     {
-        EnsureEnvironment();
         using var watch = arguments.Length >= 3 && arguments[0] == "--job" ? WatchProgress(arguments[2], progress) : null;
         var start = StartInfo(arguments);
         if (jobToken != null)

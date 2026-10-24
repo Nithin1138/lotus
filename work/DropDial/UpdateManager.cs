@@ -23,19 +23,23 @@ internal sealed class ReleaseInfo
 
 internal static class UpdateManager
 {
-    public const string ReleasesApiUrl = "https://dropdial.app/api/releases";
-    public const string FallbackReleasesApiUrl = "https://dropdial.app/api/releases/latest";
+    public const string ReleasesApiUrl = "https://www.dropdial.app/api/releases";
+    public const string FallbackReleasesApiUrl = "https://www.dropdial.app/api/releases/latest";
+    public const string GitHubReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest";
 
     private static bool _isShowingPrompt = false;
     private static string? _sessionDismissedVersion = null;
     public static bool HasPendingPrompt { get; private set; }
 
+    public static bool IsSessionDismissed(string tagName) =>
+        string.Equals(_sessionDismissedVersion, tagName, StringComparison.OrdinalIgnoreCase);
+
     public static void PromptIfPending()
     {
-        if (!HasPendingPrompt || AvailableUpdate == null)
+        if (AvailableUpdate == null)
             return;
 
-        if (string.Equals(_sessionDismissedVersion, AvailableUpdate.TagName, StringComparison.OrdinalIgnoreCase))
+        if (IsSessionDismissed(AvailableUpdate.TagName))
         {
             HasPendingPrompt = false;
             return;
@@ -83,13 +87,24 @@ internal static class UpdateManager
         return false;
     }
 
+    private static HttpClient CreateClient()
+    {
+        var handler = new HttpClientHandler
+        {
+            AllowAutoRedirect = true,
+            MaxAutomaticRedirections = 5
+        };
+        var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd($"DropDial-Windows/{CurrentVersion}");
+        client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+        return client;
+    }
+
     public static async Task CheckForUpdatesAsync(bool isUserInitiated)
     {
         try
         {
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
-            client.DefaultRequestHeaders.UserAgent.ParseAdd($"DropDial-Windows/{CurrentVersion}");
-            client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+            using var client = CreateClient();
 
             HttpResponseMessage? response = null;
             try
@@ -104,6 +119,16 @@ internal static class UpdateManager
                 {
                     response?.Dispose();
                     response = await client.GetAsync(FallbackReleasesApiUrl);
+                }
+                catch { }
+            }
+
+            if (response == null || (!response.IsSuccessStatusCode && (int)response.StatusCode != 404))
+            {
+                try
+                {
+                    response?.Dispose();
+                    response = await client.GetAsync(GitHubReleasesApiUrl);
                 }
                 catch { }
             }

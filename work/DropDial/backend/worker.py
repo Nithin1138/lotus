@@ -3,33 +3,6 @@ import sys,json,os
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from common import *
 
-def ensure_dependencies():
-    # Skip the check entirely when running from a bundled app with its own Python runtime.
-    runtime_python = BASE / 'runtime' / 'python'
-    if runtime_python.is_dir():
-        return
-    try:
-        import PIL, pypdf, pypdfium2
-        return
-    except ImportError:
-        pass
-    missing = []
-    for mod, pkg in [('pymupdf', 'pymupdf'), ('PIL', 'pillow'), ('pypdf', 'pypdf'), ('pypdfium2', 'pypdfium2')]:
-        try:
-            __import__(mod)
-        except ImportError:
-            if mod == 'pymupdf':
-                try: __import__('fitz')
-                except ImportError: missing.append(pkg)
-            else:
-                missing.append(pkg)
-    if missing:
-        try:
-            subprocess.run([sys.executable, '-m', 'pip', 'install', '--disable-pip-version-check', *missing], capture_output=True, timeout=120)
-        except Exception:
-            pass
-
-ensure_dependencies()
 
 def one(path,action,params):
     kind=category(path)

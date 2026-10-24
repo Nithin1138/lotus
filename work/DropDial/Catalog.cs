@@ -114,14 +114,14 @@ internal static class Catalog
         if (OfficeSlides.Contains(ext))
             return OfficeBridge.Available("PowerPoint") ? ["pdf", "jpg", "png", "pptx", "txt", "ppt", "odp"] : ["pdf", "jpg", "png", "txt"];
         if (OfficeWords.Contains(ext))
-            return OfficeBridge.Available("Word") ? ["pages", "pdf", "txt", "md", "html", "epub", "png", "jpg", "docx", "doc", "rtf", "odt"] : ext is "rtf" or "rtfd" ? ["pages", "pdf", "docx", "txt", "html", "epub", "md"] : ["pages", "pdf", "txt", "md", "html", "epub", "png", "jpg"];
+            return OfficeBridge.Available("Word") ? ["pdf", "txt", "md", "html", "epub", "png", "jpg", "docx", "doc", "rtf", "odt"] : ext is "rtf" or "rtfd" ? ["pdf", "docx", "txt", "html", "epub", "md"] : ["pdf", "txt", "md", "html", "epub", "png", "jpg"];
         if (OfficeSheets.Contains(ext))
             return OfficeBridge.Available("Excel") ? ["ods", "csv", "tsv", "pdf", "xlsx", "xls", "json", "txt"] : ext is "xlsx" or "xlsm" ? ["ods", "csv", "tsv", "pdf", "json", "txt"] : ext is "csv" or "tsv" ? ["xlsx", "ods", "csv", "tsv", "json", "txt"] : ["ods", "csv", "tsv", "pdf", "txt"];
         if (ext == "epub")
-            return ["pdf", "docx", "pages", "txt", "md", "html"];
+            return ["pdf", "docx", "txt", "md", "html"];
         if (ext is "md" or "markdown")
-            return ["pdf", "docx", "pages", "epub", "html", "txt"];
-        return ext is "jpg" or "png" ? [.. ImageTargets, "docx"] : Images.Contains(ext) ? ImageTargets : Audio.Contains(ext) ? Audio : Video.Contains(ext) ? [.. Video, "gif", "mp3", "m4a", "wav"] : ext == "gif" ? [.. Video, "mp4", "webm"] : ext == "pdf" ? ["docx", "pages", "pptx", "xlsx", "epub", "md", "jpg", "png", "txt"] : ext == "txt" ? ["pdf", "docx", "md", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? ["srt", "vtt", "txt"] : Archives;
+            return ["pdf", "docx", "epub", "html", "txt"];
+        return ext is "jpg" or "png" ? [.. ImageTargets, "docx"] : Images.Contains(ext) ? ImageTargets : Audio.Contains(ext) ? Audio : Video.Contains(ext) ? [.. Video, "gif", "mp3", "m4a", "wav"] : ext == "gif" ? [.. Video, "mp4", "webm"] : ext == "pdf" ? ["docx", "pptx", "xlsx", "epub", "md", "jpg", "png", "txt"] : ext == "txt" ? ["pdf", "docx", "md", "jpg", "png", "srt", "vtt"] : ext is "srt" or "vtt" ? ["srt", "vtt", "txt"] : Archives;
     }
     public static readonly Operation[] FileActions = [
         new("action:float", "Float", true),

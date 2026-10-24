@@ -1,6 +1,90 @@
 import AppKit
 import Carbon
 
+func getFinderSelectedFiles() -> [String] {
+    let script = """
+    tell application "Finder"
+        set sel to selection as alias list
+        set res to {}
+        repeat with anItem in sel
+            set end of res to POSIX path of anItem
+        end repeat
+        set AppleScript's text item delimiters to linefeed
+        return res as text
+    end tell
+    """
+    guard let appleScript = NSAppleScript(source: script) else { return [] }
+    var errorInfo: NSDictionary?
+    let descriptor = appleScript.executeAndReturnError(&errorInfo)
+    if let output = descriptor.stringValue, !output.isEmpty {
+        let paths = output.components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && FileManager.default.fileExists(atPath: $0) }
+        return paths
+    }
+    return []
+}
+
+final class EventTapManager {
+    static let shared = EventTapManager()
+    private var eventTap: CFMachPort?
+    private var runLoopSource: CFRunLoopSource?
+
+    func setup() {
+        guard eventTap == nil, AXIsProcessTrusted() else { return }
+        let mask = (1 << CGEventType.keyDown.rawValue)
+        let observer = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: CGEventMask(mask),
+            callback: { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
+                if type == .keyDown {
+                    let flags = event.flags
+                    let hasCmd = flags.contains(.maskCommand)
+                    let hasShift = flags.contains(.maskShift)
+                    let hasNoOther = !flags.contains(.maskAlternate) && !flags.contains(.maskControl)
+                    let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+
+                    // kVK_ANSI_D = 2, kVK_ANSI_L = 37
+                    if hasCmd && hasShift && hasNoOther && (keyCode == 2 || keyCode == 37) {
+                        DispatchQueue.main.async {
+                            let files = getFinderSelectedFiles()
+                            if !files.isEmpty {
+                                DropWheelWindowController.shared.loadFiles(files)
+                            } else {
+                                DropWheelWindowController.shared.toggleWheel(mode: nil)
+                            }
+                        }
+                        return nil
+                    }
+                }
+                return Unmanaged.passRetained(event)
+            },
+            userInfo: observer
+        ) else { return }
+
+        self.eventTap = tap
+        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        self.runLoopSource = source
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
+    }
+
+    func stop() {
+        if let tap = eventTap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            eventTap = nil
+        }
+        if let source = runLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+            runLoopSource = nil
+        }
+    }
+}
+
 final class HotKeyManager {
     static let shared = HotKeyManager()
     private var hotKeys: [UInt32: EventHotKeyRef] = [:]
@@ -65,17 +149,37 @@ final class HotKeyManager {
         }
     }
 
-    private func handleHotKey(id: UInt32) {
+    func handleHotKey(id: UInt32) {
         DispatchQueue.main.async {
             switch id {
             case 1:
-                DropWheelWindowController.shared.toggleWheel(mode: .conversions)
+                let files = getFinderSelectedFiles()
+                if !files.isEmpty {
+                    DropWheelWindowController.shared.loadFiles(files, mode: .conversions)
+                } else {
+                    DropWheelWindowController.shared.toggleWheel(mode: .conversions)
+                }
             case 2:
-                DropWheelWindowController.shared.toggleWheel(mode: .tools)
+                let files = getFinderSelectedFiles()
+                if !files.isEmpty {
+                    DropWheelWindowController.shared.loadFiles(files, mode: .tools)
+                } else {
+                    DropWheelWindowController.shared.toggleWheel(mode: .tools)
+                }
             case 5:
-                DropWheelWindowController.shared.toggleWheel(mode: .actions)
+                let files = getFinderSelectedFiles()
+                if !files.isEmpty {
+                    DropWheelWindowController.shared.loadFiles(files, mode: .actions)
+                } else {
+                    DropWheelWindowController.shared.toggleWheel(mode: .actions)
+                }
             case 3, 4, 6:
-                DropWheelWindowController.shared.toggleWheel(mode: nil)
+                let files = getFinderSelectedFiles()
+                if !files.isEmpty {
+                    DropWheelWindowController.shared.loadFiles(files)
+                } else {
+                    DropWheelWindowController.shared.toggleWheel(mode: nil)
+                }
             default:
                 break
             }
@@ -137,6 +241,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var globalKeyMonitor: Any?
     private var localKeyMonitor: Any?
+    private var globalDragMonitor: Any?
+    private var localDragMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
@@ -318,37 +424,153 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func getDraggedFiles() -> [String] {
         let pboard = NSPasteboard(name: .drag)
-        guard let types = pboard.types else { return [] }
-        let fileTypes: [NSPasteboard.PasteboardType] = [
-            .fileURL,
-            NSPasteboard.PasteboardType("public.file-url"),
-            NSPasteboard.PasteboardType("NSFilenamesPboardType")
-        ]
-        guard fileTypes.contains(where: { types.contains($0) }) else { return [] }
-        if let urls = pboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
-            return urls.map { $0.path }.filter { FileManager.default.fileExists(atPath: $0) }
+
+        let types = pboard.types?.map { $0.rawValue } ?? []
+        let hasFileTypes = types.contains(where: {
+            $0.contains("file") || $0.contains("finder") || $0.contains("pasteboard.promised")
+        })
+        guard hasFileTypes else {
+            return []
         }
+
+        // 1. Check if pasteboard explicitly contains file URLs
+        if let urls = pboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
+            let paths = urls.map { $0.path }.filter { FileManager.default.fileExists(atPath: $0) }
+            if !paths.isEmpty { return paths }
+        }
+
+        // 2. Check legacy NSFilenamesPboardType
+        if let files = pboard.propertyList(forType: NSPasteboard.PasteboardType("NSFilenamesPboardType")) as? [String] {
+            let paths = files.filter { FileManager.default.fileExists(atPath: $0) }
+            if !paths.isEmpty { return paths }
+        }
+
+        // 3. Check public.file-url string
+        if let string = pboard.string(forType: NSPasteboard.PasteboardType("public.file-url")), let url = URL(string: string) {
+            if FileManager.default.fileExists(atPath: url.path) {
+                return [url.path]
+            }
+        }
+
+        // 4. Only if Finder is the active frontmost app AND a promised file drag is active, check Finder selection
+        let isFinderFrontmost = NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.finder"
+        if isFinderFrontmost && types.contains(where: { $0.contains("pasteboard.promised") || $0.contains("com.apple.finder.node") }) {
+            let finderSelection = getFinderSelectedFiles()
+            if !finderSelection.isEmpty {
+                return finderSelection
+            }
+        }
+
         return []
+    }
+
+    private var dragStartPasteboardChangeCount: Int = -1
+    private var isRealDragInProgress: Bool = false
+    private var lastDragTriggerTime: TimeInterval = 0
+
+    private func handleDragOrModifierEvent(_ event: NSEvent) {
+        let isMouseDown = (NSEvent.pressedMouseButtons & 1) != 0
+
+        // If mouse is released or event is leftMouseUp, drag has ended
+        if !isMouseDown || event.type == .leftMouseUp {
+            isRealDragInProgress = false
+            dragStartPasteboardChangeCount = -1
+            return
+        }
+
+        // On leftMouseDown, record pasteboard change count before any drag begins
+        if event.type == .leftMouseDown {
+            dragStartPasteboardChangeCount = NSPasteboard(name: .drag).changeCount
+            isRealDragInProgress = false
+            return
+        }
+
+        // If mouse is held down, detect if a real drag operation has been initiated
+        let currentChangeCount = NSPasteboard(name: .drag).changeCount
+        if dragStartPasteboardChangeCount == -1 {
+            dragStartPasteboardChangeCount = currentChangeCount
+        }
+
+        if currentChangeCount != dragStartPasteboardChangeCount {
+            isRealDragInProgress = true
+        }
+
+        // Under NO circumstances should the wheel open if there is no active file drag in progress!
+        // During text selection, mouse clicks, window drags, etc., isRealDragInProgress is strictly false.
+        guard isRealDragInProgress else {
+            return
+        }
+
+        let flags = NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let hasShift = flags.contains(.shift)
+        let hasCmd = flags.contains(.command)
+
+        // Only open/switch if Shift, Command, or both are held during drag
+        guard hasShift || hasCmd else {
+            return
+        }
+
+        let targetMode: WheelMode
+        if hasShift && hasCmd {
+            targetMode = .actions
+        } else if hasShift {
+            targetMode = .conversions
+        } else {
+            targetMode = .tools
+        }
+
+        // If the wheel is already visible and active for this drag, switch mode seamlessly
+        if DropWheelWindowController.shared.window?.isVisible == true {
+            DropWheelWindowController.shared.setMode(targetMode)
+            return
+        }
+
+        let now = ProcessInfo.processInfo.systemUptime
+        if now - lastDragTriggerTime < 0.20 {
+            return
+        }
+        lastDragTriggerTime = now
+
+        let files = getDraggedFiles()
+        guard !files.isEmpty else {
+            return
+        }
+
+        DropWheelWindowController.shared.loadFiles(files, mode: targetMode)
     }
 
     private func setupShortcuts() {
         // 0. Remove any previous monitors to prevent duplicate triggers
         if let m = globalKeyMonitor { NSEvent.removeMonitor(m); globalKeyMonitor = nil }
         if let m = localKeyMonitor { NSEvent.removeMonitor(m); localKeyMonitor = nil }
+        if let m = globalDragMonitor { NSEvent.removeMonitor(m); globalDragMonitor = nil }
+        if let m = localDragMonitor { NSEvent.removeMonitor(m); localDragMonitor = nil }
 
-        // 1. Carbon Global HotKeys (No Accessibility permissions required!)
+        // 1. Carbon Global HotKeys (No Accessibility permissions required)
         HotKeyManager.shared.setup()
 
-        // 2. Global Monitor for Key Down (fallback when Accessibility is active)
+        // 2. Head-insert Event Tap for Shift + Command + D / L (intercepts before Finder Desktop shortcut)
+        EventTapManager.shared.setup()
+
+        // 3. Global & Local Monitor for Key Down
         globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
             self?.handleKeyEvent(event)
         }
 
-        // 3. Local Monitor for Key Down (when DropDial has focus)
         localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
             if self?.handleKeyEvent(event) == true {
                 return nil
             }
+            return event
+        }
+
+        // 4. Global & Local Monitor for Drag & Modifier events (Shift, Command, both)
+        globalDragMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged, .leftMouseDragged, .leftMouseDown, .leftMouseUp]) { [weak self] event in
+            self?.handleDragOrModifierEvent(event)
+        }
+
+        localDragMonitor = NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged, .leftMouseDragged, .leftMouseDown, .leftMouseUp]) { [weak self] event in
+            self?.handleDragOrModifierEvent(event)
             return event
         }
     }
@@ -356,22 +578,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @discardableResult
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
         let code = event.keyCode
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
         // F8 (keyCode 100) -> Show Formats Wheel
         if code == 100 {
-            DropWheelWindowController.shared.toggleWheel(mode: .conversions)
+            let files = getFinderSelectedFiles()
+            if !files.isEmpty {
+                DropWheelWindowController.shared.loadFiles(files, mode: .conversions)
+            } else {
+                DropWheelWindowController.shared.toggleWheel(mode: .conversions)
+            }
             return true
         }
 
         // F9 (keyCode 101) -> Show Tools Wheel
         if code == 101 {
-            DropWheelWindowController.shared.toggleWheel(mode: .tools)
+            let files = getFinderSelectedFiles()
+            if !files.isEmpty {
+                DropWheelWindowController.shared.loadFiles(files, mode: .tools)
+            } else {
+                DropWheelWindowController.shared.toggleWheel(mode: .tools)
+            }
             return true
         }
 
         // F10 (keyCode 109) -> Show Actions Wheel
         if code == 109 {
-            DropWheelWindowController.shared.toggleWheel(mode: .actions)
+            let files = getFinderSelectedFiles()
+            if !files.isEmpty {
+                DropWheelWindowController.shared.loadFiles(files, mode: .actions)
+            } else {
+                DropWheelWindowController.shared.toggleWheel(mode: .actions)
+            }
             return true
         }
 
@@ -384,17 +622,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return false
         }
 
-        // Cmd + Shift + L or Cmd + Shift + D -> Toggle Wheel
-        if event.modifierFlags.contains([.command, .shift]) {
-            if let chars = event.charactersIgnoringModifiers?.lowercased(), chars == "l" || chars == "d" {
-                DropWheelWindowController.shared.toggleWheel()
+        // Cmd + Shift + D (keyCode 2) or Cmd + Shift + L (keyCode 37) -> Toggle Wheel
+        let hasCmd = flags.contains(.command)
+        let hasShift = flags.contains(.shift)
+        let noOther = !flags.contains(.option) && !flags.contains(.control)
+
+        if hasCmd && hasShift && noOther {
+            let isD = (code == 2) || (event.charactersIgnoringModifiers?.lowercased() == "d")
+            let isL = (code == 37) || (event.charactersIgnoringModifiers?.lowercased() == "l")
+            if isD || isL {
+                let files = getFinderSelectedFiles()
+                if !files.isEmpty {
+                    DropWheelWindowController.shared.loadFiles(files)
+                } else {
+                    DropWheelWindowController.shared.toggleWheel()
+                }
                 return true
             }
         }
 
-        // Option + Space -> Toggle Wheel
-        if event.modifierFlags.contains(.option) && code == 49 {
-            DropWheelWindowController.shared.toggleWheel()
+        // Option + Space (keyCode 49) -> Toggle Wheel
+        if flags.contains(.option) && code == 49 {
+            let files = getFinderSelectedFiles()
+            if !files.isEmpty {
+                DropWheelWindowController.shared.loadFiles(files)
+            } else {
+                DropWheelWindowController.shared.toggleWheel()
+            }
             return true
         }
 

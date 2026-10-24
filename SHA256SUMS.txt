@@ -1,0 +1,2 @@
+f5bd51486381b656b25a6306ab6eb660f31d51de72d9a2c8751852a1b1a057e4  website/downloads/DropDial-macOS.zip
+eccd66ce584affba5d60237af7568a4e3fbe8f7b8af6e1bd29cee570106441a1  website/downloads/DropDial.dmg

@@ -219,6 +219,17 @@
     if (cliDesc) {
       cliDesc.innerHTML = isM ? descMac : descWin;
     }
+    const vtLink = $("#cli-vt-link");
+    const scriptLink = $("#cli-script-inspect-link");
+    if (vtLink) {
+      vtLink.href = isM
+        ? "https://www.virustotal.com/gui/file/5a99b6c08f629f50f549f2e3a9056e64a0297e9399e0f3c5f1710e1a0fa6fda8"
+        : "https://www.virustotal.com/gui/file/6c2329bdcac58bc724ede6449f6513c06adcf789f6dc70fda48716bfeaf820a9";
+    }
+    if (scriptLink) {
+      scriptLink.href = isM ? "https://dropdial.app/install.sh" : "https://dropdial.app/install.ps1";
+      scriptLink.textContent = isM ? "Inspect Shell Script" : "Inspect PowerShell Script";
+    }
     updateHeroDownloadBtn(platform);
   }
 

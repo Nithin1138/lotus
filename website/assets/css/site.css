@@ -1221,6 +1221,99 @@ figcaption { font-size: .9rem; color: var(--muted); margin-top: 12px; }
   flex-shrink: 0;
 }
 
+/* Certified Security & Clean Verification Strip */
+.dl-security-trust {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.dl-security-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  color: #10b981;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.05);
+}
+.dl-security-pill:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.45);
+  transform: translateY(-1px);
+}
+.dl-security-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  flex-shrink: 0;
+}
+.dl-security-text {
+  color: #cbd5e1;
+  font-weight: 400;
+}
+.dl-security-text strong {
+  color: #10b981;
+  font-weight: 600;
+}
+.dl-security-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #10b981;
+  font-weight: 600;
+  margin-left: 4px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.dl-security-transparency {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.77rem;
+  color: var(--muted);
+}
+.dl-security-transparency a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+.dl-security-transparency a:hover {
+  color: var(--text);
+}
+.dl-security-sep {
+  opacity: 0.4;
+  user-select: none;
+}
+.win-security-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.77rem;
+  color: #10b981;
+  margin-top: 10px;
+  background: rgba(16, 185, 129, 0.06);
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(16, 185, 129, 0.18);
+}
+.win-security-note a {
+  color: #10b981;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 
 /* Minimalist Trust Bar */
 .dl-trust-bar {

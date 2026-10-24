@@ -1438,9 +1438,14 @@ final class DropWheelWindowController: NSWindowController {
             wheelView.mode = mode
             wheelView.loadDefaultItems()
         }
-        window?.makeKeyAndOrderFront(nil)
-        window?.makeFirstResponder(wheelView)
-        NSApp.activate(ignoringOtherApps: true)
+        let isDragging = (NSEvent.pressedMouseButtons & 1) != 0
+        if isDragging {
+            window?.orderFrontRegardless()
+        } else {
+            window?.makeKeyAndOrderFront(nil)
+            window?.makeFirstResponder(wheelView)
+            NSApp.activate(ignoringOtherApps: true)
+        }
         installOutsideClickMonitors()
     }
 

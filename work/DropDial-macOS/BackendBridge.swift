@@ -9,21 +9,30 @@ final class BackendBridge {
     private var cachedWorker: String?
     private var cachedPythonPaths: [String: String] = [:]
 
-    func getPythonPaths(backendDir: String) -> String {
-        if let cached = cachedPythonPaths[backendDir] { return cached }
+    func getPythonPaths(backendDir: String, pythonPath: String? = nil) -> String {
+        let activePy = pythonPath ?? cachedPython ?? ""
+        let cacheKey = "\(backendDir)_\(activePy)"
+        if let cached = cachedPythonPaths[cacheKey] { return cached }
+
+        var paths: [String] = [backendDir]
+
+        // Determine python version if known
+        var pyVer = "3.12"
+        if activePy.contains("3.14") {
+            pyVer = "3.14"
+        } else if activePy.contains("3.13") {
+            pyVer = "3.13"
+        }
+
         let bundleURL = Bundle.main.bundleURL
         let repoRoot = bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 
-        var paths: [String] = [backendDir]
         let candidateSitePackages = [
-            bundleURL.appendingPathComponent("Contents/runtime/python/lib/python3.12/site-packages").path,
-            bundleURL.appendingPathComponent("Contents/runtime/python/lib/python3.13/site-packages").path,
-            bundleURL.appendingPathComponent("Contents/runtime/python/lib/python3.14/site-packages").path,
-            repoRoot.appendingPathComponent(".venv/lib/python3.12/site-packages").path,
-            repoRoot.appendingPathComponent(".venv/lib/python3.13/site-packages").path,
-            repoRoot.appendingPathComponent(".venv/lib/python3.14/site-packages").path,
-            FileManager.default.currentDirectoryPath + "/.venv/lib/python3.12/site-packages",
-            NSHomeDirectory() + "/Library/Application Support/DropDial/venv/lib/python3.12/site-packages"
+            NSHomeDirectory() + "/Library/Application Support/DropDial/venv/lib/python\(pyVer)/site-packages",
+            NSHomeDirectory() + "/Desktop/lotus/.venv/lib/python\(pyVer)/site-packages",
+            bundleURL.appendingPathComponent("Contents/runtime/python/lib/python\(pyVer)/site-packages").path,
+            repoRoot.appendingPathComponent(".venv/lib/python\(pyVer)/site-packages").path,
+            FileManager.default.currentDirectoryPath + "/.venv/lib/python\(pyVer)/site-packages"
         ]
 
         for p in candidateSitePackages {
@@ -33,11 +42,13 @@ final class BackendBridge {
         }
 
         if let envPyPath = ProcessInfo.processInfo.environment["PYTHONPATH"], !envPyPath.isEmpty {
-            paths.append(envPyPath)
+            for ep in envPyPath.components(separatedBy: ":") {
+                if !paths.contains(ep) { paths.append(ep) }
+            }
         }
 
         let result = paths.joined(separator: ":")
-        cachedPythonPaths[backendDir] = result
+        cachedPythonPaths[cacheKey] = result
         return result
     }
 
@@ -45,7 +56,8 @@ final class BackendBridge {
         if let cached = cachedPython { return cached }
 
         if let saved = UserDefaults.standard.string(forKey: "kCachedPythonPath"),
-           FileManager.default.isExecutableFile(atPath: saved) {
+           FileManager.default.isExecutableFile(atPath: saved),
+           verifyPython(saved) {
             cachedPython = saved
             return saved
         }
@@ -54,23 +66,26 @@ final class BackendBridge {
         let repoRoot = bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         
         let candidates = [
+            NSHomeDirectory() + "/Library/Application Support/DropDial/venv/bin/python",
+            NSHomeDirectory() + "/Library/Application Support/DropDial/venv/bin/python3",
+            NSHomeDirectory() + "/Desktop/lotus/.venv/bin/python",
+            NSHomeDirectory() + "/Desktop/lotus/.venv/bin/python3",
             bundleURL.appendingPathComponent("Contents/runtime/python/bin/python3").path,
             bundleURL.appendingPathComponent("Contents/runtime/python/bin/python").path,
             repoRoot.appendingPathComponent(".venv/bin/python").path,
             FileManager.default.currentDirectoryPath + "/.venv/bin/python",
-            NSHomeDirectory() + "/Library/Application Support/DropDial/venv/bin/python3",
             "/opt/homebrew/bin/python3.12",
             "/opt/homebrew/bin/python3",
             "/usr/local/bin/python3.12",
-            "/usr/local/bin/python3",
             "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
-            "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
+            "/usr/local/bin/python3",
             "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3",
+            "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3",
             "/Library/Frameworks/Python.framework/Versions/Current/bin/python3",
             "/usr/bin/python3"
         ]
 
-        // First pass: test each candidate to ensure it can import essential packages (PIL, pypdfium2)
+        // First pass: test each candidate to ensure it can import essential packages (PIL with C-extension, pypdfium2)
         for path in candidates {
             guard FileManager.default.isExecutableFile(atPath: path) else { continue }
             if path.contains("Contents/runtime/python") || verifyPython(path) {
@@ -94,11 +109,11 @@ final class BackendBridge {
     private func verifyPython(_ path: String) -> Bool {
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: path)
-        proc.arguments = ["-c", "import PIL, pypdfium2"]
+        proc.arguments = ["-c", "from PIL import Image; import pypdfium2"]
         let worker = findWorkerScript()
         let backendDir = (worker as NSString).deletingLastPathComponent
         var env = ProcessInfo.processInfo.environment
-        env["PYTHONPATH"] = getPythonPaths(backendDir: backendDir)
+        env["PYTHONPATH"] = getPythonPaths(backendDir: backendDir, pythonPath: path)
         proc.environment = env
         do {
             try proc.run()
@@ -310,9 +325,10 @@ final class BackendBridge {
             "/sbin"
         ]
         let backendDir = (worker as NSString).deletingLastPathComponent
+        let pythonBinDir = (python as NSString).deletingLastPathComponent
         let existingPath = env["PATH"] ?? ""
-        env["PATH"] = ([backendDir] + extraPaths + [existingPath]).joined(separator: ":")
-        env["PYTHONPATH"] = getPythonPaths(backendDir: backendDir)
+        env["PATH"] = ([pythonBinDir, backendDir] + extraPaths + [existingPath]).joined(separator: ":")
+        env["PYTHONPATH"] = getPythonPaths(backendDir: backendDir, pythonPath: python)
 
         if let customOutput = UserDefaults.standard.string(forKey: "DROPDIAL_OUTPUT_DIR"), !customOutput.isEmpty {
             env["DROPDIAL_OUTPUT_DIR"] = customOutput
@@ -425,9 +441,10 @@ final class BackendBridge {
             "/usr/bin",
             "/bin"
         ]
+        let pythonBinDir = (python as NSString).deletingLastPathComponent
         let existingPath = env["PATH"] ?? ""
-        env["PATH"] = ([backendDir] + extraPaths + [existingPath]).joined(separator: ":")
-        env["PYTHONPATH"] = getPythonPaths(backendDir: backendDir)
+        env["PATH"] = ([pythonBinDir, backendDir] + extraPaths + [existingPath]).joined(separator: ":")
+        env["PYTHONPATH"] = getPythonPaths(backendDir: backendDir, pythonPath: python)
         process.environment = env
 
         let errorPipe = Pipe()
