@@ -261,8 +261,13 @@ final class PermissionWelcomeWindowController: NSWindowController {
         activeObservers = [obs1, obs2]
     }
 
-    func show(isFirstLaunch: Bool = false) {
+    func show(isFirstLaunch: Bool = false, triggerSystemPrompt: Bool = true) {
+        if triggerSystemPrompt && !isAccessibilityTrusted() {
+            let promptOptions = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+            _ = AXIsProcessTrustedWithOptions(promptOptions)
+        }
         checkStatusLive()
+        window?.center()
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         startPolling()
@@ -283,7 +288,7 @@ final class PermissionWelcomeWindowController: NSWindowController {
                 NotificationCenter.default.post(name: NSNotification.Name("DropDialAccessibilityGranted"), object: nil)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
                     self?.close()
-                    DropWheelWindowController.shared.showWheel()
+                    DropWheelWindowController.shared.showWheel(bypassPermissionCheck: true)
                 }
             }
         }
@@ -347,7 +352,7 @@ final class PermissionWelcomeWindowController: NSWindowController {
         let trusted = isAccessibilityTrusted()
         if trusted {
             close()
-            DropWheelWindowController.shared.showWheel()
+            DropWheelWindowController.shared.showWheel(bypassPermissionCheck: true)
             return
         }
 
@@ -385,7 +390,7 @@ final class PermissionWelcomeWindowController: NSWindowController {
 
     @objc private func skipButtonTapped() {
         close()
-        DropWheelWindowController.shared.showWheel()
+        DropWheelWindowController.shared.showWheel(bypassPermissionCheck: true)
     }
 
     override func close() {

@@ -1405,11 +1405,42 @@ final class DropWheelWindowController: NSWindowController {
         self.currentPaths = paths
     }
 
-    func showWheel() {
-        showAtCursor(mode: currentMode)
+    func checkPermissionBeforeOpeningWheel(bypass: Bool = false) -> Bool {
+        if bypass || AXIsProcessTrusted() {
+            return true
+        }
+
+        // If permission window is already open, bring it to front
+        if PermissionWelcomeWindowController.shared.window?.isVisible == true {
+            PermissionWelcomeWindowController.shared.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return false
+        }
+
+        // On 1st time opening the wheel without permission, ask for permission!
+        let hasAsked = UserDefaults.standard.bool(forKey: "DropDial_HasAskedWheelPermission")
+        if !hasAsked {
+            UserDefaults.standard.set(true, forKey: "DropDial_HasAskedWheelPermission")
+            DispatchQueue.main.async {
+                PermissionWelcomeWindowController.shared.show(isFirstLaunch: true, triggerSystemPrompt: true)
+            }
+            return false
+        }
+
+        return true
     }
 
-    func showAtCursor(mode: WheelMode) {
+    func showWheel(bypassPermissionCheck: Bool = false) {
+        if !checkPermissionBeforeOpeningWheel(bypass: bypassPermissionCheck) {
+            return
+        }
+        showAtCursor(mode: currentMode, bypassPermissionCheck: true)
+    }
+
+    func showAtCursor(mode: WheelMode, bypassPermissionCheck: Bool = false) {
+        if !checkPermissionBeforeOpeningWheel(bypass: bypassPermissionCheck) {
+            return
+        }
         let mouse = NSEvent.mouseLocation
         let width: CGFloat = 340
         let height: CGFloat = 380
@@ -1514,13 +1545,7 @@ final class DropWheelWindowController: NSWindowController {
 
     private var lastToggleTime: TimeInterval = 0
 
-    func toggleWheel(mode: WheelMode? = nil) {
-        let now = ProcessInfo.processInfo.systemUptime
-        if now - lastToggleTime < 0.25 {
-            return
-        }
-        lastToggleTime = now
-
+    func toggleWheel(mode: WheelMode? = nil, bypassPermissionCheck: Bool = false) {
         if window?.isVisible == true {
             if let targetMode = mode, targetMode != self.currentMode {
                 self.currentMode = targetMode
@@ -1528,16 +1553,27 @@ final class DropWheelWindowController: NSWindowController {
             } else {
                 hideWheel()
             }
-        } else {
-            showAtCursor(mode: mode ?? currentMode)
+            return
         }
+
+        if !checkPermissionBeforeOpeningWheel(bypass: bypassPermissionCheck) {
+            return
+        }
+
+        let now = ProcessInfo.processInfo.systemUptime
+        if now - lastToggleTime < 0.25 {
+            return
+        }
+        lastToggleTime = now
+
+        showAtCursor(mode: mode ?? currentMode, bypassPermissionCheck: true)
     }
 
     func loadFiles(_ paths: [String], mode: WheelMode = .conversions) {
         self.currentPaths = paths
         self.currentMode = mode
         wheelView.configure(paths: paths, mode: mode)
-        showAtCursor(mode: mode)
+        showAtCursor(mode: mode, bypassPermissionCheck: true)
     }
 
     private func pickFiles() {
