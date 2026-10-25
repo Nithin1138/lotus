@@ -1478,6 +1478,15 @@ final class DropWheelWindowController: NSWindowController {
             NSApp.activate(ignoringOtherApps: true)
         }
         installOutsideClickMonitors()
+
+        // If an update was detected in background and held, show it now that the wheel is opened!
+        if UpdateService.shared.hasPendingPrompt {
+            if !isDragging {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    UpdateService.shared.promptIfPending()
+                }
+            }
+        }
     }
 
     func stopOutsideTracking() {
@@ -1535,6 +1544,13 @@ final class DropWheelWindowController: NSWindowController {
         stopOutsideTracking()
         removeOutsideClickMonitors()
         window?.orderOut(nil)
+
+        // If an update was held during a file drag, show it now after wheel is closed
+        if UpdateService.shared.hasPendingPrompt {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                UpdateService.shared.promptIfPending()
+            }
+        }
     }
 
     func setMode(_ mode: WheelMode) {

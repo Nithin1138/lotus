@@ -1041,15 +1041,6 @@ internal sealed class Resident : IDisposable
             }
         }
 
-        if (mouse && !nextMouse && UpdateManager.HasPendingPrompt)
-        {
-            _ = app.Dispatcher.InvokeAsync(async () =>
-            {
-                await Task.Delay(300);
-                UpdateManager.PromptIfPending();
-            });
-        }
-
         f8 = nextF8;
         f9 = nextF9;
         f10 = nextF10;

@@ -186,6 +186,8 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
         task.resume()
     }
 
+    private(set) var hasPendingPrompt = false
+
     private func handleReleaseResult(release: ReleaseInfo, isUserInitiated: Bool) {
         let hasUpdate = isNewer(remote: release.tagName, local: currentVersion)
 
@@ -193,20 +195,43 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
             if hasUpdate {
                 self.latestRelease = release
                 self.onUpdateStatusChanged?()
-                self.postUpdateNotification(release: release)
 
-                // If user tapped check, or if not dismissed yet in this running session: show prompt!
-                if isUserInitiated || self.sessionDismissedVersion != release.tagName {
+                if isUserInitiated {
+                    // User explicitly tapped "Check for Updates" -> show prompt immediately
+                    self.hasPendingPrompt = false
                     self.showUpdateAvailableDialog(release: release)
+                } else {
+                    // Background check: DO NOT interrupt the user while working in other apps!
+                    // Hold the update and mark pending so it only displays when the wheel is opened.
+                    if self.sessionDismissedVersion != release.tagName {
+                        self.hasPendingPrompt = true
+                    }
                 }
             } else {
                 self.latestRelease = nil
+                self.hasPendingPrompt = false
                 self.onUpdateStatusChanged?()
                 if isUserInitiated {
                     self.showUpToDateAlert()
                 }
             }
         }
+    }
+
+    func promptIfPending() {
+        guard hasPendingPrompt, let release = latestRelease else { return }
+        guard !isShowingPrompt && !isUpdating else { return }
+        if sessionDismissedVersion == release.tagName {
+            hasPendingPrompt = false
+            return
+        }
+        hasPendingPrompt = false
+        showUpdateAvailableDialog(release: release)
+    }
+
+    func dismissForSession(tagName: String) {
+        sessionDismissedVersion = tagName
+        hasPendingPrompt = false
     }
 
     private func postUpdateNotification(release: ReleaseInfo) {
@@ -239,6 +264,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
     func showUpdateAvailableDialog(release: ReleaseInfo) {
         guard !isShowingPrompt && !isUpdating else { return }
         isShowingPrompt = true
+        hasPendingPrompt = false
         defer { isShowingPrompt = false }
 
         NSApp.setActivationPolicy(.regular)
@@ -267,6 +293,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
         switch response {
         case .alertFirstButtonReturn:
             sessionDismissedVersion = nil
+            hasPendingPrompt = false
             if release.isZip && release.downloadUrl != nil {
                 startDownloadAndApply(release: release)
             } else if let dl = release.downloadUrl ?? URL(string: release.htmlUrl)?.absoluteString {
@@ -275,7 +302,9 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
         case .alertSecondButtonReturn:
             // Snooze only for subsequent automatic checks in this active running session
             sessionDismissedVersion = release.tagName
+            hasPendingPrompt = false
         default:
+            hasPendingPrompt = false
             break
         }
     }
