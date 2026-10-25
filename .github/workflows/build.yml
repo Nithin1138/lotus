@@ -180,6 +180,18 @@ jobs:
 
           Copy-Item -LiteralPath outputs/DropDial/DropDial.exe -Destination outputs/DropDial.exe -Force
 
+          # 3. Build standalone NSIS installer DropDial-Setup.exe
+          if (Get-Command makensis -ErrorAction SilentlyContinue) {
+            makensis installer.nsi
+          } elseif (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe") {
+            & "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
+          } elseif (Test-Path "C:\Program Files\NSIS\makensis.exe") {
+            & "C:\Program Files\NSIS\makensis.exe" installer.nsi
+          }
+          if (Test-Path "website/downloads/DropDial-Setup.exe") {
+            Copy-Item -LiteralPath "website/downloads/DropDial-Setup.exe" -Destination "outputs/DropDial-Setup.exe" -Force
+          }
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
@@ -188,6 +200,7 @@ jobs:
             outputs/DropDial-Windows-x64.zip
             outputs/DropDial-Windows-Update.zip
             outputs/DropDial.exe
+            outputs/DropDial-Setup.exe
           if-no-files-found: error
 
   release:
