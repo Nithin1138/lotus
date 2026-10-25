@@ -161,10 +161,9 @@ module.exports = async function handler(req, res) {
   const query = req.query || {};
   const downloadTarget = (query.download || query.asset || '').trim();
 
-  // Determine base URL (defaulting to https://dropdial.app)
-  const proto = req.headers['x-forwarded-proto'] || 'https';
-  const host = req.headers['x-forwarded-host'] || req.headers.host || 'dropdial.app';
-  const baseUrl = `${proto}://${host}`;
+  // Support only https://dropdial.app or https://www.dropdial.app
+  const reqHost = (req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
+  const baseUrl = reqHost.includes('www.dropdial.app') ? 'https://www.dropdial.app' : 'https://dropdial.app';
 
   // 1. Download Mode: prioritize dropdial.app direct hosted assets for 100% uptime
   if (downloadTarget) {

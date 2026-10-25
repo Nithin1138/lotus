@@ -457,7 +457,15 @@ internal static class LicenseManager
                 platform = "windows"
             };
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-            var response = await client.PostAsync("https://dropdial.app/api/activate", content);
+            HttpResponseMessage response;
+            try
+            {
+                response = await client.PostAsync("https://dropdial.app/api/activate", content);
+            }
+            catch
+            {
+                response = await client.PostAsync("https://www.dropdial.app/api/activate", content);
+            }
             if (!response.IsSuccessStatusCode)
             {
                 string respJson = await response.Content.ReadAsStringAsync();
@@ -533,7 +541,14 @@ internal static class LicenseManager
                     using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
                     var payload = new { licenseKey = key, deviceId };
                     var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-                    await client.PostAsync("https://dropdial.app/api/deactivate", content);
+                    try
+                    {
+                        await client.PostAsync("https://dropdial.app/api/deactivate", content);
+                    }
+                    catch
+                    {
+                        await client.PostAsync("https://www.dropdial.app/api/deactivate", content);
+                    }
                 }
                 catch { }
             });

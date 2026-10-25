@@ -24,7 +24,7 @@ internal sealed class ReleaseInfo
 internal static class UpdateManager
 {
     public const string ReleasesApiUrl = "https://dropdial.app/api/releases";
-    public const string FallbackReleasesApiUrl = "https://dropdial.app/api/releases/latest";
+    public const string FallbackReleasesApiUrl = "https://www.dropdial.app/api/releases";
     public const string GitHubReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest";
 
     public static Action? DismissWheelAction;
@@ -534,14 +534,18 @@ internal static class UpdateManager
 
             if (!string.IsNullOrEmpty(primaryUrl))
             {
-                string normalized = primaryUrl.Replace("www.dropdial.app", "dropdial.app");
-                downloadUrls.Add(normalized);
-                if (normalized != primaryUrl)
-                    downloadUrls.Add(primaryUrl);
+                downloadUrls.Add(primaryUrl);
+                if (primaryUrl.Contains("www.dropdial.app"))
+                    downloadUrls.Add(primaryUrl.Replace("www.dropdial.app", "dropdial.app"));
+                else if (primaryUrl.Contains("dropdial.app"))
+                    downloadUrls.Add(primaryUrl.Replace("dropdial.app", "www.dropdial.app"));
             }
             downloadUrls.Add($"https://dropdial.app/downloads/{fileName}");
+            downloadUrls.Add($"https://www.dropdial.app/downloads/{fileName}");
             downloadUrls.Add($"https://dropdial.app/api/releases?download={fileName}");
+            downloadUrls.Add($"https://www.dropdial.app/api/releases?download={fileName}");
             downloadUrls.Add("https://dropdial.app/downloads/DropDial-Windows-x64.zip");
+            downloadUrls.Add("https://www.dropdial.app/downloads/DropDial-Windows-x64.zip");
             downloadUrls.Add($"https://github.com/Nithin1138/lotus/releases/download/{release.TagName}/{fileName}");
             downloadUrls.Add($"https://github.com/Nithin1138/lotus/releases/latest/download/{fileName}");
 

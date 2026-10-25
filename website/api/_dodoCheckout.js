@@ -116,10 +116,9 @@ module.exports = async function handler(req, res) {
     };
     const productId = productMap[tier] || process.env.DODO_PRODUCT_ID;
 
-    // Determine host return URL (avoid 307 apex redirects on return)
-    const reqHost = req.headers['x-forwarded-host'] || req.headers.host || '';
+    const reqHost = (req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
     const isLocal = reqHost.includes('localhost') || reqHost.includes('127.0.0.1');
-    const host = isLocal ? reqHost : 'www.dropdial.app';
+    const host = isLocal ? reqHost : (reqHost.includes('www.dropdial.app') ? 'www.dropdial.app' : 'dropdial.app');
     const protocol = isLocal ? 'http' : 'https';
     const returnUrl = `${protocol}://${host}/?payment_status=success&tier=${tier}&email=${encodeURIComponent(email)}`;
 

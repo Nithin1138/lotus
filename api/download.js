@@ -7,10 +7,11 @@
  * to the correct installation binary.
  */
 
-const MAC_DOWNLOAD_URL = 'https://dropdial.app/downloads/DropDial.dmg';
-const WIN_DOWNLOAD_URL = 'https://dropdial.app/downloads/DropDial-Setup.exe';
-
 module.exports = function handler(req, res) {
+  const reqHost = (req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
+  const baseUrl = reqHost.includes('www.dropdial.app') ? 'https://www.dropdial.app' : 'https://dropdial.app';
+  const MAC_DOWNLOAD_URL = `${baseUrl}/downloads/DropDial.dmg`;
+  const WIN_DOWNLOAD_URL = `${baseUrl}/downloads/DropDial-Setup.exe`;
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
 
@@ -53,8 +54,8 @@ module.exports = function handler(req, res) {
       url: targetUrl,
       fileName: fileName,
       command: isMac
-        ? 'curl -fsSL https://dropdial.app/install.sh | bash'
-        : 'irm https://dropdial.app/install.ps1 | iex'
+        ? `curl -fsSL ${baseUrl}/install.sh | bash`
+        : `irm ${baseUrl}/install.ps1 | iex`
     });
   }
 
