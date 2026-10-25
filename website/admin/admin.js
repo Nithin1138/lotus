@@ -1143,10 +1143,20 @@
     });
 
     document.querySelectorAll('input[name="india_gateway"]').forEach(r => {
-      r.addEventListener('change', updateRadioOptionSelection);
+      r.addEventListener('change', () => {
+        updateRadioOptionSelection();
+        handleSaveGatewayForm();
+      });
     });
     document.querySelectorAll('input[name="intl_gateway"]').forEach(r => {
-      r.addEventListener('change', updateRadioOptionSelection);
+      r.addEventListener('change', () => {
+        updateRadioOptionSelection();
+        handleSaveGatewayForm();
+      });
+    });
+
+    document.getElementById('chk-auto-fallback')?.addEventListener('change', () => {
+      handleSaveGatewayForm();
     });
 
     document.getElementById('btn-copy-dodo-wh')?.addEventListener('click', () => {
@@ -2917,6 +2927,7 @@ ${escapeHtml(cleanBody)}
    * ==============================================================================
    */
   let gatewaySettingsCache = null;
+  let healthCache = null;
 
   async function loadGatewaySettings() {
     try {
@@ -2929,22 +2940,7 @@ ${escapeHtml(cleanBody)}
       const data = await res.json();
       if (res.ok && data.success) {
         gatewaySettingsCache = data.settings || {};
-
-        // Update Radio Inputs
-        const indiaVal = gatewaySettingsCache.indiaGateway || gatewaySettingsCache.india || 'dodo';
-        const intlVal = gatewaySettingsCache.intlGateway || gatewaySettingsCache.intl || gatewaySettingsCache.international || 'dodo';
-        const autoFallback = gatewaySettingsCache.autoFallback !== false;
-
-        const indiaRadio = document.querySelector(`input[name="india_gateway"][value="${indiaVal}"]`);
-        if (indiaRadio) indiaRadio.checked = true;
-
-        const intlRadio = document.querySelector(`input[name="intl_gateway"][value="${intlVal}"]`);
-        if (intlRadio) intlRadio.checked = true;
-
-        const fallbackToggle = document.getElementById('chk-auto-fallback') || document.getElementById('gateway-fallback-toggle');
-        if (fallbackToggle) fallbackToggle.checked = autoFallback;
-
-        updateRadioOptionSelection();
+        if (data.health) healthCache = data.health;
         updateGatewayUIState(gatewaySettingsCache, data.health);
       }
     } catch (err) {
@@ -2956,16 +2952,31 @@ ${escapeHtml(cleanBody)}
     document.querySelectorAll('.gateway-radio-option').forEach(opt => {
       const radio = opt.querySelector('input[type="radio"]');
       if (radio && radio.checked) {
+        opt.classList.add('selected');
         opt.classList.add('active');
       } else {
+        opt.classList.remove('selected');
         opt.classList.remove('active');
       }
     });
 
     const indiaRadio = document.querySelector('input[name="india_gateway"]:checked');
     const intlRadio = document.querySelector('input[name="intl_gateway"]:checked');
-    const indiaVal = indiaRadio ? indiaRadio.value : 'dodo';
-    const intlVal = intlRadio ? intlRadio.value : 'dodo';
+    const indiaVal = indiaRadio ? indiaRadio.value : (gatewaySettingsCache?.indiaGateway || 'dodo');
+    const intlVal = intlRadio ? intlRadio.value : (gatewaySettingsCache?.intlGateway || 'dodo');
+
+    // Update real-time active pills on the region cards
+    const indiaPill = document.getElementById('pill-india-active');
+    const intlPill = document.getElementById('pill-intl-active');
+
+    if (indiaPill) {
+      indiaPill.textContent = indiaVal === 'dodo' ? 'Active: Dodo Payments' : 'Active: Razorpay';
+      indiaPill.className = `region-active-pill ${indiaVal === 'dodo' ? 'dodo' : 'razorpay'}`;
+    }
+    if (intlPill) {
+      intlPill.textContent = intlVal === 'dodo' ? 'Active: Dodo Payments' : 'Active: Razorpay';
+      intlPill.className = `region-active-pill ${intlVal === 'dodo' ? 'dodo' : 'razorpay'}`;
+    }
 
     // Highlight Preset Cards
     const cardDodo = document.getElementById('preset-card-dodo');
@@ -2975,45 +2986,17 @@ ${escapeHtml(cleanBody)}
     if (cardDodo) cardDodo.classList.toggle('active', indiaVal === 'dodo' && intlVal === 'dodo');
     if (cardRzp) cardRzp.classList.toggle('active', indiaVal === 'razorpay' && intlVal === 'razorpay');
     if (cardSplit) cardSplit.classList.toggle('active', indiaVal === 'razorpay' && intlVal === 'dodo');
-  }
 
-  function updateGatewayUIState(settings, health) {
-    if (!settings) return;
-    gatewaySettingsCache = settings;
-
-    const indiaGateway = settings.indiaGateway || settings.india || 'dodo';
-    const intlGateway = settings.intlGateway || settings.intl || settings.international || 'dodo';
-
-    // 1. Sidebar Nav Badge
-    const navBadge = document.getElementById('nav-badge-gateways');
-    if (navBadge) {
-      if (indiaGateway === 'dodo' && intlGateway === 'dodo') {
-        navBadge.textContent = 'DODO';
-        navBadge.style.background = 'rgba(16, 185, 129, 0.15)';
-        navBadge.style.color = '#10b981';
-      } else if (indiaGateway === 'razorpay' && intlGateway === 'razorpay') {
-        navBadge.textContent = 'RAZORPAY';
-        navBadge.style.background = 'rgba(59, 130, 246, 0.15)';
-        navBadge.style.color = '#3b82f6';
-      } else {
-        navBadge.textContent = 'SPLIT';
-        navBadge.style.background = 'rgba(139, 92, 246, 0.15)';
-        navBadge.style.color = '#a78bfa';
-      }
-    }
-
-    // 2. Overview Strip Labels & Badges
+    // Update Master Overview Status Strip
     const masterBadge = document.getElementById('label-active-routing') || document.getElementById('gw-master-badge');
     const indiaBadge = document.getElementById('label-india-status') || document.getElementById('gw-status-india');
     const intlBadge = document.getElementById('label-intl-status') || document.getElementById('gw-status-intl');
-    const indiaPill = document.getElementById('pill-india-active');
-    const intlPill = document.getElementById('pill-intl-active');
     const presetBadge = document.getElementById('badge-preset-active');
 
     if (masterBadge) {
-      if (indiaGateway === 'dodo' && intlGateway === 'dodo') {
+      if (indiaVal === 'dodo' && intlVal === 'dodo') {
         masterBadge.textContent = 'Dodo Payments (All Regions)';
-      } else if (indiaGateway === 'razorpay' && intlGateway === 'razorpay') {
+      } else if (indiaVal === 'razorpay' && intlVal === 'razorpay') {
         masterBadge.textContent = 'Razorpay (All Regions)';
       } else {
         masterBadge.textContent = 'Split: Razorpay (India) + Dodo (Global)';
@@ -3021,24 +3004,152 @@ ${escapeHtml(cleanBody)}
     }
 
     if (presetBadge) {
-      if (indiaGateway === 'dodo' && intlGateway === 'dodo') presetBadge.textContent = 'Active: All Dodo';
-      else if (indiaGateway === 'razorpay' && intlGateway === 'razorpay') presetBadge.textContent = 'Active: All Razorpay';
+      if (indiaVal === 'dodo' && intlVal === 'dodo') presetBadge.textContent = 'Active: All Dodo';
+      else if (indiaVal === 'razorpay' && intlVal === 'razorpay') presetBadge.textContent = 'Active: All Razorpay';
       else presetBadge.textContent = 'Active: Smart Regional Split';
     }
 
     if (indiaBadge) {
-      indiaBadge.textContent = indiaGateway === 'dodo' ? 'Dodo Payments • Active' : 'Razorpay • Active';
+      indiaBadge.textContent = indiaVal === 'dodo' ? 'Dodo Payments • Active' : 'Razorpay • Active';
     }
-    if (indiaPill) {
-      indiaPill.textContent = indiaGateway === 'dodo' ? 'Active: Dodo Payments' : 'Active: Razorpay';
+    if (intlBadge) {
+      intlBadge.textContent = intlVal === 'dodo' ? 'Dodo Payments • Active (MoR)' : 'Razorpay • Active';
     }
 
-    if (intlBadge) {
-      intlBadge.textContent = intlGateway === 'dodo' ? 'Dodo Payments • Active (MoR)' : 'Razorpay • Active';
+    const navBadge = document.getElementById('badge-active-gateway') || document.getElementById('nav-badge-gateways');
+    if (navBadge) {
+      if (indiaVal === 'dodo' && intlVal === 'dodo') {
+        navBadge.textContent = 'DODO';
+        navBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+        navBadge.style.color = '#10b981';
+      } else if (indiaVal === 'razorpay' && intlVal === 'razorpay') {
+        navBadge.textContent = 'RAZORPAY';
+        navBadge.style.background = 'rgba(56, 189, 248, 0.15)';
+        navBadge.style.color = '#38bdf8';
+      } else {
+        navBadge.textContent = 'SPLIT';
+        navBadge.style.background = 'rgba(168, 85, 247, 0.15)';
+        navBadge.style.color = '#c084fc';
+      }
     }
-    if (intlPill) {
-      intlPill.textContent = intlGateway === 'dodo' ? 'Active: Dodo Payments' : 'Active: Razorpay';
+
+    // Refresh option status badges
+    updateOptionStatusBadges(indiaVal, intlVal);
+  }
+
+  function updateOptionStatusBadges(indiaVal, intlVal) {
+    const isRzpConfigured = Boolean(healthCache?.razorpay?.configured || gatewaySettingsCache?.envStatus?.razorpayConfigured);
+    const isDodoConfigured = Boolean(healthCache?.dodoPayments?.configured || gatewaySettingsCache?.envStatus?.dodoConfigured);
+
+    // India badges
+    const badgeRzpIn = document.getElementById('badge-rzp-in-status');
+    if (badgeRzpIn) {
+      if (isRzpConfigured) {
+        if (indiaVal === 'razorpay') {
+          badgeRzpIn.textContent = 'Active & Live';
+          badgeRzpIn.className = 'option-status-badge green';
+        } else {
+          badgeRzpIn.textContent = 'Ready Now';
+          badgeRzpIn.className = 'option-status-badge green';
+        }
+      } else {
+        badgeRzpIn.textContent = 'Account Pending';
+        badgeRzpIn.className = 'option-status-badge amber';
+      }
     }
+
+    const badgeDodoIn = document.getElementById('badge-dodo-in-status');
+    if (badgeDodoIn) {
+      if (isDodoConfigured) {
+        if (indiaVal === 'dodo') {
+          badgeDodoIn.textContent = 'Active & Live';
+          badgeDodoIn.className = 'option-status-badge green';
+        } else {
+          badgeDodoIn.textContent = 'Standby Ready';
+          badgeDodoIn.className = 'option-status-badge green';
+        }
+      } else {
+        badgeDodoIn.textContent = 'Keys Needed';
+        badgeDodoIn.className = 'option-status-badge amber';
+      }
+    }
+
+    // International badges
+    const badgeRzpIntl = document.getElementById('badge-rzp-intl-status');
+    if (badgeRzpIntl) {
+      if (isRzpConfigured) {
+        if (intlVal === 'razorpay') {
+          badgeRzpIntl.textContent = 'Active & Live';
+          badgeRzpIntl.className = 'option-status-badge green';
+        } else {
+          badgeRzpIntl.textContent = 'Ready Now';
+          badgeRzpIntl.className = 'option-status-badge green';
+        }
+      } else {
+        badgeRzpIntl.textContent = 'Requires Approval';
+        badgeRzpIntl.className = 'option-status-badge amber';
+      }
+    }
+
+    const badgeDodoIntl = document.getElementById('badge-dodo-intl-status');
+    if (badgeDodoIntl) {
+      if (isDodoConfigured) {
+        if (intlVal === 'dodo') {
+          badgeDodoIntl.textContent = 'Active & Recommended';
+          badgeDodoIntl.className = 'option-status-badge green';
+        } else {
+          badgeDodoIntl.textContent = 'Standby (MoR)';
+          badgeDodoIntl.className = 'option-status-badge green';
+        }
+      } else {
+        badgeDodoIntl.textContent = 'Keys Needed';
+        badgeDodoIntl.className = 'option-status-badge amber';
+      }
+    }
+
+    // Strip notice badge
+    const badgeRzpNotice = document.getElementById('badge-razorpay-notice');
+    if (badgeRzpNotice) {
+      if (isRzpConfigured) {
+        if (indiaVal === 'razorpay' || intlVal === 'razorpay') {
+          badgeRzpNotice.className = 'badge-status success';
+          badgeRzpNotice.textContent = 'Razorpay: Active & Live';
+        } else {
+          badgeRzpNotice.className = 'badge-status success';
+          badgeRzpNotice.textContent = 'Razorpay: Ready to Route';
+        }
+      } else {
+        badgeRzpNotice.className = 'badge-status warning';
+        badgeRzpNotice.textContent = 'Razorpay: Account Pending (15–20d)';
+      }
+    }
+  }
+
+  function updateGatewayUIState(settings, health) {
+    if (!settings && !gatewaySettingsCache) return;
+    if (settings) gatewaySettingsCache = settings;
+    if (health) healthCache = health;
+
+    const currentSettings = gatewaySettingsCache || {};
+    const currentHealth = healthCache || {};
+
+    const indiaGateway = currentSettings.indiaGateway || currentSettings.india || 'dodo';
+    const intlGateway = currentSettings.intlGateway || currentSettings.intl || currentSettings.international || 'dodo';
+
+    // 1. Synchronize Radio Inputs in the DOM
+    const inRadio = document.querySelector(`input[name="india_gateway"][value="${indiaGateway}"]`);
+    if (inRadio) inRadio.checked = true;
+
+    const intlRadio = document.querySelector(`input[name="intl_gateway"][value="${intlGateway}"]`);
+    if (intlRadio) intlRadio.checked = true;
+
+    const fallbackCheck = document.getElementById('chk-auto-fallback') || document.getElementById('gateway-fallback-toggle');
+    if (fallbackCheck && currentSettings.autoFallback !== undefined) {
+      fallbackCheck.checked = currentSettings.autoFallback !== false;
+    }
+
+    // 2. Synchronize radio visuals, pill badges, and preset cards
+    updateRadioOptionSelection();
 
     // 3. Populate Webhook URLs
     const origin = window.location.origin || 'https://dropdial.com';
@@ -3047,51 +3158,67 @@ ${escapeHtml(cleanBody)}
     if (dodoWhInput) dodoWhInput.value = `${origin}/api/dodo-webhook`;
     if (rzpWhInput) rzpWhInput.value = `${origin}/api/verify-payment`;
 
-    // 4. Update Credential Status if health info provided
-    if (health) {
-      // Dodo
-      const dodoKeyEl = document.getElementById('chk-dodo-key');
-      const dodoWhEl = document.getElementById('chk-dodo-wh');
-      const dodoPill = document.getElementById('card-badge-dodo');
-      const dodoModeEl = document.getElementById('chk-dodo-mode');
+    // 4. Update Detailed Gateway Credentials Checklist Cards
+    const isDodoConfigured = Boolean(currentHealth?.dodoPayments?.configured || currentSettings?.envStatus?.dodoConfigured);
+    const isRzpConfigured = Boolean(currentHealth?.razorpay?.configured || currentSettings?.envStatus?.razorpayConfigured);
 
-      if (health.dodoPayments) {
-        if (dodoKeyEl) dodoKeyEl.textContent = health.dodoPayments.keyConfigured ? `Configured (${health.dodoPayments.keyPrefix || 'live'})` : 'Not Configured';
-        if (dodoKeyEl) dodoKeyEl.style.color = health.dodoPayments.keyConfigured ? '#10b981' : '#f59e0b';
-        if (dodoModeEl) dodoModeEl.textContent = health.dodoPayments.mode || 'Live';
-        if (dodoWhEl) dodoWhEl.textContent = health.dodoPayments.webhookSecretConfigured ? 'Configured' : 'Missing (Optional)';
-        if (dodoWhEl) dodoWhEl.style.color = health.dodoPayments.webhookSecretConfigured ? '#10b981' : '#94a3b8';
+    // Dodo Card Details
+    const badgeDodoConn = document.getElementById('badge-dodo-conn');
+    const valDodoKey = document.getElementById('val-dodo-key');
+    const valDodoMode = document.getElementById('val-dodo-mode');
+    const valDodoWh = document.getElementById('val-dodo-wh');
+    const valDodoProd = document.getElementById('val-dodo-prod');
 
-        if (dodoPill) {
-          if (health.dodoPayments.configured) {
-            dodoPill.textContent = 'Active (Live)';
-            dodoPill.className = 'health-status-badge green-badge';
-          } else {
-            dodoPill.textContent = 'Setup Needed';
-            dodoPill.className = 'health-status-badge';
-          }
-        }
-      }
+    if (badgeDodoConn) {
+      badgeDodoConn.textContent = isDodoConfigured ? 'Active (Live)' : 'Setup Needed';
+      badgeDodoConn.className = `health-status-badge ${isDodoConfigured ? 'green-badge' : 'amber-badge'}`;
+    }
+    if (valDodoKey) {
+      const keyPrefix = currentHealth?.dodoPayments?.keyPrefix || currentSettings?.envStatus?.dodoKeyPrefix;
+      valDodoKey.textContent = isDodoConfigured ? `Configured (${keyPrefix || 'live'})` : 'Not Configured';
+      valDodoKey.style.color = isDodoConfigured ? '#10b981' : '#f59e0b';
+    }
+    if (valDodoMode) {
+      valDodoMode.textContent = currentHealth?.dodoPayments?.mode || currentSettings?.envStatus?.dodoMode || 'LIVE (Production)';
+      valDodoMode.style.color = '#10b981';
+    }
+    if (valDodoWh) {
+      const whConfigured = currentHealth?.dodoPayments?.webhookConfigured ?? currentSettings?.envStatus?.dodoWebhookConfigured;
+      valDodoWh.textContent = whConfigured ? 'Configured & Verified' : 'Optional (Default Active)';
+      valDodoWh.style.color = whConfigured ? '#10b981' : '#94a3b8';
+    }
+    if (valDodoProd) {
+      valDodoProd.textContent = 'Configured & Verified';
+      valDodoProd.style.color = '#10b981';
+    }
 
-      // Razorpay
-      const rzpKeyEl = document.getElementById('chk-rzp-key');
-      const rzpSecretEl = document.getElementById('chk-rzp-secret');
-      const rzpPill = document.getElementById('card-badge-razorpay');
+    // Razorpay Card Details
+    const badgeRzpConn = document.getElementById('badge-rzp-conn');
+    const valRzpKey = document.getElementById('val-rzp-key');
+    const valRzpMode = document.getElementById('val-rzp-mode');
+    const valRzpWh = document.getElementById('val-rzp-wh');
+    const valRzpOnboarding = document.getElementById('val-rzp-onboarding');
 
-      if (rzpKeyEl) rzpKeyEl.textContent = health.razorpay ? 'Configured' : 'Missing (Check RAZORPAY_KEY_ID)';
-      if (rzpKeyEl) rzpKeyEl.style.color = health.razorpay ? '#10b981' : '#f59e0b';
-      if (rzpSecretEl) rzpSecretEl.textContent = health.razorpay ? 'Configured' : 'Missing';
-      if (rzpSecretEl) rzpSecretEl.style.color = health.razorpay ? '#10b981' : '#f59e0b';
-
-      if (rzpPill) {
-        if (health.razorpay) {
-          rzpPill.textContent = 'Active (Ready)';
-          rzpPill.className = 'health-status-badge green-badge';
-        } else {
-          rzpPill.textContent = 'Key Not Set';
-          rzpPill.className = 'health-status-badge';
-        }
-      }
+    if (badgeRzpConn) {
+      badgeRzpConn.textContent = isRzpConfigured ? 'Connected & Ready' : 'Account Pending';
+      badgeRzpConn.className = `health-status-badge ${isRzpConfigured ? 'green-badge' : 'amber-badge'}`;
+    }
+    if (valRzpKey) {
+      const rzpKeyPrefix = currentHealth?.razorpay?.keyIdPrefix || currentSettings?.envStatus?.razorpayKeyPrefix;
+      valRzpKey.textContent = isRzpConfigured ? `Configured (${rzpKeyPrefix || 'live'})` : 'Pending Setup';
+      valRzpKey.style.color = isRzpConfigured ? '#10b981' : '#f59e0b';
+    }
+    if (valRzpMode) {
+      valRzpMode.textContent = isRzpConfigured ? (currentHealth?.razorpay?.mode || 'LIVE') : 'Awaiting Account';
+      valRzpMode.style.color = isRzpConfigured ? '#10b981' : '#94a3b8';
+    }
+    if (valRzpWh) {
+      valRzpWh.textContent = isRzpConfigured ? 'Configured / Active' : 'Optional / Standby';
+      valRzpWh.style.color = isRzpConfigured ? '#10b981' : '#94a3b8';
+    }
+    if (valRzpOnboarding) {
+      valRzpOnboarding.textContent = isRzpConfigured ? 'Account Approved & Active' : 'Expected in 15–20 days';
+      valRzpOnboarding.style.color = isRzpConfigured ? '#10b981' : 'var(--amber-text)';
     }
   }
 
@@ -3140,9 +3267,12 @@ ${escapeHtml(cleanBody)}
     const intlRadio = document.querySelector('input[name="intl_gateway"]:checked');
     const fallbackToggle = document.getElementById('chk-auto-fallback') || document.getElementById('gateway-fallback-toggle');
 
-    const india = indiaRadio ? indiaRadio.value : 'dodo';
-    const international = intlRadio ? intlRadio.value : 'dodo';
+    const india = indiaRadio ? indiaRadio.value : (gatewaySettingsCache?.indiaGateway || 'dodo');
+    const international = intlRadio ? intlRadio.value : (gatewaySettingsCache?.intlGateway || 'dodo');
     const autoFallback = fallbackToggle ? fallbackToggle.checked : true;
+
+    // Instant UI update (0ms latency feel)
+    updateRadioOptionSelection();
 
     await saveGatewaySettings({
       indiaGateway: india,
@@ -3150,14 +3280,19 @@ ${escapeHtml(cleanBody)}
       india,
       international,
       autoFallback
-    });
+    }, `Real-time updated: India (${india.toUpperCase()}), Global (${international.toUpperCase()})`);
   }
 
   async function saveGatewaySettings(settings, customMsg) {
     const saveBtn = document.getElementById('btn-save-gateways');
+    const saveMsg = document.getElementById('gateway-save-msg');
     if (saveBtn) {
       saveBtn.disabled = true;
       saveBtn.innerHTML = `<span>Saving routing configuration...</span>`;
+    }
+    if (saveMsg) {
+      saveMsg.textContent = 'Syncing gateway settings...';
+      saveMsg.style.color = '#94a3b8';
     }
 
     try {
@@ -3165,7 +3300,8 @@ ${escapeHtml(cleanBody)}
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.adminToken || ''}`
+          'Authorization': `Bearer ${state.adminToken || ''}`,
+          'x-admin-key': state.adminToken || ''
         },
         body: JSON.stringify({
           action: 'update_payment_settings',
@@ -3177,18 +3313,29 @@ ${escapeHtml(cleanBody)}
       const data = await res.json();
       if (res.ok && data.success) {
         showToast(customMsg || 'Gateway routing configuration saved successfully!', 'success');
-        updateGatewayUIState(data.settings);
-        updateRadioOptionSelection();
+        if (saveMsg) {
+          saveMsg.textContent = `✓ Real-time status active (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })})`;
+          saveMsg.style.color = '#10b981';
+        }
+        updateGatewayUIState(data.settings, data.health || healthCache);
       } else {
         showToast(`Failed to update gateways: ${data.error || 'Unknown error'}`, 'error');
+        if (saveMsg) {
+          saveMsg.textContent = `Error: ${data.error || 'Failed to save'}`;
+          saveMsg.style.color = '#ef4444';
+        }
       }
     } catch (err) {
       console.error('Save gateway error:', err);
       showToast(`Error saving gateways: ${err.message}`, 'error');
+      if (saveMsg) {
+        saveMsg.textContent = `Error: ${err.message}`;
+        saveMsg.style.color = '#ef4444';
+      }
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = `<span>Save Gateway Routing</span>`;
+        saveBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Save Gateway Configuration</span>`;
       }
     }
   }

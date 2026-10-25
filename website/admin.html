@@ -1569,13 +1569,13 @@
                   <p class="region-card-hint">Used for buyers located in India or checking out in INR.</p>
 
                   <div class="gateway-radio-group">
-                    <label class="gateway-radio-option selected" id="label-opt-in-dodo">
-                      <input type="radio" name="india_gateway" value="dodo" checked>
+                    <label class="gateway-radio-option" id="label-opt-in-dodo">
+                      <input type="radio" name="india_gateway" value="dodo">
                       <div class="radio-custom"></div>
                       <div class="option-details">
                         <div class="option-title-row">
                           <strong class="option-name">Dodo Payments</strong>
-                          <span class="option-status-badge green">Ready Now</span>
+                          <span class="option-status-badge green" id="badge-dodo-in-status">Ready Now</span>
                         </div>
                         <p class="option-sub">Cards, Apple Pay, Google Pay, Multi-currency. Works without waiting for Razorpay account.</p>
                       </div>
@@ -1604,13 +1604,13 @@
                   <p class="region-card-hint">Used for all international buyers across US, EU, UK, Canada, and global markets.</p>
 
                   <div class="gateway-radio-group">
-                    <label class="gateway-radio-option selected" id="label-opt-intl-dodo">
-                      <input type="radio" name="intl_gateway" value="dodo" checked>
+                    <label class="gateway-radio-option" id="label-opt-intl-dodo">
+                      <input type="radio" name="intl_gateway" value="dodo">
                       <div class="radio-custom"></div>
                       <div class="option-details">
                         <div class="option-title-row">
                           <strong class="option-name">Dodo Payments (MoR)</strong>
-                          <span class="option-status-badge green">Recommended</span>
+                          <span class="option-status-badge green" id="badge-dodo-intl-status">Recommended</span>
                         </div>
                         <p class="option-sub">Merchant of Record: Handles EU VAT, US sales taxes, Apple Pay, 150+ countries. Zero merchant tax liability.</p>
                       </div>
@@ -1734,7 +1734,7 @@
                   </div>
                   <div class="gdc-row">
                     <span class="gdc-k">Onboarding:</span>
-                    <span class="gdc-v" style="color:var(--amber-text);">Expected in 15–20 days</span>
+                    <span class="gdc-v" id="val-rzp-onboarding" style="color:var(--amber-text);">Expected in 15–20 days</span>
                   </div>
 
                   <div class="webhook-endpoint-box mt-12">

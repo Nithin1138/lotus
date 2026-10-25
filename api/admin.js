@@ -369,11 +369,31 @@ module.exports = async function handler(req, res) {
       const { savePaymentSettings } = require('./_paymentSettings');
       const payload = body.settings || body;
       const updated = await savePaymentSettings(payload, sql);
+
+      const dodoKey = (process.env.DODO_PAYMENTS_API_KEY || '').trim();
+      const dodoProduct = (process.env.DODO_PRODUCT_UNIVERSAL || process.env.DODO_PRODUCT_ID || '').trim();
+      const razorpayKey = (process.env.RAZORPAY_KEY_ID || '').trim();
+      const razorpaySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+
+      const health = {
+        dodoPayments: {
+          configured: Boolean(dodoKey && dodoProduct),
+          keyPrefix: dodoKey ? dodoKey.slice(0, 8) + '...' : 'Not set',
+          mode: dodoKey.startsWith('test_') ? 'TEST (Sandbox)' : dodoKey ? 'LIVE (Production)' : 'Mock / Unset'
+        },
+        razorpay: {
+          configured: Boolean(razorpayKey && razorpaySecret),
+          keyIdPrefix: razorpayKey ? razorpayKey.slice(0, 8) + '...' : 'Not set',
+          mode: razorpayKey.startsWith('rzp_live') ? 'LIVE (Production)' : razorpayKey.startsWith('rzp_test') ? 'TEST (Sandbox)' : 'Mock / Unset'
+        }
+      };
+
       return res.status(200).json({
         ok: true,
         success: true,
         message: 'Payment gateway configuration updated successfully',
-        settings: updated
+        settings: updated,
+        health
       });
     } catch (err) {
       console.error('[Admin update_payment_settings Error]', err);
