@@ -112,6 +112,11 @@ module.exports = async function handler(req, res) {
     const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
 
     if (!keyId || !keySecret) {
+      const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+      if (isProd) {
+        console.error('[Razorpay Error] RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET missing in production');
+        return res.status(503).json({ error: 'Payment gateway is currently unavailable. Please try again shortly or contact support.' });
+      }
       console.warn('[Razorpay] RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is not configured. Running in sandbox test mode.');
       return res.status(200).json({
         orderId: `order_mock_${Date.now()}`,

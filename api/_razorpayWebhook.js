@@ -86,6 +86,24 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ status: 'ignored_no_email' });
       }
 
+      // Check DB for Idempotency
+      try {
+        const { getDb, ensureSchema } = require('./_db');
+        const sql = getDb();
+        if (sql) {
+          await ensureSchema();
+          const existingTx = await sql`
+            SELECT id FROM transactions WHERE payment_id = ${paymentId} LIMIT 1;
+          `;
+          if (existingTx && existingTx.length > 0) {
+            console.log(`[Razorpay Webhook] Payment ${paymentId} already recorded in DB. Skipping duplicate.`);
+            return res.status(200).json({ status: 'ok', already_processed: true });
+          }
+        }
+      } catch (dbErr) {
+        console.warn('[Razorpay Webhook DB Idempotency Check Warning]:', dbErr.message);
+      }
+
       // 1. Determine Plan Tier & Generate Signed License Key
       const rawTier = (notes.tier || notes.product || '').toLowerCase();
       const tier = rawTier.includes('single') ? 'single'
@@ -94,7 +112,32 @@ module.exports = async function handler(req, res) {
       const licenseKey = generateLicense(email, name, tier);
       console.log(`[Razorpay Webhook] Issued ${tier} license for: ${email} -> ${licenseKey.slice(0, 20)}...`);
 
-      // 2. Dispatch Email via Resend
+      // 2. Persist to Neon DB
+      try {
+        const { getDb, ensureSchema } = require('./_db');
+        const sql = getDb();
+        if (sql) {
+          await ensureSchema();
+          const licId = `lic_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+          await sql`
+            INSERT INTO licenses (id, customer_name, email, license_key, tier, status, created_at)
+            VALUES (${licId}, ${name}, ${email}, ${licenseKey}, ${tier}, 'active', NOW())
+            ON CONFLICT (id) DO NOTHING;
+          `;
+          const txId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+          const txAmount = Math.round(Number(amount)) || (tier === 'single' ? 799 : tier === 'team' ? 3499 : 999);
+          const orderId = payment.order_id || 'wh_order';
+          await sql`
+            INSERT INTO transactions (id, order_id, payment_id, amount, currency, customer_name, email, status, coupon_code, country, created_at)
+            VALUES (${txId}, ${orderId}, ${paymentId}, ${txAmount}, ${payment.currency || 'INR'}, ${name}, ${email}, 'captured', ${notes.coupon || null}, ${notes.country || 'IN'}, NOW())
+            ON CONFLICT (id) DO NOTHING;
+          `;
+        }
+      } catch (saveErr) {
+        console.warn('[Razorpay Webhook DB Save Warning]:', saveErr.message);
+      }
+
+      // 3. Dispatch Email via Resend
       const emailResult = await sendResendEmail({
         to: email,
         name,

@@ -709,7 +709,7 @@
         alreadyHandled = Boolean(sessionStorage.getItem('dd_handled_' + txKey));
       } catch (_) {}
 
-      if ((dodoPaymentId || dodoStatus === 'succeeded' || dodoStatus === 'success') && !window._dd_return_handled && !alreadyHandled) {
+      if (dodoPaymentId && (dodoStatus === 'succeeded' || dodoStatus === 'success' || !dodoStatus) && !window._dd_return_handled && !alreadyHandled) {
         window._dd_return_handled = true;
         try {
           sessionStorage.setItem('dd_handled_' + txKey, '1');
@@ -731,7 +731,7 @@
             successView.style.display = 'block';
           }
           if (licenseKeyDisplay) {
-            licenseKeyDisplay.value = 'Generating and verifying your license key…';
+            licenseKeyDisplay.value = 'Verifying secure payment and generating license…';
           }
           if (successEmailText && returnEmail) {
             successEmailText.textContent = returnEmail;
@@ -743,20 +743,28 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 gateway: 'dodo',
-                payment_id: dodoPaymentId || 'dodo_return',
+                payment_id: dodoPaymentId,
                 email: returnEmail,
                 tier: returnTier
               })
             });
             const vData = await vRes.json();
-            if (vData.success && vData.licenseKey) {
+            if (vRes.ok && vData.success && vData.licenseKey) {
               showSuccess(vData.licenseKey, vData.email || returnEmail);
             } else {
-              showSuccess('Your DropDial ' + (TIERS[returnTier]?.name || 'Pro') + ' license has been generated and dispatched to ' + (returnEmail || 'your email') + '! Please check your inbox (and spam/promotions folder).', returnEmail);
+              if (formView && successView) {
+                formView.style.display = 'block';
+                successView.style.display = 'none';
+              }
+              showError(vData.error || 'Payment verification could not be completed. If you were charged, please contact support@dropdial.app.');
             }
           } catch (vErr) {
             console.warn('[Dodo Verification Error]', vErr);
-            showSuccess('Your DropDial ' + (TIERS[returnTier]?.name || 'Pro') + ' license has been generated and dispatched to ' + (returnEmail || 'your email') + '! Please check your inbox (and spam/promotions folder).', returnEmail);
+            if (formView && successView) {
+              formView.style.display = 'block';
+              successView.style.display = 'none';
+            }
+            showError('Unable to verify payment status. If your payment went through, please contact support@dropdial.app.');
           }
         }, 300);
       }

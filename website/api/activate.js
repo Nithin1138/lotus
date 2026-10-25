@@ -10,6 +10,7 @@
 
 const { verifyLicense, sendDeviceActivationEmail } = require('./_utils');
 const { getDb, ensureSchema } = require('./_db');
+const { checkRateLimit } = require('./_rateLimit');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,6 +23,15 @@ module.exports = async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  // Rate Limiting: Max 20 activation requests per minute per IP
+  const rateLimit = checkRateLimit(req, 'activate', 20, 60000);
+  if (!rateLimit.allowed) {
+    return res.status(429).json({
+      error: 'Too many activation attempts. Please wait a moment before trying again.',
+      retryAfterSeconds: Math.ceil(rateLimit.resetMs / 1000)
+    });
   }
 
   try {

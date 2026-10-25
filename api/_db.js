@@ -79,6 +79,25 @@ async function ensureSchema() {
       );
     `;
 
+    // Security & Concurrency: Unique index on payment_id to prevent double-spending
+    try {
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_payment_id
+        ON transactions (payment_id)
+        WHERE payment_id IS NOT NULL;
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_licenses_email
+        ON licenses (email);
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_transactions_email
+        ON transactions (email);
+      `;
+    } catch (idxErr) {
+      console.warn('[Neon DB Index Notice]:', idxErr.message);
+    }
+
     // 3. Coupons Table
     await sql`
       CREATE TABLE IF NOT EXISTS coupons (

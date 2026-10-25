@@ -122,8 +122,13 @@ module.exports = async function handler(req, res) {
     const protocol = isLocal ? 'http' : 'https';
     const returnUrl = `${protocol}://${host}/?payment_status=success&tier=${tier}&email=${encodeURIComponent(email)}`;
 
-    // If API key is missing, return test sandbox response with helpful configuration note
+    // If API key is missing, return error in production or test sandbox response in development
     if (!apiKey || !productId) {
+      const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+      if (isProd) {
+        console.error('[Dodo Payments Error] DODO_PAYMENTS_API_KEY or Product ID missing in production');
+        return res.status(503).json({ error: 'Payment gateway is currently unavailable. Please try again shortly or contact support.' });
+      }
       console.warn('[Dodo Payments] DODO_PAYMENTS_API_KEY or Product ID is not configured. Returning sandbox session.');
       const mockSessionId = `cks_mock_${Date.now()}`;
       return res.status(200).json({
