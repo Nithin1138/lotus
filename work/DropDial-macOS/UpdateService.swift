@@ -15,8 +15,9 @@ struct ReleaseInfo {
 final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificationCenterDelegate {
     static let shared = UpdateService()
 
-    private let releasesApiUrl = "https://dropdial.app/api/releases/latest"
-    private let fallbackReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest"
+    private let releasesApiUrl = "https://dropdial.app/api/releases"
+    private let fallbackReleasesApiUrl = "https://dropdial.app/api/releases/latest"
+    private let githubReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest"
 
     static func formatVersion(_ raw: String) -> String {
         var clean = raw.trimmingCharacters(in: CharacterSet(charactersIn: "vV \t\r\n"))
@@ -94,21 +95,29 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
                     }
                 }
             } else {
-                // Try fallback to GitHub releases API directly
+                // Try fallback to secondary dropdial.app release endpoint
                 self.fetchReleaseData(urlString: self.fallbackReleasesApiUrl) { [weak self] fbRelease, fbError, fbIs404 in
                     guard let self = self else { return }
                     if let fbRelease = fbRelease {
                         self.handleReleaseResult(release: fbRelease, isUserInitiated: isUserInitiated)
                     } else {
-                        DispatchQueue.main.async {
-                            if fbIs404 {
-                                self.latestRelease = nil
-                                self.onUpdateStatusChanged?()
-                                if isUserInitiated {
-                                    self.showUpToDateAlert()
+                        // Optional fallback to GitHub if available
+                        self.fetchReleaseData(urlString: self.githubReleasesApiUrl) { [weak self] ghRelease, _, ghIs404 in
+                            guard let self = self else { return }
+                            if let ghRelease = ghRelease {
+                                self.handleReleaseResult(release: ghRelease, isUserInitiated: isUserInitiated)
+                            } else {
+                                DispatchQueue.main.async {
+                                    if fbIs404 || ghIs404 {
+                                        self.latestRelease = nil
+                                        self.onUpdateStatusChanged?()
+                                        if isUserInitiated {
+                                            self.showUpToDateAlert()
+                                        }
+                                    } else if isUserInitiated {
+                                        self.showConnectionAlert()
+                                    }
                                 }
-                            } else if isUserInitiated {
-                                self.showConnectionAlert()
                             }
                         }
                     }

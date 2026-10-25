@@ -539,9 +539,11 @@ internal static class UpdateManager
                 if (normalized != primaryUrl)
                     downloadUrls.Add(primaryUrl);
             }
+            downloadUrls.Add($"https://dropdial.app/downloads/{fileName}");
+            downloadUrls.Add($"https://dropdial.app/api/releases?download={fileName}");
+            downloadUrls.Add("https://dropdial.app/downloads/DropDial-Windows-x64.zip");
             downloadUrls.Add($"https://github.com/Nithin1138/lotus/releases/download/{release.TagName}/{fileName}");
             downloadUrls.Add($"https://github.com/Nithin1138/lotus/releases/latest/download/{fileName}");
-            downloadUrls.Add($"https://dropdial.app/downloads/{fileName}");
 
             HttpResponseMessage? response = null;
             HttpClient? activeClient = null;

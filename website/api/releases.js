@@ -178,7 +178,7 @@ module.exports = async function handler(req, res) {
       return res.end();
     }
     if (lower.includes('update')) {
-      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Windows-Update.zip` });
+      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Windows-x64.zip` });
       return res.end();
     }
     if (lower.includes('.zip') && (lower.includes('windows') || lower.includes('win'))) {
@@ -224,9 +224,9 @@ module.exports = async function handler(req, res) {
     {
       id: 5,
       name: 'DropDial-Windows-Update.zip',
-      size: 73462975,
+      size: 96049041,
       content_type: 'application/zip',
-      browser_download_url: `${baseUrl}/downloads/DropDial-Windows-Update.zip`
+      browser_download_url: `${baseUrl}/downloads/DropDial-Windows-x64.zip`
     },
     {
       id: 6,
