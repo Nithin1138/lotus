@@ -121,11 +121,22 @@ internal static class Backend
         var info = new ProcessStartInfo(pythonExe) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true, WorkingDirectory = baseDir };
         info.ArgumentList.Add(Path.Combine(baseDir, "backend", "worker.py"));
 
-        string sitePackages = Path.Combine(baseDir, "runtime", "python", "Lib", "site-packages");
-        if (Directory.Exists(sitePackages))
+        var siteCandidates = new[]
+        {
+            Path.Combine(baseDir, "runtime", "python", "Lib", "site-packages"),
+            Path.Combine(baseDir, "runtime", "Lib", "site-packages"),
+            Path.Combine(baseDir, "runtime", "site-packages")
+        };
+        var validSites = new System.Collections.Generic.List<string>();
+        foreach (var s in siteCandidates)
+        {
+            if (Directory.Exists(s)) validSites.Add(s);
+        }
+        if (validSites.Count > 0)
         {
             string existingPpath = Environment.GetEnvironmentVariable("PYTHONPATH") ?? "";
-            info.Environment["PYTHONPATH"] = string.IsNullOrEmpty(existingPpath) ? sitePackages : sitePackages + Path.PathSeparator + existingPpath;
+            string combined = string.Join(Path.PathSeparator.ToString(), validSites);
+            info.Environment["PYTHONPATH"] = string.IsNullOrEmpty(existingPpath) ? combined : combined + Path.PathSeparator + existingPpath;
         }
 
         string ffmpegDir = Path.Combine(baseDir, "runtime", "ffmpeg");

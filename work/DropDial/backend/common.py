@@ -61,6 +61,8 @@ def get_fitz():
             _base / 'runtime' / 'python' / 'Lib' / 'site-packages',
             _base / 'runtime' / 'Lib' / 'site-packages',
             _base / 'runtime' / 'site-packages',
+            Path(sys.prefix) / 'Lib' / 'site-packages',
+            Path(sys.prefix) / 'site-packages',
         ]:
             if _cand.exists() and str(_cand) not in sys.path:
                 sys.path.insert(0, str(_cand))
