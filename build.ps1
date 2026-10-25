@@ -1,7 +1,17 @@
-param([switch]$SkipRuntimeCheck)
+param(
+    [switch]$SkipRuntimeCheck,
+    [string]$Version = ""
+)
 $ErrorActionPreference = 'Stop'
 $taskRoot = $PSScriptRoot
 $taskOutput = Join-Path $taskRoot 'outputs/DropDial'
+
+if ([string]::IsNullOrWhiteSpace($Version) -and -not [string]::IsNullOrWhiteSpace($env:VERSION)) {
+    $Version = $env:VERSION
+}
+if ([string]::IsNullOrWhiteSpace($Version) -and -not [string]::IsNullOrWhiteSpace($env:GITHUB_REF_NAME)) {
+    $Version = $env:GITHUB_REF_NAME.TrimStart('v')
+}
 
 if (-not $SkipRuntimeCheck) {
     foreach ($taskFile in @('runtime/python/python.exe', 'runtime/ffmpeg/ffmpeg.exe', 'runtime/ffmpeg/ffprobe.exe', 'runtime/7zip/7z.exe')) {
@@ -11,7 +21,13 @@ if (-not $SkipRuntimeCheck) {
     }
 }
 
-dotnet publish (Join-Path $taskRoot 'work/DropDial/DropDial.csproj') -c Release -r win-x64 --self-contained true -o $taskOutput --nologo
+$publishArgs = @('publish', (Join-Path $taskRoot 'work/DropDial/DropDial.csproj'), '-c', 'Release', '-r', 'win-x64', '--self-contained', 'true', '-o', $taskOutput, '--nologo')
+if (-not [string]::IsNullOrWhiteSpace($Version)) {
+    $cleanVer = $Version.TrimStart('v')
+    $publishArgs += @("/p:Version=$cleanVer", "/p:AssemblyVersion=$cleanVer", "/p:FileVersion=$cleanVer")
+}
+
+dotnet @publishArgs
 if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed.' }
 Copy-Item -LiteralPath (Join-Path $taskRoot 'work/DropDial/backend') -Destination $taskOutput -Recurse -Force
 Get-ChildItem -LiteralPath (Join-Path $taskOutput 'backend') -Recurse -Directory -Filter '__pycache__' | Remove-Item -Recurse -Force

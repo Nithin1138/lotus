@@ -61,9 +61,17 @@ else
     swiftc -O "${SWIFT_SOURCES[@]}" -o "$MACOS_DIR/DropDial"
 fi
 
+BUILD_VERSION="${1:-${APP_VERSION:-${VERSION:-${GITHUB_REF_NAME:-}}}}"
+BUILD_VERSION="${BUILD_VERSION#v}"
+
 # 4. Copy Bundle Info & Icons
 echo "Packaging application bundle..."
 cp "$ROOT_DIR/work/DropDial-macOS/Info.plist" "$CONTENTS_DIR/Info.plist"
+if [ -n "$BUILD_VERSION" ]; then
+    echo "Injecting version $BUILD_VERSION into Info.plist..."
+    /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $BUILD_VERSION" "$CONTENTS_DIR/Info.plist" 2>/dev/null || true
+    /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_VERSION" "$CONTENTS_DIR/Info.plist" 2>/dev/null || true
+fi
 if [ -f "$ROOT_DIR/work/DropDial/assets/AppIcon.icns" ]; then
     cp "$ROOT_DIR/work/DropDial/assets/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
 fi
@@ -118,6 +126,7 @@ ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_FILE"
 if [ -d "$ROOT_DIR/website/downloads" ]; then
     cp "$ZIP_FILE" "$ROOT_DIR/website/downloads/DropDial-macOS.zip"
 fi
+cp "$ZIP_FILE" "$ROOT_DIR/outputs/DropDial-macOS.zip" 2>/dev/null || true
 
 DMG_FILE="$OUTPUT_DIR/DropDial.dmg"
 if [ -f "$ROOT_DIR/packaging/build-dmg.sh" ]; then

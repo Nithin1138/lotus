@@ -30,7 +30,12 @@ internal static class UpdateManager
     public static Action? DismissWheelAction;
     private static bool _isShowingPrompt = false;
     private static string? _sessionDismissedVersion = null;
+    private static bool _hasPromptedInCurrentRun = false;
     public static bool HasPendingPrompt { get; private set; }
+
+    private const string LastAppliedTagKey = "LastAppliedUpdateTag";
+    private const string SnoozedTagKey = "SnoozedUpdateTag";
+    private const string SnoozedTimeKey = "SnoozedUpdateTime";
 
     public static void SetPendingPrompt(bool pending) => HasPendingPrompt = pending;
 
@@ -38,18 +43,37 @@ internal static class UpdateManager
         !string.IsNullOrEmpty(_sessionDismissedVersion) &&
         string.Equals(FormatVersion(_sessionDismissedVersion), FormatVersion(tagName), StringComparison.OrdinalIgnoreCase);
 
+    public static bool IsAlreadyApplied(string tagName) =>
+        string.Equals(Settings.GetString(LastAppliedTagKey), tagName, StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsSnoozed(string tagName)
+    {
+        string? snoozed = Settings.GetString(SnoozedTagKey);
+        if (!string.Equals(snoozed, tagName, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        string? timeStr = Settings.GetString(SnoozedTimeKey);
+        if (long.TryParse(timeStr, out long unixSecs))
+        {
+            long elapsed = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - unixSecs;
+            return elapsed < 86400; // 24 hours snooze
+        }
+        return false;
+    }
+
     public static void PromptIfPending()
     {
-        if (AvailableUpdate == null)
+        if (AvailableUpdate == null || _hasPromptedInCurrentRun)
             return;
 
-        if (IsSessionDismissed(AvailableUpdate.TagName))
+        if (IsSessionDismissed(AvailableUpdate.TagName) || IsSnoozed(AvailableUpdate.TagName) || IsAlreadyApplied(AvailableUpdate.TagName))
         {
             HasPendingPrompt = false;
             return;
         }
 
         HasPendingPrompt = false;
+        _hasPromptedInCurrentRun = true;
         ShowUpdatePrompt(AvailableUpdate);
     }
 
@@ -67,18 +91,26 @@ internal static class UpdateManager
     public static string CurrentVersion =>
         FormatVersion(typeof(UpdateManager).Assembly.GetName().Version is { } v
             ? (v.Revision > 0 ? $"{v.Major}.{v.Minor}.{v.Build}.{v.Revision}" : $"{v.Major}.{v.Minor}.{v.Build}")
-            : "1.0.2.0");
+            : "1.0.2.2");
 
     public static ReleaseInfo? AvailableUpdate { get; private set; }
     public static event Action? UpdateStatusChanged;
 
+    public static int[] ParseVersionComponents(string v)
+    {
+        string clean = v.Trim().TrimStart('v', 'V');
+        var parts = clean.Split('.').Select(p => int.TryParse(p, out var n) ? n : 0).ToList();
+        while (parts.Count > 1 && parts[^1] == 0)
+        {
+            parts.RemoveAt(parts.Count - 1);
+        }
+        return parts.ToArray();
+    }
+
     public static bool IsNewer(string remote, string local)
     {
-        string cleanRemote = remote.Trim().TrimStart('v', 'V');
-        string cleanLocal = local.Trim().TrimStart('v', 'V');
-
-        var rParts = cleanRemote.Split('.').Select(p => int.TryParse(p, out var n) ? n : 0).ToArray();
-        var lParts = cleanLocal.Split('.').Select(p => int.TryParse(p, out var n) ? n : 0).ToArray();
+        var rParts = ParseVersionComponents(remote);
+        var lParts = ParseVersionComponents(local);
 
         int count = Math.Max(rParts.Length, lParts.Length);
         for (int i = 0; i < count; i++)
@@ -259,19 +291,28 @@ internal static class UpdateManager
             };
 
             bool newer = IsNewer(tagName, CurrentVersion);
+            bool alreadyApplied = IsAlreadyApplied(tagName);
+            bool snoozed = IsSnoozed(tagName);
 
-            if (newer)
+            if (newer && !alreadyApplied)
             {
                 bool changed = AvailableUpdate?.TagName != release.TagName;
                 AvailableUpdate = release;
                 if (changed)
                     UpdateStatusChanged?.Invoke();
 
-                if (isUserInitiated || autoPromptOnWheelOpen)
+                if (isUserInitiated)
                 {
-                    if (!IsSessionDismissed(release.TagName))
+                    HasPendingPrompt = false;
+                    _hasPromptedInCurrentRun = true;
+                    ShowUpdatePrompt(release);
+                }
+                else if (autoPromptOnWheelOpen)
+                {
+                    if (!IsSessionDismissed(release.TagName) && !snoozed && !_hasPromptedInCurrentRun)
                     {
                         HasPendingPrompt = false;
+                        _hasPromptedInCurrentRun = true;
                         ShowUpdatePrompt(release);
                     }
                 }
@@ -279,9 +320,13 @@ internal static class UpdateManager
                 {
                     // Do not interrupt user while working in other apps.
                     // Mark pending so the update prompt appears only when the user opens the wheel / interacts with DropDial.
-                    if (!IsSessionDismissed(release.TagName))
+                    if (!IsSessionDismissed(release.TagName) && !snoozed && !_hasPromptedInCurrentRun)
                     {
                         HasPendingPrompt = true;
+                    }
+                    else
+                    {
+                        HasPendingPrompt = false;
                     }
                 }
             }
@@ -399,6 +444,7 @@ internal static class UpdateManager
             {
                 HasPendingPrompt = false;
                 _sessionDismissedVersion = null;
+                Settings.Set(LastAppliedTagKey, release.TagName);
                 if (release.IsZip && !string.IsNullOrEmpty(release.DownloadUrl))
                 {
                     _ = DownloadAndApplyUpdateAsync(release);
@@ -416,6 +462,8 @@ internal static class UpdateManager
             {
                 HasPendingPrompt = false;
                 _sessionDismissedVersion = release.TagName;
+                Settings.Set(SnoozedTagKey, release.TagName);
+                Settings.Set(SnoozedTimeKey, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
             }
         }
         finally

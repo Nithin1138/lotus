@@ -37,7 +37,9 @@ jobs:
           python3 -m py_compile work/DropDial/backend/*.py
 
       - name: Build macOS application bundle
-        run: ./build-mac.sh
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          ./build-mac.sh "$TAG"
 
       - name: Verify macOS app bundle & binaries
         run: |
@@ -68,7 +70,9 @@ jobs:
 
       - name: Package macOS application
         run: |
-          ditto -c -k --sequesterRsrc --keepParent outputs/DropDial-macOS/DropDial.app outputs/DropDial-macOS.zip
+          mkdir -p outputs/DropDial-macOS
+          ditto -c -k --sequesterRsrc --keepParent outputs/DropDial-macOS/DropDial.app outputs/DropDial-macOS/DropDial-macOS.zip
+          cp outputs/DropDial-macOS/DropDial-macOS.zip outputs/DropDial-macOS.zip 2>/dev/null || true
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
@@ -112,7 +116,9 @@ jobs:
 
       - name: Build Windows application
         shell: pwsh
-        run: ./build.ps1
+        run: |
+          $tag = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME.TrimStart('v') } else { "1.0.2.2" }
+          ./build.ps1 -Version $tag
 
       - name: Verify Windows executable & runtime
         shell: pwsh

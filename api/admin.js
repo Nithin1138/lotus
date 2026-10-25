@@ -543,7 +543,7 @@ module.exports = async function handler(req, res) {
     const repo = process.env.GITHUB_REPO || 'lotus';
 
     if (!ghToken) {
-      let currentVersion = '1.0.2.0';
+      let currentVersion = '1.0.2.2';
       try {
         const { getDb, ensureSchema } = require('./_db');
         const sql = getDb();

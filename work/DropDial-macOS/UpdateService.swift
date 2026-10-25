@@ -32,6 +32,12 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
         return UpdateService.formatVersion(raw)
     }
 
+    private let kLastAppliedTag = "dropdial_last_applied_update_tag"
+    private let kSnoozedTag = "dropdial_snoozed_update_tag"
+    private let kSnoozedTimestamp = "dropdial_snoozed_update_time"
+
+    private var hasPromptedInCurrentRun = false
+
     private(set) var latestRelease: ReleaseInfo?
     var onUpdateStatusChanged: (() -> Void)?
 
@@ -50,12 +56,18 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
     }
 
     // MARK: - Version Comparison
-    func isNewer(remote: String, local: String) -> Bool {
-        let cleanRemote = remote.trimmingCharacters(in: CharacterSet(charactersIn: "vV \t\r\n"))
-        let cleanLocal = local.trimmingCharacters(in: CharacterSet(charactersIn: "vV \t\r\n"))
+    static func parseVersionComponents(_ v: String) -> [Int] {
+        let clean = v.trimmingCharacters(in: CharacterSet(charactersIn: "vV \t\r\n"))
+        var parts = clean.split(separator: ".").compactMap { Int($0) }
+        while parts.count > 1 && parts.last == 0 {
+            parts.removeLast()
+        }
+        return parts
+    }
 
-        let rParts = cleanRemote.split(separator: ".").compactMap { Int($0) }
-        let lParts = cleanLocal.split(separator: ".").compactMap { Int($0) }
+    func isNewer(remote: String, local: String) -> Bool {
+        let rParts = UpdateService.parseVersionComponents(remote)
+        let lParts = UpdateService.parseVersionComponents(local)
 
         let count = max(rParts.count, lParts.count)
         for i in 0..<count {
@@ -191,8 +203,17 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
     private func handleReleaseResult(release: ReleaseInfo, isUserInitiated: Bool) {
         let hasUpdate = isNewer(remote: release.tagName, local: currentVersion)
 
+        // 1. Anti-loop check: Check if this release tag was already applied / installed
+        let lastAppliedTag = UserDefaults.standard.string(forKey: kLastAppliedTag)
+        let isAlreadyApplied = (lastAppliedTag != nil && lastAppliedTag == release.tagName)
+
+        // 2. Snooze check: Check if snoozed by user in the last 24 hours
+        let snoozedTag = UserDefaults.standard.string(forKey: kSnoozedTag)
+        let snoozedTime = UserDefaults.standard.double(forKey: kSnoozedTimestamp)
+        let isSnoozed = (snoozedTag == release.tagName && (Date().timeIntervalSince1970 - snoozedTime) < 86400)
+
         DispatchQueue.main.async {
-            if hasUpdate {
+            if hasUpdate && !isAlreadyApplied {
                 self.latestRelease = release
                 self.onUpdateStatusChanged?()
 
@@ -202,9 +223,11 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
                     self.showUpdateAvailableDialog(release: release)
                 } else {
                     // Background check: DO NOT interrupt the user while working in other apps!
-                    // Hold the update and mark pending so it only displays when the wheel is opened.
-                    if self.sessionDismissedVersion != release.tagName {
+                    // And do not re-prompt if already applied, snoozed, or already prompted in this active run
+                    if !isSnoozed && self.sessionDismissedVersion != release.tagName && !self.hasPromptedInCurrentRun {
                         self.hasPendingPrompt = true
+                    } else {
+                        self.hasPendingPrompt = false
                     }
                 }
             } else {
@@ -221,11 +244,12 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
     func promptIfPending() {
         guard hasPendingPrompt, let release = latestRelease else { return }
         guard !isShowingPrompt && !isUpdating else { return }
-        if sessionDismissedVersion == release.tagName {
+        if sessionDismissedVersion == release.tagName || hasPromptedInCurrentRun {
             hasPendingPrompt = false
             return
         }
         hasPendingPrompt = false
+        hasPromptedInCurrentRun = true
         showUpdateAvailableDialog(release: release)
     }
 
@@ -265,6 +289,7 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
         guard !isShowingPrompt && !isUpdating else { return }
         isShowingPrompt = true
         hasPendingPrompt = false
+        hasPromptedInCurrentRun = true
         defer { isShowingPrompt = false }
 
         NSApp.setActivationPolicy(.regular)
@@ -294,13 +319,18 @@ final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificat
         case .alertFirstButtonReturn:
             sessionDismissedVersion = nil
             hasPendingPrompt = false
+            UserDefaults.standard.set(release.tagName, forKey: kLastAppliedTag)
+            UserDefaults.standard.synchronize()
             if release.isZip && release.downloadUrl != nil {
                 startDownloadAndApply(release: release)
             } else if let dl = release.downloadUrl ?? URL(string: release.htmlUrl)?.absoluteString {
                 openManualDownload(url: dl)
             }
         case .alertSecondButtonReturn:
-            // Snooze only for subsequent automatic checks in this active running session
+            // Snooze for 24h and for this active running session
+            UserDefaults.standard.set(release.tagName, forKey: kSnoozedTag)
+            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: kSnoozedTimestamp)
+            UserDefaults.standard.synchronize()
             sessionDismissedVersion = release.tagName
             hasPendingPrompt = false
         default:
