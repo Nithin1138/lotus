@@ -42,12 +42,12 @@ if (-not (Test-Path $installDir)) {
     New-Item -ItemType Directory -Path $installDir -Force | Out-Null
 }
 
-# 5. Download Installer (Ultra-fast direct edge download ~66 MB)
+# 5. Download Installer (Ultra-fast direct edge download ~90 MB)
 $downloadUrl = "https://dropdial.app/downloads/DropDial-Setup.exe"
 $fallbackUrl = "https://dropdial.app/api/releases?download=DropDial-Setup.exe"
 $tempSetup = Join-Path $env:TEMP ("DropDial-Setup-" + [System.Guid]::NewGuid().ToString("N") + ".exe")
 
-Write-Host "→ Downloading DropDial installer (~66 MB)..." -ForegroundColor Cyan
+Write-Host "→ Downloading DropDial installer (~90 MB)..." -ForegroundColor Cyan
 
 # Enable modern TLS
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13

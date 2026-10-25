@@ -302,14 +302,14 @@
 
   // Native Releases for macOS and Windows
   const releaseWin = {
-    tag: "v1.0.1",
-    size: "204 KB",
-    url: "/api/releases?download=DropDial-Setup.exe"
+    tag: "v1.0.2.3",
+    size: "90 MB",
+    url: "/downloads/DropDial-Setup.exe"
   };
   const releaseMac = {
-    tag: "v1.0.1",
-    size: "4.4 MB",
-    url: "/api/releases?download=DropDial.dmg"
+    tag: "v1.0.2.3",
+    size: "4.2 MB",
+    url: "/downloads/DropDial.dmg"
   };
 
   // Zero-PII Anonymous Telemetry Ping for Admin Dashboard
@@ -330,7 +330,7 @@
       if (!data) return;
 
       const latestTag = data.tag_name || data.version || data.latest_version;
-      let displayTag = "v1.0.1";
+      let displayTag = "v1.0.2.3";
       if (latestTag) {
         let cleanTag = String(latestTag).trim();
         displayTag = cleanTag.toLowerCase().startsWith('v') ? cleanTag : `v${cleanTag}`;
@@ -359,15 +359,16 @@
       }
 
       if (!data.assets || !Array.isArray(data.assets)) return;
-      const winExe = data.assets.find(a => a.name.toLowerCase().endsWith(".exe"));
+      const winSetup = data.assets.find(a => a.name.toLowerCase() === "dropdial-setup.exe" || a.name.toLowerCase().includes("setup"));
+      const winExe = winSetup || data.assets.find(a => a.name.toLowerCase().endsWith(".exe"));
       const winZip = data.assets.find(a => a.name.toLowerCase().endsWith(".zip") && (a.name.toLowerCase().includes("win") || a.name.toLowerCase().includes("windows")));
-      const winAsset = winExe || winZip;
+      const winAsset = winSetup || winExe || winZip;
 
       const macDmg = data.assets.find(a => a.name.toLowerCase().endsWith(".dmg"));
       const macZip = data.assets.find(a => a.name.toLowerCase().endsWith(".zip") && a.name.toLowerCase().includes("mac"));
       const macAsset = macDmg || macZip;
 
-      const activeTag = displayTag || "v1.0.1";
+      const activeTag = displayTag || "v1.0.2.3";
 
       const formatSize = (bytes) => {
         if (!bytes || isNaN(bytes)) return "";
@@ -381,9 +382,9 @@
         releaseWin.tag = activeTag;
         const winSizeFormatted = formatSize(winAsset.size);
         $$("[data-download-win]").forEach(a => { a.href = releaseWin.url; });
-        $$("[data-release-meta-win]").forEach(el => { el.textContent = `(${releaseWin.tag} · ${winSizeFormatted || '69 MB'})`; });
+        $$("[data-release-meta-win]").forEach(el => { el.textContent = `(${releaseWin.tag} · ${winSizeFormatted || '90 MB'})`; });
       } else if (latestTag) {
-        $$("[data-release-meta-win]").forEach(el => { el.textContent = `(${releaseWin.tag} · 69 MB)`; });
+        $$("[data-release-meta-win]").forEach(el => { el.textContent = `(${releaseWin.tag} · 90 MB)`; });
       }
 
       if (macAsset) {
