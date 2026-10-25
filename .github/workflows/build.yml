@@ -191,7 +191,9 @@ jobs:
 
           # 3. Build standalone NSIS installer DropDial-Setup.exe
           $sourceDir = (Resolve-Path "outputs/DropDial").Path
+          $sourceFiles = Join-Path $sourceDir "*.*"
           Write-Host "NSIS source directory: $sourceDir"
+          Write-Host "NSIS source files: $sourceFiles"
           New-Item -ItemType Directory -Path "website/downloads" -Force | Out-Null
           New-Item -ItemType Directory -Path "outputs" -Force | Out-Null
 
@@ -201,7 +203,7 @@ jobs:
                      elseif (Test-Path "C:\Program Files\NSIS\makensis.exe") { "C:\Program Files\NSIS\makensis.exe" }
                      else { throw "makensis executable not found!" }
 
-          & $nsisCmd "/DSOURCE_DIR=$sourceDir" "/DAPP_VERSION=$appVer" installer.nsi
+          & $nsisCmd "/DSOURCE_FILES=$sourceFiles" "/DAPP_VERSION=$appVer" installer.nsi
           if ($LASTEXITCODE -ne 0) { throw "makensis failed with exit code $LASTEXITCODE" }
 
           if (Test-Path "website/downloads/DropDial-Setup.exe") {

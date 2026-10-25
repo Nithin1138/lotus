@@ -8,7 +8,7 @@ Name "DropDial"
 Caption "DropDial Setup"
 
 !ifndef OUT_FILE
-  !ifdef $%OS%
+  !if "$%OS%" == "Windows_NT"
     !define OUT_FILE "website\downloads\DropDial-Setup.exe"
   !else
     !define OUT_FILE "website/downloads/DropDial-Setup.exe"
@@ -23,7 +23,7 @@ SetCompressor /SOLID lzma
 
 ; UI Settings
 !define MUI_ABORTWARNING
-!ifdef $%OS%
+!if "$%OS%" == "Windows_NT"
   !define MUI_ICON "work\DropDial\assets\dropdial.ico"
   !define MUI_UNICON "work\DropDial\assets\dropdial.ico"
 !else
@@ -55,19 +55,14 @@ Section "MainSection" SEC01
   SetOverwrite on
 
   ; Copy all files recursively from outputs/DropDial
-  !ifdef SOURCE_DIR
-    !ifdef $%OS%
-      File /r "${SOURCE_DIR}\*.*"
+  !ifndef SOURCE_FILES
+    !if "$%OS%" == "Windows_NT"
+      !define SOURCE_FILES "outputs\DropDial\*.*"
     !else
-      File /r "${SOURCE_DIR}/*.*"
-    !endif
-  !else
-    !ifdef $%OS%
-      File /r "outputs\DropDial\*.*"
-    !else
-      File /r "outputs/DropDial/*.*"
+      !define SOURCE_FILES "outputs/DropDial/*.*"
     !endif
   !endif
+  File /r "${SOURCE_FILES}"
 
   ; Store installation folder
   WriteRegStr HKCU "Software\DropDial" "InstallDir" "$INSTDIR"
