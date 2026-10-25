@@ -256,8 +256,170 @@ code { font: .9em var(--mono); background: var(--bg-alt); border: 1px solid var(
   transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease !important;
 }
 
-@media (max-width: 760px) { .nav-links { display: none; } .nav-row { gap: 12px; } }
-@media (max-width: 400px) { .icon-link { display: none; } }
+.mobile-nav-toggle {
+  display: none;
+}
+
+.mobile-nav-drawer {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .nav-links {
+    display: none;
+  }
+
+  .nav-row {
+    gap: 10px;
+  }
+
+  .mobile-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 9999px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+  }
+
+  .mobile-nav-toggle:active {
+    transform: scale(0.92);
+  }
+
+  /* Mobile Nav Drawer */
+  .mobile-nav-drawer {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    pointer-events: none;
+    visibility: hidden;
+    transition: visibility 0.28s ease;
+  }
+
+  .mobile-nav-drawer.open {
+    pointer-events: auto;
+    visibility: visible;
+  }
+
+  .mobile-nav-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity 0.28s ease;
+  }
+
+  .mobile-nav-drawer.open .mobile-nav-backdrop {
+    opacity: 1;
+  }
+
+  .mobile-nav-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(320px, 85vw);
+    background: var(--bg);
+    border-left: 1px solid var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+  }
+
+  .mobile-nav-drawer.open .mobile-nav-panel {
+    transform: translateX(0);
+  }
+
+  .mobile-nav-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 18px;
+  }
+
+  .mobile-nav-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 9999px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .mobile-nav-close:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+
+  .mobile-nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .mobile-nav-item {
+    padding: 12px 14px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ink);
+    text-decoration: none;
+    border-radius: 10px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .mobile-nav-item:hover,
+  .mobile-nav-item:active {
+    background: var(--surface);
+    color: var(--accent);
+  }
+
+  .mobile-nav-cta {
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    margin-top: 18px;
+  }
+}
+
+@media (max-width: 520px) {
+  .nav .btn-ghost {
+    display: none; /* Hide secondary Free Download in top bar, kept inside mobile menu */
+  }
+  .cta-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 400px) {
+  .icon-link {
+    display: none;
+  }
+  #nav-header-buy-btn {
+    padding: 8px 11px;
+    font-size: 0.85rem;
+  }
+}
 
 /* Buttons */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font: 600 1rem/1 var(--font); text-decoration: none; border-radius: 12px; padding: 15px 22px; border: 1px solid transparent; transition: transform .15s, background-color .15s, border-color .15s, box-shadow .15s; }

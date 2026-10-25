@@ -41,11 +41,61 @@
     languageListeners.forEach(fn => fn());
   }
 
-  /* ---------- Navigation ---------- */
+  /* ---------- Navigation & Mobile Drawer ---------- */
   const nav = $(".nav");
   const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
   addEventListener("scroll", onScroll, { passive: true });
   onScroll();
+
+  const mobileNavToggle = $("#mobile-nav-toggle");
+  const mobileNavDrawer = $("#mobile-nav-drawer");
+  const mobileNavClose = $("#mobile-nav-close");
+  const mobileNavBackdrop = $("#mobile-nav-backdrop");
+
+  function openMobileNav() {
+    if (mobileNavDrawer) {
+      mobileNavDrawer.classList.add("open");
+      mobileNavDrawer.setAttribute("aria-hidden", "false");
+    }
+    if (mobileNavToggle) mobileNavToggle.setAttribute("aria-expanded", "true");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeMobileNav() {
+    if (mobileNavDrawer) {
+      mobileNavDrawer.classList.remove("open");
+      mobileNavDrawer.setAttribute("aria-hidden", "true");
+    }
+    if (mobileNavToggle) mobileNavToggle.setAttribute("aria-expanded", "false");
+    document.body.style.overflow = "";
+  }
+
+  mobileNavToggle?.addEventListener("click", () => {
+    if (mobileNavDrawer?.classList.contains("open")) {
+      closeMobileNav();
+    } else {
+      openMobileNav();
+    }
+  });
+
+  mobileNavClose?.addEventListener("click", closeMobileNav);
+  mobileNavBackdrop?.addEventListener("click", closeMobileNav);
+
+  $$(".mobile-nav-item, .mobile-nav-cta a").forEach(link => {
+    link.addEventListener("click", closeMobileNav);
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && mobileNavDrawer?.classList.contains("open")) {
+      closeMobileNav();
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 760 && mobileNavDrawer?.classList.contains("open")) {
+      closeMobileNav();
+    }
+  });
 
   /* ---------- Theme Management & Impressive View Transition ---------- */
   const themeToggle = $("#theme-toggle");

@@ -462,9 +462,48 @@
       </button>
       <a class="btn btn-small" href="#buy" data-open-checkout id="nav-header-buy-btn" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;">Buy</a>
       <a class="btn btn-small btn-ghost" href="#download" data-i18n="nav.download">Free Download</a>
+      <button type="button" class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
     </div>
   </div>
 </header>
+
+<!-- Mobile Navigation Drawer -->
+<div class="mobile-nav-drawer" id="mobile-nav-drawer" aria-hidden="true">
+  <div class="mobile-nav-backdrop" id="mobile-nav-backdrop"></div>
+  <div class="mobile-nav-panel">
+    <div class="mobile-nav-header">
+      <div class="brand">
+        <img src="/assets/img/logo.png" alt="" width="28" height="28">
+        <span>DropDial</span>
+      </div>
+      <button type="button" class="mobile-nav-close" id="mobile-nav-close" aria-label="Close navigation menu">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <nav class="mobile-nav-links">
+      <a href="#how" class="mobile-nav-item">How it works</a>
+      <a href="#features" class="mobile-nav-item">Features</a>
+      <a href="#actions" class="mobile-nav-item">Actions Dial</a>
+      <a href="#tools" class="mobile-nav-item">Media Tools</a>
+      <a href="/guide" class="mobile-nav-item">Setup Guide</a>
+      <a href="#pricing" class="mobile-nav-item">Pricing</a>
+      <a href="#faq" class="mobile-nav-item">FAQ</a>
+    </nav>
+    <div class="mobile-nav-cta">
+      <a class="btn btn-primary" href="#download" data-download style="width: 100%; justify-content: center;">Download Free Trial</a>
+      <a class="btn btn-ghost" href="#buy" data-open-checkout style="width: 100%; justify-content: center; margin-top: 10px;">Buy Lifetime Pro</a>
+    </div>
+  </div>
+</div>
 
 <main id="main">
   <!-- Hero Section -->

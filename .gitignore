@@ -10,6 +10,7 @@ outputs/
 .venv/
 venv/
 node_modules/
+scratch/
 
 # Generated test data, downloaded packages and development experiments
 work/*-fixtures/
