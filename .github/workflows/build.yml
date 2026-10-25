@@ -190,15 +190,26 @@ jobs:
           Copy-Item -LiteralPath outputs/DropDial/DropDial.exe -Destination outputs/DropDial.exe -Force
 
           # 3. Build standalone NSIS installer DropDial-Setup.exe
-          if (Get-Command makensis -ErrorAction SilentlyContinue) {
-            makensis installer.nsi
-          } elseif (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe") {
-            & "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
-          } elseif (Test-Path "C:\Program Files\NSIS\makensis.exe") {
-            & "C:\Program Files\NSIS\makensis.exe" installer.nsi
-          }
+          $sourceDir = (Resolve-Path "outputs/DropDial").Path
+          Write-Host "NSIS source directory: $sourceDir"
+          New-Item -ItemType Directory -Path "website/downloads" -Force | Out-Null
+          New-Item -ItemType Directory -Path "outputs" -Force | Out-Null
+
+          $appVer = if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -match '^v?\d') { $env:GITHUB_REF_NAME.TrimStart('v') } else { "1.0.2.3" }
+          $nsisCmd = if (Get-Command makensis -ErrorAction SilentlyContinue) { "makensis" }
+                     elseif (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe") { "C:\Program Files (x86)\NSIS\makensis.exe" }
+                     elseif (Test-Path "C:\Program Files\NSIS\makensis.exe") { "C:\Program Files\NSIS\makensis.exe" }
+                     else { throw "makensis executable not found!" }
+
+          & $nsisCmd "/DSOURCE_DIR=$sourceDir" "/DAPP_VERSION=$appVer" installer.nsi
+          if ($LASTEXITCODE -ne 0) { throw "makensis failed with exit code $LASTEXITCODE" }
+
           if (Test-Path "website/downloads/DropDial-Setup.exe") {
             Copy-Item -LiteralPath "website/downloads/DropDial-Setup.exe" -Destination "outputs/DropDial-Setup.exe" -Force
+          } elseif (Test-Path "outputs/DropDial-Setup.exe") {
+            Copy-Item -LiteralPath "outputs/DropDial-Setup.exe" -Destination "website/downloads/DropDial-Setup.exe" -Force
+          } else {
+            throw "Error: DropDial-Setup.exe was not created."
           }
 
       - name: Upload Windows artifact
