@@ -1,6 +1,15 @@
 from pathlib import Path
 import sys,json,os
-sys.path.insert(0,str(Path(__file__).resolve().parent))
+_worker_dir = Path(__file__).resolve().parent
+sys.path.insert(0, str(_worker_dir))
+_app_root = _worker_dir.parent
+for _cand in [
+    _app_root / 'runtime' / 'python' / 'Lib' / 'site-packages',
+    _app_root / 'runtime' / 'Lib' / 'site-packages',
+    _app_root / 'runtime' / 'site-packages',
+]:
+    if _cand.exists() and str(_cand) not in sys.path:
+        sys.path.insert(0, str(_cand))
 from common import *
 
 

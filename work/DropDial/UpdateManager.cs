@@ -23,8 +23,8 @@ internal sealed class ReleaseInfo
 
 internal static class UpdateManager
 {
-    public const string ReleasesApiUrl = "https://www.dropdial.app/api/releases";
-    public const string FallbackReleasesApiUrl = "https://www.dropdial.app/api/releases/latest";
+    public const string ReleasesApiUrl = "https://dropdial.app/api/releases";
+    public const string FallbackReleasesApiUrl = "https://dropdial.app/api/releases/latest";
     public const string GitHubReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest";
 
     public static Action? DismissWheelAction;
@@ -526,12 +526,63 @@ internal static class UpdateManager
 
         try
         {
-            using (var client = new HttpClient { Timeout = TimeSpan.FromMinutes(5) })
-            {
-                client.DefaultRequestHeaders.UserAgent.ParseAdd($"DropDial-Windows/{CurrentVersion}");
-                using var response = await client.GetAsync(release.DownloadUrl!, HttpCompletionOption.ResponseHeadersRead, cts.Token);
-                response.EnsureSuccessStatusCode();
+            var downloadUrls = new System.Collections.Generic.List<string>();
+            string primaryUrl = release.DownloadUrl ?? "";
+            string fileName = "";
+            try { fileName = Path.GetFileName(new Uri(primaryUrl).AbsolutePath); } catch { }
+            if (string.IsNullOrEmpty(fileName)) fileName = "DropDial-Windows-Update.zip";
 
+            if (!string.IsNullOrEmpty(primaryUrl))
+            {
+                string normalized = primaryUrl.Replace("www.dropdial.app", "dropdial.app");
+                downloadUrls.Add(normalized);
+                if (normalized != primaryUrl)
+                    downloadUrls.Add(primaryUrl);
+            }
+            downloadUrls.Add($"https://github.com/Nithin1138/lotus/releases/download/{release.TagName}/{fileName}");
+            downloadUrls.Add($"https://github.com/Nithin1138/lotus/releases/latest/download/{fileName}");
+            downloadUrls.Add($"https://dropdial.app/downloads/{fileName}");
+
+            HttpResponseMessage? response = null;
+            HttpClient? activeClient = null;
+            Exception? lastEx = null;
+
+            foreach (var url in downloadUrls.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    activeClient?.Dispose();
+                    var handler = new HttpClientHandler
+                    {
+                        AllowAutoRedirect = true,
+                        MaxAutomaticRedirections = 10
+                    };
+                    activeClient = new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(5) };
+                    activeClient.DefaultRequestHeaders.UserAgent.ParseAdd($"DropDial-Windows/{CurrentVersion}");
+
+                    var req = new HttpRequestMessage(HttpMethod.Get, url);
+                    var resp = await activeClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        response = resp;
+                        break;
+                    }
+                    resp.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    lastEx = ex;
+                }
+            }
+
+            if (response == null || activeClient == null)
+            {
+                throw lastEx ?? new HttpRequestException("Could not connect to update servers. Please download manually.");
+            }
+
+            using (activeClient)
+            using (response)
+            {
                 long? totalBytes = response.Content.Headers.ContentLength;
                 using var contentStream = await response.Content.ReadAsStreamAsync(cts.Token);
                 using var fileStream = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None, 65536, true);

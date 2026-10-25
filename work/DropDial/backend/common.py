@@ -53,6 +53,30 @@ def get_fitz():
         return fitz
     except ImportError:
         pass
+
+    # Search local runtime site-packages in parent directories if running embedded
+    try:
+        _base = Path(__file__).resolve().parent.parent
+        for _cand in [
+            _base / 'runtime' / 'python' / 'Lib' / 'site-packages',
+            _base / 'runtime' / 'Lib' / 'site-packages',
+            _base / 'runtime' / 'site-packages',
+        ]:
+            if _cand.exists() and str(_cand) not in sys.path:
+                sys.path.insert(0, str(_cand))
+                try:
+                    import pymupdf as fitz
+                    return fitz
+                except ImportError:
+                    pass
+                try:
+                    import fitz
+                    return fitz
+                except ImportError:
+                    pass
+    except Exception:
+        pass
+
     raise ImportError(T('PyMuPDF is required for document and PDF operations. Run: pip install pymupdf'))
 
 IMAGE_EXT={'.jpg','.jpeg','.png','.webp','.heic','.heif','.tif','.tiff','.svg','.avif','.bmp','.ico'}

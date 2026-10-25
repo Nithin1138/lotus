@@ -23,32 +23,62 @@ internal static class Backend
             {
                 string baseDir = AppContext.BaseDirectory;
                 string bundledPython = Path.Combine(baseDir, "runtime", "python", "python.exe");
-                if (File.Exists(bundledPython)) return;
+                string pythonExe = File.Exists(bundledPython) ? bundledPython : FindPythonExecutable();
+                string sitePackages = Path.Combine(baseDir, "runtime", "python", "Lib", "site-packages");
 
-                string pythonExe = FindPythonExecutable();
+                // If bundled Python is present, ensure its ._pth allows Lib/site-packages
+                if (File.Exists(bundledPython))
+                {
+                    string pyDir = Path.GetDirectoryName(bundledPython)!;
+                    foreach (var pth in Directory.GetFiles(pyDir, "python*._pth"))
+                    {
+                        try
+                        {
+                            string text = File.ReadAllText(pth);
+                            if (!text.Contains("site-packages") || !text.Contains("import site"))
+                            {
+                                string stem = Path.GetFileNameWithoutExtension(pth);
+                                File.WriteAllText(pth, $"{stem}.zip\n.\nLib/site-packages\nimport site\n");
+                            }
+                        }
+                        catch { }
+                    }
+                }
+
                 var check = new ProcessStartInfo(pythonExe, "-c \"import pymupdf, pypdfium2\"")
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardError = true,
-                    RedirectStandardOutput = true
+                    RedirectStandardOutput = true,
+                    WorkingDirectory = baseDir
                 };
+                if (Directory.Exists(sitePackages))
+                {
+                    check.Environment["PYTHONPATH"] = sitePackages;
+                }
                 using var p = Process.Start(check);
                 p?.WaitForExit(3500);
                 if (p == null || p.ExitCode != 0)
                 {
                     string reqFile = Path.Combine(baseDir, "requirements-runtime.txt");
+                    string targetFlag = (File.Exists(bundledPython) && Directory.Exists(sitePackages)) ? $"--target \"{sitePackages}\"" : "";
                     string args = File.Exists(reqFile)
-                        ? $"-m pip install --disable-pip-version-check -r \"{reqFile}\""
-                        : "-m pip install --disable-pip-version-check pymupdf pillow pypdf pypdfium2 pdf2docx python-docx python-pptx openpyxl";
+                        ? $"-m pip install --disable-pip-version-check {targetFlag} -r \"{reqFile}\""
+                        : $"-m pip install --disable-pip-version-check {targetFlag} pymupdf pillow pypdf pypdfium2 pdf2docx python-docx python-pptx openpyxl";
 
                     var install = new ProcessStartInfo(pythonExe, args)
                     {
                         UseShellExecute = false,
                         CreateNoWindow = true,
                         RedirectStandardError = true,
-                        RedirectStandardOutput = true
+                        RedirectStandardOutput = true,
+                        WorkingDirectory = baseDir
                     };
+                    if (Directory.Exists(sitePackages))
+                    {
+                        install.Environment["PYTHONPATH"] = sitePackages;
+                    }
                     using var ip = Process.Start(install);
                     ip?.WaitForExit(90000);
                 }

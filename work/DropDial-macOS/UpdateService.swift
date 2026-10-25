@@ -15,7 +15,7 @@ struct ReleaseInfo {
 final class UpdateService: NSObject, URLSessionDownloadDelegate, UNUserNotificationCenterDelegate {
     static let shared = UpdateService()
 
-    private let releasesApiUrl = "https://www.dropdial.app/api/releases/latest"
+    private let releasesApiUrl = "https://dropdial.app/api/releases/latest"
     private let fallbackReleasesApiUrl = "https://api.github.com/repos/Nithin1138/lotus/releases/latest"
 
     static func formatVersion(_ raw: String) -> String {

@@ -256,16 +256,17 @@ final class LicenseManager {
         return max(0, maxFreeDailyConversions - getDailyConversionsUsed())
     }
 
-    func recordDailyConversion() {
+    func recordDailyConversion(count: Int = 1) {
         let defaults = UserDefaults.standard
         let todayStr = getTodayDateString()
         let storedDate = defaults.string(forKey: dailyConversionsDateKey) ?? ""
-        var count = 0
+        var current = 0
         if storedDate == todayStr {
-            count = defaults.integer(forKey: dailyConversionsCountKey)
+            current = defaults.integer(forKey: dailyConversionsCountKey)
         }
+        let add = max(1, count)
         defaults.set(todayStr, forKey: dailyConversionsDateKey)
-        defaults.set(count + 1, forKey: dailyConversionsCountKey)
+        defaults.set(min(maxFreeDailyConversions, current + add), forKey: dailyConversionsCountKey)
         onStatusChanged?()
     }
 
@@ -309,11 +310,13 @@ final class LicenseManager {
         }
 
         let remaining = getDailyConversionsRemaining()
-        if remaining > 0 {
+        if remaining >= fileCount && remaining > 0 {
             if record {
-                recordDailyConversion()
+                recordDailyConversion(count: fileCount)
             }
             return (true, nil)
+        } else if remaining > 0 {
+            return (false, "You only have \(remaining) free conversion\(remaining == 1 ? "" : "s") left today. Upgrade to DropDial Pro for unlimited conversions.")
         }
 
         return (false, "You have reached your 3 free conversions for today. Upgrade to DropDial Pro for unlimited conversions.")
@@ -425,7 +428,7 @@ final class LicenseManager {
         let deviceId = getDeviceId()
         let deviceName = Host.current().localizedName ?? "Mac"
 
-        guard let url = URL(string: "https://www.dropdial.app/api/activate") else {
+        guard let url = URL(string: "https://dropdial.app/api/activate") else {
             self.saveAndApply(key: cleanKey, info: info)
             completion(true, "DropDial Pro successfully activated! Thank you, \(info.name.isEmpty ? info.email : info.name).")
             return
@@ -485,7 +488,7 @@ final class LicenseManager {
     func deactivate() {
         let key = getStoredKey()
         let deviceId = getDeviceId()
-        if let key = key, let url = URL(string: "https://www.dropdial.app/api/deactivate") {
+        if let key = key, let url = URL(string: "https://dropdial.app/api/deactivate") {
             var req = URLRequest(url: url)
             req.httpMethod = "POST"
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")

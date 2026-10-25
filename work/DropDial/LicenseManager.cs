@@ -248,23 +248,24 @@ internal static class LicenseManager
     public static int GetDailyConversionsRemaining()
     {
         var state = LoadState();
-        string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        string today = DateTime.Now.ToString("yyyy-MM-dd");
         if (state.DailyConversionDate != today) return MaxFreeDailyConversions;
         return Math.Max(0, MaxFreeDailyConversions - state.DailyConversionCount);
     }
 
-    public static void RecordDailyConversion()
+    public static void RecordDailyConversion(int count = 1)
     {
         var state = LoadState();
-        string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        string today = DateTime.Now.ToString("yyyy-MM-dd");
+        int add = Math.Max(1, count);
         if (state.DailyConversionDate != today)
         {
             state.DailyConversionDate = today;
-            state.DailyConversionCount = 1;
+            state.DailyConversionCount = Math.Min(MaxFreeDailyConversions, add);
         }
         else
         {
-            state.DailyConversionCount++;
+            state.DailyConversionCount = Math.Min(MaxFreeDailyConversions, state.DailyConversionCount + add);
         }
         SaveState(state);
         StatusChanged?.Invoke();
@@ -276,14 +277,14 @@ internal static class LicenseManager
         if (CurrentStatus.IsPro || CurrentStatus.Kind != LicenseStatusKind.TrialExpired)
             return false;
         var state = LoadState();
-        string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        string today = DateTime.Now.ToString("yyyy-MM-dd");
         return state.LastTrialExpiredPromptDate != today;
     }
 
     public static void MarkTrialExpiredPromptShown()
     {
         var state = LoadState();
-        state.LastTrialExpiredPromptDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        state.LastTrialExpiredPromptDate = DateTime.Now.ToString("yyyy-MM-dd");
         SaveState(state);
     }
 
@@ -296,10 +297,15 @@ internal static class LicenseManager
         if (isProTool) return (false, "Tools require DropDial Pro. Upgrade to unlock.");
         if (fileCount > 3) return (false, $"Batch conversion of {fileCount} files requires DropDial Pro.");
 
-        if (GetDailyConversionsRemaining() > 0)
+        int rem = GetDailyConversionsRemaining();
+        if (rem >= fileCount && rem > 0)
         {
-            if (record) RecordDailyConversion();
+            if (record) RecordDailyConversion(fileCount);
             return (true, null);
+        }
+        else if (rem > 0)
+        {
+            return (false, $"You only have {rem} free conversion{(rem == 1 ? "" : "s")} left today. Upgrade to DropDial Pro for unlimited conversions.");
         }
 
         return (false, "You have reached your 3 free conversions for today. Upgrade to DropDial Pro for unlimited conversions.");
@@ -451,7 +457,7 @@ internal static class LicenseManager
                 platform = "windows"
             };
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-            var response = await client.PostAsync("https://www.dropdial.app/api/activate", content);
+            var response = await client.PostAsync("https://dropdial.app/api/activate", content);
             if (!response.IsSuccessStatusCode)
             {
                 string respJson = await response.Content.ReadAsStringAsync();
@@ -527,7 +533,7 @@ internal static class LicenseManager
                     using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
                     var payload = new { licenseKey = key, deviceId };
                     var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-                    await client.PostAsync("https://www.dropdial.app/api/deactivate", content);
+                    await client.PostAsync("https://dropdial.app/api/deactivate", content);
                 }
                 catch { }
             });
