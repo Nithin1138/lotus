@@ -298,7 +298,7 @@
             <!-- Gross Revenue -->
             <div class="kpi-card revenue-card">
               <div class="kpi-header">
-                <span class="kpi-title">Revenue</span>
+                <span class="kpi-title">Gross Revenue</span>
                 <span class="kpi-badge emerald" id="kpi-growth-badge">Live</span>
               </div>
               <div class="kpi-value-wrap">
@@ -311,18 +311,50 @@
               </div>
             </div>
 
+            <!-- Gateway Fees -->
+            <div class="kpi-card fees-card">
+              <div class="kpi-header">
+                <span class="kpi-title">Gateway Fees</span>
+                <span class="kpi-badge rose" id="kpi-fees-badge">Cut</span>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="kpi-gateway-fees" style="color:var(--rose);">₹0</span>
+                <span class="kpi-sub-val" id="kpi-fees-usd">($0 USD)</span>
+              </div>
+              <div class="kpi-footer">
+                <span id="kpi-fees-split-text">Razorpay: 2.36% • Dodo: 5%+$0.40</span>
+              </div>
+            </div>
+
+            <!-- GST / Tax -->
+            <div class="kpi-card gst-card">
+              <div class="kpi-header">
+                <span class="kpi-title">GST / Sales Tax</span>
+                <button type="button" id="toggle-gst-btn" class="kpi-badge amber" style="cursor:pointer; border:1px solid rgba(245,158,11,0.3); background:rgba(245,158,11,0.15);" title="Click to toggle between 18% GST Registered vs GST-Exempt (< ₹20L)">
+                  <span id="kpi-gst-status">18% GST</span>
+                </button>
+              </div>
+              <div class="kpi-value-wrap">
+                <span class="kpi-main-val" id="kpi-gst-tax" style="color:var(--amber);">₹0</span>
+                <span class="kpi-sub-val" id="kpi-gst-usd">($0 USD)</span>
+              </div>
+              <div class="kpi-footer">
+                <span id="kpi-gst-split-text">India 18% • Dodo MoR (0%)</span>
+              </div>
+            </div>
+
             <!-- Net Profit -->
             <div class="kpi-card profit-card">
               <div class="kpi-header">
-                <span class="kpi-title">Net Profit</span>
-                <span class="kpi-badge emerald">97.8% Margin</span>
+                <span class="kpi-title">Net Take-Home</span>
+                <span class="kpi-badge emerald" id="kpi-profit-margin-badge">92.4% Margin</span>
               </div>
               <div class="kpi-value-wrap">
-                <span class="kpi-main-val" id="kpi-net-profit">₹0</span>
-                <span class="kpi-sub-val">After fees</span>
+                <span class="kpi-main-val" id="kpi-net-profit" style="color:var(--emerald);">₹0</span>
+                <span class="kpi-sub-val" id="kpi-net-profit-usd">($0 USD)</span>
               </div>
               <div class="kpi-footer">
-                <span>Zero server costs</span>
+                <span id="kpi-net-split-text">Real net payout in bank</span>
               </div>
             </div>
 
@@ -344,7 +376,7 @@
             <!-- Page Views & Conversion -->
             <div class="kpi-card traffic-card">
               <div class="kpi-header">
-                <span class="kpi-title">Traffic</span>
+                <span class="kpi-title">Traffic &amp; Conversion</span>
                 <span class="kpi-badge sky" id="kpi-conversion-rate">0.0% Conv</span>
               </div>
               <div class="kpi-value-wrap">
@@ -484,6 +516,45 @@
 
           </div>
 
+          <!-- Unit Economics & Gateway Fee Breakdown Panel -->
+          <div class="panel-card mb-24" style="margin-top: 24px;">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Gateway Unit Economics &amp; Net Profit Calculator</h3>
+                <p class="panel-subtitle">Itemized take-home profit, payment gateway fees, and GST for India (Razorpay) &amp; Global (Dodo Payments MoR)</p>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="pill-badge emerald">Live Gateway Rates</span>
+              </div>
+            </div>
+
+            <div class="table-responsive" style="margin-top:16px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Plan / Tier</th>
+                    <th>Region &amp; Gateway</th>
+                    <th>Selling Price</th>
+                    <th>Gateway Fee Rate</th>
+                    <th>Gateway Fee</th>
+                    <th>GST / Tax</th>
+                    <th>Net Profit (Take-Home)</th>
+                    <th>Profit Margin</th>
+                  </tr>
+                </thead>
+                <tbody id="economics-tbody">
+                  <!-- Populated dynamically via admin.js -->
+                </tbody>
+              </table>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 12.5px; color: var(--text-muted); line-height: 1.6;">
+              <strong style="color:var(--text-heading);">Gateway Calculation Rules:</strong><br>
+              • <strong>Dodo Payments (MoR):</strong> Fee is <code>5.0% + $0.40</code> (or <code>5.0% + ₹30</code>). As Merchant of Record, Dodo automatically calculates, collects, and remits global sales tax/VAT directly to tax authorities. Founder pays <strong>$0 tax burden</strong>.<br>
+              • <strong>Razorpay (India Gateway):</strong> Fee is <code>2.00% + 18% GST on fee = 2.36%</code>. Software digital delivery in India is subject to 18% GST (inclusive in selling price). If turnover is under ₹20 Lakh/year, founder can operate under GST exemption threshold for <strong>97.6% margin</strong>.
+            </div>
+          </div>
+
           <!-- Bottom: Recent Orders Feed -->
           <div class="panel-card mt-24">
             <div class="panel-header">
@@ -616,7 +687,9 @@
                     <th>Order ID</th>
                     <th>Customer Name</th>
                     <th>Email</th>
-                    <th>Amount</th>
+                    <th>Gross Amount</th>
+                    <th>Gateway Fee</th>
+                    <th>Net Payout</th>
                     <th>Payment Method</th>
                     <th>Coupon</th>
                     <th>Country</th>

@@ -724,9 +724,11 @@ body.admin-body {
 }
 
 .revenue-card::after { background: var(--emerald); }
-.profit-card::after { background: var(--sky); }
+.profit-card::after { background: #10b981; }
+.fees-card::after { background: #f43f5e; }
+.gst-card::after { background: #f59e0b; }
 .license-card::after { background: var(--violet); }
-.traffic-card::after { background: var(--amber); }
+.traffic-card::after { background: var(--sky); }
 
 .kpi-header {
   display: flex;

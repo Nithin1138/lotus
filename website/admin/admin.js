@@ -57,6 +57,7 @@
     adminToken: null,
     activeTab: 'overview',
     revenuePeriod: 'all', // 'all', 'monthly', 'weekly', 'today'
+    includeGst: localStorage.getItem('dd_admin_include_gst') !== 'false',
     licenses: [],
     transactions: [],
     coupons: [],
@@ -353,6 +354,9 @@
     const period = state.revenuePeriod || 'all';
     let grossInr = 0;
     let grossUsd = 0;
+    let feeInr = 0;
+    let feeUsd = 0;
+    let gstInr = 0;
     let inrOrders = 0;
     let usdOrders = 0;
 
@@ -360,29 +364,92 @@
 
     filteredTx.forEach(tx => {
       const isCaptured = (tx.status || '').toLowerCase() === 'captured';
-      if (isCaptured) {
-        if (tx.currency === 'INR') {
-          grossInr += Number(tx.amountRaw) || 999;
-          inrOrders++;
+      if (!isCaptured) return;
+
+      const amt = Number(tx.amountRaw) || 0;
+      const isUsd = (tx.currency || '').toUpperCase() === 'USD';
+      const isDodo = (tx.method || '').toLowerCase().includes('dodo') || String(tx.paymentId).startsWith('cks_') || String(tx.paymentId).startsWith('dodo_');
+
+      if (isUsd) {
+        usdOrders++;
+        grossUsd += amt;
+        // Dodo Payments USD MoR fee: 5% + $0.40
+        const dodoFee = (amt * 0.05) + 0.40;
+        feeUsd += dodoFee;
+        // Global sales tax/VAT is handled and remitted by Dodo MoR directly
+      } else {
+        inrOrders++;
+        grossInr += amt;
+        if (isDodo) {
+          // Dodo Payments INR: 5% + ₹30
+          const dodoInrFee = (amt * 0.05) + 30;
+          feeInr += dodoInrFee;
         } else {
-          grossUsd += Number(tx.amountRaw) || 19;
-          usdOrders++;
+          // Razorpay standard: 2.00% fee + 18% GST on fee = 2.36% total gateway deduction
+          const rzpFee = amt * 0.0236;
+          feeInr += rzpFee;
+          // Software product GST: 18% inclusive in selling price (amount * 18 / 118)
+          const pGst = amt * (18 / 118);
+          gstInr += pGst;
         }
       }
     });
 
-    // Unified total in INR and USD
-    const unifiedInr = grossInr + Math.round(grossUsd * 85);
-    const unifiedUsd = grossUsd + Math.round(grossInr / 85);
+    // FX Rate for unified stats (approx 85 INR per USD)
+    const FX_RATE = 85;
+    const unifiedInr = grossInr + Math.round(grossUsd * FX_RATE);
+    const unifiedUsd = grossUsd + Math.round(grossInr / FX_RATE);
 
-    // Net profit (~2.2% gateway fees deducted)
-    const netProfitInr = Math.round(unifiedInr * 0.978);
+    // Total Gateway Fees
+    const unifiedFeeInr = feeInr + Math.round(feeUsd * FX_RATE);
+    const unifiedFeeUsd = feeUsd + (feeInr / FX_RATE);
 
-    // KPI Elements
-    document.getElementById('kpi-gross-revenue').textContent = unifiedInr > 0 ? `₹${unifiedInr.toLocaleString('en-IN')}` : '₹0';
-    document.getElementById('kpi-gross-usd').textContent = unifiedUsd > 0 ? `($${unifiedUsd.toLocaleString('en-US')} USD)` : '($0 USD)';
-    document.getElementById('kpi-split-text').textContent = `India: ₹${grossInr.toLocaleString('en-IN')} • Global: $${grossUsd}`;
-    document.getElementById('kpi-net-profit').textContent = netProfitInr > 0 ? `₹${netProfitInr.toLocaleString('en-IN')}` : '₹0';
+    // GST component (toggleable via state.includeGst)
+    const applicableGstInr = state.includeGst !== false ? gstInr : 0;
+    const unifiedGstInr = applicableGstInr;
+    const unifiedGstUsd = applicableGstInr / FX_RATE;
+
+    // Real Net Take-Home Profit
+    const netProfitInr = Math.max(0, unifiedInr - unifiedFeeInr - unifiedGstInr);
+    const netProfitUsd = Math.max(0, unifiedUsd - unifiedFeeUsd - unifiedGstUsd);
+    const marginPercent = unifiedInr > 0 ? ((netProfitInr / unifiedInr) * 100).toFixed(1) : (state.includeGst !== false ? '82.4' : '97.6');
+
+    // 1. Gross Revenue Card
+    const elGrossInr = document.getElementById('kpi-gross-revenue');
+    if (elGrossInr) elGrossInr.textContent = unifiedInr > 0 ? `₹${Math.round(unifiedInr).toLocaleString('en-IN')}` : '₹0';
+    const elGrossUsd = document.getElementById('kpi-gross-usd');
+    if (elGrossUsd) elGrossUsd.textContent = unifiedUsd > 0 ? `($${Math.round(unifiedUsd).toLocaleString('en-US')} USD)` : '($0 USD)';
+    const elSplit = document.getElementById('kpi-split-text');
+    if (elSplit) elSplit.textContent = `India: ₹${grossInr.toLocaleString('en-IN')} • Global: $${grossUsd}`;
+
+    // 2. Gateway Fees Card
+    const elFeeInr = document.getElementById('kpi-gateway-fees');
+    if (elFeeInr) elFeeInr.textContent = unifiedFeeInr > 0 ? `₹${Math.round(unifiedFeeInr).toLocaleString('en-IN')}` : '₹0';
+    const elFeeUsd = document.getElementById('kpi-fees-usd');
+    if (elFeeUsd) elFeeUsd.textContent = feeUsd > 0 ? `($${feeUsd.toFixed(2)} USD)` : '($0 USD)';
+    const elFeeSplit = document.getElementById('kpi-fees-split-text');
+    if (elFeeSplit) elFeeSplit.textContent = `Razorpay: ₹${Math.round(feeInr).toLocaleString('en-IN')} • Dodo: $${feeUsd.toFixed(2)}`;
+
+    // 3. GST / Tax Card
+    const elGstInr = document.getElementById('kpi-gst-tax');
+    if (elGstInr) elGstInr.textContent = unifiedGstInr > 0 ? `₹${Math.round(unifiedGstInr).toLocaleString('en-IN')}` : '₹0';
+    const elGstUsd = document.getElementById('kpi-gst-usd');
+    if (elGstUsd) elGstUsd.textContent = unifiedGstUsd > 0 ? `($${unifiedGstUsd.toFixed(2)} USD)` : '($0 USD)';
+    const elGstStatus = document.getElementById('kpi-gst-status');
+    if (elGstStatus) elGstStatus.textContent = state.includeGst !== false ? '18% GST' : 'GST Exempt (0%)';
+    const elGstSplit = document.getElementById('kpi-gst-split-text');
+    if (elGstSplit) elGstSplit.textContent = state.includeGst !== false ? `India GST: ₹${Math.round(gstInr).toLocaleString('en-IN')} • MoR: $0` : 'Operating under ₹20L exemption';
+
+    // 4. Net Profit Card
+    const elNetInr = document.getElementById('kpi-net-profit');
+    if (elNetInr) elNetInr.textContent = netProfitInr > 0 ? `₹${Math.round(netProfitInr).toLocaleString('en-IN')}` : '₹0';
+    const elNetUsd = document.getElementById('kpi-net-profit-usd');
+    if (elNetUsd) elNetUsd.textContent = netProfitUsd > 0 ? `($${Math.round(netProfitUsd).toLocaleString('en-US')} USD)` : '($0 USD)';
+    const elMargin = document.getElementById('kpi-profit-margin-badge');
+    if (elMargin) elMargin.textContent = `${marginPercent}% Margin`;
+
+    // Render Unit Economics Table
+    renderEconomicsTable();
 
     const periodLabels = {
       all: 'All-Time Direct Sales',
@@ -438,6 +505,68 @@
     document.getElementById('geo-usd-orders').textContent = `${usdOrders} Orders`;
     document.getElementById('geo-eur-rev').textContent = `$0`;
     document.getElementById('geo-eur-orders').textContent = `0 Orders`;
+  }
+
+  function renderEconomicsTable() {
+    const tbody = document.getElementById('economics-tbody');
+    if (!tbody) return;
+
+    const singleInr = Number(document.getElementById('price-single-inr-input')?.value || 799);
+    const singleUsd = Number(document.getElementById('price-single-usd-input')?.value || 15);
+    const universalInr = Number(document.getElementById('price-inr-input')?.value || 999);
+    const universalUsd = Number(document.getElementById('price-usd-input')?.value || 19);
+    const teamInr = Number(document.getElementById('price-team-inr-input')?.value || 3499);
+    const teamUsd = Number(document.getElementById('price-team-usd-input')?.value || 69);
+
+    const includeGst = state.includeGst !== false;
+
+    const items = [
+      { tier: 'Single Pro Lifetime', region: 'India (Razorpay)', currency: 'INR', price: singleInr, rate: '2.36%', calcType: 'razorpay' },
+      { tier: 'Single Pro Lifetime', region: 'Global (Dodo MoR)', currency: 'USD', price: singleUsd, rate: '5% + $0.40', calcType: 'dodo_usd' },
+      { tier: 'Universal Pro ★ Hero', region: 'India (Razorpay)', currency: 'INR', price: universalInr, rate: '2.36%', calcType: 'razorpay' },
+      { tier: 'Universal Pro ★ Hero', region: 'Global (Dodo MoR)', currency: 'USD', price: universalUsd, rate: '5% + $0.40', calcType: 'dodo_usd' },
+      { tier: 'Anchor Tier / Upsell', region: 'Global (Dodo MoR)', currency: 'USD', price: 29, rate: '5% + $0.40', calcType: 'dodo_usd' },
+      { tier: 'Team Pro License', region: 'India (Razorpay)', currency: 'INR', price: teamInr, rate: '2.36%', calcType: 'razorpay' },
+      { tier: 'Team Pro License', region: 'Global (Dodo MoR)', currency: 'USD', price: teamUsd, rate: '5% + $0.40', calcType: 'dodo_usd' },
+      { tier: 'Studio / Tier 3', region: 'Global (Dodo MoR)', currency: 'USD', price: 79, rate: '5% + $0.40', calcType: 'dodo_usd' }
+    ];
+
+    tbody.innerHTML = items.map(item => {
+      let fee = 0;
+      let gst = 0;
+      let net = 0;
+      let margin = 0;
+
+      if (item.calcType === 'dodo_usd') {
+        fee = (item.price * 0.05) + 0.40;
+        gst = 0; // Handled and remitted by Dodo MoR
+        net = Math.max(0, item.price - fee);
+        margin = ((net / item.price) * 100).toFixed(1);
+      } else {
+        fee = item.price * 0.0236; // 2.00% fee + 18% GST on fee = 2.36%
+        gst = includeGst ? item.price * (18 / 118) : 0;
+        net = Math.max(0, item.price - fee - gst);
+        margin = ((net / item.price) * 100).toFixed(1);
+      }
+
+      const feeStr = item.currency === 'INR' ? `₹${fee.toFixed(2)}` : `$${fee.toFixed(2)}`;
+      const gstStr = item.currency === 'INR' ? (includeGst ? `₹${gst.toFixed(2)}` : '₹0 (Exempt)') : '$0 (MoR Handled)';
+      const netStr = item.currency === 'INR' ? `₹${net.toFixed(2)}` : `$${net.toFixed(2)}`;
+      const priceStr = item.currency === 'INR' ? `₹${item.price.toLocaleString('en-IN')}` : `$${item.price.toFixed(2)}`;
+
+      return `
+        <tr>
+          <td><strong>${escapeHtml(item.tier)}</strong></td>
+          <td><span class="pill-badge ${item.currency === 'INR' ? 'violet' : 'emerald'}">${escapeHtml(item.region)}</span></td>
+          <td><strong style="color:var(--text-heading); font-size:14px;">${priceStr}</strong></td>
+          <td><code style="font-size:11.5px;">${escapeHtml(item.rate)}</code></td>
+          <td><span style="color:var(--rose); font-weight:600;">-${feeStr}</span></td>
+          <td><span style="color:var(--amber); font-weight:500;">${gstStr}</span></td>
+          <td><strong style="color:var(--emerald); font-size:14px;">${netStr}</strong></td>
+          <td><span class="status-pill active" style="font-weight:700;">${margin}%</span></td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function updateBadges() {
@@ -557,11 +686,11 @@
     if (state.transactions.length === 0) {
       tbody.innerHTML = `
         <tr class="empty-state-row">
-          <td colspan="10">
+          <td colspan="12">
             <div class="empty-state-box">
               ${ICONS.emptyBox}
               <strong>No transaction history available</strong>
-              <p>All captured payments from Razorpay will appear here with order IDs, coupons used, and timestamps.</p>
+              <p>All captured payments from Dodo Payments and Razorpay will appear here with gross amounts, gateway fees, and net payouts.</p>
             </div>
           </td>
         </tr>
@@ -569,20 +698,52 @@
       return;
     }
 
-    tbody.innerHTML = state.transactions.map(tx => `
-      <tr>
-        <td><code>${escapeHtml(tx.paymentId)}</code></td>
-        <td><code>${escapeHtml(tx.orderId)}</code></td>
-        <td><strong>${escapeHtml(tx.customer)}</strong></td>
-        <td>${escapeHtml(tx.email)}</td>
-        <td><strong class="emerald-text">${escapeHtml(tx.amount)}</strong></td>
-        <td>${escapeHtml(tx.method || 'Razorpay Gateway')}</td>
-        <td><span class="pill-badge ${tx.coupon && tx.coupon !== 'None' ? 'emerald' : ''}">${escapeHtml(tx.coupon || 'None')}</span></td>
-        <td>${escapeHtml(tx.country)}</td>
-        <td><span class="status-pill active">${escapeHtml(tx.status || 'Captured')}</span></td>
-        <td class="text-muted">${escapeHtml(tx.timestamp)}</td>
-      </tr>
-    `).join('');
+    const includeGst = state.includeGst !== false;
+
+    tbody.innerHTML = state.transactions.map(tx => {
+      const amt = Number(tx.amountRaw) || 0;
+      const isUsd = (tx.currency || '').toUpperCase() === 'USD';
+      const isDodo = (tx.method || '').toLowerCase().includes('dodo') || String(tx.paymentId).startsWith('cks_') || String(tx.paymentId).startsWith('dodo_');
+      let feeDisplay = '';
+      let netDisplay = '';
+
+      if (isUsd) {
+        const fee = (amt * 0.05) + 0.40;
+        const net = Math.max(0, amt - fee);
+        feeDisplay = `-$${fee.toFixed(2)}`;
+        netDisplay = `$${net.toFixed(2)}`;
+      } else {
+        if (isDodo) {
+          const fee = (amt * 0.05) + 30;
+          const net = Math.max(0, amt - fee);
+          feeDisplay = `-₹${fee.toFixed(2)}`;
+          netDisplay = `₹${net.toFixed(2)}`;
+        } else {
+          const fee = amt * 0.0236; // 2% fee + 18% GST on fee
+          const gst = includeGst ? amt * (18 / 118) : 0;
+          const net = Math.max(0, amt - fee - gst);
+          feeDisplay = `-₹${fee.toFixed(2)}`;
+          netDisplay = `₹${Math.round(net).toLocaleString('en-IN')}`;
+        }
+      }
+
+      return `
+        <tr>
+          <td><code>${escapeHtml(tx.paymentId)}</code></td>
+          <td><code>${escapeHtml(tx.orderId)}</code></td>
+          <td><strong>${escapeHtml(tx.customer)}</strong></td>
+          <td>${escapeHtml(tx.email)}</td>
+          <td><strong class="emerald-text">${escapeHtml(tx.amount)}</strong></td>
+          <td><span style="color:var(--rose); font-weight:600; font-size:12.5px;">${feeDisplay}</span></td>
+          <td><strong style="color:var(--emerald); font-size:13px;">${netDisplay}</strong></td>
+          <td>${escapeHtml(tx.method || (isDodo ? 'Dodo Payments MoR' : 'Razorpay Gateway'))}</td>
+          <td><span class="pill-badge ${tx.coupon && tx.coupon !== 'None' ? 'emerald' : ''}">${escapeHtml(tx.coupon || 'None')}</span></td>
+          <td>${escapeHtml(tx.country)}</td>
+          <td><span class="status-pill active">${escapeHtml(tx.status || 'Captured')}</span></td>
+          <td class="text-muted">${escapeHtml(tx.timestamp)}</td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function renderCouponsTable() {
@@ -831,6 +992,15 @@
       });
     });
 
+    // GST Mode Toggle Button
+    document.getElementById('toggle-gst-btn')?.addEventListener('click', function () {
+      state.includeGst = !state.includeGst;
+      localStorage.setItem('dd_admin_include_gst', state.includeGst ? 'true' : 'false');
+      renderKPIs();
+      renderTransactionsTable();
+      showToast(state.includeGst ? 'GST mode: 18% GST deducted on Indian sales' : 'GST mode: Operating under ₹20L exemption (0% GST)', 'info');
+    });
+
     // Reset countdown freshly button
     document.getElementById('btn-reset-countdown-now')?.addEventListener('click', handleResetCountdownFreshly);
 
@@ -850,6 +1020,7 @@
       document.getElementById(id)?.addEventListener('input', () => {
         updatePricingPreviews();
         updateCountdownExpiryDisplay();
+        renderEconomicsTable();
       });
     });
 
