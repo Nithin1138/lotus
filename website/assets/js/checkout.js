@@ -113,14 +113,10 @@
       }
     } catch (_) {}
 
-    // 1. Honor manual user selection if already saved
-    const saved = getSavedCurrencyPreference();
-    if (saved === 'INR') {
-      return { isIndia: true, country: 'IN', currency: 'INR' };
-    }
-    if (saved === 'USD') {
-      return { isIndia: false, country: 'US', currency: 'USD' };
-    }
+    // Clear any legacy manual currency preference so visitors always receive pure automatic geo-detection
+    try {
+      localStorage.removeItem('dropdial_user_currency');
+    } catch (_) {}
 
     try {
       const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || '').toLowerCase();
@@ -419,18 +415,7 @@
       activeTierStrikeEnabled = strikeEnabled && hasSavings;
     }
 
-    // 2. Region / Currency Switcher Buttons (Landing Page + Modal)
-    const inrBtn = document.getElementById('currency-btn-inr');
-    const usdBtn = document.getElementById('currency-btn-usd');
-    if (inrBtn) inrBtn.classList.toggle('active', isIndia);
-    if (usdBtn) usdBtn.classList.toggle('active', !isIndia);
-
-    const mInrBtn = document.getElementById('modal-currency-inr');
-    const mUsdBtn = document.getElementById('modal-currency-usd');
-    if (mInrBtn) mInrBtn.classList.toggle('active', isIndia);
-    if (mUsdBtn) mUsdBtn.classList.toggle('active', !isIndia);
-
-    // 3. Modal Elements
+    // 2. Pricing Display Elements
     if (priceDisplay) {
       if (priceConfig.oldPrice) {
         priceDisplay.innerHTML = `
@@ -654,14 +639,7 @@
       }
     } catch (_) {}
 
-    // 2. Check if user has an explicit currency override saved
-    const savedPref = getSavedCurrencyPreference();
-    if (savedPref) {
-      applyPricing(savedPref === 'INR', savedPref === 'INR' ? 'IN' : 'US');
-      return;
-    }
-
-    // 3. Fetch Edge Geo detection (authoritative IP from Vercel / Cloudflare)
+    // 2. Fetch Edge Geo detection (authoritative IP from Vercel / Cloudflare)
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
       const offset = new Date().getTimezoneOffset();
@@ -825,10 +803,6 @@
             </div>
           </div>
           <div class="cko-header-actions">
-            <div class="cko-curr-toggle" role="radiogroup" aria-label="Currency">
-              <button type="button" class="cko-curr-btn" id="modal-currency-usd" title="Switch to USD ($)">$ USD</button>
-              <button type="button" class="cko-curr-btn" id="modal-currency-inr" title="Switch to INR (₹)">₹ INR</button>
-            </div>
             <button type="button" class="cko-close-btn" id="checkout-close" aria-label="Close checkout">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
@@ -1058,17 +1032,6 @@
       }
     });
 
-    // Currency Switcher Buttons (Landing Page + Modal)
-    function switchCurrency(targetCurr) {
-      const isInd = targetCurr === 'INR';
-      setSavedCurrencyPreference(targetCurr);
-      applyPricing(isInd, isInd ? 'IN' : 'US');
-    }
-
-    document.getElementById('currency-btn-inr')?.addEventListener('click', () => switchCurrency('INR'));
-    document.getElementById('currency-btn-usd')?.addEventListener('click', () => switchCurrency('USD'));
-    document.getElementById('modal-currency-inr')?.addEventListener('click', () => switchCurrency('INR'));
-    document.getElementById('modal-currency-usd')?.addEventListener('click', () => switchCurrency('USD'));
 
     // Tier Selector inside Modal
     document.querySelectorAll('[data-tier-choice]').forEach(function (btn) {
