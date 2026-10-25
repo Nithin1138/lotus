@@ -155,8 +155,8 @@ internal sealed class WelcomeWindow : Window
         });
         titleStack.Children.Add(new TextBlock
         {
-            Text = L.T("Drag. Drop. Convert. • 100% Offline & Private"),
-            FontSize = 12,
+            Text = L.T("DropDial runs in the notification area • 100% Offline, never connects to the internet"),
+            FontSize = 11,
             Foreground = UiTheme.Muted,
             Margin = new Thickness(0, 2, 0, 0)
         });
@@ -168,7 +168,7 @@ internal sealed class WelcomeWindow : Window
 
         var stepsList = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
         stepsList.Children.Add(Step(1, L.T("Drag files"), L.T("Select any files on your Desktop or File Explorer and drag them.")));
-        stepsList.Children.Add(Step(2, L.T("Press Shift / Ctrl / Alt"), L.T("Hold Shift for formats, Ctrl for tools, or Alt for shelf actions.")));
+        stepsList.Children.Add(Step(2, L.T("Press Shift"), L.T("Hold Shift for formats, Ctrl for tools, or Alt for shelf actions.")));
         stepsList.Children.Add(Step(3, L.T("Release to convert"), L.T("Drop on any slice — converted files save right next to originals.")));
         guideContent.Children.Add(stepsList);
 
@@ -305,7 +305,7 @@ internal sealed class WelcomeWindow : Window
 
         var hide = new CheckBox
         {
-            Content = L.T("Don't show on launch"),
+            Content = L.T("Don't show this window when DropDial starts"),
             IsChecked = Settings.GetBool(HideAtStartKey, false),
             FontSize = 11,
             Foreground = UiTheme.Muted,
@@ -333,8 +333,25 @@ internal sealed class WelcomeWindow : Window
         optionsRow.Children.Add(startup);
         panel.Children.Add(optionsRow);
 
-        startupMessage = new TextBlock { Visibility = Visibility.Collapsed };
-        startupSettings = new Button { Visibility = Visibility.Collapsed };
+        startupMessage = new TextBlock
+        {
+            Foreground = UiTheme.Muted,
+            FontSize = 10,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(2, 2, 0, 4),
+            Visibility = Visibility.Collapsed
+        };
+        startupSettings = new Button
+        {
+            Content = L.T("Windows startup app settings"),
+            Visibility = Visibility.Collapsed,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            FontSize = 10,
+            Margin = new Thickness(2, 2, 0, 4)
+        };
+        startupSettings.Click += (_, _) => StartupManager.OpenWindowsSettings();
+        panel.Children.Add(startupMessage);
+        panel.Children.Add(startupSettings);
         RefreshStartup();
 
         // 6. Got It Button
@@ -362,8 +379,10 @@ internal sealed class WelcomeWindow : Window
     private void UpdateStartup(StartupStatus status)
     {
         if (startup == null || startupMessage == null || startupSettings == null) return;
-        startup.IsChecked = status.Enabled; startup.IsEnabled = status.CanChange;
+        startup.IsChecked = status.Enabled;
+        startup.IsEnabled = status.CanChange;
         startupMessage.Text = status.Message ?? L.T("Run quietly in the background after signing in to Windows.");
+        startupMessage.Visibility = status.Message == null ? Visibility.Collapsed : Visibility.Visible;
         startupSettings.Visibility = status.Message == null ? Visibility.Collapsed : Visibility.Visible;
     }
 
