@@ -703,8 +703,25 @@
       }
       const dodoPaymentId = urlParams.get('payment_id');
       const dodoStatus = (urlParams.get('status') || urlParams.get('payment_status') || '').toLowerCase();
-      if ((dodoPaymentId || dodoStatus === 'succeeded' || dodoStatus === 'success') && !window._dd_return_handled) {
+      const txKey = dodoPaymentId || urlParams.get('session_id') || 'done';
+      let alreadyHandled = false;
+      try {
+        alreadyHandled = Boolean(sessionStorage.getItem('dd_handled_' + txKey));
+      } catch (_) {}
+
+      if ((dodoPaymentId || dodoStatus === 'succeeded' || dodoStatus === 'success') && !window._dd_return_handled && !alreadyHandled) {
         window._dd_return_handled = true;
+        try {
+          sessionStorage.setItem('dd_handled_' + txKey, '1');
+        } catch (_) {}
+
+        // Remove payment query parameters immediately so URL looks clean and refreshing does NOT re-trigger
+        try {
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } catch (_) {}
+
         const returnEmail = urlParams.get('email') || '';
         const returnTier = (urlParams.get('tier') || 'universal').toLowerCase();
         setTimeout(async function () {
@@ -1230,6 +1247,11 @@
 
   function closeModal() {
     overlay.classList.remove('active');
+    try {
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (_) {}
   }
 
   function showError(msg) {
