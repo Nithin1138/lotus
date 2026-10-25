@@ -24,7 +24,7 @@ internal sealed class WelcomeWindow : Window
     public WelcomeWindow()
     {
         UiTheme.Apply(this);
-        Width = 530;
+        Width = 490;
         MaxHeight = Math.Max(500, SystemParameters.WorkArea.Height - 50);
         SizeToContent = SizeToContent.Height;
         ResizeMode = ResizeMode.CanMinimize;
@@ -88,8 +88,9 @@ internal sealed class WelcomeWindow : Window
 
     private UIElement Body()
     {
-        var panel = new StackPanel { Margin = new Thickness(20, 2, 20, 12) };
+        var panel = new StackPanel { Margin = new Thickness(22, 6, 22, 18) };
 
+        // 1. Update Notification Pill (if available)
         if (UpdateManager.AvailableUpdate is { } upd)
         {
             var updateCard = new Border
@@ -97,16 +98,16 @@ internal sealed class WelcomeWindow : Window
                 Background = UiTheme.Tint,
                 BorderBrush = UiTheme.Accent,
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(6),
-                Padding = new Thickness(10, 5, 10, 5),
-                Margin = new Thickness(0, 0, 0, 9)
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(14, 7, 14, 7),
+                Margin = new Thickness(0, 0, 0, 12)
             };
             var updateRow = new DockPanel();
             var updateBtn = new Button
             {
                 Content = L.T("Update Now"),
-                Padding = new Thickness(10, 3, 10, 3),
-                FontSize = 11,
+                Padding = new Thickness(12, 4, 12, 4),
+                FontSize = 11.5,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = Brushes.White,
                 Background = UiTheme.Accent,
@@ -117,11 +118,12 @@ internal sealed class WelcomeWindow : Window
             DockPanel.SetDock(updateBtn, Dock.Right);
             updateBtn.Click += (_, _) => UpdateManager.ShowUpdatePrompt(upd);
             updateRow.Children.Add(updateBtn);
+
             var updateText = new TextBlock
             {
-                Text = $"{L.T("New version available:")} {upd.TagName}",
+                Text = $"✦ {L.T("New version available:")} {upd.TagName}",
                 FontWeight = FontWeights.SemiBold,
-                FontSize = 11.5,
+                FontSize = 12,
                 Foreground = UiTheme.Ink,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -130,28 +132,59 @@ internal sealed class WelcomeWindow : Window
             panel.Children.Add(updateCard);
         }
 
-        var heading = new StackPanel { Orientation = Orientation.Horizontal };
-        heading.Children.Add(new Image { Source = AppIcon.Window, Width = 32, Height = 32, Margin = new Thickness(0, 0, 10, 0) });
-        var titles = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        titles.Children.Add(new TextBlock { Text = L.T("Welcome to DropDial"), FontSize = 17, FontWeight = FontWeights.Bold, Foreground = UiTheme.Ink });
-        titles.Children.Add(new TextBlock { Text = L.T("Drag. Drop. Convert."), FontSize = 11.5, Foreground = UiTheme.Muted, Margin = new Thickness(0, 1, 0, 0) });
-        heading.Children.Add(titles);
-        panel.Children.Add(heading);
+        // 2. Clean Header
+        var header = new DockPanel { Margin = new Thickness(0, 2, 0, 14) };
+        var icon = new Image
+        {
+            Source = AppIcon.Window,
+            Width = 38,
+            Height = 38,
+            Margin = new Thickness(0, 0, 12, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        DockPanel.SetDock(icon, Dock.Left);
+        header.Children.Add(icon);
 
-        var steps = new StackPanel { Margin = new Thickness(0, 9, 0, 0) };
-        steps.Children.Add(Step(1, L.T("Drag files"), L.T("Select one or more files on the desktop or in File Explorer and start dragging them, as if you were moving them.")));
-        steps.Children.Add(Step(2, L.T("Press Shift"), L.T("While dragging, press Shift for formats, Ctrl+Shift for tools, or Alt for actions (Floating Shelf, Copy, Move, Terminal). F8, F9, and F10 also work.")));
-        steps.Children.Add(Step(3, L.T("Release on an option"), L.T("The new file is saved next to the original, which is never changed.")));
-        panel.Children.Add(steps);
+        var titleStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        titleStack.Children.Add(new TextBlock
+        {
+            Text = L.T("Welcome to DropDial"),
+            FontSize = 18,
+            FontWeight = FontWeights.Bold,
+            Foreground = UiTheme.Ink
+        });
+        titleStack.Children.Add(new TextBlock
+        {
+            Text = L.T("Drag. Drop. Convert. • 100% Offline & Private"),
+            FontSize = 12,
+            Foreground = UiTheme.Muted,
+            Margin = new Thickness(0, 2, 0, 0)
+        });
+        header.Children.Add(titleStack);
+        panel.Children.Add(header);
 
-        var launchRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 6) };
+        // 3. Workflow Guide Card
+        var guideContent = new StackPanel();
+
+        var stepsList = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
+        stepsList.Children.Add(Step(1, L.T("Drag files"), L.T("Select any files on your Desktop or File Explorer and drag them.")));
+        stepsList.Children.Add(Step(2, L.T("Press Shift / Ctrl / Alt"), L.T("Hold Shift for formats, Ctrl for tools, or Alt for shelf actions.")));
+        stepsList.Children.Add(Step(3, L.T("Release to convert"), L.T("Drop on any slice — converted files save right next to originals.")));
+        guideContent.Children.Add(stepsList);
+
+        // Quick Action Buttons
+        var actionsRow = new Grid { Margin = new Thickness(0, 2, 0, 0) };
+        actionsRow.ColumnDefinitions.Add(new ColumnDefinition());
+        actionsRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
+        actionsRow.ColumnDefinitions.Add(new ColumnDefinition());
+        actionsRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
+        actionsRow.ColumnDefinitions.Add(new ColumnDefinition());
 
         var openWheelBtn = new Button
         {
-            Content = L.T("Open Floating Wheel"),
-            Padding = new Thickness(12, 5, 12, 5),
-            Margin = new Thickness(0, 0, 6, 0),
-            FontSize = 12,
+            Content = $"✣ {L.T("Open Wheel")}",
+            Padding = new Thickness(8, 6, 8, 6),
+            FontSize = 11.5,
             FontWeight = FontWeights.SemiBold,
             Foreground = Brushes.White,
             Background = UiTheme.Accent,
@@ -163,65 +196,62 @@ internal sealed class WelcomeWindow : Window
             WindowState = WindowState.Minimized;
             ToggleWheelAction?.Invoke();
         };
-        launchRow.Children.Add(openWheelBtn);
+        Grid.SetColumn(openWheelBtn, 0);
+        actionsRow.Children.Add(openWheelBtn);
 
         var openShelfBtn = new Button
         {
-            Content = L.T("Open Floating Shelf"),
-            Padding = new Thickness(10, 5, 10, 5),
-            Margin = new Thickness(0, 0, 6, 0),
-            FontSize = 12,
+            Content = $"☵ {L.T("Floating Shelf")}",
+            Padding = new Thickness(8, 6, 8, 6),
+            FontSize = 11.5,
             FontWeight = FontWeights.Normal,
             Foreground = UiTheme.Ink,
             Background = UiTheme.Surface,
             BorderBrush = UiTheme.Line,
             Cursor = Cursors.Hand
         };
-        openShelfBtn.Click += (_, _) =>
-        {
-            ShowShelfAction?.Invoke();
-        };
-        launchRow.Children.Add(openShelfBtn);
+        openShelfBtn.Click += (_, _) => ShowShelfAction?.Invoke();
+        Grid.SetColumn(openShelfBtn, 2);
+        actionsRow.Children.Add(openShelfBtn);
 
         var selectFilesBtn = new Button
         {
             Content = L.T("Choose Files…"),
-            Padding = new Thickness(10, 5, 10, 5),
-            FontSize = 12,
+            Padding = new Thickness(8, 6, 8, 6),
+            FontSize = 11.5,
             FontWeight = FontWeights.Normal,
             Foreground = UiTheme.Ink,
             Background = UiTheme.Surface,
             BorderBrush = UiTheme.Line,
             Cursor = Cursors.Hand
         };
-        selectFilesBtn.Click += (_, _) =>
-        {
-            PromptSelectFilesAction?.Invoke();
-        };
-        launchRow.Children.Add(selectFilesBtn);
+        selectFilesBtn.Click += (_, _) => PromptSelectFilesAction?.Invoke();
+        Grid.SetColumn(selectFilesBtn, 4);
+        actionsRow.Children.Add(selectFilesBtn);
 
-        panel.Children.Add(launchRow);
+        guideContent.Children.Add(actionsRow);
 
-        var tray = new StackPanel();
-        tray.Children.Add(new TextBlock { Text = L.T("DropDial runs in the notification area (next to the clock) and has no main window. Click or right-click its tray icon to toggle the wheel, pause jobs, or change settings."), TextWrapping = TextWrapping.Wrap, Foreground = UiTheme.Ink, FontSize = 11, LineHeight = 15 });
-        tray.Children.Add(new TextBlock { Text = L.T("Everything is processed on this PC. Nothing is uploaded, and DropDial never connects to the internet."), TextWrapping = TextWrapping.Wrap, Foreground = UiTheme.Muted, FontSize = 10.5, Margin = new Thickness(0, 3, 0, 0) });
-        var card = UiTheme.Card(tray, new Thickness(12, 6, 12, 6));
-        card.Margin = new Thickness(0, 4, 0, 0);
-        panel.Children.Add(card);
+        var guideCard = UiTheme.Card(guideContent, new Thickness(14, 12, 14, 12));
+        guideCard.Margin = new Thickness(0, 0, 0, 10);
+        panel.Children.Add(guideCard);
+
+        // 4. Compact Status & License Card
+        var statusCardContent = new DockPanel();
 
         var licStatus = LicenseManager.CurrentStatus;
-        var licRow = new DockPanel();
+        int remConversions = LicenseManager.GetDailyConversionsRemaining();
+
         var licBtn = new Button
         {
-            Content = licStatus.IsPro ? L.T("Manage License…") : (LicenseManager.IsWithinFirst24Hours ? L.T("Claim 10% Off") : L.T("Enter License Key…")),
-            Padding = new Thickness(10, 4, 10, 4),
-            Margin = new Thickness(8, 0, 0, 0),
+            Content = licStatus.IsPro ? L.T("Manage License…") : (LicenseManager.IsWithinFirst24Hours ? L.T("Claim 10% Off") : L.T("Enter Key…")),
+            Padding = new Thickness(12, 4, 12, 4),
             FontSize = 11,
             FontWeight = FontWeights.SemiBold,
             Foreground = licStatus.IsPro ? UiTheme.Ink : Brushes.White,
             Background = licStatus.IsPro ? UiTheme.Surface : UiTheme.Accent,
             BorderBrush = licStatus.IsPro ? UiTheme.Line : UiTheme.Accent,
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(8, 0, 0, 0)
         };
         licBtn.Click += (_, _) =>
         {
@@ -235,53 +265,99 @@ internal sealed class WelcomeWindow : Window
             }
         };
         DockPanel.SetDock(licBtn, Dock.Right);
-        licRow.Children.Add(licBtn);
+        statusCardContent.Children.Add(licBtn);
 
-        var licTextPanel = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        string licTitleText = licStatus.IsPro
+        var statusInfo = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        string statusTitle = licStatus.IsPro
             ? $"DropDial {licStatus.Info?.PlanDisplayName ?? "Pro"} Plan ✓"
             : (licStatus.Kind == LicenseStatusKind.Trial
                 ? (LicenseManager.IsWithinFirst24Hours
-                    ? $"Free Trial ({licStatus.DaysRemaining}d) · 10% Off Early Bird"
+                    ? $"Trial ({licStatus.DaysRemaining}d) · 10% Off Early Bird"
                     : $"Free Trial ({licStatus.DaysRemaining} days left)")
-                : "Free Tier (Trial Expired)");
-        string licSubText = licStatus.IsPro
+                : $"Free Tier • {remConversions}/3 conversions left today");
+
+        string statusSub = licStatus.IsPro
             ? $"Licensed to {(string.IsNullOrEmpty(licStatus.Info?.Name) ? licStatus.Info?.Email : licStatus.Info?.Name)}"
-            : (LicenseManager.IsWithinFirst24Hours
-                ? L.T("First 24 Hours Offer: Save 10% on Lifetime Pro with coupon FIRST24.")
-                : L.T("Activate your license key to unlock unlimited conversions."));
-        licTextPanel.Children.Add(new TextBlock { Text = licTitleText, FontWeight = FontWeights.SemiBold, FontSize = 12, Foreground = UiTheme.Ink });
-        licTextPanel.Children.Add(new TextBlock { Text = licSubText, Foreground = UiTheme.Muted, FontSize = 10.5, Margin = new Thickness(0, 1, 0, 0) });
-        licRow.Children.Add(licTextPanel);
+            : L.T("Runs quietly in taskbar tray. Everything is processed offline.");
 
-        var licCard = UiTheme.Card(licRow, new Thickness(12, 6, 12, 6));
-        licCard.Margin = new Thickness(0, 5, 0, 0);
-        panel.Children.Add(licCard);
+        statusInfo.Children.Add(new TextBlock
+        {
+            Text = statusTitle,
+            FontWeight = FontWeights.SemiBold,
+            FontSize = 12,
+            Foreground = UiTheme.Ink
+        });
+        statusInfo.Children.Add(new TextBlock
+        {
+            Text = statusSub,
+            FontSize = 10.5,
+            Foreground = UiTheme.Muted,
+            Margin = new Thickness(0, 1, 0, 0)
+        });
+        statusCardContent.Children.Add(statusInfo);
 
-        var hide = new CheckBox { Content = L.T("Don't show this window when DropDial starts"), IsChecked = Settings.GetBool(HideAtStartKey, false), Margin = new Thickness(0, 6, 0, 0), FontSize = 11, Foreground = UiTheme.Muted };
+        var statusCard = UiTheme.Card(statusCardContent, new Thickness(14, 10, 14, 10));
+        statusCard.Margin = new Thickness(0, 0, 0, 10);
+        panel.Children.Add(statusCard);
+
+        // 5. Options Row
+        var optionsRow = new DockPanel { Margin = new Thickness(2, 2, 2, 12) };
+
+        var hide = new CheckBox
+        {
+            Content = L.T("Don't show on launch"),
+            IsChecked = Settings.GetBool(HideAtStartKey, false),
+            FontSize = 11,
+            Foreground = UiTheme.Muted,
+            VerticalAlignment = VerticalAlignment.Center
+        };
         hide.Click += (_, _) => Settings.Set(HideAtStartKey, hide.IsChecked == true);
-        panel.Children.Add(hide);
-        startup = new CheckBox { Content = L.T("Start with Windows"), IsEnabled = false, Margin = new Thickness(0, 2, 0, 0), FontSize = 11, ToolTip = L.T("Run quietly in the background after signing in to Windows.") };
-        startupMessage = new TextBlock { Foreground = UiTheme.Muted, FontSize = 10, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(6, 1, 0, 0) };
-        startupSettings = new Button { Content = L.T("Windows startup app settings"), Visibility = Visibility.Collapsed, HorizontalAlignment = HorizontalAlignment.Left, FontSize = 10, Margin = new Thickness(6, 2, 0, 0) };
-        startupSettings.Click += (_, _) => StartupManager.OpenWindowsSettings();
+        DockPanel.SetDock(hide, Dock.Right);
+        optionsRow.Children.Add(hide);
+
+        startup = new CheckBox
+        {
+            Content = L.T("Start with Windows"),
+            IsEnabled = false,
+            FontSize = 11,
+            Foreground = UiTheme.Muted,
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = L.T("Run quietly in the background after signing in to Windows.")
+        };
         startup.Click += async (_, _) =>
         {
             startup.IsEnabled = false;
             var status = await StartupManager.SetAsync(startup.IsChecked == true);
             UpdateStartup(status);
         };
-        panel.Children.Add(startup); panel.Children.Add(startupMessage); panel.Children.Add(startupSettings);
+        optionsRow.Children.Add(startup);
+        panel.Children.Add(optionsRow);
+
+        startupMessage = new TextBlock { Visibility = Visibility.Collapsed };
+        startupSettings = new Button { Visibility = Visibility.Collapsed };
         RefreshStartup();
 
-        var footer = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
-        var close = new Button { Content = L.T("Got it"), Background = UiTheme.Accent, Foreground = Brushes.White, BorderBrush = UiTheme.Accent, Padding = new Thickness(20, 5, 20, 5), FontSize = 12, FontWeight = FontWeights.SemiBold, IsDefault = true, IsCancel = true };
+        // 6. Got It Button
+        var close = new Button
+        {
+            Content = L.T("Got it"),
+            Background = UiTheme.Accent,
+            Foreground = Brushes.White,
+            BorderBrush = UiTheme.Accent,
+            Height = 36,
+            FontSize = 12.5,
+            FontWeight = FontWeights.SemiBold,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            IsDefault = true,
+            IsCancel = true,
+            Cursor = Cursors.Hand
+        };
         close.Click += (_, _) => Close();
-        DockPanel.SetDock(close, Dock.Right);
-        footer.Children.Add(close);
-        panel.Children.Add(footer);
+        panel.Children.Add(close);
+
         return panel;
     }
+
     private async void RefreshStartup() => UpdateStartup(await StartupManager.GetAsync());
     private void UpdateStartup(StartupStatus status)
     {
@@ -364,15 +440,31 @@ internal sealed class WelcomeWindow : Window
 
     private static UIElement Step(int number, string title, string text)
     {
-        var row = new Grid { Margin = new Thickness(0, 0, 0, 5) };
+        var row = new Grid { Margin = new Thickness(0, 0, 0, 8) };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
         row.ColumnDefinitions.Add(new ColumnDefinition());
-        var badge = new Border { Width = 20, Height = 20, CornerRadius = new CornerRadius(10), Background = UiTheme.Tint, VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Left };
-        badge.Child = new TextBlock { Text = number.ToString(), FontWeight = FontWeights.Bold, FontSize = 10.5, Foreground = UiTheme.Accent, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var badge = new Border
+        {
+            Width = 20,
+            Height = 20,
+            CornerRadius = new CornerRadius(10),
+            Background = UiTheme.Tint,
+            VerticalAlignment = VerticalAlignment.Top,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        badge.Child = new TextBlock
+        {
+            Text = number.ToString(),
+            FontWeight = FontWeights.Bold,
+            FontSize = 10.5,
+            Foreground = UiTheme.Accent,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
         row.Children.Add(badge);
         var words = new StackPanel();
-        words.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, FontSize = 12.5, Foreground = UiTheme.Ink });
-        words.Children.Add(new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Foreground = UiTheme.Muted, FontSize = 11, Margin = new Thickness(0, 1, 0, 0), LineHeight = 15 });
+        words.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, FontSize = 12, Foreground = UiTheme.Ink });
+        words.Children.Add(new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Foreground = UiTheme.Muted, FontSize = 10.5, Margin = new Thickness(0, 1, 0, 0), LineHeight = 14 });
         Grid.SetColumn(words, 1);
         row.Children.Add(words);
         return row;
