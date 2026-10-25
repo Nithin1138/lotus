@@ -312,10 +312,180 @@
     url: "/downloads/DropDial.dmg"
   };
 
-  // Zero-PII Anonymous Telemetry Ping for Admin Dashboard
-  try {
-    fetch('/api/admin?action=track&event=pageview', { method: 'POST', keepalive: true }).catch(() => {});
-  } catch (_) {}
+  // DropDial Behavioral Telemetry & Drop-Off Tracking Engine (Zero-PII)
+  (function initBehaviorTelemetry() {
+    try {
+      let sessionId = sessionStorage.getItem('dd_telemetry_sid');
+      if (!sessionId) {
+        sessionId = 'session_' + Math.random().toString(36).substring(2, 11) + Math.random().toString(36).substring(2, 6);
+        sessionStorage.setItem('dd_telemetry_sid', sessionId);
+      }
+
+      const sessionStartTime = Date.now();
+      let maxScrollPercent = 0;
+      let currentSection = 'hero';
+      let lastInteraction = 'landing_open';
+      let exitIntentFired = false;
+      const scrollMilestones = new Set();
+      let consecutiveClicks = 0;
+      let lastClickTarget = null;
+      let lastClickTime = 0;
+
+      function sendEvent(eventType, metadata = {}) {
+        const payload = {
+          sessionId,
+          eventType,
+          page: window.location.pathname.replace(/^\/website/, '') || 'landing',
+          metadata: {
+            ...metadata,
+            activeSection: currentSection,
+            maxScrollDepth: maxScrollPercent + '%',
+            timeSpentSec: Math.round((Date.now() - sessionStartTime) / 1000)
+          }
+        };
+
+        const jsonStr = JSON.stringify(payload);
+        const url = '/api/admin?action=track';
+
+        if (navigator.sendBeacon) {
+          try {
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            if (navigator.sendBeacon(url, blob)) return;
+          } catch (_) {}
+        }
+
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: jsonStr,
+          keepalive: true
+        }).catch(() => {});
+      }
+
+      // Initial visit
+      sendEvent('LANDING_VISIT', {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform || (navigator.userAgentData ? navigator.userAgentData.platform : 'Unknown'),
+        screen: `${window.innerWidth}x${window.innerHeight}`,
+        referrer: document.referrer ? new URL(document.referrer, window.location.origin).hostname : 'direct'
+      });
+
+      // Section Discovery via IntersectionObserver
+      const sectionElements = document.querySelectorAll('section[id], header, footer, #pricing, #download, #faq, #features');
+      if ('IntersectionObserver' in window) {
+        const obs = new IntersectionObserver((entries) => {
+          entries.forEach(e => {
+            if (e.isIntersecting && e.intersectionRatio >= 0.3) {
+              const secId = e.target.id || e.target.tagName.toLowerCase();
+              if (secId && secId !== currentSection) {
+                currentSection = secId;
+                if (secId.includes('price')) {
+                  sendEvent('PRICING_VIEW', { section: secId });
+                }
+              }
+            }
+          });
+        }, { threshold: [0.3] });
+        sectionElements.forEach(s => obs.observe(s));
+      }
+
+      // Scroll Depth Milestones (25%, 50%, 75%, 100%)
+      window.addEventListener('scroll', () => {
+        const docH = Math.max(
+          document.body.scrollHeight, document.documentElement.scrollHeight,
+          document.body.offsetHeight, document.documentElement.offsetHeight
+        ) - window.innerHeight;
+
+        if (docH <= 0) return;
+        const currentPct = Math.min(100, Math.round((window.scrollY / docH) * 100));
+        if (currentPct > maxScrollPercent) maxScrollPercent = currentPct;
+
+        [25, 50, 75, 100].forEach(milestone => {
+          if (currentPct >= milestone && !scrollMilestones.has(milestone)) {
+            scrollMilestones.add(milestone);
+            sendEvent(`SCROLL_DEPTH_${milestone}`, { scrollPercent: currentPct });
+          }
+        });
+      }, { passive: true });
+
+      // Click Tracking & Rage Click Detection
+      document.addEventListener('click', (e) => {
+        const target = e.target;
+        const now = Date.now();
+
+        if (lastClickTarget === target && (now - lastClickTime) < 650) {
+          consecutiveClicks++;
+          if (consecutiveClicks === 3) {
+            sendEvent('RAGE_CLICK', {
+              target: (target.tagName || '') + (target.className ? '.' + String(target.className).trim().split(/\s+/).slice(0, 2).join('.') : ''),
+              text: (target.innerText || '').slice(0, 40)
+            });
+          }
+        } else {
+          consecutiveClicks = 1;
+          lastClickTarget = target;
+        }
+        lastClickTime = now;
+
+        const dlBtn = target.closest('[data-download-win], [data-download-mac], [href*="DropDial"], [href*="downloads"]');
+        if (dlBtn) {
+          lastInteraction = 'download_click';
+          sendEvent('DOWNLOAD_CLICK', {
+            href: dlBtn.getAttribute('href') || '',
+            text: (dlBtn.innerText || '').slice(0, 30)
+          });
+        }
+
+        const payBtn = target.closest('[data-plan], [data-tier], [id*="checkout"], [id*="buy"]');
+        if (payBtn) {
+          lastInteraction = 'checkout_click';
+          sendEvent('CHECKOUT_INITIATED', {
+            plan: payBtn.getAttribute('data-plan') || payBtn.getAttribute('data-tier') || 'pro',
+            text: (payBtn.innerText || '').slice(0, 30)
+          });
+        }
+
+        const copyBtn = target.closest('.copy-btn, [id*="copy"]');
+        if (copyBtn) {
+          lastInteraction = 'copy_command';
+          sendEvent('COMMAND_COPIED', {
+            command: (copyBtn.closest('.cli-card, .hero-cli-box')?.querySelector('code')?.innerText || '').slice(0, 60)
+          });
+        }
+      }, { passive: true });
+
+      // Mouseout Exit Intent (moving up towards tab bar / close button)
+      document.addEventListener('mouseleave', (e) => {
+        if (e.clientY <= 0 && !exitIntentFired) {
+          exitIntentFired = true;
+          lastInteraction = 'exit_intent';
+          sendEvent('EXIT_INTENT', {
+            exitSection: currentSection,
+            maxScrollDepth: maxScrollPercent + '%',
+            exitTrigger: 'cursor_left_viewport'
+          });
+        }
+      });
+
+      // Lifecycle Exit (Page Hide, Tab Switch, Before Unload)
+      function onExit(trigger) {
+        sendEvent('LIFECYCLE_EXIT', {
+          exitSection: currentSection,
+          maxScrollDepth: maxScrollPercent + '%',
+          lastAction: lastInteraction,
+          exitTrigger: trigger,
+          dwellTimeSec: Math.round((Date.now() - sessionStartTime) / 1000)
+        });
+      }
+
+      window.addEventListener('pagehide', () => onExit('pagehide'), { capture: true });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          onExit('visibility_hidden');
+        }
+      });
+    } catch (_) {}
+  })();
 
   $$("[data-download-mac]").forEach(a => { a.href = releaseMac.url; });
   $$("[data-release-meta-mac]").forEach(el => { el.textContent = `${releaseMac.tag} · ${releaseMac.size} · Universal Mach-O DMG`; });

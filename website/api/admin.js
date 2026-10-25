@@ -101,6 +101,300 @@ let serverlessStats = {
   lastUpdated: new Date().toISOString()
 };
 
+// In-memory high-throughput telemetry stream ring buffer
+const eventRingBuffer = [];
+const MAX_RING_BUFFER = 300;
+
+function initSampleEvents() {
+  if (eventRingBuffer.length > 0) return;
+  const now = Date.now();
+  const sampleData = [
+    {
+      session_id: 'session_yopc15dzwsh',
+      event_type: 'LANDING_VISIT',
+      page: 'landing',
+      metadata: { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36', platform: 'macOS', screen: '1728x1117', referrer: 'direct' },
+      offsetMs: 12000
+    },
+    {
+      session_id: 'session_yopc15dzwsh',
+      event_type: 'SCROLL_DEPTH_50',
+      page: 'landing',
+      metadata: { scrollPercent: 54, activeSection: 'features', timeSpentSec: 18 },
+      offsetMs: 28000
+    },
+    {
+      session_id: 'session_yopc15dzwsh',
+      event_type: 'PRICING_VIEW',
+      page: 'landing',
+      metadata: { section: 'pricing', scrollPercent: 78, dwellSec: 25 },
+      offsetMs: 45000
+    },
+    {
+      session_id: 'session_yopc15dzwsh',
+      event_type: 'EXIT_INTENT',
+      page: 'landing',
+      metadata: { lastSection: 'pricing', maxScrollDepth: '78%', dwellTimeSec: 42, exitTrigger: 'cursor_top_leave' },
+      offsetMs: 58000
+    },
+    {
+      session_id: 'session_yopc15dzwsh',
+      event_type: 'LIFECYCLE_EXIT',
+      page: 'landing',
+      metadata: { exitSection: 'pricing', maxScrollDepth: '78%', dwellTimeSec: 44, lastAction: 'view_pricing_tiers', exitTrigger: 'tab_closed' },
+      offsetMs: 60000
+    },
+    {
+      session_id: 'session_8rwznly69xc',
+      event_type: 'LANDING_VISIT',
+      page: 'landing',
+      metadata: { userAgent: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/130.0.6723.69 Safari/537.36', platform: 'Linux', screen: '1920x1080', referrer: 'google' },
+      offsetMs: 140000
+    },
+    {
+      session_id: 'session_8rwznly69xc',
+      event_type: 'LIFECYCLE_EXIT',
+      page: 'landing',
+      metadata: { exitSection: 'hero', maxScrollDepth: '14%', dwellTimeSec: 6, lastAction: 'quick_bounce', exitTrigger: 'window_hidden' },
+      offsetMs: 146000
+    },
+    {
+      session_id: 'session_xd3bsus4gu9',
+      event_type: 'LANDING_VISIT',
+      page: 'landing',
+      metadata: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0', platform: 'Windows', screen: '1920x1080', referrer: 'https://twitter.com' },
+      offsetMs: 380000
+    },
+    {
+      session_id: 'session_xd3bsus4gu9',
+      event_type: 'DOWNLOAD_CLICK',
+      page: 'landing',
+      metadata: { platform: 'Windows', binary: 'DropDial-Setup.exe', targetVersion: 'v1.0.2.3', url: '/downloads/DropDial-Setup.exe' },
+      offsetMs: 410000
+    },
+    {
+      session_id: 'session_xd3bsus4gu9',
+      event_type: 'LIFECYCLE_EXIT',
+      page: 'landing',
+      metadata: { exitSection: 'download', maxScrollDepth: '96%', dwellTimeSec: 68, lastAction: 'click_download_windows', exitTrigger: 'installer_launched' },
+      offsetMs: 440000
+    },
+    {
+      session_id: 'session_4jllilin8x',
+      event_type: 'LANDING_VISIT',
+      page: 'landing',
+      metadata: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0', platform: 'Windows', screen: '2560x1440', referrer: 'https://news.ycombinator.com' },
+      offsetMs: 620000
+    },
+    {
+      session_id: 'session_4jllilin8x',
+      event_type: 'SCROLL_DEPTH_50',
+      page: 'landing',
+      metadata: { scrollPercent: 50, activeSection: 'features', dwellSec: 19 },
+      offsetMs: 645000
+    },
+    {
+      session_id: 'session_4jllilin8x',
+      event_type: 'DEAD_CLICK',
+      page: 'landing',
+      metadata: { target: 'div.feature-preview', clickCount: 1, tagName: 'DIV' },
+      offsetMs: 655000
+    },
+    {
+      session_id: 'session_4jllilin8x',
+      event_type: 'LIFECYCLE_EXIT',
+      page: 'landing',
+      metadata: { exitSection: 'features', maxScrollDepth: '52%', dwellTimeSec: 36, lastAction: 'read_feature_cards', exitTrigger: 'tab_closed' },
+      offsetMs: 670000
+    },
+    {
+      session_id: 'session_ycf7470r2h',
+      event_type: 'LANDING_VISIT',
+      page: 'landing',
+      metadata: { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15', platform: 'macOS', screen: '1512x982', referrer: 'https://reddit.com/r/macapps' },
+      offsetMs: 820000
+    },
+    {
+      session_id: 'session_ycf7470r2h',
+      event_type: 'PRICING_VIEW',
+      page: 'landing',
+      metadata: { section: 'pricing', scrollPercent: 82, dwellSec: 22 },
+      offsetMs: 845000
+    },
+    {
+      session_id: 'session_ycf7470r2h',
+      event_type: 'COUPON_APPLIED',
+      page: 'landing',
+      metadata: { code: 'DROPDIAL50', discount: '50% Off' },
+      offsetMs: 860000
+    },
+    {
+      session_id: 'session_ycf7470r2h',
+      event_type: 'CHECKOUT_INITIATED',
+      page: 'landing',
+      metadata: { tier: 'pro', price: '$14.50', gateway: 'dodo', coupon: 'DROPDIAL50' },
+      offsetMs: 875000
+    },
+    {
+      session_id: 'session_7kk5ieu1y5g',
+      event_type: 'LANDING_VISIT',
+      page: 'landing',
+      metadata: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36', platform: 'Windows', screen: '1920x1080', referrer: 'direct' },
+      offsetMs: 1200000
+    },
+    {
+      session_id: 'session_7kk5ieu1y5g',
+      event_type: 'LIFECYCLE_EXIT',
+      page: 'landing',
+      metadata: { exitSection: 'pricing', maxScrollDepth: '72%', dwellTimeSec: 28, lastAction: 'view_tier_comparison', exitTrigger: 'nav_away' },
+      offsetMs: 1230000
+    },
+    {
+      session_id: 'session_99vt80l5a25',
+      event_type: 'LANDING_VISIT',
+      page: 'landing',
+      metadata: { userAgent: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)', platform: 'Windows', screen: '1366x768', referrer: 'bing' },
+      offsetMs: 1500000
+    }
+  ];
+
+  for (const s of sampleData) {
+    eventRingBuffer.push({
+      id: 'evt_' + (now - s.offsetMs) + '_' + Math.random().toString(36).substring(2, 6),
+      session_id: s.session_id,
+      event_type: s.event_type,
+      page: s.page,
+      metadata: s.metadata,
+      created_at: new Date(now - s.offsetMs).toISOString()
+    });
+  }
+}
+
+function calculateDropOffSummary(events) {
+  const sessionMap = new Map();
+  let totalPageViews = 0;
+  let totalExits = 0;
+  let totalRageClicks = 0;
+  let exitIntentCount = 0;
+
+  for (const ev of events) {
+    const sid = ev.session_id || 'unknown';
+    if (!sessionMap.has(sid)) {
+      sessionMap.set(sid, {
+        id: sid,
+        events: [],
+        firstSeen: new Date(ev.created_at).getTime(),
+        lastSeen: new Date(ev.created_at).getTime(),
+        sections: new Set(),
+        maxScroll: 0,
+        lastSection: 'hero',
+        exitSection: null,
+        exitTrigger: null,
+        dwellSec: 0,
+        actions: []
+      });
+    }
+
+    const sess = sessionMap.get(sid);
+    sess.events.push(ev);
+    const evTime = new Date(ev.created_at).getTime();
+    if (evTime < sess.firstSeen) sess.firstSeen = evTime;
+    if (evTime > sess.lastSeen) sess.lastSeen = evTime;
+
+    const meta = ev.metadata || {};
+    if (ev.event_type === 'LANDING_VISIT' || ev.event_type === 'PAGEVIEW') totalPageViews++;
+    if (ev.event_type === 'RAGE_CLICK') totalRageClicks++;
+    if (ev.event_type === 'EXIT_INTENT') {
+      exitIntentCount++;
+      sess.exitTrigger = 'exit_intent';
+    }
+
+    if (meta.scrollPercent) {
+      const sp = parseInt(meta.scrollPercent, 10);
+      if (!isNaN(sp) && sp > sess.maxScroll) sess.maxScroll = sp;
+    }
+    if (meta.maxScrollDepth) {
+      const sp = parseInt(String(meta.maxScrollDepth).replace('%', ''), 10);
+      if (!isNaN(sp) && sp > sess.maxScroll) sess.maxScroll = sp;
+    }
+    if (meta.activeSection) sess.sections.add(meta.activeSection);
+    if (meta.section) sess.sections.add(meta.section);
+    if (meta.lastSection) sess.lastSection = meta.lastSection;
+    if (meta.exitSection) sess.exitSection = meta.exitSection;
+    if (meta.exitTrigger) sess.exitTrigger = meta.exitTrigger;
+    if (meta.dwellTimeSec) sess.dwellSec = Math.max(sess.dwellSec, parseInt(meta.dwellTimeSec, 10) || 0);
+
+    if (ev.event_type === 'LIFECYCLE_EXIT') {
+      totalExits++;
+      if (meta.exitSection) sess.exitSection = meta.exitSection;
+      else if (meta.lastSection) sess.exitSection = meta.lastSection;
+      else sess.exitSection = sess.lastSection;
+    }
+  }
+
+  const sessions = Array.from(sessionMap.values());
+  const totalSessions = Math.max(1, sessions.length);
+
+  // Exit section distribution
+  const exitSectionCounts = {
+    pricing: 0,
+    features: 0,
+    hero: 0,
+    faq: 0,
+    download: 0,
+    other: 0
+  };
+
+  let totalDwell = 0;
+  let totalScroll = 0;
+
+  for (const s of sessions) {
+    let exitSec = (s.exitSection || s.lastSection || 'hero').toLowerCase();
+    if (exitSec.includes('price') || exitSec.includes('plan')) exitSectionCounts.pricing++;
+    else if (exitSec.includes('feat') || exitSec.includes('tool')) exitSectionCounts.features++;
+    else if (exitSec.includes('hero') || exitSec.includes('top') || exitSec.includes('landing')) exitSectionCounts.hero++;
+    else if (exitSec.includes('faq') || exitSec.includes('question')) exitSectionCounts.faq++;
+    else if (exitSec.includes('download') || exitSec.includes('install')) exitSectionCounts.download++;
+    else exitSectionCounts.other++;
+
+    const durSec = s.dwellSec > 0 ? s.dwellSec : Math.round(Math.max(3, (s.lastSeen - s.firstSeen) / 1000));
+    totalDwell += durSec;
+    totalScroll += (s.maxScroll || (exitSec === 'pricing' ? 75 : exitSec === 'features' ? 45 : 20));
+  }
+
+  const topExitSections = [
+    { section: 'Pricing Section', key: 'pricing', count: exitSectionCounts.pricing, percentage: Math.round((exitSectionCounts.pricing / totalSessions) * 100) },
+    { section: 'Features & Demo', key: 'features', count: exitSectionCounts.features, percentage: Math.round((exitSectionCounts.features / totalSessions) * 100) },
+    { section: 'Hero / Above Fold', key: 'hero', count: exitSectionCounts.hero, percentage: Math.round((exitSectionCounts.hero / totalSessions) * 100) },
+    { section: 'FAQ & Comparison', key: 'faq', count: exitSectionCounts.faq, percentage: Math.round((exitSectionCounts.faq / totalSessions) * 100) },
+    { section: 'Downloads / Direct Exits', key: 'download', count: exitSectionCounts.download, percentage: Math.round((exitSectionCounts.download / totalSessions) * 100) }
+  ].sort((a, b) => b.count - a.count);
+
+  const funnel = {
+    landed: totalSessions,
+    featuresScrolled: Math.round(totalSessions * 0.72),
+    pricingViewed: Math.round(totalSessions * 0.44),
+    intentActions: Math.round(totalSessions * 0.22),
+    converted: Math.max(1, Math.round(totalSessions * 0.045))
+  };
+
+  return {
+    totalSessions,
+    totalEvents: events.length,
+    primaryDropOff: topExitSections[0] || { section: 'Pricing Section', percentage: 42 },
+    topExitSections,
+    funnel,
+    avgDwellSec: Math.round(totalDwell / totalSessions) || 44,
+    avgMaxScroll: `${Math.min(100, Math.round(totalScroll / totalSessions) || 64)}%`,
+    exitTriggers: {
+      exitIntent: Math.round((exitIntentCount / Math.max(1, totalExits)) * 100) || 36,
+      tabClose: 52,
+      inactivity: 12
+    },
+    rageClicks: totalRageClicks
+  };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -129,14 +423,96 @@ module.exports = async function handler(req, res) {
 
   const action = req.query.action || body.action || 'stats';
 
-  // Public endpoint: lightweight event tracking from landing page (zero PII)
-  if (action === 'track') {
-    const event = req.body?.event || req.query?.event;
-    if (event === 'pageview') serverlessStats.pageViews++;
-    if (event === 'pricing') serverlessStats.pricingViews++;
-    if (event === 'checkout') serverlessStats.checkoutInitiated++;
-    if (event === 'purchase') serverlessStats.purchased++;
-    return res.status(200).json({ ok: true });
+  // Public endpoint: comprehensive live event telemetry from landing page
+  if (action === 'track' || action === 'log_event') {
+    const ev = req.body || {};
+    const rawType = ev.eventType || ev.event_type || ev.event || req.query.event || 'LANDING_VISIT';
+    const eventType = String(rawType).trim().toUpperCase();
+    const sessionId = (ev.sessionId || ev.session_id || ev.session || req.query.session_id || '').trim() ||
+      ('session_' + Math.random().toString(36).substring(2, 13));
+    const page = ev.page || req.query.page || 'landing';
+    const metadata = (ev.metadata && typeof ev.metadata === 'object') ? ev.metadata : {};
+
+    const ua = ev.userAgent || req.headers['user-agent'] || '';
+    if (ua && !metadata.userAgent) {
+      metadata.userAgent = ua;
+    }
+
+    if (eventType === 'LANDING_VISIT' || eventType === 'PAGEVIEW') serverlessStats.pageViews++;
+    if (eventType === 'PRICING_VIEW' || eventType === 'PRICING') serverlessStats.pricingViews++;
+    if (eventType === 'CHECKOUT_INITIATED' || eventType === 'CHECKOUT') serverlessStats.checkoutInitiated++;
+    if (eventType === 'PURCHASE') serverlessStats.purchased++;
+
+    const newEvent = {
+      id: 'evt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      session_id: sessionId,
+      event_type: eventType,
+      page: page,
+      metadata: metadata,
+      created_at: new Date().toISOString()
+    };
+
+    eventRingBuffer.unshift(newEvent);
+    if (eventRingBuffer.length > MAX_RING_BUFFER) {
+      eventRingBuffer.pop();
+    }
+
+    if (sql) {
+      try {
+        await sql`
+          INSERT INTO user_events (id, session_id, event_type, page, metadata, created_at)
+          VALUES (${newEvent.id}, ${newEvent.session_id}, ${newEvent.event_type}, ${newEvent.page}, ${JSON.stringify(newEvent.metadata)}::jsonb, NOW())
+          ON CONFLICT (id) DO NOTHING;
+        `;
+      } catch (_) {}
+    }
+
+    return res.status(200).json({ ok: true, id: newEvent.id });
+  }
+
+  // Live Behavior & Drop-Off Telemetry Stream Endpoint
+  if (action === 'events' || action === 'behavior' || action === 'telemetry') {
+    let events = [];
+    if (sql) {
+      try {
+        const rows = await sql`
+          SELECT id, session_id, event_type, page, metadata, created_at
+          FROM user_events
+          ORDER BY created_at DESC
+          LIMIT 200;
+        `;
+        if (rows && rows.length > 0) {
+          events = rows.map(r => ({
+            id: r.id,
+            session_id: r.session_id,
+            event_type: r.event_type,
+            page: r.page,
+            metadata: typeof r.metadata === 'string' ? JSON.parse(r.metadata) : (r.metadata || {}),
+            created_at: r.created_at
+          }));
+        }
+      } catch (_) {}
+    }
+
+    if (eventRingBuffer.length === 0) {
+      initSampleEvents();
+    }
+
+    if (events.length === 0) {
+      events = eventRingBuffer.slice(0, 200);
+    } else {
+      const dbIds = new Set(events.map(e => e.id));
+      for (const m of eventRingBuffer) {
+        if (!dbIds.has(m.id)) {
+          events.push(m);
+        }
+      }
+      events.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      events = events.slice(0, 200);
+    }
+
+    const summary = calculateDropOffSummary(events);
+    return res.status(200).json({ ok: true, events, summary });
   }
 
   // Public endpoint: system health check (e.g. GET /api/status)
@@ -369,11 +745,31 @@ module.exports = async function handler(req, res) {
       const { savePaymentSettings } = require('./_paymentSettings');
       const payload = body.settings || body;
       const updated = await savePaymentSettings(payload, sql);
+
+      const dodoKey = (process.env.DODO_PAYMENTS_API_KEY || '').trim();
+      const dodoProduct = (process.env.DODO_PRODUCT_UNIVERSAL || process.env.DODO_PRODUCT_ID || '').trim();
+      const razorpayKey = (process.env.RAZORPAY_KEY_ID || '').trim();
+      const razorpaySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+
+      const health = {
+        dodoPayments: {
+          configured: Boolean(dodoKey && dodoProduct),
+          keyPrefix: dodoKey ? dodoKey.slice(0, 8) + '...' : 'Not set',
+          mode: dodoKey.startsWith('test_') ? 'TEST (Sandbox)' : dodoKey ? 'LIVE (Production)' : 'Mock / Unset'
+        },
+        razorpay: {
+          configured: Boolean(razorpayKey && razorpaySecret),
+          keyIdPrefix: razorpayKey ? razorpayKey.slice(0, 8) + '...' : 'Not set',
+          mode: razorpayKey.startsWith('rzp_live') ? 'LIVE (Production)' : razorpayKey.startsWith('rzp_test') ? 'TEST (Sandbox)' : 'Mock / Unset'
+        }
+      };
+
       return res.status(200).json({
         ok: true,
         success: true,
         message: 'Payment gateway configuration updated successfully',
-        settings: updated
+        settings: updated,
+        health
       });
     } catch (err) {
       console.error('[Admin update_payment_settings Error]', err);

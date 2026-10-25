@@ -140,6 +140,22 @@ async function ensureSchema() {
       );
     `;
 
+    // 5. User Behavior Events Table (Live Telemetry & Drop-Off Tracking)
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_events (
+        id VARCHAR(64) PRIMARY KEY,
+        session_id VARCHAR(64) NOT NULL,
+        event_type VARCHAR(64) NOT NULL,
+        page VARCHAR(128) NOT NULL,
+        metadata JSONB,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `;
+    try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_user_events_session ON user_events (session_id);`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_user_events_created ON user_events (created_at DESC);`;
+    } catch (_) {}
+
     schemaInitialized = true;
     console.log('[Neon DB] Schema verification and setup successful.');
   } catch (err) {
