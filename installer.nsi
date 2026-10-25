@@ -54,7 +54,7 @@ Section "MainSection" SEC01
   ; Write registry keys for Windows Apps & Features
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\DropDial" "DisplayName" "DropDial"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\DropDial" "DisplayIcon" "$INSTDIR\DropDial.exe,0"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\DropDial" "DisplayVersion" "1.0.2.2"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\DropDial" "DisplayVersion" "1.0.2.3"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\DropDial" "Publisher" "DropDial"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\DropDial" "HelpLink" "https://dropdial.app"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\DropDial" "URLInfoAbout" "https://dropdial.app"
