@@ -63,6 +63,9 @@ fi
 
 BUILD_VERSION="${1:-${APP_VERSION:-${VERSION:-${GITHUB_REF_NAME:-}}}}"
 BUILD_VERSION="${BUILD_VERSION#v}"
+if [[ ! "$BUILD_VERSION" =~ ^[0-9]+(\.[0-9]+)* ]]; then
+    BUILD_VERSION="1.0.2"
+fi
 
 # 4. Copy Bundle Info & Icons
 echo "Packaging application bundle..."

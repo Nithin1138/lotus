@@ -6,11 +6,14 @@ $ErrorActionPreference = 'Stop'
 $taskRoot = $PSScriptRoot
 $taskOutput = Join-Path $taskRoot 'outputs/DropDial'
 
-if ([string]::IsNullOrWhiteSpace($Version) -and -not [string]::IsNullOrWhiteSpace($env:VERSION)) {
-    $Version = $env:VERSION
-}
-if ([string]::IsNullOrWhiteSpace($Version) -and -not [string]::IsNullOrWhiteSpace($env:GITHUB_REF_NAME)) {
-    $Version = $env:GITHUB_REF_NAME.TrimStart('v')
+if ([string]::IsNullOrWhiteSpace($Version) -or ($Version -notmatch '^\d+(\.\d+)*')) {
+    if (-not [string]::IsNullOrWhiteSpace($env:VERSION) -and ($env:VERSION -match '^\d+(\.\d+)*')) {
+        $Version = $env:VERSION.TrimStart('v')
+    } elseif (-not [string]::IsNullOrWhiteSpace($env:GITHUB_REF_NAME) -and ($env:GITHUB_REF_NAME -match '^v?\d+(\.\d+)*')) {
+        $Version = $env:GITHUB_REF_NAME.TrimStart('v')
+    } else {
+        $Version = "1.0.2.2"
+    }
 }
 
 if (-not $SkipRuntimeCheck) {
@@ -22,8 +25,8 @@ if (-not $SkipRuntimeCheck) {
 }
 
 $publishArgs = @('publish', (Join-Path $taskRoot 'work/DropDial/DropDial.csproj'), '-c', 'Release', '-r', 'win-x64', '--self-contained', 'true', '-o', $taskOutput, '--nologo')
-if (-not [string]::IsNullOrWhiteSpace($Version)) {
-    $cleanVer = $Version.TrimStart('v')
+$cleanVer = $Version.TrimStart('v')
+if ($cleanVer -match '^\d+(\.\d+){1,3}$') {
     $publishArgs += @("/p:Version=$cleanVer", "/p:AssemblyVersion=$cleanVer", "/p:FileVersion=$cleanVer")
 }
 
