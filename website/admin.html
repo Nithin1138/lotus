@@ -16,7 +16,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="/admin/admin.css?v=1.0.1.6">
+  <link rel="stylesheet" href="/admin/admin.css?v=1.0.2.3">
   <script>
     (function () {
       try {
@@ -151,6 +151,15 @@
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
           <span>Traffic</span>
+        </button>
+
+        <div class="nav-section-title">SYS &amp; TELEMETRY</div>
+        <button class="nav-tab" data-tab="events">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          <span>Events</span>
+          <span id="badge-events-count" class="nav-counter" style="background:rgba(13,148,136,0.18); color:#14b8a6; font-weight:700;">LIVE</span>
         </button>
 
         <div class="nav-section-title">INFRASTRUCTURE</div>
@@ -824,6 +833,198 @@
               </div>
             </div>
 
+          </div>
+
+        </section>
+
+        <!-- ==============================================
+             TAB: BEHAVIOR & DROP-OFF EVENT STREAMS
+             ============================================== -->
+        <section id="tab-events" class="tab-view">
+          
+          <!-- Drop-off & Exit Intelligence Hub -->
+          <div class="dropoff-intel-banner">
+            <div class="dropoff-intel-header">
+              <div class="dropoff-intel-title-wrap">
+                <span class="telemetry-pill-tag">LIVE TELEMETRY DASHBOARD</span>
+                <h2 class="dropoff-main-title">Behavior &amp; Drop-Off Intelligence</h2>
+                <p class="dropoff-main-sub">Real-time lifecycle tracking identifying exactly where, when, and why visitors leave before converting.</p>
+              </div>
+              <div class="dropoff-quick-stats">
+                <div class="dropoff-stat-chip danger">
+                  <span class="chip-label">Top Exit Section</span>
+                  <strong class="chip-value" id="stat-top-exit-section">Pricing (42%)</strong>
+                </div>
+                <div class="dropoff-stat-chip info">
+                  <span class="chip-label">Avg Dwell Before Exit</span>
+                  <strong class="chip-value" id="stat-avg-dwell">46s</strong>
+                </div>
+                <div class="dropoff-stat-chip warning">
+                  <span class="chip-label">Avg Exit Scroll Depth</span>
+                  <strong class="chip-value" id="stat-avg-scroll">64%</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Visual Funnel Drop-off Bar -->
+            <div class="dropoff-funnel-card">
+              <div class="funnel-card-header">
+                <h4 class="funnel-title">Conversion Funnel &amp; Loss Stages</h4>
+                <span class="funnel-sub">Session progression from initial landing to payment completion</span>
+              </div>
+              <div class="funnel-stages-row">
+                <div class="funnel-step">
+                  <div class="step-header">
+                    <span class="step-name">1. Landed</span>
+                    <span class="step-val" id="funnel-val-landed">100%</span>
+                  </div>
+                  <div class="step-progress-bar"><div class="step-bar-fill" style="width: 100%;"></div></div>
+                  <span class="step-meta" id="funnel-meta-landed">Total visits</span>
+                </div>
+                <div class="funnel-arrow">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  <span class="drop-badge danger" id="drop-badge-features">-28% drop</span>
+                </div>
+                <div class="funnel-step">
+                  <div class="step-header">
+                    <span class="step-name">2. Features Scrolled</span>
+                    <span class="step-val" id="funnel-val-features">72%</span>
+                  </div>
+                  <div class="step-progress-bar"><div class="step-bar-fill" style="width: 72%;"></div></div>
+                  <span class="step-meta" id="funnel-meta-features">Engaged visitors</span>
+                </div>
+                <div class="funnel-arrow">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  <span class="drop-badge danger" id="drop-badge-pricing">-28% drop</span>
+                </div>
+                <div class="funnel-step">
+                  <div class="step-header">
+                    <span class="step-name">3. Reached Pricing</span>
+                    <span class="step-val" id="funnel-val-pricing">44%</span>
+                  </div>
+                  <div class="step-progress-bar"><div class="step-bar-fill" style="width: 44%;"></div></div>
+                  <span class="step-meta" id="funnel-meta-pricing">Evaluating plans</span>
+                </div>
+                <div class="funnel-arrow">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  <span class="drop-badge warning" id="drop-badge-intent">-22% drop</span>
+                </div>
+                <div class="funnel-step">
+                  <div class="step-header">
+                    <span class="step-name">4. Action / Checkout</span>
+                    <span class="step-val" id="funnel-val-intent">22%</span>
+                  </div>
+                  <div class="step-progress-bar"><div class="step-bar-fill" style="width: 22%;"></div></div>
+                  <span class="step-meta" id="funnel-meta-intent">Downloads &amp; Buy clicks</span>
+                </div>
+                <div class="funnel-arrow">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  <span class="drop-badge success" id="drop-badge-conv">4.5% win</span>
+                </div>
+                <div class="funnel-step success">
+                  <div class="step-header">
+                    <span class="step-name">5. Converted</span>
+                    <span class="step-val" id="funnel-val-converted">4.5%</span>
+                  </div>
+                  <div class="step-progress-bar"><div class="step-bar-fill success" style="width: 20%;"></div></div>
+                  <span class="step-meta" id="funnel-meta-converted">Paid licenses</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Exit Breakdown & Diagnostics Grid -->
+            <div class="dropoff-details-grid">
+              <div class="dropoff-panel">
+                <h4 class="panel-subtitle-upper">WHERE USERS LEFT (DROP-OFF SECTIONS)</h4>
+                <div class="exit-sections-list" id="exit-sections-container">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+              <div class="dropoff-panel">
+                <h4 class="panel-subtitle-upper">EXIT TRIGGERS &amp; INTENT REASON</h4>
+                <div class="exit-triggers-list">
+                  <div class="trigger-item">
+                    <div class="trigger-name">
+                      <span class="trigger-icon red">✕</span>
+                      <span>Tab Close / Window Hidden</span>
+                    </div>
+                    <span class="trigger-pct" id="trigger-pct-close">52%</span>
+                  </div>
+                  <div class="trigger-item">
+                    <div class="trigger-name">
+                      <span class="trigger-icon amber">↗</span>
+                      <span>Exit Intent (Mouseout Heading to Close/Back)</span>
+                    </div>
+                    <span class="trigger-pct" id="trigger-pct-intent">36%</span>
+                  </div>
+                  <div class="trigger-item">
+                    <div class="trigger-name">
+                      <span class="trigger-icon gray">⏱</span>
+                      <span>Idle Inactivity Abandonment</span>
+                    </div>
+                    <span class="trigger-pct" id="trigger-pct-idle">12%</span>
+                  </div>
+                </div>
+                <div class="dropoff-takeaway-box" id="dropoff-takeaway-text">
+                  <strong>💡 Key Drop-Off Takeaway:</strong> 42% of visitors read through the Pricing section but exit without initiating checkout. Adding an exit-intent discount popup or displaying localized currency removes price hesitations.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- The Event Streams Card (Exact match with user screenshot) -->
+          <div class="behavior-streams-card">
+            <div class="behavior-card-header">
+              <div class="behavior-header-left">
+                <h3 class="behavior-card-title">User Behavior Event Streams</h3>
+                <p class="behavior-card-subtitle">High-throughput stream tracking dead clicks, rage clicks, scroll depth, and lifecycle exits.</p>
+              </div>
+              <div class="behavior-header-actions">
+                <div class="stream-filter-wrap">
+                  <select id="behavior-stream-filter" class="behavior-filter-control">
+                    <option value="all">All Events</option>
+                    <option value="exits">Exits &amp; Drop-offs (Where Users Left)</option>
+                    <option value="visits">Landing Visits</option>
+                    <option value="scrolls">Scroll Depth Milestones</option>
+                    <option value="pricing">Pricing &amp; Checkouts</option>
+                    <option value="rage">Rage &amp; Dead Clicks</option>
+                  </select>
+                </div>
+                <button id="btn-stream-live-toggle" class="btn btn-secondary btn-sm" title="Toggle automatic 5s live polling">
+                  <span class="live-dot-pulse"></span>
+                  <span id="stream-live-label">Live Stream</span>
+                </button>
+                <button id="btn-refresh-stream" class="btn btn-primary btn-sm">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6M1 20v-6h6"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                  </svg>
+                  <span>Refresh Stream</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="behavior-table-container">
+              <table class="behavior-table">
+                <thead>
+                  <tr>
+                    <th>TIMESTAMP</th>
+                    <th>SESSION ID</th>
+                    <th>EVENT TYPE</th>
+                    <th>PAGE</th>
+                    <th>METADATA</th>
+                  </tr>
+                </thead>
+                <tbody id="behavior-stream-tbody">
+                  <!-- Populated by admin.js -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="behavior-table-footer">
+              <span id="behavior-stream-count">Showing 0 events</span>
+              <span class="stream-realtime-badge"><span class="status-dot green"></span> Live Edge Telemetry</span>
+            </div>
           </div>
 
         </section>
@@ -2287,11 +2488,35 @@
         </div>
       </form>
     </div>
+  <!-- Event Metadata Inspector Modal -->
+  <div id="event-detail-modal" class="admin-modal-overlay" style="display: none;">
+    <div class="admin-modal-card" style="max-width: 680px;">
+      <div class="admin-modal-header">
+        <div>
+          <h3 id="modal-event-type-title">Event Inspection</h3>
+          <p id="modal-event-session-sub" style="font-size: 12px; color: var(--text-muted); margin-top: 2px; font-family: var(--font-mono);"></p>
+        </div>
+        <button type="button" id="close-event-modal-btn" class="modal-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px 24px;">
+        <div id="event-diagnosis-box" class="event-diagnosis-callout"></div>
+        <div style="margin-top: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Raw Event Telemetry</span>
+            <button type="button" id="copy-event-json-btn" class="btn btn-secondary btn-sm" style="padding: 3px 10px; font-size: 11px;">Copy JSON</button>
+          </div>
+          <pre id="modal-event-json-code" class="code-preview-block" style="max-height: 260px; overflow-y: auto;"></pre>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top: 0; padding: 14px 24px; border-top: 1px solid var(--border-subtle); background: var(--bg-card-inner);">
+        <button type="button" id="dismiss-event-modal-btn" class="btn btn-secondary" style="margin-left: auto;">Close Inspector</button>
+      </div>
+    </div>
   </div>
 
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
 
-  <script src="/admin/admin.js?v=1.0.1.6"></script>
+  <script src="/admin/admin.js?v=1.0.2.3"></script>
 </body>
 </html>
