@@ -20,32 +20,32 @@ let currentPricing = {
     label: 'India Standard'
   },
   USD: {
-    amount: 19,
-    subunits: 1900,
+    amount: 29,
+    subunits: 2900,
     symbol: '$',
-    display: '$19',
-    strikeAmount: 29,
-    strikeDisplay: '$29',
+    display: '$29',
+    strikeAmount: 39,
+    strikeDisplay: '$39',
     label: 'Global Standard'
   },
   strikethrough: {
     enabled: true,
     inrAmount: 1499,
-    usdAmount: 29,
+    usdAmount: 39,
     single: {
       enabled: true,
       inrAmount: 1199,
-      usdAmount: 24
+      usdAmount: 29
     },
     universal: {
       enabled: true,
       inrAmount: 1499,
-      usdAmount: 29
+      usdAmount: 39
     },
     team: {
       enabled: true,
-      inrAmount: 4999,
-      usdAmount: 99
+      inrAmount: 4499,
+      usdAmount: 119
     }
   },
   countdown: {
@@ -60,17 +60,17 @@ let currentPricing = {
   tiers: {
     single: {
       INR: { amount: 799, display: '₹799', strikeAmount: 1199, strikeDisplay: '₹1,199' },
-      USD: { amount: 15, display: '$15', strikeAmount: 24, strikeDisplay: '$24' },
+      USD: { amount: 19, display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
       strikeEnabled: true
     },
     universal: {
       INR: { amount: 999, display: '₹999', strikeAmount: 1499, strikeDisplay: '₹1,499' },
-      USD: { amount: 19, display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
+      USD: { amount: 29, display: '$29', strikeAmount: 39, strikeDisplay: '$39' },
       strikeEnabled: true
     },
     team: {
-      INR: { amount: 3499, display: '₹3,499', strikeAmount: 4999, strikeDisplay: '₹4,999' },
-      USD: { amount: 69, display: '$69', strikeAmount: 99, strikeDisplay: '$99' },
+      INR: { amount: 2999, display: '₹2,999', strikeAmount: 4499, strikeDisplay: '₹4,499' },
+      USD: { amount: 79, display: '$79', strikeAmount: 119, strikeDisplay: '$119' },
       strikeEnabled: true
     }
   },

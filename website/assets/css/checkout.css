@@ -51,6 +51,34 @@
 .cko-header-text { display: flex; flex-direction: column; gap: 1px; }
 .cko-title { font-size: 1.05rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; line-height: 1.2; }
 .cko-subtitle { font-size: 0.76rem; color: #64748b; font-weight: 500; }
+.cko-header-actions { display: flex; align-items: center; gap: 10px; }
+.cko-curr-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+}
+.cko-curr-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  line-height: 1;
+}
+.cko-curr-btn:hover { color: #fff; }
+.cko-curr-btn.active {
+  background: #ff6500;
+  color: #fff;
+  box-shadow: 0 1px 6px rgba(255, 101, 0, 0.35);
+}
 .cko-close-btn {
   width: 32px; height: 32px; border-radius: 8px;
   background: transparent; border: none; color: #64748b; cursor: pointer;

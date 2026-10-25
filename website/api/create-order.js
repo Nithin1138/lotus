@@ -47,15 +47,16 @@ module.exports = async function handler(req, res) {
       ? (body.tier || '').toLowerCase()
       : 'universal';
     const tierPricing = {
-      single: { INR: 79900, USD: 1500 },
-      universal: { INR: 99900, USD: 1900 },
-      team: { INR: 349900, USD: 6900 }
+      single: { INR: 79900, USD: 1900 },
+      universal: { INR: 99900, USD: 2900 },
+      team: { INR: 299900, USD: 7900 }
     };
 
+    const requestedCurrency = (body.currency || '').toUpperCase();
     const country = (body.country || req.headers['x-vercel-ip-country'] || req.headers['cf-ipcountry'] || '').trim().toUpperCase();
-    const isIndia = country === 'IN' || (body.currency || '').toUpperCase() === 'INR';
+    const isIndia = requestedCurrency ? (requestedCurrency === 'INR') : (country === 'IN');
     const currency = isIndia ? 'INR' : 'USD';
-    let basePricing = { INR: { subunits: 99900 }, USD: { subunits: 1900 } };
+    let basePricing = { INR: { subunits: 99900 }, USD: { subunits: 2900 } };
     try {
       const { getActivePricing } = require('./pricing');
       if (typeof getActivePricing === 'function') {

@@ -13,14 +13,14 @@
   // Currency configuration
   const PRICING = {
     INR: { code: 'INR', symbol: '₹', amount: 999, display: '₹999', strikeAmount: 1499, strikeDisplay: '₹1,499' },
-    USD: { code: 'USD', symbol: '$', amount: 19, display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
+    USD: { code: 'USD', symbol: '$', amount: 29, display: '$29', strikeAmount: 39, strikeDisplay: '$39' },
     strikethrough: {
       enabled: false,
       inrAmount: 1499,
-      usdAmount: 29,
-      single: { enabled: false, inrAmount: 1199, usdAmount: 24 },
-      universal: { enabled: false, inrAmount: 1499, usdAmount: 29 },
-      team: { enabled: false, inrAmount: 4999, usdAmount: 99 }
+      usdAmount: 39,
+      single: { enabled: false, inrAmount: 1199, usdAmount: 29 },
+      universal: { enabled: false, inrAmount: 1499, usdAmount: 39 },
+      team: { enabled: false, inrAmount: 4499, usdAmount: 119 }
     },
     countdown: {
       enabled: false,
@@ -46,7 +46,7 @@
       devices: "1 Device (Mac or Windows PC)",
       strikeEnabled: false,
       INR: { amount: 799, display: "₹799", strikeAmount: 1199, strikeDisplay: "₹1,199" },
-      USD: { amount: 15, display: "$15", strikeAmount: 22, strikeDisplay: "$22" },
+      USD: { amount: 19, display: "$19", strikeAmount: 29, strikeDisplay: "$29" },
       features: ["1 Device (Mac or Windows)", "Pay Once, Own Forever", "100% Offline & Private"]
     },
     universal: {
@@ -56,7 +56,7 @@
       devices: "Up to 3 Devices (Mac & PC)",
       strikeEnabled: false,
       INR: { amount: 999, display: "₹999", strikeAmount: 1499, strikeDisplay: "₹1,499" },
-      USD: { amount: 19, display: "$19", strikeAmount: 29, strikeDisplay: "$29" },
+      USD: { amount: 29, display: "$29", strikeAmount: 39, strikeDisplay: "$39" },
       features: ["3 Devices (Mac & Windows)", "Unlimited Batch & Pro Tools", "Lifetime Free Updates"]
     },
     team: {
@@ -65,8 +65,8 @@
       badge: "COMMERCIAL",
       devices: "Up to 10 Seats / Machines",
       strikeEnabled: false,
-      INR: { amount: 3499, display: "₹3,499", strikeAmount: 4999, strikeDisplay: "₹4,999" },
-      USD: { amount: 69, display: "$69", strikeAmount: 99, strikeDisplay: "$99" },
+      INR: { amount: 2999, display: "₹2,999", strikeAmount: 4499, strikeDisplay: "₹4,499" },
+      USD: { amount: 79, display: "$79", strikeAmount: 119, strikeDisplay: "$119" },
       features: ["Up to 10 Seats / Machines", "Commercial & Client Rights", "Priority Developer Support"]
     }
   };
@@ -100,6 +100,19 @@
    * Detects Indian timezone / locale immediately before network calls
    */
   function detectFastLocation() {
+    // 0. Highest priority: explicit URL search param (?currency=USD or ?country=US)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const qCurr = (urlParams.get('currency') || '').toUpperCase();
+      const qCountry = (urlParams.get('country') || '').toUpperCase();
+      if (qCurr === 'USD' || (qCountry && qCountry !== 'IN')) {
+        return { isIndia: false, country: qCountry || 'US', currency: 'USD' };
+      }
+      if (qCurr === 'INR' || qCountry === 'IN') {
+        return { isIndia: true, country: 'IN', currency: 'INR' };
+      }
+    } catch (_) {}
+
     // 1. Honor manual user selection if already saved
     const saved = getSavedCurrencyPreference();
     if (saved === 'INR') {
@@ -406,11 +419,16 @@
       activeTierStrikeEnabled = strikeEnabled && hasSavings;
     }
 
-    // 2. Region / Currency Switcher Buttons
+    // 2. Region / Currency Switcher Buttons (Landing Page + Modal)
     const inrBtn = document.getElementById('currency-btn-inr');
     const usdBtn = document.getElementById('currency-btn-usd');
     if (inrBtn) inrBtn.classList.toggle('active', isIndia);
     if (usdBtn) usdBtn.classList.toggle('active', !isIndia);
+
+    const mInrBtn = document.getElementById('modal-currency-inr');
+    const mUsdBtn = document.getElementById('modal-currency-usd');
+    if (mInrBtn) mInrBtn.classList.toggle('active', isIndia);
+    if (mUsdBtn) mUsdBtn.classList.toggle('active', !isIndia);
 
     // 3. Modal Elements
     if (priceDisplay) {
@@ -619,6 +637,23 @@
       }
     } catch (e) {}
 
+    // 1. URL search param override has highest priority
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const qCurr = (urlParams.get('currency') || '').toUpperCase();
+      const qCountry = (urlParams.get('country') || '').toUpperCase();
+      if (qCurr === 'USD' || (qCountry && qCountry !== 'IN')) {
+        setSavedCurrencyPreference('USD');
+        applyPricing(false, qCountry || 'US');
+        return;
+      }
+      if (qCurr === 'INR' || qCountry === 'IN') {
+        setSavedCurrencyPreference('INR');
+        applyPricing(true, 'IN');
+        return;
+      }
+    } catch (_) {}
+
     // 2. Check if user has an explicit currency override saved
     const savedPref = getSavedCurrencyPreference();
     if (savedPref) {
@@ -626,7 +661,7 @@
       return;
     }
 
-    // 3. Fetch Geo detection with timezone hints
+    // 3. Fetch Edge Geo detection (authoritative IP from Vercel / Cloudflare)
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
       const offset = new Date().getTimezoneOffset();
@@ -634,9 +669,10 @@
       if (res.ok) {
         const data = await res.json();
         if (data && typeof data.isIndia === 'boolean') {
-          // If server detects India OR client heuristic detected India, preserve India
-          const userIsIndia = data.isIndia || (offset === -330) || (tz.toLowerCase().includes('kolkata')) || (tz.toLowerCase().includes('calcutta'));
-          applyPricing(userIsIndia, userIsIndia ? 'IN' : (data.country || 'US'));
+          // If server says isIndia === true -> India (INR)
+          // If server says isIndia === false -> Outside India (USD)
+          const userIsIndia = data.isIndia === true;
+          applyPricing(userIsIndia, data.country || (userIsIndia ? 'IN' : 'US'));
           return;
         }
       }
@@ -646,8 +682,8 @@
         if (fallbackRes.ok) {
           const fallbackData = await fallbackRes.json();
           const country = (fallbackData.country || '').toUpperCase();
-          const userIsIndia = country === 'IN' || isIndia;
-          applyPricing(userIsIndia, userIsIndia ? 'IN' : country);
+          const userIsIndia = country === 'IN';
+          applyPricing(userIsIndia, country || (userIsIndia ? 'IN' : 'US'));
           return;
         }
       } catch (e2) {
@@ -788,9 +824,15 @@
               <span class="cko-subtitle">Lifetime License</span>
             </div>
           </div>
-          <button type="button" class="cko-close-btn" id="checkout-close" aria-label="Close checkout">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+          <div class="cko-header-actions">
+            <div class="cko-curr-toggle" role="radiogroup" aria-label="Currency">
+              <button type="button" class="cko-curr-btn" id="modal-currency-usd" title="Switch to USD ($)">$ USD</button>
+              <button type="button" class="cko-curr-btn" id="modal-currency-inr" title="Switch to INR (₹)">₹ INR</button>
+            </div>
+            <button type="button" class="cko-close-btn" id="checkout-close" aria-label="Close checkout">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
         </div>
 
         <!-- ── Body ── -->
@@ -803,18 +845,18 @@
             <div class="cko-tier-selector" id="checkout-tier-selector">
               <button type="button" class="cko-tier-btn" data-tier-choice="single">
                 <span class="cko-tb-title">Single</span>
-                <span class="cko-tb-price" id="cko-tb-single-price">$15</span>
+                <span class="cko-tb-price" id="cko-tb-single-price">$19</span>
                 <span class="cko-tb-sub">1 Mac or PC</span>
               </button>
               <button type="button" class="cko-tier-btn active" data-tier-choice="universal">
                 <span class="cko-tb-badge">POPULAR</span>
                 <span class="cko-tb-title">Universal</span>
-                <span class="cko-tb-price" id="cko-tb-universal-price">$19</span>
+                <span class="cko-tb-price" id="cko-tb-universal-price">$29</span>
                 <span class="cko-tb-sub">3 Devices</span>
               </button>
               <button type="button" class="cko-tier-btn" data-tier-choice="team">
                 <span class="cko-tb-title">Team</span>
-                <span class="cko-tb-price" id="cko-tb-team-price">$69</span>
+                <span class="cko-tb-price" id="cko-tb-team-price">$79</span>
                 <span class="cko-tb-sub">10 Seats</span>
               </button>
             </div>
@@ -1016,15 +1058,17 @@
       }
     });
 
-    // Currency Switcher Buttons
-    document.getElementById('currency-btn-inr')?.addEventListener('click', function () {
-      setSavedCurrencyPreference('INR');
-      applyPricing(true, 'IN');
-    });
-    document.getElementById('currency-btn-usd')?.addEventListener('click', function () {
-      setSavedCurrencyPreference('USD');
-      applyPricing(false, 'US');
-    });
+    // Currency Switcher Buttons (Landing Page + Modal)
+    function switchCurrency(targetCurr) {
+      const isInd = targetCurr === 'INR';
+      setSavedCurrencyPreference(targetCurr);
+      applyPricing(isInd, isInd ? 'IN' : 'US');
+    }
+
+    document.getElementById('currency-btn-inr')?.addEventListener('click', () => switchCurrency('INR'));
+    document.getElementById('currency-btn-usd')?.addEventListener('click', () => switchCurrency('USD'));
+    document.getElementById('modal-currency-inr')?.addEventListener('click', () => switchCurrency('INR'));
+    document.getElementById('modal-currency-usd')?.addEventListener('click', () => switchCurrency('USD'));
 
     // Tier Selector inside Modal
     document.querySelectorAll('[data-tier-choice]').forEach(function (btn) {

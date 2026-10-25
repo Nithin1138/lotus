@@ -12,17 +12,33 @@ module.exports = async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Detect country from Vercel / Cloudflare edge headers
-  const countryHeader = req.headers['x-vercel-ip-country'] ||
+  // 1. Check for manual testing or explicit query parameters (?currency=USD or ?country=US)
+  const qCountry = (req.query?.country || '').trim().toUpperCase();
+  const qCurrency = (req.query?.currency || '').trim().toUpperCase();
+
+  // 2. Detect country from Vercel / Cloudflare edge headers
+  const countryHeader = (req.headers['x-vercel-ip-country'] ||
                         req.headers['cf-ipcountry'] ||
                         req.headers['x-country-code'] ||
-                        '';
+                        '').trim().toUpperCase();
 
-  let country = countryHeader.trim().toUpperCase();
-  let isIndia = country === 'IN';
+  let country = qCountry || countryHeader;
+  let isIndia = false;
 
-  // Fallback heuristic if edge country header is unavailable or local
-  if (!isIndia && (!country || country === 'XX' || country === 'T1' || country === 'UNKNOWN' || country === 'US')) {
+  if (qCurrency === 'USD' || (qCountry && qCountry !== 'IN')) {
+    isIndia = false;
+    country = qCountry || (countryHeader && countryHeader !== 'IN' ? countryHeader : 'US');
+  } else if (qCurrency === 'INR' || qCountry === 'IN') {
+    isIndia = true;
+    country = 'IN';
+  } else if (countryHeader && countryHeader !== 'XX' && countryHeader !== 'T1' && countryHeader !== 'UNKNOWN') {
+    // Authoritative edge detection from Vercel / Cloudflare
+    // If the edge header is IN, user is in India.
+    // If edge header is ANY other country (US, GB, CA, DE, AU, etc.), user is OUTSIDE India!
+    isIndia = (countryHeader === 'IN');
+    country = countryHeader;
+  } else {
+    // Only if edge header is completely absent (e.g. localhost dev)
     const tz = (req.query?.tz || '').toLowerCase();
     const offset = req.query?.offset;
     const acceptLang = (req.headers['accept-language'] || '').toLowerCase();
@@ -30,17 +46,19 @@ module.exports = async function handler(req, res) {
     const tzIsIndia = tz.includes('kolkata') || tz.includes('calcutta') || offset === '-330' || offset === -330;
     const langIsIndia = acceptLang.includes('en-in') || acceptLang.includes('hi-in') || acceptLang.includes('hi,');
 
-    // If client timezone or locale clearly denotes India, set isIndia to true
     if (tzIsIndia || langIsIndia) {
       isIndia = true;
       country = 'IN';
+    } else {
+      isIndia = false;
+      country = 'US';
     }
   }
 
   let currentPricing = {
     INR: { amount: 999, symbol: '₹', display: '₹999', strikeAmount: 1499, strikeDisplay: '₹1,499' },
-    USD: { amount: 19, symbol: '$', display: '$19', strikeAmount: 29, strikeDisplay: '$29' },
-    strikethrough: { enabled: true, inrAmount: 1499, usdAmount: 29 },
+    USD: { amount: 29, symbol: '$', display: '$29', strikeAmount: 39, strikeDisplay: '$39' },
+    strikethrough: { enabled: true, inrAmount: 1499, usdAmount: 39 },
     countdown: { enabled: true, value: 24, unit: 'hours', discountPercent: 10, label: 'First 24-Hours Deal: 10% Off All Plans with code FIRST24' }
   };
 
