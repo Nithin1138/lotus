@@ -701,12 +701,46 @@
           setTimeout(() => openModal(selectedTier), 350);
         }
       }
-      if (urlParams.get('payment_status') === 'success') {
+      const dodoPaymentId = urlParams.get('payment_id');
+      const dodoStatus = (urlParams.get('status') || urlParams.get('payment_status') || '').toLowerCase();
+      if ((dodoPaymentId || dodoStatus === 'succeeded' || dodoStatus === 'success') && !window._dd_return_handled) {
+        window._dd_return_handled = true;
         const returnEmail = urlParams.get('email') || '';
-        const returnTier = urlParams.get('tier') || 'universal';
-        setTimeout(function () {
+        const returnTier = (urlParams.get('tier') || 'universal').toLowerCase();
+        setTimeout(async function () {
           openModal(returnTier);
-          showSuccess('Your DropDial ' + (TIERS[returnTier]?.name || 'Pro') + ' license has been generated and dispatched to ' + (returnEmail || 'your email') + '! Please check your inbox (and spam/promotions folder).', returnEmail);
+          if (formView && successView) {
+            formView.style.display = 'none';
+            successView.style.display = 'block';
+          }
+          if (licenseKeyDisplay) {
+            licenseKeyDisplay.value = 'Generating and verifying your license key…';
+          }
+          if (successEmailText && returnEmail) {
+            successEmailText.textContent = returnEmail;
+          }
+
+          try {
+            const vRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                gateway: 'dodo',
+                payment_id: dodoPaymentId || 'dodo_return',
+                email: returnEmail,
+                tier: returnTier
+              })
+            });
+            const vData = await vRes.json();
+            if (vData.success && vData.licenseKey) {
+              showSuccess(vData.licenseKey, vData.email || returnEmail);
+            } else {
+              showSuccess('Your DropDial ' + (TIERS[returnTier]?.name || 'Pro') + ' license has been generated and dispatched to ' + (returnEmail || 'your email') + '! Please check your inbox (and spam/promotions folder).', returnEmail);
+            }
+          } catch (vErr) {
+            console.warn('[Dodo Verification Error]', vErr);
+            showSuccess('Your DropDial ' + (TIERS[returnTier]?.name || 'Pro') + ' license has been generated and dispatched to ' + (returnEmail || 'your email') + '! Please check your inbox (and spam/promotions folder).', returnEmail);
+          }
         }, 300);
       }
     } catch (_) {}
@@ -1253,29 +1287,9 @@
 
       // Handle Dodo Payments (Merchant of Record: Apple Pay, Cards, Global Tax Handled)
       if (orderData.gateway === 'dodo' || orderData.checkoutUrl) {
-        payBtn.innerHTML = `<span>Opening Secure Checkout…</span>`;
-        if (window.DodoPaymentsCheckout && window.DodoPaymentsCheckout.DodoPayments) {
-          try {
-            window.DodoPaymentsCheckout.DodoPayments.Initialize({
-              mode: orderData.sandbox ? 'test' : 'live',
-              displayType: 'overlay',
-              onEvent: function (event) {
-                if (event && (event.type === 'checkout.succeeded' || event.type === 'payment.succeeded')) {
-                  showSuccess('Dispatched to ' + email + '! Check your inbox shortly.', email);
-                }
-              }
-            });
-            window.DodoPaymentsCheckout.DodoPayments.Checkout.open({
-              checkoutUrl: orderData.checkoutUrl
-            });
-            payBtn.disabled = false;
-            payBtn.innerHTML = originalBtnText;
-            return;
-          } catch (overlayErr) {
-            console.warn('[Dodo Overlay Checkout fallback to redirect]', overlayErr);
-          }
-        }
-        // Direct redirect fallback
+        payBtn.innerHTML = `<span>Redirecting to Secure Checkout…</span>`;
+        payBtn.disabled = true;
+        // Direct top-level navigation: ensures Apple Pay, Google Pay work seamlessly and prevents iframe SAMEORIGIN crash
         window.location.href = orderData.checkoutUrl;
         return;
       }

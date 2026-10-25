@@ -115,10 +115,12 @@ module.exports = async function handler(req, res) {
     };
     const productId = productMap[tier] || process.env.DODO_PRODUCT_ID;
 
-    // Determine host return URL
-    const host = req.headers['x-forwarded-host'] || req.headers.host || 'dropdial.app';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const returnUrl = `${protocol}://${host}/?payment_status=success&session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(email)}&tier=${tier}`;
+    // Determine host return URL (avoid 307 apex redirects on return)
+    const reqHost = req.headers['x-forwarded-host'] || req.headers.host || '';
+    const isLocal = reqHost.includes('localhost') || reqHost.includes('127.0.0.1');
+    const host = isLocal ? reqHost : 'www.dropdial.app';
+    const protocol = isLocal ? 'http' : 'https';
+    const returnUrl = `${protocol}://${host}/?payment_status=success&tier=${tier}&email=${encodeURIComponent(email)}`;
 
     // If API key is missing, return test sandbox response with helpful configuration note
     if (!apiKey || !productId) {
