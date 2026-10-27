@@ -327,7 +327,6 @@ internal sealed class Resident : IDisposable
     private readonly System.Drawing.Icon trayIcon;
     private readonly Channel<QueuedJob> queue = Channel.CreateBounded<QueuedJob>(new BoundedChannelOptions(16) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
     private readonly CancellationTokenSource stopping = new();
-    private readonly DragShortcutTracker dragShortcuts = new(Native.GetSystemMetrics(68), Native.GetSystemMetrics(69));
     private bool f8, f9, f10, escape, mouse, ctrl, shift, alt, altSpacePressed, ctrlShiftLPressed, ctrlShiftSpacePressed;
     private DateTime activated = DateTime.MinValue;
     private string? lastOutput;
@@ -467,7 +466,7 @@ internal sealed class Resident : IDisposable
         // can switch the window off; they still get the tray notification.
         if (startupLaunch) { /* Sign-in launches stay quiet. */ }
         else if (Settings.GetBool(WelcomeWindow.HideAtStartKey, false))
-            Notify(L.T("DropDial is running"), L.T("Drag a file + Shift: convert. Ctrl+Shift: tools. F8/F9 also work while dragging."));
+            Notify(L.T("DropDial is running"), L.T("Press Alt+Space, F8, F9, or F10 to summon the wheel at any time."));
         else
             ShowWelcome();
         WatchForSecondLaunch(showRequest);
@@ -549,21 +548,30 @@ internal sealed class Resident : IDisposable
                     // 1. Alt + Space (Global shortcut to toggle DropDial)
                     if (vk == 0x20 && isAlt && !isCtrl && !isShift && !isWin)
                     {
-                        app.Dispatcher.InvokeAsync(() => ToggleWheel());
+                        if (Native.Down(1))
+                            app.Dispatcher.InvokeAsync(() => Activate(WheelMode.Convert, "DragHotkey", true));
+                        else
+                            app.Dispatcher.InvokeAsync(() => ToggleWheel());
                         return (IntPtr)1; // Consume so default Windows system menu does not open
                     }
 
                     // 2. Ctrl + Shift + D or Ctrl + Shift + L or Win + Shift + L
                     if ((vk == 0x44 || vk == 0x4C) && ((isCtrl && isShift && !isAlt && !isWin) || (isWin && isShift && !isCtrl && !isAlt)))
                     {
-                        app.Dispatcher.InvokeAsync(() => ToggleWheel());
+                        if (Native.Down(1))
+                            app.Dispatcher.InvokeAsync(() => Activate(WheelMode.Convert, "DragHotkey", true));
+                        else
+                            app.Dispatcher.InvokeAsync(() => ToggleWheel());
                         return (IntPtr)1;
                     }
 
                     // 3. Ctrl + Shift + Space
                     if (vk == 0x20 && isCtrl && isShift && !isAlt && !isWin)
                     {
-                        app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Tools));
+                        if (Native.Down(1))
+                            app.Dispatcher.InvokeAsync(() => Activate(WheelMode.Tools, "DragHotkey", true));
+                        else
+                            app.Dispatcher.InvokeAsync(() => ToggleWheel(WheelMode.Tools));
                         return (IntPtr)1;
                     }
 
@@ -937,19 +945,6 @@ internal sealed class Resident : IDisposable
         bool nextCtrlShiftL = nextCtrlShift && (nextL || nextD);
 
         Native.GetCursorPos(out var cursor);
-        var request = dragShortcuts.Update(nextMouse, nextShift, nextCtrl, nextAlt, cursor.X, cursor.Y, true);
-        if (nextEscape && !escape)
-            dragShortcuts.Cancel();
-        else if (request != DragMenuRequest.None)
-        {
-            WheelMode m = request switch
-            {
-                DragMenuRequest.Actions => WheelMode.Actions,
-                DragMenuRequest.Tools => WheelMode.Tools,
-                _ => WheelMode.Convert
-            };
-            Activate(m, "DragModifier", true);
-        }
 
         // Mode switching when wheel is already visible:
         // Pressing Ctrl switches to Tools mode, Shift to Convert, Alt to Actions
@@ -999,11 +994,26 @@ internal sealed class Resident : IDisposable
 
         // Keyboard hotkeys (fallback when RegisterHotKey was unhandled or intercepted):
         if (nextAltSpace && !altSpacePressed)
-            ToggleWheel();
+        {
+            if (nextMouse)
+                Activate(WheelMode.Convert, "DragHotkey", true);
+            else
+                ToggleWheel();
+        }
         if (nextCtrlShiftSpace && !ctrlShiftSpacePressed)
-            ToggleWheel(WheelMode.Tools);
+        {
+            if (nextMouse)
+                Activate(WheelMode.Tools, "DragHotkey", true);
+            else
+                ToggleWheel(WheelMode.Tools);
+        }
         if (nextCtrlShiftL && !ctrlShiftLPressed)
-            ToggleWheel();
+        {
+            if (nextMouse)
+                Activate(WheelMode.Convert, "DragHotkey", true);
+            else
+                ToggleWheel();
+        }
 
         altSpacePressed = nextAltSpace;
         ctrlShiftSpacePressed = nextCtrlShiftSpace;

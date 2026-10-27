@@ -167,9 +167,9 @@ internal sealed class WelcomeWindow : Window
         var guideContent = new StackPanel();
 
         var stepsList = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
-        stepsList.Children.Add(Step(1, L.T("Drag files"), L.T("Select any files on your Desktop or File Explorer and drag them.")));
-        stepsList.Children.Add(Step(2, L.T("Press Shift"), L.T("Hold Shift for formats, Ctrl for tools, or Alt for shelf actions.")));
-        stepsList.Children.Add(Step(3, L.T("Release to convert"), L.T("Drop on any slice — converted files save right next to originals.")));
+        stepsList.Children.Add(Step(1, L.T("Select files"), L.T("Select any files on your Desktop or in File Explorer.")));
+        stepsList.Children.Add(Step(2, L.T("Press Shortcut"), L.T("Press Alt+Space or F8 for formats, F9 for tools, F10 for actions.")));
+        stepsList.Children.Add(Step(3, L.T("Pick and run"), L.T("Click or drop on any slice — converted files save right next to originals.")));
         guideContent.Children.Add(stepsList);
 
         // Quick Action Buttons
