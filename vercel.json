@@ -4,17 +4,27 @@
   "redirects": [
     {
       "source": "/downloads/DropDial-Windows-Update.zip",
-      "destination": "/downloads/DropDial-Windows-x64.zip",
+      "destination": "https://github.com/Nithin1138/lotus/releases/latest/download/DropDial-Windows-Update.zip",
+      "permanent": false
+    },
+    {
+      "source": "/downloads/DropDial-Windows-x64.zip",
+      "destination": "https://github.com/Nithin1138/lotus/releases/latest/download/DropDial-Windows-x64.zip",
+      "permanent": false
+    },
+    {
+      "source": "/downloads/DropDial-Setup.exe",
+      "destination": "https://github.com/Nithin1138/lotus/releases/latest/download/DropDial-Setup.exe",
       "permanent": false
     },
     {
       "source": "/download/win",
-      "destination": "/downloads/DropDial-Setup.exe",
+      "destination": "https://github.com/Nithin1138/lotus/releases/latest/download/DropDial-Setup.exe",
       "permanent": false
     },
     {
       "source": "/download/windows",
-      "destination": "/downloads/DropDial-Setup.exe",
+      "destination": "https://github.com/Nithin1138/lotus/releases/latest/download/DropDial-Setup.exe",
       "permanent": false
     },
     {

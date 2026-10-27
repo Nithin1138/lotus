@@ -352,12 +352,12 @@
 
   // Native Releases for macOS and Windows
   const releaseWin = {
-    tag: "v1.0.2.3",
+    tag: "v1.0.2.4",
     size: "90 MB",
     url: "/downloads/DropDial-Setup.exe"
   };
   const releaseMac = {
-    tag: "v1.0.2.3",
+    tag: "v1.0.2.4",
     size: "4.2 MB",
     url: "/downloads/DropDial.dmg"
   };
@@ -550,7 +550,7 @@
       if (!data) return;
 
       const latestTag = data.tag_name || data.version || data.latest_version;
-      let displayTag = "v1.0.2.3";
+      let displayTag = "v1.0.2.4";
       if (latestTag) {
         let cleanTag = String(latestTag).trim();
         displayTag = cleanTag.toLowerCase().startsWith('v') ? cleanTag : `v${cleanTag}`;
@@ -588,7 +588,7 @@
       const macZip = data.assets.find(a => a.name.toLowerCase().endsWith(".zip") && a.name.toLowerCase().includes("mac"));
       const macAsset = macDmg || macZip;
 
-      const activeTag = displayTag || "v1.0.2.3";
+      const activeTag = displayTag || "v1.0.2.4";
 
       const formatSize = (bytes) => {
         if (!bytes || isNaN(bytes)) return "";

@@ -169,7 +169,7 @@ function initSampleEvents() {
       session_id: 'session_xd3bsus4gu9',
       event_type: 'DOWNLOAD_CLICK',
       page: 'landing',
-      metadata: { platform: 'Windows', binary: 'DropDial-Setup.exe', targetVersion: 'v1.0.2.3', url: '/downloads/DropDial-Setup.exe' },
+      metadata: { platform: 'Windows', binary: 'DropDial-Setup.exe', targetVersion: 'v1.0.2.4', url: '/downloads/DropDial-Setup.exe' },
       offsetMs: 410000
     },
     {
@@ -939,7 +939,7 @@ module.exports = async function handler(req, res) {
     const repo = process.env.GITHUB_REPO || 'lotus';
 
     if (!ghToken) {
-      let currentVersion = '1.0.2.3';
+      let currentVersion = '1.0.2.4';
       try {
         const { getDb, ensureSchema } = require('./_db');
         const sql = getDb();

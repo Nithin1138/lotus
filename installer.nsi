@@ -1,7 +1,7 @@
 !include "MUI2.nsh"
 
 !ifndef APP_VERSION
-  !define APP_VERSION "1.0.2.3"
+  !define APP_VERSION "1.0.2.4"
 !endif
 
 Name "DropDial"

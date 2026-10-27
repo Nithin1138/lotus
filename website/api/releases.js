@@ -165,7 +165,7 @@ module.exports = async function handler(req, res) {
   const reqHost = (req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
   const baseUrl = reqHost.includes('www.dropdial.app') ? 'https://www.dropdial.app' : 'https://dropdial.app';
 
-  // 1. Download Mode: prioritize dropdial.app direct hosted assets for 100% uptime
+  // 1. Download Mode: redirect to correct assets
   if (downloadTarget) {
     const lower = downloadTarget.toLowerCase();
     if (lower.includes('.dmg')) {
@@ -177,27 +177,28 @@ module.exports = async function handler(req, res) {
       return res.end();
     }
     if (lower.includes('update')) {
-      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Windows-x64.zip` });
+      res.writeHead(302, { 'Location': `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download/DropDial-Windows-Update.zip` });
       return res.end();
     }
     if (lower.includes('.zip') && (lower.includes('windows') || lower.includes('win'))) {
-      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Windows-x64.zip` });
+      res.writeHead(302, { 'Location': `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download/DropDial-Windows-x64.zip` });
       return res.end();
     }
     if (lower.includes('setup') || lower.includes('windows') || lower.includes('win') || lower.endsWith('.exe')) {
-      res.writeHead(302, { 'Location': `${baseUrl}/downloads/DropDial-Setup.exe` });
+      res.writeHead(302, { 'Location': `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download/DropDial-Setup.exe` });
       return res.end();
     }
   }
 
-  // Canonical DropDial self-hosted assets list (zero GitHub dependency)
+  // Canonical DropDial assets list
+  const githubLatestBase = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download`;
   const canonicalAssets = [
     {
       id: 1,
       name: 'DropDial-Setup.exe',
       size: 69516161,
       content_type: 'application/x-msdownload',
-      browser_download_url: `${baseUrl}/downloads/DropDial-Setup.exe`
+      browser_download_url: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download/DropDial-Setup.exe`
     },
     {
       id: 2,
@@ -218,21 +219,21 @@ module.exports = async function handler(req, res) {
       name: 'DropDial-Windows-x64.zip',
       size: 262569028,
       content_type: 'application/zip',
-      browser_download_url: `${baseUrl}/downloads/DropDial-Windows-x64.zip`
+      browser_download_url: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download/DropDial-Windows-x64.zip`
     },
     {
       id: 5,
       name: 'DropDial-Windows-Update.zip',
       size: 96049041,
       content_type: 'application/zip',
-      browser_download_url: `${baseUrl}/downloads/DropDial-Windows-x64.zip`
+      browser_download_url: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download/DropDial-Windows-Update.zip`
     },
     {
       id: 6,
       name: 'DropDial.exe',
       size: 208896,
       content_type: 'application/x-msdownload',
-      browser_download_url: `${baseUrl}/downloads/DropDial.exe`
+      browser_download_url: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download/DropDial.exe`
     }
   ];
 
@@ -247,7 +248,7 @@ module.exports = async function handler(req, res) {
               name: a.name,
               size: a.size,
               content_type: a.content_type || 'application/octet-stream',
-              browser_download_url: `${baseUrl}/downloads/${a.name}`
+              browser_download_url: a.browser_download_url || `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/${release.tag_name}/${a.name}`
             }))
           : canonicalAssets;
 
@@ -278,7 +279,7 @@ module.exports = async function handler(req, res) {
   }
 
   // Check if Neon DB has a latest_release saved by admin via 2-step verification
-  let activeTag = '1.0.2.3';
+  let activeTag = '1.0.2.4';
   try {
     const { getDb, ensureSchema } = require('./_db');
     const sql = getDb();

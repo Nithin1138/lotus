@@ -91,7 +91,7 @@ internal static class UpdateManager
     public static string CurrentVersion =>
         FormatVersion(typeof(UpdateManager).Assembly.GetName().Version is { } v
             ? (v.Revision > 0 ? $"{v.Major}.{v.Minor}.{v.Build}.{v.Revision}" : $"{v.Major}.{v.Minor}.{v.Build}")
-            : "1.0.2.3");
+            : "1.0.2.4");
 
     public static ReleaseInfo? AvailableUpdate { get; private set; }
     public static event Action? UpdateStatusChanged;
@@ -267,17 +267,6 @@ internal static class UpdateManager
                     downloadUrl = exeUrl;
                     isZip = false;
                 }
-            }
-
-            if (!string.IsNullOrEmpty(downloadUrl) && downloadUrl.Contains("github.com", StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    var fileName = Path.GetFileName(new Uri(downloadUrl).AbsolutePath);
-                    if (!string.IsNullOrEmpty(fileName))
-                        downloadUrl = $"https://dropdial.app/downloads/{fileName}";
-                }
-                catch { }
             }
 
             var release = new ReleaseInfo
@@ -535,19 +524,17 @@ internal static class UpdateManager
             if (!string.IsNullOrEmpty(primaryUrl))
             {
                 downloadUrls.Add(primaryUrl);
-                if (primaryUrl.Contains("www.dropdial.app"))
-                    downloadUrls.Add(primaryUrl.Replace("www.dropdial.app", "dropdial.app"));
-                else if (primaryUrl.Contains("dropdial.app"))
-                    downloadUrls.Add(primaryUrl.Replace("dropdial.app", "www.dropdial.app"));
             }
-            downloadUrls.Add($"https://dropdial.app/downloads/{fileName}");
-            downloadUrls.Add($"https://www.dropdial.app/downloads/{fileName}");
-            downloadUrls.Add($"https://dropdial.app/api/releases?download={fileName}");
-            downloadUrls.Add($"https://www.dropdial.app/api/releases?download={fileName}");
-            downloadUrls.Add("https://dropdial.app/downloads/DropDial-Windows-x64.zip");
-            downloadUrls.Add("https://www.dropdial.app/downloads/DropDial-Windows-x64.zip");
-            downloadUrls.Add($"https://github.com/Nithin1138/lotus/releases/download/{release.TagName}/{fileName}");
-            downloadUrls.Add($"https://github.com/Nithin1138/lotus/releases/latest/download/{fileName}");
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                if (!string.IsNullOrEmpty(release.TagName))
+                {
+                    downloadUrls.Add($"https://github.com/Nithin1138/lotus/releases/download/{release.TagName}/{fileName}");
+                }
+                downloadUrls.Add($"https://github.com/Nithin1138/lotus/releases/latest/download/{fileName}");
+                downloadUrls.Add($"https://dropdial.app/api/releases?download={fileName}");
+                downloadUrls.Add($"https://dropdial.app/downloads/{fileName}");
+            }
 
             HttpResponseMessage? response = null;
             HttpClient? activeClient = null;

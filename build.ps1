@@ -12,7 +12,7 @@ if ([string]::IsNullOrWhiteSpace($Version) -or ($Version -notmatch '^\d+(\.\d+)*
     } elseif (-not [string]::IsNullOrWhiteSpace($env:GITHUB_REF_NAME) -and ($env:GITHUB_REF_NAME -match '^v?\d+(\.\d+)*')) {
         $Version = $env:GITHUB_REF_NAME.TrimStart('v')
     } else {
-        $Version = "1.0.2.3"
+        $Version = "1.0.2.4"
     }
 }
 
