@@ -374,7 +374,7 @@ internal static class Checks
             {
                 var window = new WelcomeWindow();
                 var english = Texts(window);
-                Require(english.Contains("Welcome to DropDial") && english.Contains("Drag files") && english.Contains("Press Shift") && english.Contains("Got it"));
+                Require(english.Contains("Welcome to DropDial") && (english.Contains("Select files") || english.Contains("Drag files")) && (english.Contains("Press Shortcut") || english.Contains("Press Shift")) && english.Contains("Got it"));
                 Require(english.Any(t => t.Contains("notification area")) && english.Any(t => t.Contains("never connects to the internet")));
                 var box = FindAll<CheckBox>(window).Single(c => Equals(c.Content, L.T("Don't show this window when DropDial starts")));
                 Require(box.IsChecked == false);
