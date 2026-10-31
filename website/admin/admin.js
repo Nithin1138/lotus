@@ -481,15 +481,18 @@
     document.getElementById('kpi-conversion-rate').textContent = `${convRate}% Conv`;
     document.getElementById('kpi-checkout-stats').textContent = `${state.stats.checkouts || 0} Checkouts • ${completedPurchases} Paid`;
 
-    // Funnel Steps
+    // Funnel Steps (100% Real metrics)
+    const pricingCount = state.stats.pricingViews || 0;
+    const checkoutCount = state.stats.checkouts || 0;
+
     document.getElementById('fnl-visits').textContent = totalViews.toLocaleString();
-    document.getElementById('fnl-pricing').textContent = (state.stats.pricingViews || Math.round(totalViews * 0.4)).toLocaleString();
-    document.getElementById('fnl-checkout').textContent = (state.stats.checkouts || 0).toLocaleString();
+    document.getElementById('fnl-pricing').textContent = pricingCount.toLocaleString();
+    document.getElementById('fnl-checkout').textContent = checkoutCount.toLocaleString();
     document.getElementById('fnl-completed').textContent = completedPurchases.toLocaleString();
     document.getElementById('fnl-final-conv').textContent = `${convRate}%`;
 
-    const pricingRate = totalViews > 0 ? Math.round(((state.stats.pricingViews || totalViews * 0.4) / totalViews) * 100) : 0;
-    const checkoutRate = totalViews > 0 ? Math.round(((state.stats.checkouts || 0) / totalViews) * 100) : 0;
+    const pricingRate = totalViews > 0 ? Math.round((pricingCount / totalViews) * 100) : 0;
+    const checkoutRate = totalViews > 0 ? Math.round((checkoutCount / totalViews) * 100) : 0;
     const purchaseRate = totalViews > 0 ? Math.round((completedPurchases / totalViews) * 100) : 0;
 
     document.getElementById('fnl-rate-pricing').textContent = `${pricingRate}%`;
@@ -3502,6 +3505,7 @@ ${escapeHtml(cleanBody)}
         renderBehaviorSummary(cachedTelemetrySummary);
       }
       renderBehaviorEventRows(cachedTelemetryEvents);
+      renderTrafficTab(cachedTelemetryEvents);
 
       if (!isSilent) {
         showToast(`Telemetry stream refreshed: ${cachedTelemetryEvents.length} events active.`, 'success');
@@ -3520,37 +3524,50 @@ ${escapeHtml(cleanBody)}
   function renderBehaviorSummary(summary) {
     if (!summary) return;
 
+    const totalSessions = summary.totalSessions || 0;
+
     // 1. Top Exit Section Chip
     const topExitEl = document.getElementById('stat-top-exit-section');
-    if (topExitEl && summary.primaryDropOff) {
-      topExitEl.textContent = `${summary.primaryDropOff.section} (${summary.primaryDropOff.percentage}%)`;
+    if (topExitEl) {
+      if (summary.primaryDropOff && summary.primaryDropOff.percentage > 0) {
+        topExitEl.textContent = `${summary.primaryDropOff.section} (${summary.primaryDropOff.percentage}%)`;
+      } else {
+        topExitEl.textContent = totalSessions > 0 ? 'None yet (0 exits)' : '--';
+      }
     }
 
-    // 2. Avg Dwell & Scroll Chips
+    // 2. Avg Dwell & Scroll Chips (100% Real, zero fake defaults)
     const avgDwellEl = document.getElementById('stat-avg-dwell');
     if (avgDwellEl) {
-      avgDwellEl.textContent = `${summary.avgDwellSec || 34}s`;
+      avgDwellEl.textContent = totalSessions > 0 ? `${summary.avgDwellSec || 0}s` : '--';
     }
 
     const avgScrollEl = document.getElementById('stat-avg-scroll');
     if (avgScrollEl) {
-      avgScrollEl.textContent = summary.avgMaxScroll || '64%';
+      avgScrollEl.textContent = totalSessions > 0 ? (summary.avgMaxScroll || '0%') : '--';
     }
 
-    // 3. Conversion Funnel Stages
-    const landed = summary.funnel?.landed || summary.totalSessions || 1;
-    const features = summary.funnel?.featuresScrolled || Math.round(landed * 0.72);
-    const pricing = summary.funnel?.pricingViewed || Math.round(landed * 0.44);
-    const intent = summary.funnel?.intentActions || Math.round(landed * 0.22);
-    const converted = summary.funnel?.converted || Math.max(1, Math.round(landed * 0.045));
+    // 2b. Verified Downloads Chip (Real tracked downloads)
+    const downloadsEl = document.getElementById('stat-real-downloads');
+    if (downloadsEl) {
+      const dlCount = summary.realDownloads !== undefined ? summary.realDownloads : (state.stats.downloads || 0);
+      downloadsEl.textContent = dlCount.toLocaleString();
+    }
 
-    const featuresPct = Math.min(100, Math.round((features / landed) * 100));
-    const pricingPct = Math.min(100, Math.round((pricing / landed) * 100));
-    const intentPct = Math.min(100, Math.round((intent / landed) * 100));
-    const convertedPct = Math.min(100, Number(((converted / landed) * 100).toFixed(1)));
+    // 3. Conversion Funnel Stages (100% Real, zero fake multipliers)
+    const landed = summary.funnel?.landed || 0;
+    const features = summary.funnel?.featuresScrolled || 0;
+    const pricing = summary.funnel?.pricingViewed || 0;
+    const intent = summary.funnel?.intentActions || 0;
+    const converted = summary.funnel?.converted || 0;
+
+    const featuresPct = landed > 0 ? Math.min(100, Math.round((features / landed) * 100)) : 0;
+    const pricingPct = landed > 0 ? Math.min(100, Math.round((pricing / landed) * 100)) : 0;
+    const intentPct = landed > 0 ? Math.min(100, Math.round((intent / landed) * 100)) : 0;
+    const convertedPct = landed > 0 ? Math.min(100, Number(((converted / landed) * 100).toFixed(1))) : 0;
 
     const fLanded = document.getElementById('funnel-val-landed');
-    if (fLanded) fLanded.textContent = '100%';
+    if (fLanded) fLanded.textContent = landed > 0 ? '100%' : '0%';
     const fFeatures = document.getElementById('funnel-val-features');
     if (fFeatures) fFeatures.textContent = `${featuresPct}%`;
     const fPricing = document.getElementById('funnel-val-pricing');
@@ -3572,58 +3589,130 @@ ${escapeHtml(cleanBody)}
     if (metaConv) metaConv.textContent = `${converted} paid orders`;
 
     const dropFeatures = document.getElementById('drop-badge-features');
-    if (dropFeatures) dropFeatures.textContent = `-${Math.max(0, 100 - featuresPct)}% drop`;
+    if (dropFeatures) dropFeatures.textContent = landed > 0 ? `-${Math.max(0, 100 - featuresPct)}% drop` : '-0% drop';
     const dropPricing = document.getElementById('drop-badge-pricing');
-    if (dropPricing) dropPricing.textContent = `-${Math.max(0, featuresPct - pricingPct)}% drop`;
+    if (dropPricing) dropPricing.textContent = landed > 0 ? `-${Math.max(0, featuresPct - pricingPct)}% drop` : '-0% drop';
     const dropIntent = document.getElementById('drop-badge-intent');
-    if (dropIntent) dropIntent.textContent = `-${Math.max(0, pricingPct - intentPct)}% drop`;
+    if (dropIntent) dropIntent.textContent = landed > 0 ? `-${Math.max(0, pricingPct - intentPct)}% drop` : '-0% drop';
     const dropConv = document.getElementById('drop-badge-conv');
-    if (dropConv) dropConv.textContent = `${convertedPct}% win`;
+    if (dropConv) dropConv.textContent = `${convertedPct}% conv`;
+
+    // Dynamic Visual Funnel Bar Fills
+    const fillBars = document.querySelectorAll('.funnel-stages-row .step-bar-fill');
+    if (fillBars.length >= 5) {
+      fillBars[0].style.width = landed > 0 ? '100%' : '0%';
+      fillBars[1].style.width = `${featuresPct}%`;
+      fillBars[2].style.width = `${pricingPct}%`;
+      fillBars[3].style.width = `${intentPct}%`;
+      fillBars[4].style.width = `${convertedPct}%`;
+    }
 
     // 4. Exit Sections List (Where users left)
     const exitContainer = document.getElementById('exit-sections-container');
-    if (exitContainer && Array.isArray(summary.topExitSections)) {
-      exitContainer.innerHTML = summary.topExitSections.map((sec, idx) => {
-        const isTop = idx === 0 && sec.percentage > 0;
-        const barClass = isTop ? 'danger' : (sec.percentage >= 20 ? 'warning' : 'info');
-        return `
-          <div class="exit-section-row">
-            <div class="exit-sec-header">
-              <span class="exit-sec-name">${escapeHtml(sec.section)}</span>
-              <span class="exit-sec-pct ${isTop ? 'highlight-danger' : ''}">${sec.percentage}% (${sec.count || 0})</span>
+    if (exitContainer) {
+      const validSections = Array.isArray(summary.topExitSections) ? summary.topExitSections.filter(s => s.count > 0) : [];
+      if (validSections.length === 0) {
+        exitContainer.innerHTML = `<div style="color:var(--text-muted); font-size:12.5px; padding:18px 0; text-align:center;">No visitor drop-offs recorded yet.</div>`;
+      } else {
+        exitContainer.innerHTML = validSections.map((sec, idx) => {
+          const isTop = idx === 0 && sec.percentage > 0;
+          const barClass = isTop ? 'danger' : (sec.percentage >= 20 ? 'warning' : 'info');
+          return `
+            <div class="exit-section-row">
+              <div class="exit-sec-header">
+                <span class="exit-sec-name">${escapeHtml(sec.section)}</span>
+                <span class="exit-sec-pct ${isTop ? 'highlight-danger' : ''}">${sec.percentage}% (${sec.count || 0})</span>
+              </div>
+              <div class="exit-sec-bar">
+                <div class="exit-sec-bar-fill ${barClass}" style="width: ${sec.percentage}%;"></div>
+              </div>
             </div>
-            <div class="exit-sec-bar">
-              <div class="exit-sec-bar-fill ${barClass}" style="width: ${sec.percentage}%;"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      }
     }
 
-    // 5. Exit Triggers
+    // 5. Exit Triggers (100% Real, zero fake defaults)
     if (summary.exitTriggers) {
       const trigClose = document.getElementById('trigger-pct-close');
-      if (trigClose) trigClose.textContent = `${summary.exitTriggers.tabClose || 52}%`;
+      if (trigClose) trigClose.textContent = totalSessions > 0 ? `${summary.exitTriggers.tabClose || 0}%` : '--';
       const trigIntent = document.getElementById('trigger-pct-intent');
-      if (trigIntent) trigIntent.textContent = `${summary.exitTriggers.exitIntent || 36}%`;
+      if (trigIntent) trigIntent.textContent = totalSessions > 0 ? `${summary.exitTriggers.exitIntent || 0}%` : '--';
       const trigIdle = document.getElementById('trigger-pct-idle');
-      if (trigIdle) trigIdle.textContent = `${summary.exitTriggers.inactivity || 12}%`;
+      if (trigIdle) trigIdle.textContent = totalSessions > 0 ? `${summary.exitTriggers.inactivity || 0}%` : '--';
     }
 
     // 6. Dynamic Actionable Takeaway
     const takeawayEl = document.getElementById('dropoff-takeaway-text');
-    if (takeawayEl && summary.primaryDropOff) {
-      const p = summary.primaryDropOff;
-      if (p.key === 'pricing') {
-        takeawayEl.innerHTML = `<strong>💡 Key Drop-Off Takeaway:</strong> <strong>${p.percentage}%</strong> of visitors read down to the Pricing section but exit without clicking Buy or Download. Adding an exit-intent discount banner ($19 Special) and instant UPI/Card badges directly addresses price friction.`;
-      } else if (p.key === 'hero') {
-        takeawayEl.innerHTML = `<strong>💡 Key Drop-Off Takeaway:</strong> <strong>${p.percentage}%</strong> of visitors bounced at the Hero section before scrolling. Consider adding an auto-playing demo video or interactive preview directly above the fold to capture immediate attention.`;
-      } else if (p.key === 'features') {
-        takeawayEl.innerHTML = `<strong>💡 Key Drop-Off Takeaway:</strong> <strong>${p.percentage}%</strong> of visitors dropped off in the Features section. Consider condensing feature bullet points and moving the single-click Download CTA higher on mobile viewports.`;
+    if (takeawayEl) {
+      if (summary.primaryDropOff && summary.primaryDropOff.percentage > 0) {
+        const p = summary.primaryDropOff;
+        if (p.key === 'pricing') {
+          takeawayEl.innerHTML = `<strong>💡 Key Drop-Off Takeaway:</strong> <strong>${p.percentage}%</strong> of visitors read down to the Pricing section but exit without clicking Buy or Download. Adding an exit-intent discount banner ($19 Special) and instant UPI/Card badges directly addresses price friction.`;
+        } else if (p.key === 'hero') {
+          takeawayEl.innerHTML = `<strong>💡 Key Drop-Off Takeaway:</strong> <strong>${p.percentage}%</strong> of visitors bounced at the Hero section before scrolling. Consider adding an auto-playing demo video or interactive preview directly above the fold to capture immediate attention.`;
+        } else if (p.key === 'features') {
+          takeawayEl.innerHTML = `<strong>💡 Key Drop-Off Takeaway:</strong> <strong>${p.percentage}%</strong> of visitors dropped off in the Features section. Consider condensing feature bullet points and moving the single-click Download CTA higher on mobile viewports.`;
+        } else {
+          takeawayEl.innerHTML = `<strong>💡 Key Drop-Off Takeaway:</strong> The top drop-off location is <strong>${escapeHtml(p.section)} (${p.percentage}%)</strong> with an average dwell time of <strong>${summary.avgDwellSec || 0}s</strong>. Streamlining CTAs here will directly boost conversion.`;
+        }
       } else {
-        takeawayEl.innerHTML = `<strong>💡 Key Drop-Off Takeaway:</strong> The top drop-off location is <strong>${escapeHtml(p.section)} (${p.percentage}%)</strong> with an average dwell time of <strong>${summary.avgDwellSec || 34}s</strong>. Streamlining CTAs here will directly boost conversion.`;
+        takeawayEl.innerHTML = `<strong>💡 Live Telemetry Active:</strong> Zero drop-offs recorded yet. Real-time visitor scroll depth, dwell times, and exit intent triggers will display here dynamically as users navigate DropDial.`;
       }
     }
+  }
+
+  function renderTrafficTab(events) {
+    if (!Array.isArray(events)) return;
+    const visits = events.filter(e => e.event_type === 'LANDING_VISIT' || e.event_type === 'PAGEVIEW');
+    const total = visits.length;
+
+    let direct = 0, github = 0, google = 0, social = 0, otherRef = 0;
+    let mac = 0, win = 0, linux = 0, otherPlat = 0;
+
+    for (const v of visits) {
+      const meta = v.metadata || {};
+      const ref = (meta.referrer || '').toLowerCase();
+      const plat = (meta.platform || '').toLowerCase();
+
+      if (!ref || ref === 'direct') direct++;
+      else if (ref.includes('github')) github++;
+      else if (ref.includes('google')) google++;
+      else if (ref.includes('twitter') || ref.includes('x.com') || ref.includes('t.co') || ref.includes('reddit') || ref.includes('ycombinator') || ref.includes('facebook') || ref.includes('linkedin')) social++;
+      else otherRef++;
+
+      if (plat.includes('mac') || plat.includes('darwin') || plat.includes('ios')) mac++;
+      else if (plat.includes('win')) win++;
+      else if (plat.includes('linux')) linux++;
+      else otherPlat++;
+    }
+
+    const calcPct = (cnt) => total > 0 ? Math.round((cnt / total) * 100) : 0;
+
+    const setRef = (id, cnt) => {
+      const pct = calcPct(cnt);
+      const bar = document.getElementById(`ref-bar-${id}`);
+      const val = document.getElementById(`ref-count-${id}`);
+      if (bar) bar.style.width = `${pct}%`;
+      if (val) val.textContent = total > 0 ? `${pct}% (${cnt})` : '0%';
+    };
+
+    setRef('direct', direct);
+    setRef('github', github);
+    setRef('google', google);
+    setRef('social', social);
+
+    const setPlat = (id, cnt) => {
+      const pct = calcPct(cnt);
+      const bar = document.getElementById(`plat-bar-${id}`);
+      const val = document.getElementById(`plat-count-${id}`);
+      if (bar) bar.style.width = `${pct}%`;
+      if (val) val.textContent = total > 0 ? `${pct}% (${cnt})` : '0%';
+    };
+
+    setPlat('mac', mac);
+    setPlat('win', win);
+    setPlat('other', linux + otherPlat);
   }
 
   function formatEventTime(dateInput) {

@@ -7,10 +7,11 @@
  * to the correct installation binary.
  */
 
-const MAC_DOWNLOAD_URL = 'https://dropdial.app/downloads/DropDial.dmg';
-const WIN_DOWNLOAD_URL = 'https://dropdial.app/downloads/DropDial-Setup.exe';
-
 module.exports = function handler(req, res) {
+  const reqHost = (req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
+  const baseUrl = reqHost.includes('www.dropdial.app') ? 'https://www.dropdial.app' : 'https://dropdial.app';
+  const MAC_DOWNLOAD_URL = `${baseUrl}/downloads/DropDial.dmg`;
+  const WIN_DOWNLOAD_URL = `${baseUrl}/downloads/DropDial-Setup.exe`;
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
 
@@ -46,6 +47,29 @@ module.exports = function handler(req, res) {
   const targetUrl = isMac ? MAC_DOWNLOAD_URL : WIN_DOWNLOAD_URL;
   const fileName = isMac ? 'DropDial.dmg' : 'DropDial-Setup.exe';
 
+  // 100% Real Download Telemetry: log download execution to Neon PostgreSQL user_events
+  try {
+    const { getDb } = require('./_db');
+    const sql = getDb();
+    if (sql) {
+      const evtId = 'evt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+      const sessId = (query.session_id || 'session_' + Math.random().toString(36).substring(2, 11)).trim();
+      const meta = {
+        platform: isMac ? 'macOS' : 'Windows',
+        fileName,
+        targetUrl,
+        userAgent: ua,
+        ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown',
+        referrer: req.headers['referer'] || 'direct'
+      };
+      sql`
+        INSERT INTO user_events (id, session_id, event_type, page, metadata, created_at)
+        VALUES (${evtId}, ${sessId}, 'DOWNLOAD_REDIRECT', 'download', ${JSON.stringify(meta)}::jsonb, NOW())
+        ON CONFLICT (id) DO NOTHING;
+      `.catch(() => {});
+    }
+  } catch (_) {}
+
   // Support JSON inspection via ?format=json
   if (query.format === 'json' || (req.headers.accept && req.headers.accept.includes('application/json'))) {
     return res.status(200).json({
@@ -53,8 +77,8 @@ module.exports = function handler(req, res) {
       url: targetUrl,
       fileName: fileName,
       command: isMac
-        ? 'curl -fsSL https://dropdial.app/install.sh | bash'
-        : 'irm https://dropdial.app/install.ps1 | iex'
+        ? `curl -fsSL ${baseUrl}/install.sh | bash`
+        : `irm ${baseUrl}/install.ps1 | iex`
     });
   }
 

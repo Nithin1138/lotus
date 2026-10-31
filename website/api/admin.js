@@ -92,190 +92,52 @@ async function verifyToken(req, sql) {
   return safeCompare(provided, expected) || safeCompare(provided, fallback);
 }
 
-// In-memory buffer for tracking pageviews and conversions in serverless instance
+// In-memory buffer for tracking real pageviews, interactions, and conversions (starts at zero, 100% real)
 let serverlessStats = {
-  pageViews: 1420,
-  pricingViews: 485,
-  checkoutInitiated: 132,
-  purchased: 28,
+  pageViews: 0,
+  pricingViews: 0,
+  checkoutInitiated: 0,
+  purchased: 0,
+  downloads: 0,
   lastUpdated: new Date().toISOString()
 };
 
-// In-memory high-throughput telemetry stream ring buffer
+// In-memory high-throughput telemetry stream ring buffer (100% REAL events only, zero mock data)
 const eventRingBuffer = [];
-const MAX_RING_BUFFER = 300;
-
-function initSampleEvents() {
-  if (eventRingBuffer.length > 0) return;
-  const now = Date.now();
-  const sampleData = [
-    {
-      session_id: 'session_yopc15dzwsh',
-      event_type: 'LANDING_VISIT',
-      page: 'landing',
-      metadata: { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36', platform: 'macOS', screen: '1728x1117', referrer: 'direct' },
-      offsetMs: 12000
-    },
-    {
-      session_id: 'session_yopc15dzwsh',
-      event_type: 'SCROLL_DEPTH_50',
-      page: 'landing',
-      metadata: { scrollPercent: 54, activeSection: 'features', timeSpentSec: 18 },
-      offsetMs: 28000
-    },
-    {
-      session_id: 'session_yopc15dzwsh',
-      event_type: 'PRICING_VIEW',
-      page: 'landing',
-      metadata: { section: 'pricing', scrollPercent: 78, dwellSec: 25 },
-      offsetMs: 45000
-    },
-    {
-      session_id: 'session_yopc15dzwsh',
-      event_type: 'EXIT_INTENT',
-      page: 'landing',
-      metadata: { lastSection: 'pricing', maxScrollDepth: '78%', dwellTimeSec: 42, exitTrigger: 'cursor_top_leave' },
-      offsetMs: 58000
-    },
-    {
-      session_id: 'session_yopc15dzwsh',
-      event_type: 'LIFECYCLE_EXIT',
-      page: 'landing',
-      metadata: { exitSection: 'pricing', maxScrollDepth: '78%', dwellTimeSec: 44, lastAction: 'view_pricing_tiers', exitTrigger: 'tab_closed' },
-      offsetMs: 60000
-    },
-    {
-      session_id: 'session_8rwznly69xc',
-      event_type: 'LANDING_VISIT',
-      page: 'landing',
-      metadata: { userAgent: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/130.0.6723.69 Safari/537.36', platform: 'Linux', screen: '1920x1080', referrer: 'google' },
-      offsetMs: 140000
-    },
-    {
-      session_id: 'session_8rwznly69xc',
-      event_type: 'LIFECYCLE_EXIT',
-      page: 'landing',
-      metadata: { exitSection: 'hero', maxScrollDepth: '14%', dwellTimeSec: 6, lastAction: 'quick_bounce', exitTrigger: 'window_hidden' },
-      offsetMs: 146000
-    },
-    {
-      session_id: 'session_xd3bsus4gu9',
-      event_type: 'LANDING_VISIT',
-      page: 'landing',
-      metadata: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0', platform: 'Windows', screen: '1920x1080', referrer: 'https://twitter.com' },
-      offsetMs: 380000
-    },
-    {
-      session_id: 'session_xd3bsus4gu9',
-      event_type: 'DOWNLOAD_CLICK',
-      page: 'landing',
-      metadata: { platform: 'Windows', binary: 'DropDial-Setup.exe', targetVersion: 'v1.0.2.5', url: '/downloads/DropDial-Setup.exe' },
-      offsetMs: 410000
-    },
-    {
-      session_id: 'session_xd3bsus4gu9',
-      event_type: 'LIFECYCLE_EXIT',
-      page: 'landing',
-      metadata: { exitSection: 'download', maxScrollDepth: '96%', dwellTimeSec: 68, lastAction: 'click_download_windows', exitTrigger: 'installer_launched' },
-      offsetMs: 440000
-    },
-    {
-      session_id: 'session_4jllilin8x',
-      event_type: 'LANDING_VISIT',
-      page: 'landing',
-      metadata: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0', platform: 'Windows', screen: '2560x1440', referrer: 'https://news.ycombinator.com' },
-      offsetMs: 620000
-    },
-    {
-      session_id: 'session_4jllilin8x',
-      event_type: 'SCROLL_DEPTH_50',
-      page: 'landing',
-      metadata: { scrollPercent: 50, activeSection: 'features', dwellSec: 19 },
-      offsetMs: 645000
-    },
-    {
-      session_id: 'session_4jllilin8x',
-      event_type: 'DEAD_CLICK',
-      page: 'landing',
-      metadata: { target: 'div.feature-preview', clickCount: 1, tagName: 'DIV' },
-      offsetMs: 655000
-    },
-    {
-      session_id: 'session_4jllilin8x',
-      event_type: 'LIFECYCLE_EXIT',
-      page: 'landing',
-      metadata: { exitSection: 'features', maxScrollDepth: '52%', dwellTimeSec: 36, lastAction: 'read_feature_cards', exitTrigger: 'tab_closed' },
-      offsetMs: 670000
-    },
-    {
-      session_id: 'session_ycf7470r2h',
-      event_type: 'LANDING_VISIT',
-      page: 'landing',
-      metadata: { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15', platform: 'macOS', screen: '1512x982', referrer: 'https://reddit.com/r/macapps' },
-      offsetMs: 820000
-    },
-    {
-      session_id: 'session_ycf7470r2h',
-      event_type: 'PRICING_VIEW',
-      page: 'landing',
-      metadata: { section: 'pricing', scrollPercent: 82, dwellSec: 22 },
-      offsetMs: 845000
-    },
-    {
-      session_id: 'session_ycf7470r2h',
-      event_type: 'COUPON_APPLIED',
-      page: 'landing',
-      metadata: { code: 'DROPDIAL50', discount: '50% Off' },
-      offsetMs: 860000
-    },
-    {
-      session_id: 'session_ycf7470r2h',
-      event_type: 'CHECKOUT_INITIATED',
-      page: 'landing',
-      metadata: { tier: 'pro', price: '$14.50', gateway: 'dodo', coupon: 'DROPDIAL50' },
-      offsetMs: 875000
-    },
-    {
-      session_id: 'session_7kk5ieu1y5g',
-      event_type: 'LANDING_VISIT',
-      page: 'landing',
-      metadata: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36', platform: 'Windows', screen: '1920x1080', referrer: 'direct' },
-      offsetMs: 1200000
-    },
-    {
-      session_id: 'session_7kk5ieu1y5g',
-      event_type: 'LIFECYCLE_EXIT',
-      page: 'landing',
-      metadata: { exitSection: 'pricing', maxScrollDepth: '72%', dwellTimeSec: 28, lastAction: 'view_tier_comparison', exitTrigger: 'nav_away' },
-      offsetMs: 1230000
-    },
-    {
-      session_id: 'session_99vt80l5a25',
-      event_type: 'LANDING_VISIT',
-      page: 'landing',
-      metadata: { userAgent: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)', platform: 'Windows', screen: '1366x768', referrer: 'bing' },
-      offsetMs: 1500000
-    }
-  ];
-
-  for (const s of sampleData) {
-    eventRingBuffer.push({
-      id: 'evt_' + (now - s.offsetMs) + '_' + Math.random().toString(36).substring(2, 6),
-      session_id: s.session_id,
-      event_type: s.event_type,
-      page: s.page,
-      metadata: s.metadata,
-      created_at: new Date(now - s.offsetMs).toISOString()
-    });
-  }
-}
+const MAX_RING_BUFFER = 500;
 
 function calculateDropOffSummary(events) {
+  if (!Array.isArray(events) || events.length === 0) {
+    return {
+      totalSessions: 0,
+      totalEvents: 0,
+      primaryDropOff: null,
+      topExitSections: [],
+      funnel: {
+        landed: 0,
+        featuresScrolled: 0,
+        pricingViewed: 0,
+        intentActions: 0,
+        converted: 0
+      },
+      avgDwellSec: 0,
+      avgMaxScroll: '0%',
+      exitTriggers: {
+        exitIntent: 0,
+        tabClose: 0,
+        inactivity: 0
+      },
+      rageClicks: 0
+    };
+  }
+
   const sessionMap = new Map();
   let totalPageViews = 0;
   let totalExits = 0;
   let totalRageClicks = 0;
   let exitIntentCount = 0;
+  let tabCloseCount = 0;
+  let inactivityCount = 0;
 
   for (const ev of events) {
     const sid = ev.session_id || 'unknown';
@@ -291,7 +153,8 @@ function calculateDropOffSummary(events) {
         exitSection: null,
         exitTrigger: null,
         dwellSec: 0,
-        actions: []
+        hasIntent: false,
+        hasConverted: false
       });
     }
 
@@ -301,12 +164,21 @@ function calculateDropOffSummary(events) {
     if (evTime < sess.firstSeen) sess.firstSeen = evTime;
     if (evTime > sess.lastSeen) sess.lastSeen = evTime;
 
+    const type = (ev.event_type || '').toUpperCase();
     const meta = ev.metadata || {};
-    if (ev.event_type === 'LANDING_VISIT' || ev.event_type === 'PAGEVIEW') totalPageViews++;
-    if (ev.event_type === 'RAGE_CLICK') totalRageClicks++;
-    if (ev.event_type === 'EXIT_INTENT') {
+
+    if (type === 'LANDING_VISIT' || type === 'PAGEVIEW') totalPageViews++;
+    if (type === 'RAGE_CLICK') totalRageClicks++;
+
+    if (type === 'EXIT_INTENT' || (meta.exitTrigger && String(meta.exitTrigger).includes('intent'))) {
       exitIntentCount++;
       sess.exitTrigger = 'exit_intent';
+    } else if (meta.exitTrigger === 'tab_closed' || meta.exitTrigger === 'window_hidden' || meta.exitTrigger === 'nav_away') {
+      tabCloseCount++;
+      sess.exitTrigger = 'tab_close';
+    } else if (meta.exitTrigger === 'inactivity' || meta.exitTrigger === 'idle_timeout') {
+      inactivityCount++;
+      sess.exitTrigger = 'inactivity';
     }
 
     if (meta.scrollPercent) {
@@ -317,25 +189,55 @@ function calculateDropOffSummary(events) {
       const sp = parseInt(String(meta.maxScrollDepth).replace('%', ''), 10);
       if (!isNaN(sp) && sp > sess.maxScroll) sess.maxScroll = sp;
     }
-    if (meta.activeSection) sess.sections.add(meta.activeSection);
-    if (meta.section) sess.sections.add(meta.section);
-    if (meta.lastSection) sess.lastSection = meta.lastSection;
-    if (meta.exitSection) sess.exitSection = meta.exitSection;
-    if (meta.exitTrigger) sess.exitTrigger = meta.exitTrigger;
+
+    if (meta.activeSection) sess.sections.add(meta.activeSection.toLowerCase());
+    if (meta.section) sess.sections.add(meta.section.toLowerCase());
+    if (meta.lastSection) sess.lastSection = meta.lastSection.toLowerCase();
+    if (meta.exitSection) sess.exitSection = meta.exitSection.toLowerCase();
     if (meta.dwellTimeSec) sess.dwellSec = Math.max(sess.dwellSec, parseInt(meta.dwellTimeSec, 10) || 0);
 
-    if (ev.event_type === 'LIFECYCLE_EXIT') {
+    if (type.startsWith('SCROLL_DEPTH_')) {
+      const depth = parseInt(type.replace('SCROLL_DEPTH_', ''), 10);
+      if (!isNaN(depth) && depth > sess.maxScroll) sess.maxScroll = depth;
+    }
+
+    if (type === 'PRICING_VIEW') {
+      sess.sections.add('pricing');
+    }
+
+    if (['DOWNLOAD_CLICK', 'DOWNLOAD_REDIRECT', 'CHECKOUT_INITIATED', 'COUPON_APPLIED', 'COMMAND_COPIED'].includes(type)) {
+      sess.hasIntent = true;
+    }
+
+    if (['PURCHASE', 'CONVERSION_COMPLETED'].includes(type)) {
+      sess.hasConverted = true;
+    }
+
+    if (type === 'LIFECYCLE_EXIT') {
       totalExits++;
-      if (meta.exitSection) sess.exitSection = meta.exitSection;
-      else if (meta.lastSection) sess.exitSection = meta.lastSection;
+      if (meta.exitSection) sess.exitSection = meta.exitSection.toLowerCase();
+      else if (meta.lastSection) sess.exitSection = meta.lastSection.toLowerCase();
       else sess.exitSection = sess.lastSection;
     }
   }
 
   const sessions = Array.from(sessionMap.values());
-  const totalSessions = Math.max(1, sessions.length);
+  const totalSessions = sessions.length;
+  if (totalSessions === 0) {
+    return {
+      totalSessions: 0,
+      totalEvents: events.length,
+      primaryDropOff: null,
+      topExitSections: [],
+      funnel: { landed: 0, featuresScrolled: 0, pricingViewed: 0, intentActions: 0, converted: 0 },
+      avgDwellSec: 0,
+      avgMaxScroll: '0%',
+      exitTriggers: { exitIntent: 0, tabClose: 0, inactivity: 0 },
+      rageClicks: totalRageClicks
+    };
+  }
 
-  // Exit section distribution
+  // Real exit section distribution
   const exitSectionCounts = {
     pricing: 0,
     features: 0,
@@ -347,6 +249,10 @@ function calculateDropOffSummary(events) {
 
   let totalDwell = 0;
   let totalScroll = 0;
+  let featuresScrolledCount = 0;
+  let pricingViewedCount = 0;
+  let intentActionsCount = 0;
+  let convertedCount = 0;
 
   for (const s of sessions) {
     let exitSec = (s.exitSection || s.lastSection || 'hero').toLowerCase();
@@ -357,9 +263,23 @@ function calculateDropOffSummary(events) {
     else if (exitSec.includes('download') || exitSec.includes('install')) exitSectionCounts.download++;
     else exitSectionCounts.other++;
 
-    const durSec = s.dwellSec > 0 ? s.dwellSec : Math.round(Math.max(3, (s.lastSeen - s.firstSeen) / 1000));
+    const durSec = s.dwellSec > 0 ? s.dwellSec : Math.round(Math.max(0, (s.lastSeen - s.firstSeen) / 1000));
     totalDwell += durSec;
-    totalScroll += (s.maxScroll || (exitSec === 'pricing' ? 75 : exitSec === 'features' ? 45 : 20));
+    totalScroll += (s.maxScroll || 0);
+
+    // 100% Genuine Funnel Evaluation based on actual session actions
+    if (s.maxScroll >= 40 || s.sections.has('features')) {
+      featuresScrolledCount++;
+    }
+    if (s.sections.has('pricing') || s.maxScroll >= 70) {
+      pricingViewedCount++;
+    }
+    if (s.hasIntent || s.sections.has('download')) {
+      intentActionsCount++;
+    }
+    if (s.hasConverted) {
+      convertedCount++;
+    }
   }
 
   const topExitSections = [
@@ -370,26 +290,30 @@ function calculateDropOffSummary(events) {
     { section: 'Downloads / Direct Exits', key: 'download', count: exitSectionCounts.download, percentage: Math.round((exitSectionCounts.download / totalSessions) * 100) }
   ].sort((a, b) => b.count - a.count);
 
+  const primaryDropOff = topExitSections.find(s => s.count > 0) || null;
+
   const funnel = {
     landed: totalSessions,
-    featuresScrolled: Math.round(totalSessions * 0.72),
-    pricingViewed: Math.round(totalSessions * 0.44),
-    intentActions: Math.round(totalSessions * 0.22),
-    converted: Math.max(1, Math.round(totalSessions * 0.045))
+    featuresScrolled: featuresScrolledCount,
+    pricingViewed: pricingViewedCount,
+    intentActions: intentActionsCount,
+    converted: convertedCount
   };
+
+  const denomExits = Math.max(1, totalExits || exitIntentCount + tabCloseCount + inactivityCount);
 
   return {
     totalSessions,
     totalEvents: events.length,
-    primaryDropOff: topExitSections[0] || { section: 'Pricing Section', percentage: 42 },
+    primaryDropOff,
     topExitSections,
     funnel,
-    avgDwellSec: Math.round(totalDwell / totalSessions) || 44,
-    avgMaxScroll: `${Math.min(100, Math.round(totalScroll / totalSessions) || 64)}%`,
+    avgDwellSec: Math.round(totalDwell / totalSessions),
+    avgMaxScroll: `${Math.min(100, Math.round(totalScroll / totalSessions))}%`,
     exitTriggers: {
-      exitIntent: Math.round((exitIntentCount / Math.max(1, totalExits)) * 100) || 36,
-      tabClose: 52,
-      inactivity: 12
+      exitIntent: Math.round((exitIntentCount / denomExits) * 100),
+      tabClose: Math.round((tabCloseCount / denomExits) * 100),
+      inactivity: Math.round((inactivityCount / denomExits) * 100)
     },
     rageClicks: totalRageClicks
   };
@@ -442,6 +366,7 @@ module.exports = async function handler(req, res) {
     if (eventType === 'PRICING_VIEW' || eventType === 'PRICING') serverlessStats.pricingViews++;
     if (eventType === 'CHECKOUT_INITIATED' || eventType === 'CHECKOUT') serverlessStats.checkoutInitiated++;
     if (eventType === 'PURCHASE') serverlessStats.purchased++;
+    if (eventType === 'DOWNLOAD_CLICK' || eventType === 'DOWNLOAD_REDIRECT') serverlessStats.downloads = (serverlessStats.downloads || 0) + 1;
 
     const newEvent = {
       id: 'evt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
@@ -470,7 +395,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, id: newEvent.id });
   }
 
-  // Live Behavior & Drop-Off Telemetry Stream Endpoint
+  // Live Behavior & Drop-Off Telemetry Stream Endpoint (100% REAL)
   if (action === 'events' || action === 'behavior' || action === 'telemetry') {
     let events = [];
     if (sql) {
@@ -494,24 +419,18 @@ module.exports = async function handler(req, res) {
       } catch (_) {}
     }
 
-    if (eventRingBuffer.length === 0) {
-      initSampleEvents();
-    }
-
-    if (events.length === 0) {
-      events = eventRingBuffer.slice(0, 200);
-    } else {
-      const dbIds = new Set(events.map(e => e.id));
-      for (const m of eventRingBuffer) {
-        if (!dbIds.has(m.id)) {
-          events.push(m);
-        }
+    // Merge in-memory ring buffer (100% genuine events captured during current server process)
+    const dbIds = new Set(events.map(e => e.id));
+    for (const m of eventRingBuffer) {
+      if (!dbIds.has(m.id)) {
+        events.push(m);
       }
-      events.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      events = events.slice(0, 200);
     }
+    events.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    events = events.slice(0, 200);
 
     const summary = calculateDropOffSummary(events);
+    summary.realDownloads = serverlessStats.downloads || 0;
     return res.status(200).json({ ok: true, events, summary });
   }
 
@@ -672,6 +591,26 @@ module.exports = async function handler(req, res) {
         await ensureSchema();
         dbLicenses = await sql`SELECT id, customer_name as "name", email, license_key as "licenseKey", tier, status, TO_CHAR(created_at, 'YYYY-MM-DD') as "date", TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as "createdAtIso" FROM licenses ORDER BY created_at DESC LIMIT 500;`;
         dbTransactions = await sql`SELECT id, order_id as "orderId", payment_id as "paymentId", amount as "amountRaw", currency, customer_name as "customerName", email, status, coupon_code as "coupon", country, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') as "timestamp", TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as "createdAtIso" FROM transactions ORDER BY created_at DESC LIMIT 500;`;
+
+        // 100% Real Live Metrics queried directly from user_events table in Neon DB
+        try {
+          const eventCounts = await sql`
+            SELECT 
+              COUNT(*) FILTER (WHERE event_type IN ('LANDING_VISIT', 'PAGEVIEW')) as pageviews,
+              COUNT(*) FILTER (WHERE event_type = 'PRICING_VIEW') as pricing_views,
+              COUNT(*) FILTER (WHERE event_type = 'CHECKOUT_INITIATED') as checkouts,
+              COUNT(*) FILTER (WHERE event_type = 'PURCHASE') as purchases,
+              COUNT(*) FILTER (WHERE event_type IN ('DOWNLOAD_CLICK', 'DOWNLOAD_REDIRECT')) as downloads
+            FROM user_events;
+          `;
+          if (eventCounts && eventCounts[0]) {
+            serverlessStats.pageViews = parseInt(eventCounts[0].pageviews, 10) || 0;
+            serverlessStats.pricingViews = parseInt(eventCounts[0].pricing_views, 10) || 0;
+            serverlessStats.checkoutInitiated = parseInt(eventCounts[0].checkouts, 10) || 0;
+            serverlessStats.purchased = parseInt(eventCounts[0].purchases, 10) || (dbTransactions ? dbTransactions.filter(t => t.status === 'captured').length : 0);
+            serverlessStats.downloads = parseInt(eventCounts[0].downloads, 10) || 0;
+          }
+        } catch (_) {}
       }
     } catch (dbErr) {
       console.warn('[Admin Stats Neon DB Warning]:', dbErr.message);
@@ -702,7 +641,8 @@ module.exports = async function handler(req, res) {
         pageviews: serverlessStats.pageViews || 0,
         pricingViews: serverlessStats.pricingViews || 0,
         checkouts: serverlessStats.checkoutInitiated || 0,
-        purchases: serverlessStats.purchased || 0
+        purchases: serverlessStats.purchased || (dbTransactions ? dbTransactions.filter(t => t.status === 'captured').length : 0),
+        downloads: serverlessStats.downloads || 0
       },
       serverlessStats
     });
@@ -1384,10 +1324,14 @@ module.exports = async function handler(req, res) {
         try {
           await sql`DELETE FROM transactions;`;
           await sql`DELETE FROM licenses;`;
+          await sql`DELETE FROM license_activations;`;
+          await sql`DELETE FROM user_events;`;
           await sql`UPDATE coupons SET uses = 0;`;
         } catch (_) {
           await sql`TRUNCATE TABLE transactions;`;
           await sql`TRUNCATE TABLE licenses;`;
+          await sql`TRUNCATE TABLE license_activations;`;
+          await sql`TRUNCATE TABLE user_events;`;
           await sql`UPDATE coupons SET uses = 0;`;
         }
         dbReset = true;
@@ -1396,18 +1340,21 @@ module.exports = async function handler(req, res) {
       console.warn('[Admin Reset Neon DB Warning]:', dbErr.message);
     }
 
-    // Reset serverless visitor and conversion stats
+    eventRingBuffer.length = 0;
+
+    // Reset serverless visitor, downloads, and conversion stats
     serverlessStats = {
       pageViews: 0,
       pricingViews: 0,
       checkoutInitiated: 0,
       purchased: 0,
+      downloads: 0,
       lastUpdated: new Date().toISOString()
     };
 
     return res.status(200).json({
       success: true,
-      message: 'All test revenue, profits, captured transactions, test licenses, coupons, and visitor stats have been completely reset to zero.',
+      message: 'All test revenue, profits, captured transactions, test licenses, coupons, telemetry events, and visitor stats have been completely reset to zero.',
       dbReset,
       licenses: [],
       transactions: [],
@@ -1415,7 +1362,8 @@ module.exports = async function handler(req, res) {
         pageviews: 0,
         pricingViews: 0,
         checkouts: 0,
-        purchases: 0
+        purchases: 0,
+        downloads: 0
       }
     });
   }
