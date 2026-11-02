@@ -5,6 +5,6 @@ void main() {
   testWidgets('DropDial App loads smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const DropDialMobileApp());
     expect(find.text('DropDial'), findsOneWidget);
-    expect(find.text('Formats'), findsOneWidget);
+    expect(find.text('Convert'), findsOneWidget);
   });
 }

@@ -21,14 +21,14 @@ class FileDetailsCard extends StatelessWidget {
       return GestureDetector(
         onTap: onPickNew,
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.8),
+            color: AppColors.surface.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: AppColors.border,
-              style: BorderStyle.solid,
+              width: 1.0,
             ),
           ),
           child: Row(
@@ -36,12 +36,12 @@ class FileDetailsCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryCyan.withOpacity(0.12),
+                  color: AppColors.dropdialOrange.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.file_upload_outlined,
-                  color: AppColors.primaryCyan,
+                  color: AppColors.dropdialOrange,
                   size: 20,
                 ),
               ),
@@ -54,13 +54,13 @@ class FileDetailsCard extends StatelessWidget {
                       'Ready for File Intake',
                       style: TextStyle(
                         color: AppColors.textPrimary,
-                        fontSize: 14,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Share sheet, Vol Up+Down, or tap to browse',
+                      'Share Sheet, Vol Up+Down, or tap to browse',
                       style: TextStyle(
                         color: AppColors.textMuted,
                         fontSize: 11,
@@ -72,6 +72,7 @@ class FileDetailsCard extends StatelessWidget {
               const Icon(
                 Icons.chevron_right_rounded,
                 color: AppColors.textMuted,
+                size: 20,
               ),
             ],
           ),
@@ -80,34 +81,44 @@ class FileDetailsCard extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.borderBright),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withValues(alpha: 0.45),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         children: [
-          // File Icon Badge
+          // File Category Icon / Thumbnail Preview
           Container(
-            padding: const EdgeInsets.all(10),
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: AppColors.primaryCyan.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.cardBg,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.border),
             ),
-            child: const Icon(
-              Icons.insert_drive_file_rounded,
-              color: AppColors.primaryCyan,
-              size: 24,
-            ),
+            child: file!.thumbnailBytes != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(9),
+                    child: Image.memory(
+                      file!.thumbnailBytes!,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : const Icon(
+                    Icons.insert_drive_file_rounded,
+                    color: AppColors.dropdialOrange,
+                    size: 22,
+                  ),
           ),
           const SizedBox(width: 12),
 
@@ -123,7 +134,7 @@ class FileDetailsCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppColors.textPrimary,
-                    fontSize: 14,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -138,24 +149,24 @@ class FileDetailsCard extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     const Text('•', style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
-                        color: AppColors.accentGreen.withOpacity(0.15),
+                        color: AppColors.accentGreen.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.lock_outline_rounded, color: AppColors.accentGreen, size: 10),
+                          Icon(Icons.lock_rounded, color: AppColors.accentGreen, size: 9),
                           SizedBox(width: 3),
                           Text(
                             '100% OFFLINE',
                             style: TextStyle(
                               color: AppColors.accentGreen,
-                              fontSize: 9,
+                              fontSize: 8.5,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -168,7 +179,6 @@ class FileDetailsCard extends StatelessWidget {
             ),
           ),
 
-          // Action buttons: swap & remove
           IconButton(
             icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textMuted),
             onPressed: onClear,

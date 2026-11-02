@@ -8,11 +8,22 @@ extension WheelModeExtension on WheelMode {
   String get label {
     switch (this) {
       case WheelMode.formats:
-        return 'Formats';
+        return 'Convert';
       case WheelMode.tools:
         return 'Tools';
       case WheelMode.actions:
         return 'Actions';
+    }
+  }
+
+  String get shortcutSymbol {
+    switch (this) {
+      case WheelMode.formats:
+        return '⇧';
+      case WheelMode.tools:
+        return '⌘';
+      case WheelMode.actions:
+        return '⌃';
     }
   }
 

@@ -76,7 +76,7 @@ class _RotaryDialState extends State<RotaryDial> with SingleTickerProviderStateM
 
       final dt = now.difference(_lastTouchTime).inMicroseconds / 1000000.0;
       if (dt > 0.001) {
-        _angularVelocity = (_angularVelocity * 0.4) + ((delta / dt) * 0.6);
+        _angularVelocity = (_angularVelocity * 0.5) + ((delta / dt) * 0.5);
       }
 
       widget.controller.updateRotation(delta);
@@ -89,14 +89,13 @@ class _RotaryDialState extends State<RotaryDial> with SingleTickerProviderStateM
   void _onPanEnd(DragEndDetails details, Size size) {
     _lastTouchAngle = null;
 
-    // Apply snap to nearest petal
     final currentRot = widget.controller.rotation;
     final sectorAngle = WheelConstants.petalSectorAngle;
     
-    // Add momentum projection
-    final momentumOffset = (_angularVelocity * 0.06).clamp(
-      -sectorAngle * 2,
-      sectorAngle * 2,
+    // Smooth momentum projection with friction clamping
+    final momentumOffset = (_angularVelocity * 0.08).clamp(
+      -sectorAngle * 2.5,
+      sectorAngle * 2.5,
     );
     final projectedRot = currentRot + momentumOffset;
     final targetSector = (projectedRot / sectorAngle).round();
@@ -107,7 +106,7 @@ class _RotaryDialState extends State<RotaryDial> with SingleTickerProviderStateM
       end: targetRot,
     ).animate(CurvedAnimation(
       parent: _inertiaController,
-      curve: Curves.easeOutBack,
+      curve: Curves.easeOutCubic,
     ));
 
     _inertiaController.forward(from: 0.0).then((_) {
@@ -122,8 +121,7 @@ class _RotaryDialState extends State<RotaryDial> with SingleTickerProviderStateM
     final dy = pos.dy - center.dy;
     final dist = math.sqrt(dx * dx + dy * dy);
 
-    // Only process taps within petal arc zone
-    if (dist < WheelConstants.innerRadius || dist > WheelConstants.outerRadius + 20) {
+    if (dist < WheelConstants.innerRadius || dist > WheelConstants.outerRadius + 25) {
       return;
     }
 
@@ -143,7 +141,6 @@ class _RotaryDialState extends State<RotaryDial> with SingleTickerProviderStateM
 
       final diff = (tapAngle - angle).abs();
       if (diff < sectorAngle / 2) {
-        // Tapped petal i!
         final petal = petals[i];
         widget.onPetalTap?.call(petal);
         break;

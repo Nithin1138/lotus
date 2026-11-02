@@ -16,12 +16,19 @@ class ModeSelectorBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      padding: const EdgeInsets.all(4),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      padding: const EdgeInsets.all(3.5),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.border, width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         children: WheelMode.values.map((mode) {
@@ -31,16 +38,16 @@ class ModeSelectorBar extends StatelessWidget {
               onTap: () => onModeChanged(mode),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 240),
-                curve: Curves.easeInOut,
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(vertical: 9),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.petalActiveFace : Colors.transparent,
+                  gradient: isSelected ? AppColors.orangeGradient : null,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: AppColors.primaryCyan.withOpacity(0.35),
-                            blurRadius: 8,
+                            color: AppColors.dropdialOrange.withValues(alpha: 0.40),
+                            blurRadius: 10,
                             spreadRadius: 1,
                           ),
                         ]
@@ -51,17 +58,36 @@ class ModeSelectorBar extends StatelessWidget {
                   children: [
                     Icon(
                       _getIcon(mode),
-                      size: 16,
-                      color: isSelected ? AppColors.petalActiveText : AppColors.textSecondary,
+                      size: 15,
+                      color: isSelected ? Colors.white : AppColors.textSecondary,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 5),
                     Text(
                       mode.label,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 12.5,
                         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        color: isSelected ? AppColors.petalActiveText : AppColors.textSecondary,
-                        letterSpacing: 0.3,
+                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    // macOS shortcut key badge (⇧, ⌘, ⌃)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.black.withValues(alpha: 0.25)
+                            : AppColors.surfaceVariant.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        mode.shortcutSymbol,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.white : AppColors.textMuted,
+                        ),
                       ),
                     ),
                   ],
@@ -79,7 +105,7 @@ class ModeSelectorBar extends StatelessWidget {
       case WheelMode.formats:
         return Icons.swap_horiz_rounded;
       case WheelMode.tools:
-        return Icons.build_outlined;
+        return Icons.build_rounded;
       case WheelMode.actions:
         return Icons.bolt_rounded;
     }

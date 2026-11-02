@@ -37,7 +37,7 @@ class DropDialMobileApp extends StatelessWidget {
         scaffoldBackgroundColor: AppColors.background,
         colorScheme: const ColorScheme.dark(
           primary: AppColors.primaryCyan,
-          secondary: AppColors.accentOrange,
+          secondary: AppColors.dropdialOrange,
           surface: AppColors.surface,
         ),
         useMaterial3: true,

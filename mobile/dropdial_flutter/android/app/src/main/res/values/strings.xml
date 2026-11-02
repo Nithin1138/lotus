@@ -4,3 +4,4 @@
     <string name="accessibility_service_description">Enables hardware Volume Up + Volume Down chord shortcut to summon DropDial file converter and ingest screenshots/clipboard files instantly.</string>
     <string name="quick_settings_tile_label">DropDial</string>
 </resources>
+

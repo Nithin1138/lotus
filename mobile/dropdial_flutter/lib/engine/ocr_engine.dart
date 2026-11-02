@@ -42,3 +42,4 @@ class OcrEngine {
     _recognizer.close();
   }
 }
+

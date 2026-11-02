@@ -27,3 +27,4 @@ class HapticService {
     await HapticFeedback.vibrate();
   }
 }
+

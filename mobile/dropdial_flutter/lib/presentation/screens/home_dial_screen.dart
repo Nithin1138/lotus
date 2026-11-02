@@ -39,14 +39,12 @@ class _HomeDialScreenState extends State<HomeDialScreen> with SingleTickerProvid
   }
 
   void _listenToSharedIntake() {
-    // 1. Initial shared files on launch
     PlatformChannelService.getInitialSharedFiles().then((paths) {
       if (paths.isNotEmpty && mounted) {
         _controller.ingestFilePaths(paths).then((_) => _triggerBloom());
       }
     });
 
-    // 2. Stream for runtime incoming share intents
     _sharedFilesSub = PlatformChannelService.sharedFilesStream.listen((paths) {
       if (paths.isNotEmpty && mounted) {
         _controller.ingestFilePaths(paths).then((_) => _triggerBloom());
@@ -94,21 +92,21 @@ class _HomeDialScreenState extends State<HomeDialScreen> with SingleTickerProvid
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: AppColors.cardBg,
-                  child: Icon(Icons.folder_open_rounded, color: AppColors.primaryCyan),
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.dropdialOrange.withValues(alpha: 0.15),
+                  child: const Icon(Icons.folder_open_rounded, color: AppColors.dropdialOrange),
                 ),
                 title: const Text('Browse Files / Documents', style: TextStyle(color: AppColors.textPrimary)),
-                subtitle: const Text('PDFs, images, videos, text files', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                subtitle: const Text('PDFs, images, videos, documents', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _controller.pickFileFromStorage().then((_) => _triggerBloom());
                 },
               ),
               ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: AppColors.cardBg,
-                  child: Icon(Icons.photo_library_rounded, color: AppColors.accentPurple),
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.primaryCyan.withValues(alpha: 0.15),
+                  child: const Icon(Icons.photo_library_rounded, color: AppColors.primaryCyan),
                 ),
                 title: const Text('Choose from Photo Gallery', style: TextStyle(color: AppColors.textPrimary)),
                 subtitle: const Text('Camera roll, screenshots, albums', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
@@ -118,12 +116,12 @@ class _HomeDialScreenState extends State<HomeDialScreen> with SingleTickerProvid
                 },
               ),
               ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: AppColors.cardBg,
-                  child: Icon(Icons.camera_alt_rounded, color: AppColors.accentGreen),
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.accentGreen.withValues(alpha: 0.15),
+                  child: const Icon(Icons.camera_alt_rounded, color: AppColors.accentGreen),
                 ),
                 title: const Text('Take Photo / Document Scan', style: TextStyle(color: AppColors.textPrimary)),
-                subtitle: const Text('Use camera directly', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                subtitle: const Text('Instant camera snapshot', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _controller.pickFromCamera().then((_) => _triggerBloom());
@@ -155,10 +153,10 @@ class _HomeDialScreenState extends State<HomeDialScreen> with SingleTickerProvid
         bottom: false,
         child: Column(
           children: [
-            // 1. Header Bar
+            // 1. macOS DropDial Header Bar with Official Logo
             _buildHeader(context),
 
-            // 2. Mode Selector Bar (Formats | Tools | Actions)
+            // 2. Mode Selector Bar (Convert | Tools | Actions)
             ListenableBuilder(
               listenable: _controller,
               builder: (context, _) => ModeSelectorBar(
@@ -180,7 +178,7 @@ class _HomeDialScreenState extends State<HomeDialScreen> with SingleTickerProvid
               ),
             ),
 
-            // 4. Active Trigger Banner
+            // 4. macOS-style Active Apex Trigger Pill
             _buildActiveApexTriggerBanner(),
 
             const Spacer(),
@@ -195,32 +193,29 @@ class _HomeDialScreenState extends State<HomeDialScreen> with SingleTickerProvid
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: AppColors.cyanGradient,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryCyan.withOpacity(0.4),
-                      blurRadius: 8,
+              // Official DropDial Logo Icon
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/icons/app_logo.png',
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      gradient: AppColors.orangeGradient,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    'D',
-                    style: TextStyle(
-                      color: AppColors.petalActiveText,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
+                    child: const Center(
+                      child: Text('D', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ),
@@ -234,31 +229,40 @@ class _HomeDialScreenState extends State<HomeDialScreen> with SingleTickerProvid
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.3,
                       color: AppColors.textPrimary,
                     ),
                   ),
                   Text(
-                    'MOBILE RADIAL FAN',
+                    'THUMB-ARC RADIAL FAN',
                     style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
-                      color: AppColors.textCyan,
+                      color: AppColors.dropdialOrange,
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
-            tooltip: 'Shortcuts & System Settings',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SettingsShortcutsScreen()),
-              );
-            },
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.textSecondary, size: 22),
+                tooltip: 'Select File',
+                onPressed: _showMediaPickerModal,
+              ),
+              IconButton(
+                icon: const Icon(Icons.tune_rounded, color: AppColors.textSecondary, size: 21),
+                tooltip: 'Shortcuts & Hardware Chords',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SettingsShortcutsScreen()),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -272,21 +276,23 @@ class _HomeDialScreenState extends State<HomeDialScreen> with SingleTickerProvid
         final focused = _controller.focusedPetal;
         if (focused == null) return const SizedBox.shrink();
 
+        final activeColor = focused.accentColor ?? AppColors.dropdialOrange;
+
         return GestureDetector(
           onTap: () => _onPetalSelected(focused),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 36, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
             decoration: BoxDecoration(
-              color: AppColors.surfaceVariant.withOpacity(0.9),
+              color: AppColors.surfaceVariant.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: (focused.accentColor ?? AppColors.primaryCyan).withOpacity(0.6),
-                width: 1.5,
+                color: activeColor.withValues(alpha: 0.65),
+                width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: (focused.accentColor ?? AppColors.primaryCyan).withOpacity(0.2),
+                  color: activeColor.withValues(alpha: 0.22),
                   blurRadius: 10,
                 ),
               ],
@@ -296,23 +302,23 @@ class _HomeDialScreenState extends State<HomeDialScreen> with SingleTickerProvid
               children: [
                 Icon(
                   focused.icon,
-                  size: 16,
-                  color: focused.accentColor ?? AppColors.primaryCyan,
+                  size: 15,
+                  color: activeColor,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 7),
                 Text(
-                  'TRIGGER: ${focused.label}',
+                  'TRIGGER: ${focused.label.toUpperCase()}',
                   style: TextStyle(
-                    color: focused.accentColor ?? AppColors.primaryCyan,
-                    fontSize: 12,
+                    color: activeColor,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.8,
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 5),
                 const Icon(
-                  Icons.play_arrow_rounded,
-                  size: 16,
+                  Icons.arrow_forward_ios_rounded,
+                  size: 11,
                   color: AppColors.textPrimary,
                 ),
               ],
@@ -324,7 +330,6 @@ class _HomeDialScreenState extends State<HomeDialScreen> with SingleTickerProvid
   }
 
   Widget _buildSemiCircleWheelArea() {
-    // Wheel diameter is outerRadius * 2 (~370dp). Semicircle height is ~210dp.
     const double wheelHeight = 220.0;
 
     return Stack(
@@ -350,26 +355,26 @@ class _HomeDialScreenState extends State<HomeDialScreen> with SingleTickerProvid
           ),
         ),
 
-        // 2. Rotary Sweep Guide Text
+        // 2. Rotary Sweep Guide Text (macOS style)
         Positioned(
           bottom: 74,
           child: IgnorePointer(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.arrow_back_ios_rounded, size: 10, color: AppColors.textMuted.withOpacity(0.6)),
+                Icon(Icons.arrow_back_ios_rounded, size: 9, color: AppColors.textMuted.withValues(alpha: 0.6)),
                 const SizedBox(width: 4),
                 Text(
                   'SWIPE TO ROTATE',
                   style: TextStyle(
-                    color: AppColors.textMuted.withOpacity(0.6),
-                    fontSize: 9,
+                    color: AppColors.textMuted.withValues(alpha: 0.6),
+                    fontSize: 8.5,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.2,
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(Icons.arrow_forward_ios_rounded, size: 10, color: AppColors.textMuted.withOpacity(0.6)),
+                Icon(Icons.arrow_forward_ios_rounded, size: 9, color: AppColors.textMuted.withValues(alpha: 0.6)),
               ],
             ),
           ),

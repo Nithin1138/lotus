@@ -43,7 +43,7 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
         title: const Text(
           'Shortcuts & System Intake',
           style: TextStyle(
-            fontSize: 17,
+            fontSize: 16.5,
             fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
           ),
@@ -65,14 +65,14 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
                   title: 'Volume Up + Down Chord',
                   subtitle: 'Hold Vol Up + Vol Down for 0.5s to inspect clipboard / screenshot and pop DropDial',
                   icon: Icons.volume_up_rounded,
-                  iconColor: AppColors.accentOrange,
+                  iconColor: AppColors.dropdialOrange,
                   value: _isAccessibilityEnabled,
                   onChanged: (val) async {
                     await PlatformChannelService.openAccessibilitySettings();
                     await _checkPermissions();
                   },
                 ),
-                const Divider(color: AppColors.border),
+                const Divider(color: AppColors.border, height: 1),
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
@@ -101,7 +101,7 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
           // Section 2: Floating Edge Dock Overlay
           _buildSectionHeader('FLOATING EDGE DOCK (SYSTEM OVERLAY)'),
@@ -124,7 +124,7 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
                     }
                   },
                 ),
-                const Divider(color: AppColors.border),
+                const Divider(color: AppColors.border, height: 1),
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
@@ -153,7 +153,7 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
           // Section 3: Quick Settings Tile
           _buildSectionHeader('ANDROID QUICK SETTINGS TILE'),
@@ -162,20 +162,20 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.accentPurple.withOpacity(0.12),
+                  color: AppColors.accentPurple.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.dashboard_customize_rounded, color: AppColors.accentPurple, size: 20),
               ),
-              title: const Text('Quick Settings DropDial Tile', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+              title: const Text('Quick Settings DropDial Tile', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13.5)),
               subtitle: const Text(
                 'Pull down notification shade -> Tap Edit -> Drag "DropDial" into active tiles for instant 1-tap dial access.',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                style: TextStyle(color: AppColors.textMuted, fontSize: 11.5),
               ),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
           // Section 4: System Share Sheet
           _buildSectionHeader('SYSTEM SHARE SHEET (ZERO CONFIG)'),
@@ -184,20 +184,20 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.accentGreen.withOpacity(0.12),
+                  color: AppColors.accentGreen.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.share_rounded, color: AppColors.accentGreen, size: 20),
               ),
-              title: const Text('Direct Share Intake', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+              title: const Text('Direct Share Intake', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13.5)),
               subtitle: const Text(
                 'Open any file in WhatsApp, Gallery, Files, or Browser -> Tap Share -> Select DropDial. The semi-circle dial blooms automatically.',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                style: TextStyle(color: AppColors.textMuted, fontSize: 11.5),
               ),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
           // Section 5: Preferences & Haptics
           _buildSectionHeader('PHYSICAL FEEDBACK & HAPTICS'),
@@ -206,7 +206,7 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
               title: 'Rotary Haptic Detents',
               subtitle: 'Mechanical tick on every petal crossing and magnetic snap',
               icon: Icons.vibration_rounded,
-              iconColor: AppColors.primaryCyan,
+              iconColor: AppColors.dropdialOrange,
               value: _hapticsEnabled,
               onChanged: (val) {
                 setState(() {
@@ -217,7 +217,7 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 22),
 
           // Privacy Card
           Container(
@@ -229,7 +229,7 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
             ),
             child: const Row(
               children: [
-                Icon(Icons.shield_outlined, color: AppColors.accentGreen, size: 30),
+                Icon(Icons.shield_rounded, color: AppColors.accentGreen, size: 28),
                 SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -245,7 +245,7 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
                       ),
                       SizedBox(height: 3),
                       Text(
-                        'Zero cloud uploads. Zero telemetry. All image, PDF, and OCR conversions happen strictly on-device using local machine code.',
+                        'Zero cloud uploads. Zero telemetry. All conversions happen strictly on-device using local machine code.',
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 11,
@@ -258,7 +258,7 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
         ],
       ),
     );
@@ -271,7 +271,7 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
         title,
         style: const TextStyle(
           color: AppColors.textMuted,
-          fontSize: 10,
+          fontSize: 9.5,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.0,
         ),
@@ -301,11 +301,11 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
     return SwitchListTile(
       value: value,
       onChanged: onChanged,
-      activeColor: AppColors.primaryCyan,
+      activeThumbColor: AppColors.dropdialOrange,
       secondary: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.12),
+          color: iconColor.withValues(alpha: 0.15),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: iconColor, size: 20),
@@ -315,14 +315,14 @@ class _SettingsShortcutsScreenState extends State<SettingsShortcutsScreen> {
         style: const TextStyle(
           color: AppColors.textPrimary,
           fontWeight: FontWeight.bold,
-          fontSize: 14,
+          fontSize: 13.5,
         ),
       ),
       subtitle: Text(
         subtitle,
         style: const TextStyle(
           color: AppColors.textMuted,
-          fontSize: 12,
+          fontSize: 11.5,
         ),
       ),
     );

@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -39,13 +38,13 @@ class CenterDropHub extends StatelessWidget {
               color: AppColors.hubFace,
               border: Border.all(
                 color: file != null ? AppColors.hubActiveBorder : AppColors.hubBorder,
-                width: 2.0,
+                width: 2.2,
               ),
               boxShadow: [
                 BoxShadow(
                   color: file != null
-                      ? AppColors.primaryCyan.withOpacity(0.25)
-                      : Colors.black.withOpacity(0.6),
+                      ? AppColors.dropdialOrange.withValues(alpha: 0.35)
+                      : Colors.black.withValues(alpha: 0.65),
                   blurRadius: 18,
                   spreadRadius: 2,
                 ),
@@ -54,7 +53,7 @@ class CenterDropHub extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // 1. Thumbnail Image or Empty State
+                // 1. Thumbnail Preview Image or Official DropDial Logo
                 if (file != null && file.thumbnailBytes != null)
                   ClipOval(
                     child: Image.memory(
@@ -67,9 +66,9 @@ class CenterDropHub extends StatelessWidget {
                 else if (file != null)
                   _buildFileCategoryIcon(file.category)
                 else
-                  _buildEmptyState(),
+                  _buildEmptyStateWithLogo(r),
 
-                // 2. Dim overlay on image for readability
+                // 2. Subtle Dark Radial Vignette on Thumbnail
                 if (file != null)
                   Container(
                     width: r * 2,
@@ -79,7 +78,7 @@ class CenterDropHub extends StatelessWidget {
                       gradient: RadialGradient(
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.75),
+                          Colors.black.withValues(alpha: 0.70),
                         ],
                         radius: 0.85,
                       ),
@@ -91,22 +90,22 @@ class CenterDropHub extends StatelessWidget {
                   Positioned(
                     bottom: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                       decoration: BoxDecoration(
-                        color: AppColors.background.withOpacity(0.85),
+                        color: AppColors.background.withValues(alpha: 0.88),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: AppColors.primaryCyan.withOpacity(0.5),
+                          color: AppColors.dropdialOrange.withValues(alpha: 0.6),
                           width: 1,
                         ),
                       ),
                       child: Text(
                         file.isBatch ? '${file.count} FILES' : file.extension.toUpperCase(),
                         style: const TextStyle(
-                          color: AppColors.primaryCyan,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
+                          color: AppColors.dropdialOrange,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
                         ),
                       ),
                     ),
@@ -119,8 +118,8 @@ class CenterDropHub extends StatelessWidget {
                     height: r * 2 - 4,
                     child: CircularProgressIndicator(
                       value: progress > 0 ? progress : null,
-                      strokeWidth: 4,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryCyan),
+                      strokeWidth: 3.5,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.dropdialOrange),
                       backgroundColor: AppColors.surfaceVariant,
                     ),
                   ),
@@ -132,23 +131,29 @@ class CenterDropHub extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyStateWithLogo(double r) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.add_circle_outline_rounded,
-          color: AppColors.primaryCyan.withOpacity(0.9),
-          size: 32,
+        // Official DropDial Logo
+        Image.asset(
+          'assets/icons/app_logo.png',
+          width: 44,
+          height: 44,
+          errorBuilder: (context, error, stackTrace) => const Icon(
+            Icons.add_circle_outline_rounded,
+            color: AppColors.dropdialOrange,
+            size: 36,
+          ),
         ),
         const SizedBox(height: 4),
         const Text(
-          'TAP FILE',
+          'DROP FILE',
           style: TextStyle(
             color: AppColors.textPrimary,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.6,
+            fontSize: 9.5,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.8,
           ),
         ),
       ],
@@ -169,11 +174,11 @@ class CenterDropHub extends StatelessWidget {
         color = AppColors.accentBlue;
         break;
       case FileCategory.video:
-        icon = Icons.videocam_rounded;
-        color = AppColors.accentOrange;
+        icon = Icons.movie_creation_rounded;
+        color = AppColors.dropdialOrange;
         break;
       case FileCategory.audio:
-        icon = Icons.audiotrack_rounded;
+        icon = Icons.graphic_eq_rounded;
         color = AppColors.accentGreen;
         break;
       case FileCategory.archive:
@@ -185,6 +190,6 @@ class CenterDropHub extends StatelessWidget {
         color = AppColors.primaryCyan;
     }
 
-    return Icon(icon, size: 42, color: color);
+    return Icon(icon, size: 38, color: color);
   }
 }

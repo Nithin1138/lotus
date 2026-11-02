@@ -30,3 +30,4 @@ class PetalItem {
     return supportedCategories.contains(category);
   }
 }
+

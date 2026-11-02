@@ -33,3 +33,4 @@ class WheelConstants {
   static const Duration snapDuration = Duration(milliseconds: 280);
   static const Duration modeSwitchDuration = Duration(milliseconds: 320);
 }
+

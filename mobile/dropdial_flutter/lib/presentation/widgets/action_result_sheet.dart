@@ -39,7 +39,7 @@ class ActionResultSheet extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(top: BorderSide(color: AppColors.borderBright, width: 1.5)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -52,7 +52,7 @@ class ActionResultSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
 
           // Status Header
           Row(
@@ -61,8 +61,8 @@ class ActionResultSheet extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: result.success
-                      ? AppColors.accentGreen.withOpacity(0.15)
-                      : AppColors.accentRed.withOpacity(0.15),
+                      ? AppColors.accentGreen.withValues(alpha: 0.15)
+                      : AppColors.accentRed.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -98,7 +98,7 @@ class ActionResultSheet extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
           // Extracted Text Display (if OCR)
           if (result.extractedText != null && result.extractedText!.isNotEmpty)
@@ -123,7 +123,7 @@ class ActionResultSheet extends StatelessWidget {
               ),
             ),
 
-          // Output File Metadata Card (if File generated)
+          // Output File Metadata Card
           if (result.outputFile != null)
             Container(
               margin: const EdgeInsets.only(bottom: 20),
@@ -135,7 +135,7 @@ class ActionResultSheet extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.description_outlined, color: AppColors.primaryCyan, size: 28),
+                  const Icon(Icons.description_outlined, color: AppColors.dropdialOrange, size: 28),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -173,8 +173,8 @@ class ActionResultSheet extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryCyan,
-                      foregroundColor: AppColors.petalActiveText,
+                      backgroundColor: AppColors.dropdialOrange,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
@@ -200,8 +200,8 @@ class ActionResultSheet extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    icon: const Icon(Icons.visibility_outlined, size: 18),
-                    label: const Text('Open'),
+                    icon: const Icon(Icons.visibility_rounded, size: 18),
+                    label: const Text('Quick Look'),
                     onPressed: () {
                       OpenFilex.open(result.outputFile!.path);
                     },
@@ -246,8 +246,8 @@ class ActionResultSheet extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryCyan,
-                      foregroundColor: AppColors.petalActiveText,
+                      backgroundColor: AppColors.dropdialOrange,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),

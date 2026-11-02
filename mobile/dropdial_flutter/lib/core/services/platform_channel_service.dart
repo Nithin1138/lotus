@@ -74,3 +74,4 @@ class PlatformChannelService {
     } catch (_) {}
   }
 }
+
